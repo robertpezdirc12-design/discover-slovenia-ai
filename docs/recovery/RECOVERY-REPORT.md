@@ -121,3 +121,26 @@ Kaj ŠE VEDNO MANJKA (odgovor na „kaj manjka?"):
 4. **`main` zaščita** — ✅ PREVERJENO 21:59 UTC: `main` je zaščiten (API: »Protected branch 'main' already exists«)
 5. **muzej duplikat** — `robert.pezdirc12/muzej` in `markec-group/muzej` imata IDENTIČEN main (@ 75ac35f, ob 22:01 UTC) — isti vzorec duplikata kot zgoraj; ker lastnik trenutno aktivno pusha, nisem posegal → izbriši enega (npr. osebnega) ali reci, da konsolidiram jaz
 6. Po koncu vseh del: **prekliči `glpat-` žeton** (objavljen v klepetu) + zamenjaj geslo Neon baze (§4)
+
+
+---
+
+## 9. Posodobitev ~00:15 UTC — REKONSTRUKCIJA IZVEDENA (2.0.0-rc.1)
+
+Lastnik: „nimam nic, kaj manjka obnavljaj temeljito" → pot A (lokalni klon) odpade → IZVEDENA POT C:
+temeljita rekonstrukcija aplikacije. Repozitorij: aplikacija na rootu, arhiv incidenta v docs/recovery/.
+
+Kaj je rekonstruirano (agent-browser E2E potrjeno, 0 napak, lint 0):
+- ~30 strani (domov 1:1 po strukturi produkcije, destinacije 38 realnih zapisov SI/HR/ME/AL, destinacija/[slug],
+  vodiki/[slug], dogodki, dozivetja, primerjava, slovenia-pass, zemljevid z 38 markerji, lokali, trznica,
+  go hub 10 partnerjev, nacrtuj, potovanje, na-poti Go Mode, moja-potovanja hub, pot/[shareId], pravne strani…)
+- API: /api/health, /api/destinations (oblika 1:1 s produkcijo), /api/itinerary (DETERMINISTICNI nacrtovalec,
+  isti vhod = isti izvedek, 0 AI zetonov), /api/contact, /api/newsletter/subscribe, /rss.xml
+- i18n SL (privzet, brez predpone — kot produkcija) + EN (/en/*); PWA manifest + 84 realnih fotografij (public/content)
+- Vsi viri ostajajo v docs/recovery/: source-sessions/ (57 izpisov izvorne kode), snapshots/ (zivi API podatki),
+  production-mirror/ (201 strani), worklog-reconstruction.md (celoten dnevnik + rekonstrukcija), schema-1.163.4.prisma
+
+Primerjava z izvirnikom (1.190.0): jedrni tok ODKRIJ->DODAJ->NA CRTUJ->POJDI deluje; manjka: it/de/fr/es jeziki,
+Stripe checkout, NextAuth, skupnostne plosece, testi (5332), CI — dokumentirano v README.
+
+Dokazi: docs/evidence/reconstruction/ (desktop-home, mobile-home390, desktop-zemljevid).

@@ -1,0 +1,23 @@
+# odvisnosti / build
+node_modules/
+.next/
+out/
+build/
+
+# okolje
+.env
+.env*.local
+
+# baza (razvojna)
+db/*.db
+db/*.db-journal
+
+# dnevniki
+*.log
+
+# peskovnik orodja
+tool-results/
+agent-ctx/
+
+# sistem
+.DS_Store

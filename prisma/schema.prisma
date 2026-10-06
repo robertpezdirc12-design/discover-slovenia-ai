@@ -1,0 +1,88 @@
+// Prisma shema — SANDBOX (SQLite) MINIMALNA PODMNOŽICA temelja.
+//
+// Izvirnik: 39-model postgres/Neon shema (v1.163.4) je ohranjena kot
+// dokumentacija v docs/recovery/schema-1.163.4.prisma — ta datoteka vsebuje
+// SAMO podmnožico, ki jo rekonstrukcija 2.0.0-rc.1 dejansko potrebuje
+// (destinacijski seed, kontakti, newsletter, leadi, rezervacijske lupine).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Kanonske destinacije (seed iz src/lib/slovenia-data.ts — 38 zapisov).
+model Destination {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  tagline     String?
+  region      String?
+  type        String?
+  country     String?
+  lat         Float?
+  lng         Float?
+  rating      Float?
+  description String?
+  image       String?
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([region])
+  @@index([type])
+}
+
+/// Lokalni ponudniki (tržnica/lokali — 45-c bo polnil).
+model Listing {
+  id        String   @id @default(cuid())
+  name      String
+  category  String
+  region    String?
+  lat       Float?
+  lng       Float?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([region])
+}
+
+/// Rezervacijska lupina (DRAFT/EXTERNAL priponke Go Mode — payload = JSON).
+model JourneyBooking {
+  ref       String   @id
+  title     String
+  status    String   @default("DRAFT")
+  payload   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Sporočila iz kontaktne obrazce (hramba največ 12 mesecev — politika).
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  message   String
+  createdAt DateTime @default(now())
+}
+
+/// Prijava na novice ("Prejmi skrite bisere Slovenije").
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+/// Lead iz "Pridruži se" obrazca (za-ponudnike).
+model Lead {
+  id        String   @id @default(cuid())
+  email     String
+  interest  String?
+  note      String?
+  createdAt DateTime @default(now())
+}

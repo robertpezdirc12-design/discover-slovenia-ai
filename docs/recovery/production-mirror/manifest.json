@@ -1,0 +1,113 @@
+{
+  "id": "/",
+  "name": "Discover Slovenia AI — AI turistična platforma",
+  "short_name": "Discover Slovenia AI",
+  "description": "Odkrijte Slovenijo z AI-poganjanim načrtovalcem potovanj. 38 kuriranih destinacij, zemljevid po realnih cestah in načrti, ki ostanejo dostopni tudi brez povezave.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2d6a3e",
+  "orientation": "portrait-primary",
+  "lang": "sl-SI",
+  "dir": "ltr",
+  "categories": [
+    "travel",
+    "tourism",
+    "lifestyle",
+    "navigation"
+  ],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "AI načrtovalec",
+      "short_name": "Načrtuj",
+      "description": "Sestavi popotni itinerer z AI",
+      "url": "/nacrtuj",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Zemljevid",
+      "short_name": "Zemljevid",
+      "description": "Interaktivni zemljevid Slovenije",
+      "url": "/zemljevid",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Tržnica",
+      "short_name": "Tržnica",
+      "description": "Lokalni slovenski izdelki",
+      "url": "/trznica",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Destinacije",
+      "short_name": "Destinacije",
+      "description": "38 kuriranih destinacij",
+      "url": "/destinacije",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/pwa-shot-home-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "AI načrtovalec potovanj z zemljevidom po realnih cestah"
+    },
+    {
+      "src": "/pwa-shot-planner-narrow.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Načrt potovanja na mobilnem zaslonu — dostopen tudi brez povezave"
+    }
+  ],
+  "prefer_related_applications": false
+}

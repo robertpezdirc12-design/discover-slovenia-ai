@@ -98,3 +98,26 @@ funkcionalnost in videz pa DA, do bitne enakosti s produkcijo). Ocenjeno več se
 3. Za pot C (rekonstrukcija) samo reci "zgradi na novo" — začnem v novi seji s
    `recovery/worklog.md` kot specifikacijo
 4. V vsem primeru: izvedi varnostne korake iz §4 (zlasti Neon geslo + Vercel žetoni)
+
+---
+
+## 8. Posodobitev ~21:45 UTC — konsolidacija dvojnih GitLab projektov
+
+Ugotovitev: za isto aplikacijo sta nastala DVA GitLab projekta (oba sta arhiv, NE izvorna koda):
+
+| Projekt | Vsebina | Nastal |
+|---|---|---|
+| `markec-group/discover-slovenia-ai` (ta repozitorij) | Obnovitveni arhiv: to poročilo + `snapshots/` + `recovery/` (worklog 1156 vrstic, 57 tool-results) | 21:04 UTC |
+| `robert.pezdirc12/i-feel-slovenia` | Statični posnetek produkcije `i-feel-slovenia.vercel.app` — 201 datotek (HTML strani, `_next/` build asseti, `_mirror-meta/` dnevnik obiranja), ~25 MB, 1 commit (avtor: „Roksal Agent Loop") | 21:16 UTC |
+
+Izvedena konsolidacija v EN projekt (ta repozitorij):
+- ✅ statični posnetek produkcije premaknjen v `production-mirror/` (dokaz + vir za rekonstrukcijo po poti C)
+- ↻ duplikat `robert.pezdirc12/i-feel-slovenia` se izbriše takoj za tem commitom — njegova vsebina je 1:1 ohranjena v `production-mirror/`
+
+Kaj ŠE VEDNO MANJKA (odgovor na „kaj manjka?"):
+1. **Izvorna koda (626 commitov)** — noben od obeh projektov je ni vseboval; poti A/B/C glej §3
+2. **keep-warm** — cron vsakih 5 min je tekel na GitHub Actions in je z računom UMRIL; Render brezplačna instanca zdaj zaspi po ~15 min nedejavnosti (hladen zagon ~90 s — stran še vedno deluje, le prvi obisk počasnejši). Rešitve: GitLab načrtovani pipeline (porabi kvoto brezplačnih runnerjev), zunanja storitev cron ali sprejem hladnih zagonov
+3. **Vercel** — projekti še vedno kažejo na umrli GitHub: preveži na GitLab integracijo in izvozi env spremenljivke (zlasti `DATABASE_URL` do Neon baze!) — potreben `vcp_` žeton
+4. **`main` zaščita** — po 21:04 UTC je bil main nezaščiten (WAF je prekinil ponovno zaščititev); preveri/omogoči v Settings → Repository → Protected branches
+5. **`robert.pezdirc12/muzej`** — prazen duplikat `markec-group/muzej` (main @ fc772a8); priporočam izbris praznega
+6. Po koncu vseh del: **prekliči `glpat-` žeton** (objavljen v klepetu) + zamenjaj geslo Neon baze (§4)

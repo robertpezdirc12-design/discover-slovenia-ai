@@ -112,12 +112,12 @@ Ugotovitev: za isto aplikacijo sta nastala DVA GitLab projekta (oba sta arhiv, N
 
 Izvedena konsolidacija v EN projekt (ta repozitorij):
 - ✅ statični posnetek produkcije premaknjen v `production-mirror/` (dokaz + vir za rekonstrukcijo po poti C)
-- ↻ duplikat `robert.pezdirc12/i-feel-slovenia` se izbriše takoj za tem commitom — njegova vsebina je 1:1 ohranjena v `production-mirror/`
+- ✅ duplikat `robert.pezdirc12/i-feel-slovenia` IZBRISAN (22:01 UTC, API 202, v čistilni vrsti) — vsebina 1:1 ohranjena v `production-mirror/`
 
 Kaj ŠE VEDNO MANJKA (odgovor na „kaj manjka?"):
 1. **Izvorna koda (626 commitov)** — noben od obeh projektov je ni vseboval; poti A/B/C glej §3
 2. **keep-warm** — cron vsakih 5 min je tekel na GitHub Actions in je z računom UMRIL; Render brezplačna instanca zdaj zaspi po ~15 min nedejavnosti (hladen zagon ~90 s — stran še vedno deluje, le prvi obisk počasnejši). Rešitve: GitLab načrtovani pipeline (porabi kvoto brezplačnih runnerjev), zunanja storitev cron ali sprejem hladnih zagonov
 3. **Vercel** — projekti še vedno kažejo na umrli GitHub: preveži na GitLab integracijo in izvozi env spremenljivke (zlasti `DATABASE_URL` do Neon baze!) — potreben `vcp_` žeton
-4. **`main` zaščita** — po 21:04 UTC je bil main nezaščiten (WAF je prekinil ponovno zaščititev); preveri/omogoči v Settings → Repository → Protected branches
-5. **`robert.pezdirc12/muzej`** — prazen duplikat `markec-group/muzej` (main @ fc772a8); priporočam izbris praznega
+4. **`main` zaščita** — ✅ PREVERJENO 21:59 UTC: `main` je zaščiten (API: »Protected branch 'main' already exists«)
+5. **muzej duplikat** — `robert.pezdirc12/muzej` in `markec-group/muzej` imata IDENTIČEN main (@ 75ac35f, ob 22:01 UTC) — isti vzorec duplikata kot zgoraj; ker lastnik trenutno aktivno pusha, nisem posegal → izbriši enega (npr. osebnega) ali reci, da konsolidiram jaz
 6. Po koncu vseh del: **prekliči `glpat-` žeton** (objavljen v klepetu) + zamenjaj geslo Neon baze (§4)

@@ -1,0 +1,973 @@
+     1→"use client";
+     2→
+     3→import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+     4→import {
+     5→  Bot,
+     6→  Check,
+     7→  Heart,
+     8→  Landmark,
+     9→  Loader2,
+    10→  MapPin,
+    11→  MessageCircle,
+    12→  Plus,
+    13→  Send,
+    14→  Sparkles,
+    15→} from "lucide-react";
+    16→import { Button } from "@/components/ui/button";
+    17→import { Card, CardContent } from "@/components/ui/card";
+    18→import { Input } from "@/components/ui/input";
+    19→import { Textarea } from "@/components/ui/textarea";
+    20→import { useToast } from "@/hooks/use-toast";
+    21→import { cn } from "@/lib/utils";
+    22→// 99-b: anonimni clientId + prihranjeno ime — deljena knjižnica
+    23→// (enkraten vir ključev; prej duplicirana v 4 socialnih komponentah)
+    24→import {
+    25→  getVoterId,
+    26→  getAuthorName,
+    27→  saveAuthorName,
+    28→} from "@/lib/client-identity";
+    29→// W2 (Issue #15, 1.131.0): skupinski klepet z @AI — živost (polling + socket)
+    30→import { useTripChat, type TripChatItem } from "@/hooks/use-trip-chat";
+    31→// W2: čisti helperji @AI (omemba, rezervirano ime, JSON priloga)
+    32→import { AI_ADVISOR_NAME, isAiMention, parseAiPayload } from "@/lib/trip-chat";
+    33→// W2: "Dodaj v pot" — isti dodajalni algoritem kot klepet "+"
+    34→// (addChatPlaceToItinerary). MEJA (issue #17 §5): ta gumb piše SAMO v
+    35→// DELJENO pot (kolaborativni dokument, CAS PATCH) — osebne zbirke
+    36→// "Moja pot" NE dotika (klepetov "+" po D8-D hkrati write-through v
+    37→// zbirko; tu je dejanje urejanje skupnega dokumenta, ne osebna zbirka).
+    38→import {
+    39→  addChatPlaceToItinerary,
+    40→  isValidChatPlace,
+    41→} from "@/lib/chat-add-place";
+    42→import type { ChatPlace } from "@/lib/geo-intent";
+    43→// W2: CAS posodobitev deljene poti na mestu (+ editToken iz localStorage)
+    44→import { getEditToken, updateItinerary } from "@/lib/itinerary-share";
+    45→import {
+    46→  addSavedTrip,
+    47→  deriveSavedTripName,
+    48→} from "@/lib/my-trips-storage";
+    49→import type { Itinerary } from "@/lib/types";
+    50→import type { StoCitation } from "@/lib/rag/types";
+    51→// W2: telemetrija skupinskega klepeta (isti vir kot planner dogodki)
+    52→import { trackPlannerEvent } from "@/lib/planner-analytics";
+    53→
+    54→// ============================================================================
+    55→// TRIP SOCIAL — všečki (srčki) + SKUPINSKI KLEPET Z @AI na /pot/[shareId]
+    56→// ============================================================================
+    57→//
+    58→// W2 (Issue #15, 1.131.0) — Mindtripov vzorec "skupinski klepet z @AI",
+    59→// po našem kanonu:
+    60→//   - obstoječi KOMENTARJI (P1-2a) postanejo ZGODOVINA KLEPETA (ista tabela
+    61→//     TripComment — ZERO FEATURE LOSS, brez migracije vsebine);
+    62→//   - živost: inkrementalni polling (6 s, viden zavihek) + socket pospešitev
+    63→//     (chat:new — mini-service 3003; mrtv service → polling prevzame);
+    64→//   - @AI svetovalec: omemba v sporočilu → STREŽNIŠKO izstavljen odgovor
+    65→//     (isAI vrstica; isti deterministični pogon kot osebni klepet — 0
+    66→//     runtime LLM, pošteno groundan na bazi/STO/OSM);
+    67→//   - AI PREDLAGA, človek ODLOČA: predlogi krajev iz priloge imajo gumb
+    68→//     "Dodaj v pot" (CAS PATCH — isti čisti algoritem kot klepet "+");
+    69→//   - VŠEČKI: nespremenjeni (Heart toggle → /api/trip-likes).
+    70→//
+    71→// Iskrenost: značka AI je strežniška (navaden POST zavrne rezervirana
+    72→// imena); povezava "živo / osveževanje" je poštena (socket je kozmetičen);
+    73→// napake AI se izpišejo, sporočilo uporabnika ostane objavljeno.
+    74→// ============================================================================
+    75→
+    76→// Ključ všečka je LASTNOST te komponente (ločen seznam na deljeni pot);
+    77→// anonimni ID in ime avtorja prihajata iz client-identity lib-a.
+    78→const likeStorageKey = (shareId: string) =>
+    79→  `discoverslovenia_like_${shareId}`;
+    80→
+    81→const AUTHOR_NAME_MAX = 60;
+    82→const COMMENT_TEXT_MAX = 500;
+    83→
+    84→/** Barve avatarjev — toplo/zeleno obarvana paleta (brez modre/indigo). */
+    85→const AVATAR_COLORS = [
+    86→  "bg-emerald-600",
+    87→  "bg-amber-600",
+    88→  "bg-teal-700",
+    89→  "bg-orange-700",
+    90→  "bg-lime-700",
+    91→] as const;
+    92→
+    93→interface TripSocialProps {
+    94→  shareId: string;
+    95→  /** Začetne vrstice iz RSC (najnovejše prve — DESC; hook jih obrne). */
+    96→  initialComments: TripChatItem[];
+    97→  /** Začetno število všečkov iz RSC */
+    98→  initialLikes: number;
+    99→  /** ISO datum ustvarjanja potovanja (spodnja meja za relativen čas) */
+   100→  createdAt: string;
+   101→}
+   102→
+   103→// ============================================================================
+   104→// Slovenski helperji (ednina / dvojina / množina) — /pot je SL-only (P4-8)
+   105→// ============================================================================
+   106→
+   107→/** Slovenščina: 1 → ednina, 2 → dvojina, 3–4 → množina, 5+ → splošna množina. */
+   108→function slUnit(n: number, one: string, two: string, few: string, many: string): string {
+   109→  if (n === 1) return one;
+   110→  const r = n % 100;
+   111→  if (r === 2) return two;
+   112→  if (r === 3 || r === 4) return few;
+   113→  return many;
+   114→}
+   115→
+   116→/** "pred 2 min", "pred 3 h" — kratke oznake za manj kot uro. */
+   117→function slTimeAgo(iso: string, floorIso?: string): string {
+   118→  const ms = Date.parse(iso);
+   119→  if (Number.isNaN(ms)) return "neznano";
+   120→
+   121→  // Sanity cap: komentar ne more biti starejši od potovanja samega
+   122→  // (pokvarjeni podatki) — v tem primeru pokažemo absolutni datum.
+   123→  if (floorIso) {
+   124→    const floor = Date.parse(floorIso);
+   125→    if (!Number.isNaN(floor) && ms < floor) {
+   126→      return new Date(ms).toLocaleDateString("sl-SI", {
+   127→        day: "numeric",
+   128→        month: "short",
+   129→        year: "numeric",
+   130→      });
+   131→    }
+   132→  }
+   133→
+   134→  const seconds = Math.max(0, Math.floor((Date.now() - ms) / 1000));
+   135→  if (seconds < 45) return "pravkar";
+   136→
+   137→  const minutes = Math.floor(seconds / 60);
+   138→  if (minutes < 60) {
+   139→    return `pred ${minutes} ${slUnit(minutes, "minuto", "minutama", "minutami", "minutami")}`;
+   140→  }
+   141→
+   142→  const hours = Math.floor(minutes / 60);
+   143→  if (hours < 24) {
+   144→    return `pred ${hours} ${slUnit(hours, "uro", "urama", "urami", "urami")}`;
+   145→  }
+   146→
+   147→  const days = Math.floor(hours / 24);
+   148→  if (days < 30) {
+   149→    return `pred ${days} ${slUnit(days, "dnem", "dnevoma", "dnevi", "dnevi")}`;
+   150→  }
+   151→
+   152→  const months = Math.floor(days / 30);
+   153→  if (months < 12) {
+   154→    return `pred ${months} ${slUnit(months, "mesecem", "mesecema", "meseci", "meseci")}`;
+   155→  }
+   156→
+   157→  const years = Math.floor(days / 365);
+   158→  return `pred ${years} ${slUnit(years, "letom", "letoma", "leti", "leti")}`;
+   159→}
+   160→
+   161→/** Barva avatarja iz imena (stabilna za isto ime). */
+   162→function avatarColor(name: string): string {
+   163→  let hash = 0;
+   164→  for (const ch of name) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+   165→  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+   166→}
+   167→
+   168→/** Začetnica imena (varno za Unicode). */
+   169→function nameInitial(name: string): string {
+   170→  const trimmed = name.trim();
+   171→  const first = Array.from(trimmed)[0] ?? "?";
+   172→  return first.toUpperCase();
+   173→}
+   174→
+   175→/** "X osebam je všeč" — dativne oblike. */
+   176→function likesLabel(n: number): string {
+   177→  if (n === 0) return "Ni še všečkov";
+   178→  const people =
+   179→    n === 1 ? "1 osebi" : n === 2 ? "2 osebama" : `${n} osebam`;
+   180→  return `${people} je to potovanje všeč`;
+   181→}
+   182→
+   183→// ============================================================================
+   184→// AI mehurček — odgovor svetovalca s predlogi krajev + viri
+   185→// ============================================================================
+   186→
+   187→/** Znakovni del gumba predloga (lokalno stanje po uspešnem dodajanju). */
+   188→function PlaceSuggestion({
+   189→  place,
+   190→  added,
+   191→  pending,
+   192→  onAdd,
+   193→}: {
+   194→  place: ChatPlace;
+   195→  added: boolean;
+   196→  pending: boolean;
+   197→  onAdd: (place: ChatPlace) => void;
+   198→}) {
+   199→  // Isti čisti varovali kot klepet "+": T2 uradni vir (članek) ni fizični
+   200→  // postanek — predloga izrišemo, gumba NE (1.44 kanon).
+   201→  const isStop =
+   202→    place.provenance !== "t2" && place.category !== "source";
+   203→
+   204→  return (
+   205→    <li className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 bg-background/60 px-2.5 py-2">
+   206→      <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-foreground" title={place.name}>
+   207→        <MapPin className="mr-1 inline size-3 shrink-0 text-muted-foreground" aria-hidden="true" />
+   208→        {place.name}
+   209→      </span>
+   210→      {isStop ? (
+   211→        added ? (
+   212→          <span
+   213→            className="inline-flex shrink-0 items-center gap-1 rounded-md bg-emerald-600/10 px-2 py-1 text-[11px] font-semibold text-emerald-700"
+   214→            aria-live="polite"
+   215→          >
+   216→            <Check className="size-3" aria-hidden="true" />
+   217→            V poti
+   218→          </span>
+   219→        ) : (
+   220→          <Button
+   221→            type="button"
+   222→            variant="outline"
+   223→            size="sm"
+   224→            className="h-7 shrink-0 gap-1 px-2 text-[11px]"
+   225→            onClick={() => onAdd(place)}
+   226→            disabled={pending}
+   227→            aria-label={`Dodaj ${place.name} v pot`}
+   228→          >
+   229→            {pending ? (
+   230→              <Loader2 className="size-3 animate-spin" aria-hidden="true" />
+   231→            ) : (
+   232→              <Plus className="size-3" aria-hidden="true" />
+   233→            )}
+   234→            Dodaj v pot
+   235→          </Button>
+   236→        )
+   237→      ) : (
+   238→        <span className="shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">
+   239→          uradni vir
+   240→        </span>
+   241→      )}
+   242→    </li>
+   243→  );
+   244→}
+   245→
+   246→// ============================================================================
+   247→// Glavna komponenta
+   248→// ============================================================================
+   249→
+   250→export function TripSocial({
+   251→  shareId,
+   252→  initialComments,
+   253→  initialLikes,
+   254→  createdAt,
+   255→}: TripSocialProps) {
+   256→  const { toast } = useToast();
+   257→
+   258→  // === Klepet (W2): vrstice kronološko + živost + AI vprašanje ===
+   259→  const {
+   260→    comments,
+   261→    connected,
+   262→    aiPending,
+   263→    appendLocal,
+   264→    emitChatSignal,
+   265→    askAi,
+   266→  } = useTripChat(shareId, initialComments);
+   267→
+   268→  // === Stanje — števci se inicializirajo iz server propsov (hidratacija
+   269→  // varna), lokalni všeček in clientId se naložita šele v useEffect. ===
+   270→  const [likes, setLikes] = useState<number>(() => initialLikes ?? 0);
+   271→  const [liked, setLiked] = useState<boolean>(false);
+   272→  const [likePending, setLikePending] = useState<boolean>(false);
+   273→  const [clientId, setClientId] = useState<string>("");
+   274→
+   275→  // Obrazec
+   276→  const [authorName, setAuthorName] = useState<string>("");
+   277→  const [text, setText] = useState<string>("");
+   278→  const [submitting, setSubmitting] = useState<boolean>(false);
+   279→
+   280→  // "Dodaj v pot" — en predlog naenkrat (CAS zaporedno, brez dirk)
+   281→  const [addingPlaceId, setAddingPlaceId] = useState<string | null>(null);
+   282→  const [addedPlaceIds, setAddedPlaceIds] = useState<ReadonlySet<string>>(
+   283→    () => new Set<string>()
+   284→  );
+   285→
+   286→  // Relativni čas računamo šele po mountu (SSR/klient ura se razlikujeta)
+   287→  const [mounted, setMounted] = useState<boolean>(false);
+   288→
+   289→  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+   290→  const scrollRef = useRef<HTMLDivElement | null>(null);
+   291→
+   292→  // Mount: zagotovi clientId (enak vzorec kot shared-trip glasovanje) +
+   293→  // naloži lokalni všeček + prihranjeno ime avtorja
+   294→  useEffect(() => {
+   295→    setMounted(true);
+   296→    if (!shareId) return;
+   297→    try {
+   298→      // 99-b: read-or-create anonimni ID (private mode → null, stanje
+   299→      // ostane nedotaknjeno — isto kot prejšnji try/catch vzorec)
+   300→      const cid = getVoterId();
+   301→      if (cid) setClientId(cid);
+   302→
+   303→      setLiked(window.localStorage.getItem(likeStorageKey(shareId)) === "1");
+   304→
+   305→      const savedName = getAuthorName();
+   306→      if (savedName && savedName.trim()) setAuthorName(savedName.trim());
+   307→    } catch {
+   308→      // localStorage nedostopen (private mode) — všečki/komentarji delujejo
+   309→      // brez persistenze lastnega stanja
+   310→    }
+   311→  }, [shareId]);
+   312→
+   313→  // === Samodejni drs na dno ob novi vrstici (če je uporabnik že ob dnu —
+   314→  // ne smemo mu puliti brskalnika, če bere zgodovino) ===
+   315→  const stickToBottomRef = useRef(true);
+   316→  useEffect(() => {
+   317→    const el = scrollRef.current;
+   318→    if (!el) return;
+   319→    const onScroll = () => {
+   320→      stickToBottomRef.current =
+   321→        el.scrollTop + el.clientHeight >= el.scrollHeight - 80;
+   322→    };
+   323→    el.addEventListener("scroll", onScroll, { passive: true });
+   324→    return () => el.removeEventListener("scroll", onScroll);
+   325→  }, []);
+   326→
+   327→  const lastCount = useRef(comments.length);
+   328→  useEffect(() => {
+   329→    const grew = comments.length > lastCount.current;
+   330→    lastCount.current = comments.length;
+   331→    if (!grew) return;
+   332→    if (!stickToBottomRef.current) return; // uporabnik bere višje — ne puli
+   333→    const el = scrollRef.current;
+   334→    if (el) el.scrollTop = el.scrollHeight;
+   335→  }, [comments.length, aiPending]);
+   336→
+   337→  // === Všeček — toggle z optimističnim UI in revertom ob napaki ===
+   338→  const toggleLike = useCallback(async () => {
+   339→    if (!shareId || !clientId || likePending) return;
+   340→
+   341→    const prevLiked = liked;
+   342→    const prevLikes = likes;
+   343→    const nextLiked = !prevLiked;
+   344→
+   345→    // Optimistična posodobitev UI
+   346→    setLikePending(true);
+   347→    setLiked(nextLiked);
+   348→    setLikes((n) => Math.max(0, n + (nextLiked ? 1 : -1)));
+   349→
+   350→    try {
+   351→      const res = await fetch("/api/trip-likes", {
+   352→        method: "POST",
+   353→        headers: { "Content-Type": "application/json" },
+   354→        body: JSON.stringify({ shareId, clientId }),
+   355→      });
+   356→      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+   357→      const data: unknown = await res.json();
+   358→      const d = data as { liked?: unknown; count?: unknown } | null;
+   359→
+   360→      // Server je avtoriteta
+   361→      if (typeof d?.liked === "boolean") setLiked(d.liked);
+   362→      if (typeof d?.count === "number" && d.count >= 0) setLikes(d.count);
+   363→
+   364→      // Persistiraj lokalno stanje všečka
+   365→      try {
+   366→        if (d?.liked === true) {
+   367→          window.localStorage.setItem(likeStorageKey(shareId), "1");
+   368→        } else if (d?.liked === false) {
+   369→          window.localStorage.removeItem(likeStorageKey(shareId));
+   370→        }
+   371→      } catch {
+   372→        // private mode — ignore
+   373→      }
+   374→    } catch (err) {
+   375→      // Revert optimistične spremembe
+   376→      console.error("[trip-social] všeček neuspešen:", err);
+   377→      setLiked(prevLiked);
+   378→      setLikes(prevLikes);
+   379→      toast({
+   380→        title: "Všečka ni bilo mogoče shraniti",
+   381→        description: "Preveri povezavo in poskusi znova.",
+   382→        variant: "destructive",
+   383→      });
+   384→    } finally {
+   385→      setLikePending(false);
+   386→    }
+   387→  }, [shareId, clientId, likePending, liked, likes, toast]);
+   388→
+   389→  // === @AI žeton — vstavi na položaj kazalca v vnosno polje ===
+   390→  const insertAiMention = useCallback(() => {
+   391→    const el = textareaRef.current;
+   392→    const value = text;
+   393→    const start = el?.selectionStart ?? value.length;
+   394→    const end = el?.selectionEnd ?? start;
+   395→    const before = value.slice(0, start);
+   396→    const after = value.slice(end);
+   397→    const needsSpace = before.length > 0 && !/\s$/.test(before);
+   398→    const insert = `${needsSpace ? " " : ""}@AI `;
+   399→    const next = `${before}${insert}${after}`;
+   400→    setText(next);
+   401→    // Fokus + kazalec za žetonom (naslednja slika — textarea se še rendra)
+   402→    requestAnimationFrame(() => {
+   403→      el?.focus();
+   404→      const pos = (before + insert).length;
+   405→      el?.setSelectionRange(pos, pos);
+   406→    });
+   407→  }, [text]);
+   408→
+   409→  // === Objava sporočila (+ morebitno vprašanje @AI svetovalcu) ===
+   410→  const submitComment = useCallback(
+   411→    async (e: React.FormEvent<HTMLFormElement>) => {
+   412→      e.preventDefault();
+   413→      if (submitting || !shareId) return;
+   414→
+   415→      const name = authorName.trim();
+   416→      const body = text.trim();
+   417→      const wantsAi = isAiMention(body);
+   418→
+   419→      if (name.length < 1 || name.length > AUTHOR_NAME_MAX) {
+   420→        toast({
+   421→          title: "Vpiši svoje ime",
+   422→          description: `Ime mora imeti med 1 in ${AUTHOR_NAME_MAX} znakov.`,
+   423→          variant: "destructive",
+   424→        });
+   425→        return;
+   426→      }
+   427→      if (body.length < 2 || body.length > COMMENT_TEXT_MAX) {
+   428→        toast({
+   429→          title: "Sporočilo je prekratko ali predolgo",
+   430→          description: `Sporočilo mora imeti med 2 in ${COMMENT_TEXT_MAX} znakov.`,
+   431→          variant: "destructive",
+   432→        });
+   433→        return;
+   434→      }
+   435→
+   436→      setSubmitting(true);
+   437→      stickToBottomRef.current = true; // svoja vrstica → drs na dno
+   438→      try {
+   439→        // 1. Sporočilo se vedno objavi (vidno vsem — tudi če AI kasneje
+   440→        // odpove; iskrenost: napaka AI ne poje uporabnikovega sporočila).
+   441→        const res = await fetch("/api/trip-comments", {
+   442→          method: "POST",
+   443→          headers: { "Content-Type": "application/json" },
+   444→          body: JSON.stringify({ shareId, authorName: name, text: body }),
+   445→        });
+   446→        const data: unknown = await res.json().catch(() => null);
+   447→        const d = data as { success?: unknown; comment?: unknown; error?: unknown } | null;
+   448→
+   449→        if (!res.ok || d?.success !== true || !d?.comment) {
+   450→          const error = typeof d?.error === "string" ? d.error : null;
+   451→          throw new Error(error ?? `HTTP ${res.status}`);
+   452→        }
+   453→
+   454→        const comment = d.comment as TripChatItem;
+   455→        appendLocal({
+   456→          id: comment.id,
+   457→          authorName: comment.authorName,
+   458→          text: comment.text,
+   459→          isAI: comment.isAI === true,
+   460→          payload: comment.payload ?? null,
+   461→          createdAt: comment.createdAt,
+   462→        });
+   463→        emitChatSignal(comment.id);
+   464→        setText("");
+   465→
+   466→        // Prihrani ime za naslednje sporočilo (defenzivno — private mode
+   467→        // se mirno preskoči znotraj lib-a)
+   468→        saveAuthorName(name);
+   469→
+   470→        if (!wantsAi) {
+   471→          toast({
+   472→            title: "Sporočilo je objavljeno",
+   473→            description: "Hvala, da deliš mnenje s skupino!",
+   474→          });
+   475→          return;
+   476→        }
+   477→
+   478→        // 2. Vprašanje @AI — strežniški odgovor (isti pogon kot /api/chat).
+   479→        // Indikator tipkanja je LOKALEN (aiPending) — prisotni vidijo
+   480→        // vrstico prek svojega pollinga/chat:new.
+   481→        trackPlannerEvent("chat_group_ai_asked", {
+   482→          question_len: body.length,
+   483→          surface: "trip-chat",
+   484→        });
+   485→        try {
+   486→          await askAi(body);
+   487→          // Odgovor se doda prek appendLocal znotraj askAi — mehurček je
+   488→          // povratna informacija, toast bi bil odvečen.
+   489→        } catch (err) {
+   490→          const message =
+   491→            err instanceof Error ? err.message : "Poskusi znova.";
+   492→          toast({
+   493→            title: "AI svetovalec trenutno ne more odgovoriti",
+   494→            description: message,
+   495→            variant: "destructive",
+   496→          });
+   497→        }
+   498→      } catch (err) {
+   499→        const message =
+   500→          err instanceof Error ? err.message : "Poskusi znova.";
+   501→        toast({
+   502→          title: "Sporočila ni bilo mogoče objaviti",
+   503→          description: message,
+   504→          variant: "destructive",
+   505→        });
+   506→      } finally {
+   507→        setSubmitting(false);
+   508→      }
+   509→    },
+   510→    [submitting, shareId, authorName, text, toast, appendLocal, emitChatSignal, askAi]
+   511→  );
+   512→
+   513→  // === "Dodaj v pot" — isti dodajalni algoritem kot klepet "+" (čisti
+   514→  // algoritem addChatPlaceToItinerary + CAS PATCH deljene poti; AI samo
+   515→  // PREDLAGA, človek odloča). MEJA (#17 §5): piše SAMO v deljeno pot, ne
+   516→  // v osebno zbirko "Moja pot" (to delata klepet "+" in ostale
+   517→  // površine odkrivanja) ===
+   518→  const addPlaceToTrip = useCallback(
+   519→    async (place: ChatPlace) => {
+   520→      if (!shareId || addingPlaceId) return;
+   521→      if (!isValidChatPlace(place)) return;
+   522→
+   523→      setAddingPlaceId(place.id);
+   524→      try {
+   525→        // 1. Sveža vsebina + verzija z strežnika (?warm=1 → NE šteje ogled).
+   526→        //    Zasebna pot: editToken glavo pošlje lastnikov brskalnik;
+   527→        //    prijavljeni uredniki gredo prek seje (isti kanon kot PDF).
+   528→        const token = getEditToken(shareId);
+   529→        const r = await fetch(
+   530→          `/api/itinerary/shared/${encodeURIComponent(shareId)}?warm=1`,
+   531→          {
+   532→            cache: "no-store",
+   533→            ...(token ? { headers: { "x-dsa-edit-token": token } } : {}),
+   534→          }
+   535→        );
+   536→        if (!r.ok) {
+   537→          throw new Error(
+   538→            r.status === 404
+   539→              ? "Pot ni javna ali ne obstaja."
+   540→              : `Napaka ${r.status} pri branju poti.`
+   541→          );
+   542→        }
+   543→        const data: unknown = await r.json().catch(() => null);
+   544→        const d = data as
+   545→          | { success?: unknown; itinerary?: unknown; contentVersion?: unknown }
+   546→          | null;
+   547→        const it = d?.itinerary as Itinerary | undefined;
+   548→        const version = d?.contentVersion;
+   549→        if (
+   550→          d?.success !== true ||
+   551→          !it ||
+   552→          !Array.isArray(it.days) ||
+   553→          it.days.length === 0 ||
+   554→          typeof version !== "number"
+   555→        ) {
+   556→          throw new Error("Pot ni bilo mogoče prebrati — poskusi znova.");
+   557→        }
+   558→
+   559→        // 2. Čisti dodajalni algoritem (identičen klepetu "+" na /nacrtuj).
+   560→        const result = addChatPlaceToItinerary(it, place, { locale: "sl" });
+   561→        if (!result.ok) {
+   562→          if (result.reason === "duplicate") {
+   563→            setAddedPlaceIds((prev) => new Set(prev).add(place.id));
+   564→            toast({
+   565→              title: "Kraj je že v poti",
+   566→              description: `${place.name} je že načrtovan.`,
+   567→            });
+   568→            return;
+   569→          }
+   570→          // no-days / not-a-stop — iskrena meja brez ugibanja
+   571→          toast({
+   572→            title: "Kraja ni bilo mogoče dodati",
+   573→            description:
+   574→              result.reason === "not-a-stop"
+   575→                ? "Uradni vir je članek, ne fizični postanek."
+   576→                : "Pot nima dni, kamor bi dodali kraj.",
+   577→            variant: "destructive",
+   578→          });
+   579→          return;
+   580→        }
+   581→
+   582→        // 3. CAS posodobitev na mestu (409 = sočasno urejanje — iskreno).
+   583→        const upd = await updateItinerary(shareId, result.itinerary, version);
+   584→
+   585→        // 1.163.2 (#22 REMAINING): uspešna CAS posodobitev pomeni, da je pot
+   586→        // shranjena NA TEJ NAPRAVI (urejevalna pravica) → zapiši/osveži
+   587→        // vnos v Moja potovanja (strežniško ime je kanon, fallback iz
+   588→        // destinacij).
+   589→        addSavedTrip(
+   590→          shareId,
+   591→          upd.name ?? deriveSavedTripName(result.itinerary)
+   592→        );
+   593→
+   594→        trackPlannerEvent("chat_group_place_added", {
+   595→          provenance: place.provenance,
+   596→          day: result.day,
+   597→          surface: "trip-chat",
+   598→        });
+   599→
+   600→        setAddedPlaceIds((prev) => new Set(prev).add(place.id));
+   601→        toast({
+   602→          title: "Dodano v pot",
+   603→          description: `${place.name} je dodan v dan ${result.day}. Osvežujem stran …`,
+   604→        });
+   605→        // RSC stran /pot — celotna osvežitev pobere svežo vsebino (isti
+   606→        // vzorec kot obnova revizije v TripCollaboration).
+   607→        setTimeout(() => window.location.reload(), 900);
+   608→      } catch (err) {
+   609→        const message =
+   610→          err instanceof Error ? err.message : "Poskusi znova.";
+   611→        toast({
+   612→          title: "Kraja ni bilo mogoče dodati v pot",
+   613→          description: message.includes("sočasno urejanje")
+   614→            ? "Pot je bila med tem spremenjena — poskusi znova."
+   615→            : message,
+   616→          variant: "destructive",
+   617→        });
+   618→      } finally {
+   619→        setAddingPlaceId(null);
+   620→      }
+   621→    },
+   622→    [shareId, addingPlaceId, toast]
+   623→  );
+   624→
+   625→  const messageCountLabel = useMemo(() => {
+   626→    const n = comments.length;
+   627→    if (n === 0) return "Ni sporočil";
+   628→    return `${n} ${slUnit(n, "sporočilo", "sporočili", "sporočila", "sporočil")}`;
+   629→  }, [comments.length]);
+   630→
+   631→  return (
+   632→    <section
+   633→      aria-label="Skupinski klepet in všečki"
+   634→      className="print-hide print:hidden"
+   635→    >
+   636→      <Card className="border-border/60">
+   637→        <CardContent className="p-4 sm:p-6">
+   638→          {/* === Naslov odseka + živost + števec === */}
+   639→          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+   640→            <h2 className="flex items-center gap-2 text-xl font-bold sm:text-2xl">
+   641→              <MessageCircle
+   642→                className="size-5 text-primary"
+   643→                aria-hidden="true"
+   644→              />
+   645→              Skupinski klepet
+   646→            </h2>
+   647→            <div className="flex items-center gap-2">
+   648→              {/* Iskren indikator živosti: socket je KOZMETIČNA pospešitev
+   649→                  nad pollingom — prazen prostor ne laže. */}
+   650→              <span
+   651→                className={cn(
+   652→                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium",
+   653→                  connected
+   654→                    ? "border-emerald-600/30 bg-emerald-600/10 text-emerald-700"
+   655→                    : "border-border/70 bg-muted/50 text-muted-foreground"
+   656→                )}
+   657→                aria-live="polite"
+   658→              >
+   659→                {connected ? (
+   660→                  <>
+   661→                    <span
+   662→                      className="size-1.5 rounded-full bg-emerald-600 motion-safe:animate-pulse"
+   663→                      aria-hidden="true"
+   664→                    />
+   665→                    v živo
+   666→                  </>
+   667→                ) : (
+   668→                  "osveževanje vsakih 6 s"
+   669→                )}
+   670→              </span>
+   671→              <span className="text-sm text-muted-foreground">
+   672→                {messageCountLabel}
+   673→              </span>
+   674→            </div>
+   675→          </div>
+   676→
+   677→          {/* === Všeček (srček) — nespremenjena P1-2a funkcija === */}
+   678→          <div className="flex flex-wrap items-center gap-3 border-b border-border pb-4">
+   679→            <Button
+   680→              type="button"
+   681→              variant="outline"
+   682→              size="lg"
+   683→              onClick={() => void toggleLike()}
+   684→              disabled={likePending}
+   685→              aria-pressed={liked}
+   686→              aria-label={
+   687→                liked
+   688→                  ? "Odstrani všeček s tega potovanja"
+   689→                  : "Označi to potovanje z všeček"
+   690→              }
+   691→              className="group h-11 gap-2 px-5"
+   692→            >
+   693→              {likePending ? (
+   694→                <Loader2 className="size-5 animate-spin" aria-hidden="true" />
+   695→              ) : (
+   696→                <Heart
+   697→                  className={cn(
+   698→                    "size-5 transition-colors",
+   699→                    liked
+   700→                      ? "fill-current text-red-500"
+   701→                      : "text-foreground group-hover:text-red-500"
+   702→                  )}
+   703→                  aria-hidden="true"
+   704→                />
+   705→              )}
+   706→              Všeč mi
+   707→            </Button>
+   708→            <span
+   709→              className="text-sm text-muted-foreground"
+   710→              aria-live="polite"
+   711→            >
+   712→              <span className="sr-only">Število všečkov: </span>
+   713→              {likesLabel(likes)}
+   714→            </span>
+   715→          </div>
+   716→
+   717→          {/* === @AI pas — vzorec W9 (povedano je točno to, kar se zgodi) === */}
+   718→          <div className="flex items-start gap-2.5 border-b border-border py-3">
+   719→            <span
+   720→              className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
+   721→              aria-hidden="true"
+   722→            >
+   723→              <Bot className="size-4" />
+   724→            </span>
+   725→            <p className="text-xs leading-relaxed text-muted-foreground">
+   726→              Omeni <strong className="font-semibold text-foreground">@AI</strong> v
+   727→              sporočilu in vprašaj npr.{" "}
+   728→              <em className="italic">
+   729→                »@AI kje lahko večerjamo v Bledu?«
+   730→              </em>{" "}
+   731→              — svetovalec odgovarja vsem v klepetu, iz podatkov platforme
+   732→              (deterministično, z viri). Predlagane kraje doda v pot tisti, ki
+   733→              ureja pot.
+   734→            </p>
+   735→          </div>
+   736→
+   737→          {/* === Klepet — kronološki seznam z drsom === */}
+   738→          <div
+   739→            ref={scrollRef}
+   740→            className="scroll-area-custom mt-4 max-h-96 space-y-4 overflow-y-auto pr-2"
+   741→            aria-label="Zgodovina klepeta"
+   742→          >
+   743→            {comments.length === 0 && !aiPending ? (
+   744→              <div className="flex flex-col items-center gap-2 py-8 text-center">
+   745→                <MessageCircle
+   746→                  className="size-8 text-muted-foreground/50"
+   747→                  aria-hidden="true"
+   748→                />
+   749→                <p className="text-sm text-muted-foreground">
+   750→                  Trenutno ni sporočil — bodi prvi!
+   751→                </p>
+   752→                <p className="max-w-md text-xs text-muted-foreground/70">
+   753→                  Deli mnenje, se dogovori za termin (»vidimo se ob 9h pred
+   754→                  jezerom«) ali vprašaj <strong>@AI</strong> svetovalca.
+   755→                </p>
+   756→              </div>
+   757→            ) : (
+   758→              <ul className="space-y-4" aria-live="polite" aria-atomic="false">
+   759→                {comments.map((c) => {
+   760→                  // AI vrstica — značka je strežniška (isAI), prilogo
+   761→                  // (predlogi/viri) klient znova validira (parseAiPayload).
+   762→                  const aiPayload =
+   763→                    c.isAI && c.payload ? parseAiPayload(c.payload) : null;
+   764→                  return (
+   765→                    <li key={c.id} className="flex gap-3">
+   766→                      {c.isAI ? (
+   767→                        // AI avatar — enoten, primarni (nikoli barva po imenu)
+   768→                        <div
+   769→                          className="flex size-9 shrink-0 select-none items-center justify-center rounded-full bg-primary text-primary-foreground"
+   770→                          aria-hidden="true"
+   771→                        >
+   772→                          <Bot className="size-4" />
+   773→                        </div>
+   774→                      ) : (
+   775→                        <div
+   776→                          className={cn(
+   777→                            "flex size-9 shrink-0 select-none items-center justify-center rounded-full text-sm font-bold text-white",
+   778→                            avatarColor(c.authorName)
+   779→                          )}
+   780→                          aria-hidden="true"
+   781→                        >
+   782→                          {nameInitial(c.authorName)}
+   783→                        </div>
+   784→                      )}
+   785→                      <div className="min-w-0 flex-1">
+   786→                        <p className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+   787→                          {c.isAI ? (
+   788→                            <>
+   789→                              <span className="font-semibold text-primary">
+   790→                                {AI_ADVISOR_NAME}
+   791→                              </span>
+   792→                              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+   793→                                <Sparkles className="size-2.5" aria-hidden="true" />
+   794→                                deterministično · iz podatkov platforme
+   795→                              </span>
+   796→                            </>
+   797→                          ) : (
+   798→                            <span className="font-medium">{c.authorName}</span>
+   799→                          )}
+   800→                          <time
+   801→                            dateTime={c.createdAt}
+   802→                            className="text-xs text-muted-foreground"
+   803→                          >
+   804→                            {mounted ? slTimeAgo(c.createdAt, createdAt) : "…"}
+   805→                          </time>
+   806→                        </p>
+   807→                        <p
+   808→                          className={cn(
+   809→                            "mt-1 break-words whitespace-pre-line text-sm text-foreground",
+   810→                            c.isAI &&
+   811→                              "rounded-2xl rounded-tl-sm border border-primary/20 bg-primary/5 px-3.5 py-2.5"
+   812→                          )}
+   813→                        >
+   814→                          {c.text}
+   815→                        </p>
+   816→
+   817→                        {/* AI PREDLOGI KRAJEV — gumb "Dodaj v pot" (isti
+   818→                            kanon kot klepet "+"); AI samo predlaga. */}
+   819→                        {aiPayload && aiPayload.places.length > 0 ? (
+   820→                          <ul className="mt-2 space-y-1.5" aria-label="Predlogi krajev AI svetovalca">
+   821→                            {aiPayload.places.map((place) => (
+   822→                              <PlaceSuggestion
+   823→                                key={place.id}
+   824→                                place={place}
+   825→                                added={addedPlaceIds.has(place.id)}
+   826→                                pending={addingPlaceId === place.id}
+   827→                                onAdd={(p) => void addPlaceToTrip(p)}
+   828→                              />
+   829→                            ))}
+   830→                          </ul>
+   831→                        ) : null}
+   832→
+   833→                        {/* Citati uradnih virov STO (T2) — isti vzorec
+   834→                            značk kot osebni klepet. */}
+   835→                        {aiPayload && aiPayload.sources.length > 0 ? (
+   836→                          <div className="mt-2 border-t border-border/60 pt-2">
+   837→                            <p className="mb-1.5 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+   838→                              <Landmark className="size-3" aria-hidden="true" />
+   839→                              Uradni viri
+   840→                            </p>
+   841→                            <ul className="space-y-1.5">
+   842→                              {aiPayload.sources.map(
+   843→                                (s: StoCitation) => (
+   844→                                  <li
+   845→                                    key={s.url}
+   846→                                    className="min-w-0"
+   847→                                  >
+   848→                                    {/* BLOCK + break-words (NE truncate): nowrap
+   849→                                        bi razširil intrinsično širino flex
+   850→                                        itema (635px preliv na 375); naslov
+   851→                                        vira se POŠTENO prelomi v novo vrstico
+   852→                                        (cel naslov viden — provenance). */}
+   853→                                    <a
+   854→                                      href={s.url}
+   855→                                      target="_blank"
+   856→                                      rel="noopener noreferrer"
+   857→                                      className="block max-w-full break-words rounded-md bg-background px-2 py-1 text-[11px] font-medium text-foreground underline decoration-border underline-offset-2 transition-colors hover:decoration-primary"
+   858→                                      title={`${s.title} — slovenia.info`}
+   859→                                    >
+   860→                                      {s.title}
+   861→                                    </a>
+   862→                                  </li>
+   863→                                )
+   864→                              )}
+   865→                            </ul>
+   866→                          </div>
+   867→                        ) : null}
+   868→                      </div>
+   869→                    </li>
+   870→                  );
+   871→                })}
+   872→
+   873→                {/* Indikator tipkanja AI — LOKALEN (vidi ga vpraševalec,
+   874→                    dokler strežnik ne izstavi vrstice). */}
+   875→                {aiPending ? (
+   876→                  <li className="flex gap-3" aria-live="polite">
+   877→                    <div
+   878→                      className="flex size-9 shrink-0 select-none items-center justify-center rounded-full bg-primary text-primary-foreground"
+   879→                      aria-hidden="true"
+   880→                    >
+   881→                      <Bot className="size-4" />
+   882→                    </div>
+   883→                    <div className="flex items-center gap-1.5 rounded-2xl rounded-tl-sm border border-primary/20 bg-primary/5 px-3.5 py-2.5">
+   884→                      <span className="size-1.5 animate-bounce rounded-full bg-primary/60 [animation-delay:0ms]" />
+   885→                      <span className="size-1.5 animate-bounce rounded-full bg-primary/60 [animation-delay:150ms]" />
+   886→                      <span className="size-1.5 animate-bounce rounded-full bg-primary/60 [animation-delay:300ms]" />
+   887→                      <span className="ml-1 text-xs text-muted-foreground">
+   888→                        {AI_ADVISOR_NAME} piše …
+   889→                      </span>
+   890→                    </div>
+   891→                  </li>
+   892→                ) : null}
+   893→              </ul>
+   894→            )}
+   895→          </div>
+   896→
+   897→          {/* === Obrazec za novo sporočilo === */}
+   898→          <form
+   899→            onSubmit={(e) => void submitComment(e)}
+   900→            className="space-y-3 border-t border-border pt-4"
+   901→          >
+   902→            <Input
+   903→              value={authorName}
+   904→              onChange={(e) => setAuthorName(e.target.value)}
+   905→              placeholder="Tvoje ime"
+   906→              required
+   907→              maxLength={AUTHOR_NAME_MAX}
+   908→              autoComplete="name"
+   909→              aria-label="Tvoje ime"
+   910→              className="h-11"
+   911→              disabled={submitting}
+   912→            />
+   913→            <Textarea
+   914→              ref={textareaRef}
+   915→              value={text}
+   916→              onChange={(e) => setText(e.target.value)}
+   917→              placeholder="Deli mnenje z družino in prijatelji … ali vprašaj @AI"
+   918→              required
+   919→              maxLength={COMMENT_TEXT_MAX}
+   920→              rows={3}
+   921→              aria-label="Sporočilo v skupinski klepet"
+   922→              className="min-h-[88px] resize-y"
+   923→              disabled={submitting}
+   924→            />
+   925→            <div className="flex flex-wrap items-center justify-between gap-3">
+   926→              <div className="flex items-center gap-2">
+   927→                <Button
+   928→                  type="button"
+   929→                  variant="outline"
+   930→                  size="sm"
+   931→                  className="h-8 gap-1.5 px-2.5 text-xs"
+   932→                  onClick={insertAiMention}
+   933→                  disabled={submitting}
+   934→                  aria-label="Vstavi omembo @AI svetovalca v sporočilo"
+   935→                  title="Vstavi @AI — svetovalec bo odgovoril v klepetu"
+   936→                >
+   937→                  <Bot className="size-3.5 text-primary" aria-hidden="true" />
+   938→                  @AI
+   939→                </Button>
+   940→                <span className="text-xs text-muted-foreground">
+   941→                  {text.length}/{COMMENT_TEXT_MAX}
+   942→                </span>
+   943→              </div>
+   944→              <Button
+   945→                type="submit"
+   946→                disabled={submitting}
+   947→                className="h-11 min-w-44 gap-2"
+   948→              >
+   949→                {submitting ? (
+   950→                  <>
+   951→                    <Loader2
+   952→                      className="size-4 animate-spin"
+   953→                      aria-hidden="true"
+   954→                    />
+   955→                    Pošiljam…
+   956→                  </>
+   957→                ) : (
+   958→                  <>
+   959→                    <Send className="size-4" aria-hidden="true" />
+   960→                    Pošlji
+   961→                  </>
+   962→                )}
+   963→              </Button>
+   964→            </div>
+   965→          </form>
+   966→        </CardContent>
+   967→      </Card>
+   968→    </section>
+   969→  );
+   970→}
+   971→
+   972→export default TripSocial;
+   973→

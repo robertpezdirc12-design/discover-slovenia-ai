@@ -1,0 +1,638 @@
+     1→// Centralni tipi za Discover Slovenia AI platformo
+     2→// Single source of truth - brez duplikacij kot v originalnem repu
+     3→
+     4→import type { SelectedProviderProduct } from "./supply/types";
+     5→
+     6→export type Region =
+     7→  | "gorenjska"
+     8→  | "primorska"
+     9→  | "osrednja"
+    10→  | "kras"
+    11→  | "stajerska"
+    12→  | "koroska"
+    13→  | "prekmurje"
+    14→  | "dolenjska"
+    15→  | "bela-krajina"
+    16→  // TASK 62: regionalne pokritost — regije sosednjih držav (HR/ME/AL)
+    17→  | "kontinentalna-hrvaska"
+    18→  | "istra"
+    19→  | "kvartner"
+    20→  | "lika"
+    21→  | "dalmacija"
+    22→  | "boka-kotorska"
+    23→  | "crnogorsko-primorje"
+    24→  | "osrednja-crna-gora"
+    25→  | "severna-crna-gora"
+    26→  | "osrednja-albanija"
+    27→  | "juana-albanija";
+    28→
+    29→/**
+    30→ * TASK 62: država destinacije — pokritost SI+HR+ME+AL (zahodni Balkan).
+    31→ * Obstaja v vsaki destinaciji (izrecno, NE po privzetku — iskrenost:
+    32→ * država ni ugibanje iz koordinat, je editorialno določena lastnost
+    33→ * registra, testno preverjena proti FSQ SUPPORTED_COUNTRY_BBOXES).
+    34→ */
+    35→export type CountryCode = "SI" | "HR" | "ME" | "AL";
+    36→export type DestinationType = "lake" | "city" | "mountain" | "cave" | "coast" | "river" | "spa" | "gorge" | "castle";
+    37→export type Budget = "€" | "€€" | "€€€";
+    38→export type Season = "spring" | "summer" | "autumn" | "winter";
+    39→
+    40→/**
+    41→ * F5.5 ( odpiralni časi): preverjeni podatki o obratovalnem času destinacije.
+    42→ * Obstaja SAMO za destinacije, kjer so bili urnik/dnevi zaprtja preverjeni
+    43→ * na uradnih virih ( data honesty — prazno ≠ izmišljeno). Vir je prikazan
+    44→ * uporabniku; geo-validacija iz njega izpelje opozorila (samo z znanim
+    45→ * datumom odhoda).
+    46→ */
+    47→export interface DestinationOpening {
+    48→  /** Kratko zabeleženo obdobje/urnik ( SL) — prikazano uporabniku. */
+    49→  note: string;
+    50→  /** EN različica opombe. */
+    51→  noteEn: string;
+    52→  /** Meseci ( 1–12), ko je ZAPRTO ( npr. Vintgar pozimi). */
+    53→  closedMonths?: number[];
+    54→  /** Dnevi v tednu po JS getDay() ( 0=ned, 1=pon … 6=sob), ko je zaprto. */
+    55→  closedWeekdays?: number[];
+    56→  /** destination = celoten kraj zaprt (ERROR); mainAttraction = zaprta glavna
+    57→   *  znamenitost, kraj sam je dostopen (WARN). */
+    58→  closureLevel: "destination" | "mainAttraction";
+    59→  /** Vir ( prikazan uporabniku — uradna domena). */
+    60→  source: string;
+    61→  /** URL vira ( opcijsko, za dokumentacijo). */
+    62→  sourceUrl?: string;
+    63→}
+    64→
+    65→export interface Destination {
+    66→  id: string;
+    67→  slug: string;
+    68→  name: string;
+    69→  tagline: string;
+    70→  region: Region;
+    71→  /** TASK 62: država (SI/HR/ME/AL) — skupaj z regijo določa filtriranje
+    72→   *  po državah; koherence regija↔država preverjajo testi. */
+    73→  country: CountryCode;
+    74→  type: DestinationType;
+    75→  description: string;
+    76→  highlights: string[];
+    77→  activities: string[];
+    78→  bestFor: string[];
+    79→  bestSeason: Season[];
+    80→  image: string;
+    81→  coords: { lat: number; lng: number };
+    82→  rating: number;
+    83→  budget: Budget;
+    84→  duration: string;
+    85→  costPerPerson: number;
+    86→  featured: boolean;
+    87→  /** F5.5: preverjeni odpiralni časi ( SAMO kjer vir obstaja — opcijsko). */
+    88→  opening?: DestinationOpening;
+    89→  /** ISSUE #4 §18 (VAL 7): provenance vsebine — pripne jo resolver
+    90→   *  `getDestinationProvenance()` iz lib/destination-provenance.ts na
+    91→   *  API/vrhnjih površinah (NE v samih podatkih — vzorec route-intent).
+    92→   *  Odsotnost = uredniška kuracija (iskreno privzeto). */
+    93→  provenance?: DestinationProvenance;
+    94→}
+    95→
+    96→/**
+    97→ * ISSUE #4 §18 (VAL 7): provenance destinacijske vsebine.
+    98→ *
+    99→ * Zahteva Issue #4 besedno: "Discover naj ga ne kopira [NiST], ampak naj
+   100→ * po potrebi uporablja strukturirane javne podatke kot source layer z
+   101→ * provenance, datumom, obdobjem, enoto in virom."
+   102→ *
+   103→ * Iskren model:
+   104→ * - kind "official" — ZUNANJA preverjena stran (uradna domena destinacije
+   105→ *   ali kanonična STO slovenia.info stran); sourceUrl OBVEZNO https.
+   106→ * - kind "internal" — uredniška kuracija Discover Slovenia (BREZ lažnega
+   107→ *   zunanjega vira; verifiedAt = datum vsebinske posodobitve dataseta).
+   108→ *
+   109→ * "Obdobje/enota" iz zahteve nosijo sama dejstva (bestSeason = obdobje;
+   110→ * costPerPerson = EUR oseba; duration = obdobje) — vir in datum pa ta
+   111→ * zapis. Jezik: SL vir resnice + EN prekrivni prevod (dokumentirano na
+   112→ * /vir-podatkov, ISTO za vse zapise — zato NI per-zapisnega polja lang).
+   113→ */
+   114→export interface DestinationProvenance {
+   115→  /** Razred vira: zunanja preverjena stran ali uredniška kuracija. */
+   116→  kind: "official" | "internal";
+   117→  /** Oznaka vira, prikazana uporabniku (uradna domena ali kuracija). */
+   118→  source: string;
+   119→  /** URL vira (SAMO za kind "official" — https, preverjena živa stran). */
+   120→  sourceUrl?: string;
+   121→  /** ISO datum (yyyy-mm-dd) zadnjega preverjanja vira/vsebine. */
+   122→  verifiedAt: string;
+   123→}
+   124→
+   125→export interface PlannerInput {
+   126→  budget: number;
+   127→  days: number;
+   128→  interests: string[];
+   129→  season: Season;
+   130→  groupSize: number;
+   131→  // NOVO (FW4.2): datum odhoda (ISO YYYY-MM-DD) — opcijsko (nazaj
+   132→  // kompatibilno s starejšimi načrti); poganja datumski events match,
+   133→  // AI kontekst in prikaz datumov na dnevih
+   134→  startDate?: string;
+   135→  // NOVO (FW4.3): jezik izpisa — "sl" (privzeto) ali "en". Client
+   136→  // (itinerary-planner) pošlje locale; itinerer se generira v tem jeziku.
+   137→  // W1-faza-2b (Issue #15): razširjeno na "it"/"de" — pogon prek PL()
+   138→  // helperja (manjkajoč prevod deduje EN, nikoli SL za IT/DE uporabnike).
+   139→  // W12-faza-2b: razširjeno na "fr"/"es" (planner ploskev /fr+/es/nacrtuj).
+   140→  language?: "sl" | "en" | "it" | "de" | "fr" | "es";
+   141→  // NOVO (WEATHER-CONTEXT / t11): tip potne skupine — opcijsko; oblikuje
+   142→  // ritem in izbor načrta (družina → krajši prevozi in otrokom prijazne
+   143→  // lokacije, par → mirnejši tempo ...). Nazaj kompatibilno.
+   144→  partyType?: "couple" | "family" | "friends" | "solo";
+   145→  // NOVO (F15 / backlog #3): tempo potovanja — opcijsko; oblikuje GOSTOTO
+   146→  // načrta (slow → manj postankov, več časa na mestu; fast → več postankov
+   147→  // na dan). Vir: forumi (Reddit ×2 — "plannerji ne vprašajo za tempo").
+   148→  // Nazaj kompatibilno: brez polja = "balanced" (dosedanji izpis).
+   149→  pace?: "slow" | "balanced" | "fast";
+   150→  // NOVO (F5.4 "Začni s povezavo" / url-ingest): destinacije, ki jih je
+   151→  // uporabnik izrecno prepoznal na prilepljeni povezavi (YouTube/blog).
+   152→  // Opcijsko — fallback ocenjevalnik jih premakne na vrh izbora, AI prompt
+   153→  // pa dobi izrecno navodilo, da jih upošteva. Nazaj kompatibilno.
+   154→  preferredDestinations?: string[];
+   155→  // NOVO (F1 Supply Map, 1.49.0): produkti, izbrani na zemljevidu ponudbe
+   156→  // (structured — provider, id, tip, geo, cena, selectionState
+   157→  // FIXED/PREFERRED/SUGGESTED). AI jih prejme KOT STRUKTURIRAN objekt;
+   158→  // FIXED izbire so obvezne (AI ne zamenja izbranega hotela z drugim).
+   159→  // Sanitizacija na strežniku: src/lib/supply/sanitize.ts. Nazaj
+   160→  // kompatibilno: brez polja = dosedanje vedenje.
+   161→  selectedProviderProducts?: SelectedProviderProduct[];
+   162→  // NOVO (TASK 100 / TASK 99 na GitHubu): izbira motorja generiranja.
+   163→  //   "auto" (privzeto) — AI veriga, ob odpovedi deterministična rezerva;
+   164→  //   "deterministic" — BREZ LLM klica: parser → podatki → constrainti →
+   165→  //   ranking → scheduling (generateDeterministicItinerary) + ISTA
+   166→  //   validacijska/obogatitvena veriga; source odgovora "deterministic".
+   167→  // Opcijsko + nazaj kompatibilno: brez polja = "auto".
+   168→  engine?: "auto" | "deterministic";
+   169→}
+   170→
+   171→export interface LocationVisit {
+   172→  destination_id: string;
+   173→  destination_name: string;
+   174→  time_slot: string;
+   175→  duration: number;
+   176→  estimated_cost: number;
+   177→  notes: string;
+   178→  // Dodatni (optional) podatki, ki jih AI/ranking lahko priloži lokaciji
+   179→  // (npr. transparency partner badge, affiliate tip, kategorija aktivnosti)
+   180→  recommendationType?: string;
+   181→  affiliateType?: string;
+   182→  category?: string;
+   183→  // FAZA 4-1 ("Zakaj je to priporočeno?"): kratka, podatkovno utemeljena
+   184→  // razlaga izbire postanka — sestavljena IZKLJUČNO iz dejstev (ugemanje
+   185→  // interesov, tip skupine, razdalja do sosednjega postanka, vremenska
+   186→  // ustreznost, sezona). Brez marketinških fraz. Glej src/lib/stop-insights.ts
+   187→  reason?: string;
+   188→  // 1.42 (GEO → NAČRT): koordinate OSM kraja, dodanega iz AI klepeta —
+   189→  // kadar destination_id NI v T1 datasetu (osm-node-…), zemljevid poti in
+   190→  // povezovalniki uporabijo te koordinate namesto dataseta
+   191→  lat?: number;
+   192→  lng?: number;
+   193→  // ISSUE #4 §3 (implementacijski val 1, 2026-09-24): ISKRENI rezervacijski
+   194→  // lifecycle postanka AI načrta. Postanki, dodani z zemljevida ponudbe
+   195→  // (stop-insert.ts), nosijo KONKRETEN izdelek (provider + productId +
+   196→  // /go povezavo) — trip-timeline na njihovem mestu izriše resnico:
+   197→  //   · brez teh polj (organik/T1 postanki) → žetona ni (ni rezervacijskega
+   198→  //     koncepta — isto kot INFO semantika GO Mode);
+   199→  //   · booking_url brez zapisa → žeton „Brez rezervacije“;
+   200→  //   · zapis EXTERNAL (handoff) → vijolični žeton „Zunanja rezervacija —
+   201→  //     pri ponudniku“ (ISTI kanon JourneyBooking, session-scoped prekrivka
+   202→  //     /api/journey/bookings?products=… — nikoli lažni CONFIRMED).
+   203→  // Opcijsko + nazaj kompatibilno (stari shranjeni načrti brez polj).
+   204→  booking_provider?: string;
+   205→  booking_product_id?: string;
+   206→  /** Relativna /go/… povezava (adapter jo gradi strežniško-varno). */
+   207→  booking_url?: string;
+   208→  // ISSUE #4 §21 (VAL 6): ISKRENA oznaka NAMERNOSTI postanka. Postanki iz
+   209→  // uporabnikovih FIXED izbir in uporabnikovo dodani supply postanki (zemljevid
+   210→  // ponudbe) so uporabnikov NAMERNI vrstni red — optimizeDayOrder jih ZAMRZNE
+   211→  // na mestu (pozicija + lastni termin). Stari shranjeni načrti brez oznake:
+   212→  // vsi postanki prosti (isto obnašanje kot prej — nazaj kompatibilno).
+   213→  intentLocked?: boolean;
+   214→  // ISSUE #11 (D1, 1.117.0): TRŽNICA NA POSTANKU — povezava postanka načrta
+   215→  // z REALNIMI cenami lastnih izkušenj (Experience.pricePerPerson, published,
+   216→  // isti destinationId-pri prostor kot kanonske destinacije). ISKRENOST:
+   217→  // fromPrice je IZREČNO »od« cena (min pricePerPerson — spodnja meja,
+   218→  // nikoli »je« cena); estimated_cost (ocena načrta iz costPerPerson) se
+   219→  // NE prepiše in NE sešteje s tržniško ceno (ocena ≠ cena — mešanje bi
+   220→  // bilo laž; trip-budget vedrice ostanejo nedotaknjene). Opcijsko +
+   221→  // nazaj kompatibilno: stari shranjeni načrti brez polja ostanejo
+   222→  // veljavni (UI čip se ne izriše). Glej src/lib/marketplace-stop-enrichment.ts.
+   223→  marketplace?: StopMarketplaceInfo;
+   224→}
+   225→
+   226→/**
+   227→ * ISSUE #11 (D1): povzetek tržniških izkušenj destinacije postanka.
+   228→ * Pripne ga OBOGATITEV ob generiranju načrta (fail-open — DB nedosegljiva
+   229→ * pomeni načrt BREZ polja, nikoli napako uporabniku).
+   230→ */
+   231→export interface StopMarketplaceInfo {
+   232→  /** Št. published izkušenj destinacije (≥ 1 — pri 0 polja NI). */
+   233→  count: number;
+   234→  /** min(pricePerPerson) — »od« cena NA OSEBO (spodnja meja, EUR). */
+   235→  fromPrice: number;
+   236→  currency: "EUR";
+   237→  /** Najboljša izkušnja — deterministična izbira (verified → rating → reviewCount → ime). */
+   238→  top: {
+   239→    slug: string;
+   240→    name: string;
+   241→    pricePerPerson: number;
+   242→    rating: number;
+   243→    reviewCount: number;
+   244→    verified: boolean;
+   245→    durationHours: number;
+   246→  };
+   247→}
+   248→
+   249→export interface DayPlan {
+   250→  day: number;
+   251→  locations: LocationVisit[];
+   252→  weather: { condition: string; temp: number };
+   253→  // TASK 4 / K-2 (UX FIX PASS, 1.91.0): iskrenost vremena v trust vrstici —
+   254→  // `estimated: true` = SEZONSKA OCENA / AI-izmišljeno vreme, NE realna
+   255→  // Open-Meteo napoved (plast se ni izvedla oz. ni uspela). TrustLine na
+   256→  // podlagi tega NE izriše "✓ Vreme preverjeno" (pravilo Issue #3 §4:
+   257→  // nikoli ✓ brez dejansko izvedene plasti). Opcijsko + nazaj kompatibilno:
+   258→  // stari načrti brez polja se obravnavajo po starem ( some(d=>d.weather) ),
+   259→  // sveže generirani pa nosijo izrecno resnico.
+   260→  weatherEstimated?: boolean;
+   261→  // F5.6 (road routing): poenostavljena geometrija poti dneva PO REALNIH
+   262→  // CESTAH ([lat, lng] točke, OSRM/OpenStreetMap) — za zemljevid poti na
+   263→  // /nacrtuj. Opcijsko: stari načrti in hevristični izračuni (OSRM ni
+   264→  // dosegljiv) ga nimajo → zemljevid izriše ravne črte (kot doslej).
+   265→  routeGeometry?: [number, number][];
+   266→}
+   267→
+   268→export interface Itinerary {
+   269→  days: DayPlan[];
+   270→  total_budget: number;
+   271→  recommendations: string[];
+   272→  tips: string[];
+   273→  // TASK 100 (TASK 99 na GitHubu): "deterministic" = načrt je sestavil
+   274→  // DETERMINISTIČNI MOTOR (rule/scoring/scheduling iz kanonskih podatkov —
+   275→  // 0 AI žetonov, reproducibilno), ki ga je uporabnik IZRECNO zahteval
+   276→  // (PlannerInput.engine). "fallback" ostaja za isti motor, dosežen ob
+   277→  // odpovedi AI (iskrena degradacija); "ai" = generativni model.
+   278→  source: "ai" | "fallback" | "deterministic";
+   279→  // NOVO: dogodki, ki se zgodijo na obiskanih destinacijah (matched iz
+   280→  // events-data.ts ob generiranju / ob ogledu deljenega potovanja)
+   281→  events?: ItineraryEvent[];
+   282→  // W6 (Issue #15, 1.136.0): dogodki NA ISTIH destinacijah/regijah, ki se
+   283→  // pa NE prekrivajo z okvirjem potovanja — brskalni pas "Kaj se dogaja
+   284→  // izven tvojih datumov" na /nacrtuj (Mindtrip Events vzorec; datumsko
+   285→  // ujemanje ostane primarno). Opcijsko + nazaj kompatibilno (stari shranjeni
+   286→  // načrti pas ne izrišejo).
+   287→  outsideEvents?: ItineraryEvent[];
+   288→  // NOVO: AI pakirni seznam (AI predlog ali deterministična hevristika)
+   289→  packingList?: string[];
+   290→  // NOVO (FW4.1): strukturne metrike kakovosti — deterministično izračunane
+   291→  // ob generiranju; starejši shranjeni načrti jih nimajo (kartica jih
+   292→  // izračuna na mestu uporabe iz iste čiste funkcije)
+   293→  quality?: ItineraryQuality;
+   294→  // NOVO (FW4.1): AI utemeljitev "Zakaj ta pot?" (1–2 povedi, sanitizirana;
+   295→  // fallback = deterministična sestava iz vnosnih želja)
+   296→  rationale?: string;
+   297→  // NOVO (FW4.2): okvir potovanja (ISO datumi, dan 1 = tripStartDate) —
+   298→  // omogoča svež datumski events match na /pot/[shareId] in prikaz datumov
+   299→  // na dnevih; shranjuje se skupaj z načrtom (share/email/localStorage)
+   300→  tripStartDate?: string;
+   301→  tripEndDate?: string;
+   302→  // NOVO (FW4.2): dogodki, ki si jih uporabnik dodal v svojo pot (izbira
+   303→  // iz events sekcije) — preslikajo se na konkretne dneve potovanja
+   304→  addedEvents?: ItineraryEvent[];
+   305→  // NOVO (CROWD-ALTERNATIVES): poštene opombe o gneči — uredniška trditev o
+   306→  // vzorcu obiskanosti (vrhunski vikend julijske/avgustovske sezone na
+   307→  // javno dokumentiranih točkah) + alternative izračunane iz resničnih
+   308→  // podatkov destinacij (bližina/sezona/interesi); prazno brez datuma odhoda
+   309→  crowdNotices?: CrowdNotice[];
+   310→  // NOVO (P0.2 GEO-VALIDACIJA): geografska/časovna izvedljivost poti —
+   311→  // deterministično preverjena plast NAD generiranim načrtom (km na dan,
+   312→  // zaporedne razdalje, obseg dneva, časovna združljivost urnika, duplikati,
+   313→  // manjkajoče koordinate). Izračun: src/lib/geo-validation.ts (čista funkcija
+   314→  // — isto na serverju in clientu; stari shranjeni načrti brez tega polja
+   315→  // ga panel izračuna na mestu uporabe).
+   316→  geoValidation?: GeoValidation;
+   317→  // NOVO (UI sprint, točka D smeri): cestne noge med zaporednimi postanki,
+   318→  // serializirane iz strežniškega indeksa (ključ "idA|idB" → km/min/vir).
+   319→  // Za povezovalnike "🚗 ~X km · ~Y min" na dnevni časovni liniji — isti vir
+   320→  // številk kot značke ~km dni (geo-validacija uporablja isti indeks).
+   321→  // Opcijsko: stari shranjeni/deljeni načrti brez polja → client hevristika
+   322→  // (ista formula kot fallback geo-validacije, pošteno razkrito z "~").
+   323→  legs?: Record<string, LegSummary>;
+   324→  // NOVO (TASK 48, 1.53.0): supply-doslednost + status proračuna —
+   325→  // deterministično preverjena plast NAD AI izhodom (generacija + refine +
+   326→  // fallback): vsak supply ref proti kanonski izbiri (izmišljen → odstranjen),
+   327→  // dedupe po (provider, id), cene po unit semantiki, koordinate iz vira,
+   328→  // FIXED izbire neničljive. Izračun: src/lib/supply/itinerary-validation.ts.
+   329→  // Opcijsko: stari shranjeni načrti polja nimajo.
+   330→  supplyValidation?: SupplyValidationInfo;
+   331→  // NOVO (TASK 48, 1.53.0): status proračuna iz ZNANIH (dokazljivih) stroškov
+   332→  // — "within" ZAHTEVA, da so vse cene znane in da ni "od" cen (§12: nikoli
+   333→  // "znotraj proračuna", česar ne moremo dokazati). Prikaz: BudgetPanel.
+   334→  budgetValidation?: BudgetValidationInfo;
+   335→}
+   336→
+   337→/** TASK 48: povzetek supply validacije (serializabilen podcene poročila —
+   338→ *  brez Map struktur, ki nosijo kanonske cene). */
+   339→export interface SupplyValidationInfo {
+   340→  /** Vseh supply postankov (kolon-format "provider:id") v načrtu. */
+   341→  supplyStops: number;
+   342→  /** Ref-ov, uspešno rešenih proti kanonski avtoriteti. */
+   343→  validated: number;
+   344→  /** Izmišljenih ref-ov, ODSTRANJENIH (fail-closed). */
+   345→  rejected: number;
+   346→  /** Podvojenih ref-ov, odstranjenih (isti provider+id). */
+   347→  deduped: number;
+   348→  /** Popravljenih cen na kanonsko vrednost (unit semantika). */
+   349→  priceCorrections: number;
+   350→  /** Obnovljenih koordinat iz kanonske izbire. */
+   351→  geoRestored: number;
+   352→  /** Popravljenih obrnjenih smeri prevozov (§5 kanonska smer). */
+   353→  directionsFixed: number;
+   354→  /** Ponovno vstavljenih FIXED izbir (AI jih je izpustil). */
+   355→  reinserted: number;
+   356→}
+   357→
+   358→/** TASK 48: status proračuna iz znanih stroškov (§12 — iskren do dokazov). */
+   359→export interface BudgetValidationInfo {
+   360→  status: "within" | "exceeded" | "uncertain";
+   361→  /** Uporabnikov proračun (EUR), če je znan. */
+   362→  budget: number | null;
+   363→  /** Seštevek postankov z dokazljivo (kanonsko) ceno. */
+   364→  knownTotal: number;
+   365→  /** Seštevek estimated_cost vseh postankov (prikazna številka). */
+   366→  stopsTotal: number;
+   367→  /** Št. postankov z "od" ceno (spodnja meja, ne končni znesek). */
+   368→  fromPriceCount: number;
+   369→  /** Št. postankov brez dokazljive cene. */
+   370→  unknownCostStops: number;
+   371→}
+   372→
+   373→/** UI sprint: povzetek cestne noge (km/min/vir, brez geometrije) — serializacijska
+   374→ *  podoblika LegRoute iz src/lib/road-routing.ts. */
+   375→export interface LegSummary {
+   376→  km: number;
+   377→  min: number;
+   378→  source: "osrm" | "heuristic";
+   379→}
+   380→
+   381→// Dogodek, povezan z destinacijo v itinererju (subset EventItem iz events-data)
+   382→export interface ItineraryEvent {
+   383→  id: string;
+   384→  name: string;
+   385→  date: string;
+   386→  endDate?: string;
+   387→  location: string;
+   388→  category: string;
+   389→  priceRange: string;
+   390→  description: string;
+   391→  website?: string;
+   392→}
+   393→
+   394→// CROWD-ALTERNATIVES: mirnejša alternativa v bližini vrhunske točke —
+   395→// razdalja iz coords, ujemani interesi iz bestFor ∩ interesi potnika
+   396→export interface CrowdAlternative {
+   397→  destination_id: string;
+   398→  destination_name: string;
+   399→  slug: string;
+   400→  distanceKm: number;
+   401→  matchedInterests: string[];
+   402→}
+   403→
+   404→// CROWD-ALTERNATIVES: opomba o gneči na določenem dnevu itinererja —
+   405→// reason je uredniška trditev o vzorcu (NE status v realnem času)
+   406→export interface CrowdNotice {
+   407→  day: number;
+   408→  destination_id: string;
+   409→  destination_name: string;
+   410→  reason: string;
+   411→  alternatives: CrowdAlternative[];
+   412→}
+   413→
+   414→// ============================================================================
+   415→// P0.2 — GEO-VALIDACIJA: geografska/časovna izvedljivost itinererja
+   416→// ============================================================================
+   417→//
+   418→// Deterministična plast NAD generacijo (AI ali fallback): metrike po dnevih
+   419→// (km, vožnja, aktivnosti, obseg) + opozorila po uporabnikovih pravilih iz
+   420→// pilot validacije. Brez lažne natančnosti (zaokrožitve na 5, "~" ocene).
+   421→// Glej src/lib/geo-validation.ts.
+   422→
+   423→export type GeoIssueLevel = "warn" | "error";
+   424→
+   425→export type GeoRuleId =
+   426→  | "day_km"
+   427→  | "day_stops"
+   428→  | "leg_distance"
+   429→  | "day_overload"
+   430→  | "schedule_gap"
+   431→  | "schedule_overlap"
+   432→  | "duplicate_stop"
+   433→  | "missing_coords"
+   434→  // TASK 48 (§4 časovne invariante): obrnjen termin (start ≥ end) in
+   435→  // nepozitivno trajanje postanka — prej tiho preskočeno.
+   436→  | "time_slot_invalid"
+   437→  | "duration_invalid"
+   438→  // F5.5: odpiralni časi ( samo z znanim datumom; vir v sporočilu)
+   439→  | "closed_month"
+   440→  | "closed_weekday";
+   441→
+   442→export interface DayGeoMetrics {
+   443→  day: number;
+   444→  stops: number;
+   445→  km: number;
+   446→  drivingMinutes: number;
+   447→  activityMinutes: number;
+   448→  loadMinutes: number;
+   449→}
+   450→
+   451→export interface GeoValidationIssue {
+   452→  day: number;
+   453→  level: GeoIssueLevel;
+   454→  rule: GeoRuleId;
+   455→  message: string;
+   456→}
+   457→
+   458→export interface GeoValidation {
+   459→  days: DayGeoMetrics[];
+   460→  issues: GeoValidationIssue[];
+   461→  tripKm: number;
+   462→  worst: "ok" | "warn" | "error";
+   463→  /**
+   464→   * TASK 4 / K-3 (UX FIX PASS, 1.91.0): ali se je plast odpiralnih časov
+   465→   * (closed_month/closed_weekday) DEJANSKO izvedla — zahteva znan datum
+   466→   * odhoda (tripStartDate). false / undefined (stari shranjeni načrti) →
+   467→   * TrustLine NE izriše "✓ Odprto ob tvojem času" (pravilo Issue #3 §4:
+   468→   * nikoli ✓ brez izvedene plasti — prej je closedCount=0 brez datuma
+   469→   * napačno izrisal ✓, čeprav pravili sploh nista tekla).
+   470→   */
+   471→  openingHoursChecked?: boolean;
+   472→  /**
+   473→   * F5.6 (road routing): od kod so razdalje/časi — "osrm" (realne ceste),
+   474→   * "heuristic" (haversine × 1,3 ÷ 55 km/h) ali "mixed". Opcijsko: stari
+   475→   * shranjeni načrti brez OSRM obogatitve ga nimajo → panel izpiše
+   476→   * hevristiko (nazaj kompatibilno, pošteno razkrito).
+   477→   */
+   478→  method?: RoutingMethod;
+   479→}
+   480→
+   481→export interface WeatherData {
+   482→  condition: string;
+   483→  temp: number;
+   484→  humidity: number;
+   485→  windSpeed: number;
+   486→  icon: string;
+   487→}
+   488→
+   489→// ============================================================================
+   490→// FW4.1 — strukturne metrike kakovosti itinererja (deterministične)
+   491→// ============================================================================
+   492→//
+   493→// NAČELO: VSA metrika je izračunana iz REALNIH podatkov (koordinate, cene,
+   494→// tipi destinacij, struktura dni) — NI AI-uganjena. AI prispeva samo
+   495→// `rationale` ("Zakaj ta pot?"), ki je vizualno/logično ločen od meritev.
+   496→// Izračun: src/lib/itinerary-quality.ts (čista funkcija, isto na serverju
+   497→// in clientu — stare shranjene načrte kartica izračuna na mestu uporabe).
+   498→
+   499→export type TempoLabel = "Miren" | "Umirjen" | "Poln";
+   500→
+   501→export interface ItineraryQuality {
+   502→  /** Skupni čas vožnje v minutah (realne ceste prek OSRM, kadar je bil indeks nog podan; sicer haversine × 1.3 ÷ 55 km/h — glej routingMethod) */
+   503→  drivingMinutes: number;
+   504→  /** Seštevek estimated_cost vseh lokacij (EUR) */
+   505→  estimatedCost: number;
+   506→  /** € / €€ / €€€ — glede na strošek na osebo na dan */
+   507→  budgetTier: Budget;
+   508→  /** Povprečno število lokacij na dan: ≤2 Miren, 3 Umirjen, ≥4 Poln */
+   509→  tempo: TempoLabel;
+   510→  /** 1–5 — delež naravnih destinacij (lake/mountain/gorge/cave/river/coast) */
+   511→  natureScore: 1 | 2 | 3 | 4 | 5;
+   512→  /** 1–5 — iz interesov potnika + omemb hrane v notes/recommendations */
+   513→  foodScore: 1 | 2 | 3 | 4 | 5;
+   514→  /** Število dni (za prikaz v kartici) */
+   515→  days: number;
+   516→  /** Velikost skupine (za prikaz v kartici) */
+   517→  groupSize: number;
+   518→  /**
+   519→   * NOVO (F5.3): stroški vožnje — gorivo + e-vinjeta (ocene, ne rezervacija).
+   520→   * Opcijsko polje: starejši shranjeni načrti ga nimajo → kartica ga izračuna
+   521→   * na mestu uporabe iz ISTE čiste funkcije (computeTripDriveCosts).
+   522→   * Strukturirano (vignetteDays številka) — oznake se lokalizira v UI.
+   523→   */
+   524→  driveCosts?: DriveCosts;
+   525→  /**
+   526→   * F5.6 (road routing): metoda izračuna vožnje/kilometrov — "osrm"
+   527→   * (realne ceste), "heuristic" ali "mixed". Opcijsko: stari načrti brez
+   528→   * tega polja so izračunani hevristično (kartica izpiše staro razlago).
+   529→   */
+   530→  routingMethod?: RoutingMethod;
+   531→}
+   532→
+   533→/** F5.6 (road routing): vir razdalj/časov — razkrit v UI. */
+   534→export type RoutingMethod = "osrm" | "heuristic" | "mixed";
+   535→
+   536→/**
+   537→ * F5.3 — ocena stroškov vožnje (deterministično, iz km poti):
+   538→ * gorivo (km × poraba × cena/l) + slovenska e-vinjeta (izbrana po dolžini
+   539→ * potovanja). Vse predpostavke so razkrite v UI ("Kako smo izračunali")
+   540→ * z viri (AMZS/DARS, regulirana cena goriva) — skladno z načelom: ocena,
+   541→ * ki pove svoje meje. Vinjeta je pogojna (samo ob uporabi avtocest).
+   542→ */
+   543→export interface DriveCosts {
+   544→  /** Skupni kilometri poti (realne ceste prek OSRM, kadar je bil indeks nog podan; sicer haversine × 1.3 — zaokroženo na 5) */
+   545→  km: number;
+   546→  /** Ocenjena poraba goriva v litrih (zaokroženo na 1) */
+   547→  fuelLiters: number;
+   548→  /** Ocenjeni strošek goriva v EUR (zaokroženo) */
+   549→  fuelEur: number;
+   550→  /** Veljavnost vinjete v dnevih: 1, 10, 62 (dvomesečna) ali 365 (letna) */
+   551→  vignetteDays: 1 | 10 | 62 | 365;
+   552→  /** Cena izbrane vinjete v EUR (vozila do 3,5 t) */
+   553→  vignetteEur: number;
+   554→  /** Skupaj gorivo + vinjeta (EUR) */
+   555→  totalEur: number;
+   556→}
+   557→
+   558→// ============================================================================
+   559→// FAZA 4-2 — "Prilagodi ta dan": hitre akcije prek obstoječega refine mehanizma
+   560→// ============================================================================
+   561→//
+   562→// Šest kanoničnih akcij (Manj vožnje / Primerno za dež / Počasnejši tempo /
+   563→// Več narave / Več hrane / Za družino). AI pot jih obdela kot naravnojezični
+   564→// ukaz; fallback pot (deterministično, brez novega AI sistema) jih obdela z
+   565→// čistimi transformacijami nad istim datasetom destinacij — glej
+   566→// src/lib/refine-actions.ts.
+   567→
+   568→export type QuickActionId =
+   569→  | "less_driving"
+   570→  | "rain_suitable"
+   571→  | "slower_pace"
+   572→  | "more_nature"
+   573→  | "more_food"
+   574→  | "family_friendly"
+   575→  | "cheaper"
+   576→  | "pricier"
+   577→  | "more_active";
+   578→
+   579→/** Elemenarna sprememba, ki jo je prinesla hitra akcija (za prikaz + analitiko). */
+   580→export interface RefineChange {
+   581→  kind:
+   582→    | "stop_removed"
+   583→    | "stop_added"
+   584→    | "stop_replaced"
+   585→    | "day_reordered"
+   586→    | "day_simplified"
+   587→    | "unchanged"
+   588→    /** P0.3 (recenzija): akcija se NI izvedla — za varen popravek manjkajo
+   589→     * preverljivi podatki (neznan destination_id, ni geo-ustrezne alternative).
+   590→     * Itinerer ostane nespremenjen; reason pove zakaj (pošteno, brez ugibanj). */
+   591→    | "cannot_transform";
+   592→  day: number;
+   593→  destination_id?: string;
+   594→  destination_name?: string;
+   595→  replacement_id?: string;
+   596→  replacement_name?: string;
+   597→  km?: number;
+   598→  /** Samo pri cannot_transform: strojno berljiv razlog (missing_destination_data |
+   599→   * no_nearby_alternative) — za analitiko in prikaz. */
+   600→  reason?: string;
+   601→}
+   602→
+   603→// ============================================================================
+   604→// P0.1 (recenzija) — validacijski dokaz po vsaki spremembi
+   605→// ============================================================================
+   606→//
+   607→// Recenzentova zahteva: "deterministični fallback, ki spremeni dan, še ni isto
+   608→// kot validator, ki dokaže, da je novi dan izvedljiv." Zato vsak refine
+   609→// odgovor (AI in deterministična pot) vsebuje struktuirani dokaz:
+   610→//   before → mutation (changes) → after, s statusom pass | warn | still_failing
+   611→// in opombo, če dan po spremembi ostaja geografsko obremenjen.
+   612→
+   613→/** Stanje enega dneva (ali celega potovanja) v geo-validaciji. */
+   614→export interface GeoValidationSnapshot {
+   615→  km: number;
+   616→  /** "ok" (0 opozoril) | "warn" | "error" — enake ravni kot GeoValidation. */
+   617→  worst: "ok" | "warn" | "error";
+   618→  /** Število opozoril (warn + error). */
+   619→  issues: number;
+   620→  /** Število ERROR opozoril (ni realno izvedljivo). */
+   621→  errors: number;
+   622→}
+   623→
+   624→/** Struktuirani validacijski dokaz refine odgovora (P0.1). */
+   625→export interface RefineValidation {
+   626→  /** Obseg dokaza: "day" (hitra akcija na določen dan) | "trip" (prosti ukaz). */
+   627→  scope: "day" | "trip";
+   628→  /** Pri hitri akciji: številka dneva (pri trip: izpuščeno). */
+   629→  day?: number;
+   630→  before: GeoValidationSnapshot;
+   631→  after: GeoValidationSnapshot;
+   632→  /** "pass" = po spremembi 0 opozoril; "warn" = ostajajo opozorila (a izvedljivo);
+   633→   * "still_failing" = po spremembi še vedno ≥1 ERROR (ni realno izvedljivo). */
+   634→  status: "pass" | "warn" | "still_failing";
+   635→  /** Lokalizirana opomba, kadar status ≠ "pass" (prikaže se v toastu). */
+   636→  statusNote?: string;
+   637→}
+   638→

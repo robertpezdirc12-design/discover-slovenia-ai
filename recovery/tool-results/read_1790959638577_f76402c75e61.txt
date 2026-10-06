@@ -1,0 +1,989 @@
+     1→     1→"use client";
+     2→     2→
+     3→     3→import { useCallback, useEffect, useMemo, useState } from "react";
+     4→     4→import { useLocale } from "next-intl";
+     5→     5→import {
+     6→     6→  BarChart3,
+     7→     7→  Check,
+     8→     8→  Loader2,
+     9→     9→  Lock,
+    10→    10→  Plus,
+    11→    11→  Trash2,
+    12→    12→  Vote,
+    13→    13→  X,
+    14→    14→} from "lucide-react";
+    15→    15→import { Button } from "@/components/ui/button";
+    16→    16→import { Card, CardContent } from "@/components/ui/card";
+    17→    17→import { Input } from "@/components/ui/input";
+    18→    18→import { useToast } from "@/hooks/use-toast";
+    19→    19→import { cn } from "@/lib/utils";
+    20→    20→// 99-b: anonimni clientId + prihranjeno ime — deljena knjižnica
+    21→    21→// (enkraten vir ključev; prej duplicirana v 4 socialnih komponentah)
+    22→    22→import {
+    23→    23→  getVoterId,
+    24→    24→  getAuthorName,
+    25→    25→  saveAuthorName,
+    26→    26→} from "@/lib/client-identity";
+    27→    27→
+    28→    28→// TASK 8 / F3-B: hydration placeholder v L-pattern (SL/EN — D8-A §13
+    29→    29→// „Nalagam…" uhodi so trdi predpogoj za F3-E EN razširitev).
+    30→    30→// ISSUE #24 Sklop 1 (1.164.0): L-vzorec {sl,en} razširjen na celo komponento — prej SL-only (samo nalagalni placeholder)
+    31→    31→// (prejšnja per-ključ oblika placeholderja, iz katere je zrasel ta slovar:
+    32→    32→//   loadingPolls: { sl: "Nalagam ankete …", en: "Loading polls …" })
+    33→    33→const L = {
+    34→    34→  sl: {
+    35→    35→    loadingPolls: "Nalagam ankete …",
+    36→    36→    heading: "Skupinske ankete",
+    37→    37→    openCountLabel: (n: number) =>
+    38→    38→      `${n} ${slUnit(n, "odprta", "odprti", "odprte", "odprtih")}`,
+    39→    39→    allClosed: "vse zaključene",
+    40→    40→    noPolls: "še ni anket",
+    41→    41→    close: "Zapri",
+    42→    42→    newPoll: "Nova anketa",
+    43→    43→    description:
+    44→    44→      "Odločite se skupaj: postavite vprašanje (npr. „Kateri dan odpotujemo?“) in vsak član skupine odda en glas. Glas lahko prestavite, dokler je anketa odprta.",
+    45→    45→    questionPlaceholder: "Vprašanje za skupino (npr. Kateri dan odpotujemo?)",
+    46→    46→    questionAria: "Vprašanje ankete",
+    47→    47→    optionPlaceholder: (letter: string) => `Možnost ${letter}`,
+    48→    48→    optionAria: (letter: string) => `Možnost ${letter}`,
+    49→    49→    removeOptionAria: (letter: string) => `Odstrani možnost ${letter}`,
+    50→    50→    addOption: "Dodaj možnost",
+    51→    51→    namePlaceholder: "Tvoje ime (opcijsko — vidno ob anketi)",
+    52→    52→    nameAria: "Tvoje ime",
+    53→    53→    createPoll: "Ustvari anketo",
+    54→    54→    emptyPolls: "Še ni nobene ankete — postavi prvo vprašanje skupini!",
+    55→    55→    // Posamezna anketa (PollCard)
+    56→    56→    closedBadge: "Zaključena",
+    57→    57→    voteAria: (opt: string, count: number) =>
+    58→    58→      `Glasuj za: ${opt} (${count} ${slUnit(count, "glas", "glasa", "glasi", "glasov")})`,
+    59→    59→    votesCount: (n: number) =>
+    60→    60→      `${n} ${slUnit(n, "glas", "glasa", "glasi", "glasov")}`,
+    61→    61→    yourVoteCounted: " · tvoj glas je štet",
+    62→    62→    reopenPoll: "Znova odpri",
+    63→    63→    closePoll: "Zaključi",
+    64→    64→    delete: "Izbriši",
+    65→    65→    deleteAria: "Izbriši anketo",
+    66→    66→    // Toasti (validacija + optimistični tok)
+    67→    67→    errQuestionTitle: "Vprašanje ni ustrezno",
+    68→    68→    errQuestionDesc: () =>
+    69→    69→      `Vprašanje mora imeti med 2 in ${QUESTION_MAX} znakov.`,
+    70→    70→    errOptionsTitle: "Anketa potrebuje možnosti",
+    71→    71→    errOptionsDesc: () =>
+    72→    72→      `Vpiši vsaj ${OPTIONS_MIN} (največ ${OPTIONS_MAX}) neprazni možnosti.`,
+    73→    73→    errOptionTitle: "Možnost je predolga",
+    74→    74→    errOptionDesc: () =>
+    75→    75→      `Posamezna možnost je lahko dolga največ ${OPTION_MAX} znakov.`,
+    76→    76→    okCreatedTitle: "Anketa je ustvarjena",
+    77→    77→    okCreatedDesc: "Povezavo deli s skupino in glasujte skupaj!",
+    78→    78→    errCreateTitle: "Ankete ni bilo mogoče ustvariti",
+    79→    79→    errVoteTitle: "Glasa ni bilo mogoče oddati",
+    80→    80→    okClosedTitle: "Anketa je zaključena",
+    81→    81→    okClosedDesc: "Rezultati so vidni, glasovanje pa zaprto.",
+    82→    82→    okReopenedTitle: "Anketa je znova odprta",
+    83→    83→    okReopenedDesc: "Skupina lahko spet glasuje.",
+    84→    84→    errUpdateTitle: "Napaka pri posodabljanju ankete",
+    85→    85→    okDeletedTitle: "Anketa je izbrisana",
+    86→    86→    errDeleteTitle: "Ankete ni bilo mogoče izbrisati",
+    87→    87→    tryAgain: "Poskusi znova.",
+    88→    88→  },
+    89→    89→  en: {
+    90→    90→    loadingPolls: "Loading polls …",
+    91→    91→    heading: "Group polls",
+    92→    92→    openCountLabel: (n: number) => `${n} open`,
+    93→    93→    allClosed: "all closed",
+    94→    94→    noPolls: "no polls yet",
+    95→    95→    close: "Close",
+    96→    96→    newPoll: "New poll",
+    97→    97→    description:
+    98→    98→      "Decide together: ask a question (e.g. “Which day do we leave?”) and each group member casts one vote. You can change your vote while the poll is open.",
+    99→    99→    questionPlaceholder: "Question for the group (e.g. Which day do we leave?)",
+   100→   100→    questionAria: "Poll question",
+   101→   101→    optionPlaceholder: (letter: string) => `Option ${letter}`,
+   102→   102→    optionAria: (letter: string) => `Option ${letter}`,
+   103→   103→    removeOptionAria: (letter: string) => `Remove option ${letter}`,
+   104→   104→    addOption: "Add option",
+   105→   105→    namePlaceholder: "Your name (optional — shown with the poll)",
+   106→   106→    nameAria: "Your name",
+   107→   107→    createPoll: "Create poll",
+   108→   108→    emptyPolls: "No polls yet — ask the group your first question!",
+   109→   109→    // Posamezna anketa (PollCard)
+   110→   110→    closedBadge: "Closed",
+   111→   111→    voteAria: (opt: string, count: number) =>
+   112→   112→      `Vote for: ${opt} (${count} ${count === 1 ? "vote" : "votes"})`,
+   113→   113→    votesCount: (n: number) => `${n} ${n === 1 ? "vote" : "votes"}`,
+   114→   114→    yourVoteCounted: " · your vote is counted",
+   115→   115→    reopenPoll: "Reopen",
+   116→   116→    closePoll: "Close",
+   117→   117→    delete: "Delete",
+   118→   118→    deleteAria: "Delete poll",
+   119→   119→    // Toasti (validacija + optimistični tok)
+   120→   120→    errQuestionTitle: "Question is invalid",
+   121→   121→    errQuestionDesc: () =>
+   122→   122→      `The question must be between 2 and ${QUESTION_MAX} characters.`,
+   123→   123→    errOptionsTitle: "The poll needs options",
+   124→   124→    errOptionsDesc: () =>
+   125→   125→      `Enter at least ${OPTIONS_MIN} (at most ${OPTIONS_MAX}) non-empty options.`,
+   126→   126→    errOptionTitle: "Option is too long",
+   127→   127→    errOptionDesc: () => `Each option can be at most ${OPTION_MAX} characters.`,
+   128→   128→    okCreatedTitle: "Poll created",
+   129→   129→    okCreatedDesc: "Share the link with the group and vote together!",
+   130→   130→    errCreateTitle: "Could not create the poll",
+   131→   131→    errVoteTitle: "Could not cast your vote",
+   132→   132→    okClosedTitle: "Poll closed",
+   133→   133→    okClosedDesc: "Results stay visible, voting is closed.",
+   134→   134→    okReopenedTitle: "Poll reopened",
+   135→   135→    okReopenedDesc: "The group can vote again.",
+   136→   136→    errUpdateTitle: "Error updating the poll",
+   137→   137→    okDeletedTitle: "Poll deleted",
+   138→   138→    errDeleteTitle: "Could not delete the poll",
+   139→   139→    tryAgain: "Try again.",
+   140→   140→  },
+   141→   141→} as const;
+   142→   142→
+   143→   143→// ============================================================================
+   144→   144→// TRIP POLLS — skupinske ankete na javni strani deljenega tripa (F11)
+   145→   145→// ============================================================================
+   146→   146→//
+   147→   147→// MindTrip vrzel #2: brez-računa skupinsko odločanje na /pot/[shareId].
+   148→   148→// Vsak obiskovalec (anonimni clientId iz localStorage — ENAK ID kot za
+   149→   149→// glasovanje/všečke/komantarje) lahko:
+   150→   150→//   - ustvari anketo (vprašanje + 2–6 možnosti, ime opcijsko)
+   151→   151→//   - glasuje (klik na možnost) ali prestavi glas (zadnji velja)
+   152→   152→//   - avtor ankete jo lahko zaključi ali izbriše
+   153→   153→//
+   154→   154→// API: /api/poll (GET/POST/PATCH/DELETE) + /api/poll/vote (POST).
+   155→   155→// Optimistični UI z revertom ob napaki (isti vzorec kot trip-social).
+   156→   156→// ============================================================================
+   157→   157→
+   158→   158→// Anonimni clientId + prihranjeno ime avtorja prihajata iz deljene
+   159→   159→// knjižnice src/lib/client-identity.ts (99-b — enkraten vir: isti
+   160→   160→// brskalnik = isti anonimni obiskovalec povsod).
+   161→   161→
+   162→   162→const QUESTION_MAX = 200;
+   163→   163→const OPTION_MAX = 80;
+   164→   164→const OPTIONS_MIN = 2;
+   165→   165→const OPTIONS_MAX = 6;
+   166→   166→const AUTHOR_NAME_MAX = 60;
+   167→   167→
+   168→   168→export interface TripPollItem {
+   169→   169→  id: string;
+   170→   170→  question: string;
+   171→   171→  options: string[];
+   172→   172→  authorName: string | null;
+   173→   173→  closed: boolean;
+   174→   174→  createdAt: string;
+   175→   175→  counts: number[];
+   176→   176→  total: number;
+   177→   177→  myVote: number | null;
+   178→   178→  isAuthor: boolean;
+   179→   179→}
+   180→   180→
+   181→   181→interface TripPollsProps {
+   182→   182→  shareId: string;
+   183→   183→  /** Začetne ankete iz RSC (brez myVote — ta pride s klientom). */
+   184→   184→  initialPolls: Omit<TripPollItem, "myVote" | "isAuthor">[];
+   185→   185→  /** ISO datum ustvarjanja potovanja (spodnja meja relativnega časa). */
+   186→   186→  createdAt: string;
+   187→   187→}
+   188→   188→
+   189→   189→// ============================================================================
+   190→   190→// Slovenski helperji (ednina / dvojina / množina)
+   191→   191→// ============================================================================
+   192→   192→
+   193→   193→function slUnit(
+   194→   194→  n: number,
+   195→   195→  one: string,
+   196→   196→  two: string,
+   197→   197→  few: string,
+   198→   198→  many: string
+   199→   199→): string {
+   200→   200→  if (n === 1) return one;
+   201→   201→  const r = n % 100;
+   202→   202→  if (r === 2) return two;
+   203→   203→  if (r === 3 || r === 4) return few;
+   204→   204→  return many;
+   205→   205→}
+   206→   206→
+   207→   207→/** "pred 2 min", "pred 3 h" — relativni čas z varnostnim stropom. */
+   208→   208→function slTimeAgo(iso: string, floorIso?: string): string {
+   209→   209→  const ms = Date.parse(iso);
+   210→   210→  if (Number.isNaN(ms)) return "neznano";
+   211→   211→
+   212→   212→  // Sanity cap: anketa ne more biti starejša od potovanja (pokvarjeni podatki)
+   213→   213→  if (floorIso) {
+   214→   214→    const floor = Date.parse(floorIso);
+   215→   215→    if (!Number.isNaN(floor) && ms < floor) {
+   216→   216→      return new Date(ms).toLocaleDateString("sl-SI", {
+   217→   217→        day: "numeric",
+   218→   218→        month: "short",
+   219→   219→        year: "numeric",
+   220→   220→      });
+   221→   221→    }
+   222→   222→  }
+   223→   223→
+   224→   224→  const seconds = Math.max(0, Math.floor((Date.now() - ms) / 1000));
+   225→   225→  if (seconds < 45) return "pravkar";
+   226→   226→
+   227→   227→  const minutes = Math.floor(seconds / 60);
+   228→   228→  if (minutes < 60) {
+   229→   229→    return `pred ${minutes} ${slUnit(minutes, "minuto", "minutama", "minutami", "minutami")}`;
+   230→   230→  }
+   231→   231→  const hours = Math.floor(minutes / 60);
+   232→   232→  if (hours < 24) {
+   233→   233→    return `pred ${hours} ${slUnit(hours, "uro", "urama", "urami", "urami")}`;
+   234→   234→  }
+   235→   235→  const days = Math.floor(hours / 24);
+   236→   236→  if (days < 30) {
+   237→   237→    return `pred ${days} ${slUnit(days, "dnem", "dnevoma", "dnevi", "dnevi")}`;
+   238→   238→  }
+   239→   239→  return new Date(ms).toLocaleDateString("sl-SI", {
+   240→   240→    day: "numeric",
+   241→   241→    month: "short",
+   242→   242→    year: "numeric",
+   243→   243→  });
+   244→   244→}
+   245→   245→
+   246→   246→/** EN dvojnik slTimeAgo ("2 min ago") — isti varnostni strop, "en-GB" datumi. */
+   247→   247→function enTimeAgo(iso: string, floorIso?: string): string {
+   248→   248→  const ms = Date.parse(iso);
+   249→   249→  if (Number.isNaN(ms)) return "unknown";
+   250→   250→
+   251→   251→  // Sanity cap: anketa ne more biti starejša od potovanja (pokvarjeni podatki)
+   252→   252→  if (floorIso) {
+   253→   253→    const floor = Date.parse(floorIso);
+   254→   254→    if (!Number.isNaN(floor) && ms < floor) {
+   255→   255→      return new Date(ms).toLocaleDateString("en-GB", {
+   256→   256→        day: "numeric",
+   257→   257→        month: "short",
+   258→   258→        year: "numeric",
+   259→   259→      });
+   260→   260→    }
+   261→   261→  }
+   262→   262→
+   263→   263→  const seconds = Math.max(0, Math.floor((Date.now() - ms) / 1000));
+   264→   264→  if (seconds < 45) return "just now";
+   265→   265→
+   266→   266→  const minutes = Math.floor(seconds / 60);
+   267→   267→  if (minutes < 60) {
+   268→   268→    return `${minutes} min ago`;
+   269→   269→  }
+   270→   270→  const hours = Math.floor(minutes / 60);
+   271→   271→  if (hours < 24) {
+   272→   272→    return `${hours} h ago`;
+   273→   273→  }
+   274→   274→  const days = Math.floor(hours / 24);
+   275→   275→  if (days < 30) {
+   276→   276→    return `${days} ${days === 1 ? "day" : "days"} ago`;
+   277→   277→  }
+   278→   278→  return new Date(ms).toLocaleDateString("en-GB", {
+   279→   279→    day: "numeric",
+   280→   280→    month: "short",
+   281→   281→    year: "numeric",
+   282→   282→  });
+   283→   283→}
+   284→   284→
+   285→   285→/** ISSUE #24 Sklop 1 (1.164.0): jezikovni dispenser — SL pot ostane
+   286→   286→ *  byte-identična (slTimeAgo), EN gre po enTimeAgo. */
+   287→   287→function timeAgo(
+   288→   288→  iso: string,
+   289→   289→  floorIso: string | undefined,
+   290→   290→  lang: "sl" | "en"
+   291→   291→): string {
+   292→   292→  return lang === "en" ? enTimeAgo(iso, floorIso) : slTimeAgo(iso, floorIso);
+   293→   293→}
+   294→   294→
+   295→   295→/** "3 glasovi" / "3 votes" — pravilne oblike po jeziku (SL dual/množina). */
+   296→   296→function votesLabel(n: number, lang: "sl" | "en" = "sl"): string {
+   297→   297→  if (n === 0)
+   298→   298→    return lang === "en" ? "No votes yet" : "Ni še glasov";
+   299→   299→  return lang === "en"
+   300→   300→    ? `${n} ${n === 1 ? "vote" : "votes"}`
+   301→   301→    : `${n} ${slUnit(n, "glas", "glasa", "glasi", "glasov")}`;
+   302→   302→}
+   303→   303→
+   304→   304→// ============================================================================
+   305→   305→// GLAVNA KOMPONENTA
+   306→   306→// ============================================================================
+   307→   307→export function TripPolls({ shareId, initialPolls, createdAt }: TripPollsProps) {
+   308→   308→  const { toast } = useToast();
+   309→   309→  // TASK 8 / F3-B: jezik za L-pattern placeholder nalaganja (SL privzeto).
+   310→   310→  const locale = useLocale();
+   311→   311→  const lang: "sl" | "en" = locale === "en" ? "en" : "sl";
+   312→   312→  const t = L[lang];
+   313→   313→
+   314→   314→  const [clientId, setClientId] = useState<string>("");
+   315→   315→  const [mounted, setMounted] = useState<boolean>(false);
+   316→   316→  const [polls, setPolls] = useState<TripPollItem[]>(() =>
+   317→   317→    (initialPolls ?? []).map((p) => ({ ...p, myVote: null, isAuthor: false }))
+   318→   318→  );
+   319→   319→
+   320→   320→  // Obrazec za novo anketo
+   321→   321→  const [formOpen, setFormOpen] = useState<boolean>(false);
+   322→   322→  const [question, setQuestion] = useState<string>("");
+   323→   323→  const [options, setOptions] = useState<string[]>(["", ""]);
+   324→   324→  const [authorName, setAuthorName] = useState<string>("");
+   325→   325→  const [creating, setCreating] = useState<boolean>(false);
+   326→   326→
+   327→   327→  // Za katero anketo trenutno poteka oddaja glasu (pollId → optionIdx)
+   328→   328→  const [votePending, setVotePending] = useState<Record<string, number>>({});
+   329→   329→  const [actionPending, setActionPending] = useState<string | null>(null);
+   330→   330→
+   331→   331→  /** Znova pridobi ankete z mojim glasom (GET /api/poll?voterId=). */
+   332→   332→  const refreshPolls = useCallback(
+   333→   333→    async (cid: string) => {
+   334→   334→      try {
+   335→   335→        const res = await fetch(
+   336→   336→          `/api/poll?shareId=${encodeURIComponent(shareId)}&voterId=${encodeURIComponent(cid)}`,
+   337→   337→          { cache: "no-store" }
+   338→   338→        );
+   339→   339→        if (!res.ok) return;
+   340→   340→        const data = (await res.json().catch(() => null)) as {
+   341→   341→          polls?: TripPollItem[];
+   342→   342→        } | null;
+   343→   343→        if (Array.isArray(data?.polls)) {
+   344→   344→          setPolls(data.polls);
+   345→   345→        }
+   346→   346→      } catch {
+   347→   347→        // Off-line / napaka — ohranimo trenutno stanje
+   348→   348→      }
+   349→   349→    },
+   350→   350→    [shareId]
+   351→   351→  );
+   352→   352→
+   353→   353→  // Mount: clientId (isti ID kot ostale socialne funkcije) + prihranjeno ime
+   354→   354→  useEffect(() => {
+   355→   355→    setMounted(true);
+   356→   356→    if (!shareId) return;
+   357→   357→    try {
+   358→   358→      // 99-b: read-or-create anonimni ID (private mode → null → stanje
+   359→   359→      // ostane nedotaknjeno, ankete ostanejo berljive)
+   360→   360→      const cid = getVoterId();
+   361→   361→      if (cid) {
+   362→   362→        setClientId(cid);
+   363→   363→
+   364→   364→        // Prihranjeno ime (skupno s komentarji)
+   365→   365→        const savedName = getAuthorName() ?? "";
+   366→   366→        if (savedName) setAuthorName(savedName);
+   367→   367→
+   368→   368→        // Dopolni myVote/isAuthor (server-side podatki jih ne poznajo)
+   369→   369→        void refreshPolls(cid);
+   370→   370→      }
+   371→   371→    } catch {
+   372→   372→      // private mode — ankete ostanejo berljive, brez mojega glasu
+   373→   373→    }
+   374→   374→  }, [shareId, refreshPolls]);
+   375→   375→
+   376→   376→  // ========================================================================
+   377→   377→  // Ustvari anketo
+   378→   378→  // ========================================================================
+   379→   379→  const submitPoll = useCallback(
+   380→   380→    async (e: React.FormEvent<HTMLFormElement>) => {
+   381→   381→      e.preventDefault();
+   382→   382→      if (creating || !shareId || !clientId) return;
+   383→   383→
+   384→   384→      const q = question.trim();
+   385→   385→      const opts = options.map((o) => o.trim()).filter((o) => o.length > 0);
+   386→   386→
+   387→   387→      if (q.length < 2 || q.length > QUESTION_MAX) {
+   388→   388→        toast({
+   389→   389→          title: t.errQuestionTitle,
+   390→   390→          description: t.errQuestionDesc(),
+   391→   391→          variant: "destructive",
+   392→   392→        });
+   393→   393→        return;
+   394→   394→      }
+   395→   395→      if (opts.length < OPTIONS_MIN || opts.length > OPTIONS_MAX) {
+   396→   396→        toast({
+   397→   397→          title: t.errOptionsTitle,
+   398→   398→          description: t.errOptionsDesc(),
+   399→   399→          variant: "destructive",
+   400→   400→        });
+   401→   401→        return;
+   402→   402→      }
+   403→   403→      if (opts.some((o) => o.length > OPTION_MAX)) {
+   404→   404→        toast({
+   405→   405→          title: t.errOptionTitle,
+   406→   406→          description: t.errOptionDesc(),
+   407→   407→          variant: "destructive",
+   408→   408→        });
+   409→   409→        return;
+   410→   410→      }
+   411→   411→
+   412→   412→      setCreating(true);
+   413→   413→      try {
+   414→   414→        const res = await fetch("/api/poll", {
+   415→   415→          method: "POST",
+   416→   416→          headers: { "Content-Type": "application/json" },
+   417→   417→          body: JSON.stringify({
+   418→   418→            shareId,
+   419→   419→            question: q,
+   420→   420→            options: opts,
+   421→   421→            authorName: authorName.trim(),
+   422→   422→            clientId,
+   423→   423→          }),
+   424→   424→        });
+   425→   425→        const data: unknown = await res.json().catch(() => null);
+   426→   426→        const d = data as { success?: unknown; poll?: unknown } | null;
+   427→   427→
+   428→   428→        if (!res.ok || d?.success !== true || !d?.poll) {
+   429→   429→          const error = (data as { error?: unknown } | null)?.error;
+   430→   430→          throw new Error(
+   431→   431→            typeof error === "string" ? error : `HTTP ${res.status}`
+   432→   432→          );
+   433→   433→        }
+   434→   434→
+   435→   435→        const poll = d.poll as TripPollItem;
+   436→   436→        setPolls((prev) => [poll, ...prev]);
+   437→   437→        setQuestion("");
+   438→   438→        setOptions(["", ""]);
+   439→   439→        setFormOpen(false);
+   440→   440→
+   441→   441→        // Prihrani ime (skupno s komentarji; defenzivno — private mode
+   442→   442→        // se mirno preskoči znotraj lib-a)
+   443→   443→        saveAuthorName(authorName.trim());
+   444→   444→
+   445→   445→        toast({
+   446→   446→          title: t.okCreatedTitle,
+   447→   447→          description: t.okCreatedDesc,
+   448→   448→        });
+   449→   449→      } catch (err) {
+   450→   450→        const message = err instanceof Error ? err.message : t.tryAgain;
+   451→   451→        toast({
+   452→   452→          title: t.errCreateTitle,
+   453→   453→          description: message,
+   454→   454→          variant: "destructive",
+   455→   455→        });
+   456→   456→      } finally {
+   457→   457→        setCreating(false);
+   458→   458→      }
+   459→   459→    },
+   460→   460→    [creating, shareId, clientId, question, options, authorName, toast, t]
+   461→   461→  );
+   462→   462→
+   463→   463→  // ========================================================================
+   464→   464→  // Glasuj / prestavi glas (optimistično z revertom)
+   465→   465→  // ========================================================================
+   466→   466→  const castVote = useCallback(
+   467→   467→    async (pollId: string, optionIdx: number) => {
+   468→   468→      if (!clientId || !shareId) return;
+   469→   469→      const poll = polls.find((p) => p.id === pollId);
+   470→   470→      if (!poll || poll.closed) return;
+   471→   471→      if (votePending[pollId] !== undefined) return; // že v teku
+   472→   472→      if (poll.myVote === optionIdx) return; // klik na svoj glas = no-op
+   473→   473→
+   474→   474→      // Optimistični update: prestavi moj glas med opcijami
+   475→   475→      const prev = poll;
+   476→   476→      const next: TripPollItem = {
+   477→   477→        ...poll,
+   478→   478→        counts: poll.counts.map((c, i) => {
+   479→   479→          if (i === optionIdx) return c + 1;
+   480→   480→          if (poll.myVote === i) return Math.max(0, c - 1);
+   481→   481→          return c;
+   482→   482→        }),
+   483→   483→        total: poll.myVote === null ? poll.total + 1 : poll.total,
+   484→   484→        myVote: optionIdx,
+   485→   485→      };
+   486→   486→      setPolls((all) => all.map((p) => (p.id === pollId ? next : p)));
+   487→   487→      setVotePending((v) => ({ ...v, [pollId]: optionIdx }));
+   488→   488→
+   489→   489→      try {
+   490→   490→        const res = await fetch("/api/poll/vote", {
+   491→   491→          method: "POST",
+   492→   492→          headers: { "Content-Type": "application/json" },
+   493→   493→          body: JSON.stringify({ pollId, voterId: clientId, optionIdx }),
+   494→   494→        });
+   495→   495→        const data: unknown = await res.json().catch(() => null);
+   496→   496→        const d = data as
+   497→   497→          | { success?: unknown; counts?: unknown; total?: unknown; myVote?: unknown }
+   498→   498→          | null;
+   499→   499→
+   500→   500→        if (
+   501→   501→          !res.ok ||
+   502→   502→          d?.success !== true ||
+   503→   503→          !Array.isArray(d?.counts) ||
+   504→   504→          typeof d?.total !== "number"
+   505→   505→        ) {
+   506→   506→          throw new Error(
+   507→   507→            (data as { error?: unknown } | null)?.error instanceof Error
+   508→   508→              ? String((data as { error?: unknown }).error)
+   509→   509→              : `HTTP ${res.status}`
+   510→   510→          );
+   511→   511→        }
+   512→   512→
+   513→   513→        // Strežniško stanje je resnica (ali izgladi lokalne razlike)
+   514→   514→        setPolls((all) =>
+   515→   515→          all.map((p) =>
+   516→   516→            p.id === pollId
+   517→   517→              ? {
+   518→   518→                  ...p,
+   519→   519→                  counts: d.counts as number[],
+   520→   520→                  total: d.total as number,
+   521→   521→                  myVote:
+   522→   522→                    typeof d.myVote === "number" ? (d.myVote as number) : null,
+   523→   523→                }
+   524→   524→              : p
+   525→   525→          )
+   526→   526→        );
+   527→   527→      } catch (err) {
+   528→   528→        // Revert na prejšnje stanje
+   529→   529→        setPolls((all) => all.map((p) => (p.id === pollId ? prev : p)));
+   530→   530→        const message = err instanceof Error ? err.message : t.tryAgain;
+   531→   531→        toast({
+   532→   532→          title: t.errVoteTitle,
+   533→   533→          description: message,
+   534→   534→          variant: "destructive",
+   535→   535→        });
+   536→   536→      } finally {
+   537→   537→        setVotePending((v) => {
+   538→   538→          const copy = { ...v };
+   539→   539→          delete copy[pollId];
+   540→   540→          return copy;
+   541→   541→        });
+   542→   542→      }
+   543→   543→    },
+   544→   544→    [clientId, shareId, polls, votePending, toast, t]
+   545→   545→  );
+   546→   546→
+   547→   547→  // ========================================================================
+   548→   548→  // Zaključi / ponovno odpri (samo avtor)
+   549→   549→  // ========================================================================
+   550→   550→  const toggleClose = useCallback(
+   551→   551→    async (pollId: string, closed: boolean) => {
+   552→   552→      if (!clientId || actionPending) return;
+   553→   553→      setActionPending(pollId);
+   554→   554→      try {
+   555→   555→        const res = await fetch("/api/poll", {
+   556→   556→          method: "PATCH",
+   557→   557→          headers: { "Content-Type": "application/json" },
+   558→   558→          body: JSON.stringify({ pollId, clientId, closed }),
+   559→   559→        });
+   560→   560→        const data: unknown = await res.json().catch(() => null);
+   561→   561→        const d = data as { success?: unknown; poll?: unknown } | null;
+   562→   562→        if (!res.ok || d?.success !== true || !d?.poll) {
+   563→   563→          throw new Error(
+   564→   564→            (data as { error?: unknown } | null)?.error instanceof Error
+   565→   565→              ? String((data as { error?: unknown }).error)
+   566→   566→              : `HTTP ${res.status}`
+   567→   567→          );
+   568→   568→        }
+   569→   569→        const poll = d.poll as TripPollItem;
+   570→   570→        setPolls((all) => all.map((p) => (p.id === pollId ? poll : p)));
+   571→   571→        toast({
+   572→   572→          title: closed ? t.okClosedTitle : t.okReopenedTitle,
+   573→   573→          description: closed ? t.okClosedDesc : t.okReopenedDesc,
+   574→   574→        });
+   575→   575→      } catch (err) {
+   576→   576→        const message = err instanceof Error ? err.message : t.tryAgain;
+   577→   577→        toast({
+   578→   578→          title: t.errUpdateTitle,
+   579→   579→          description: message,
+   580→   580→          variant: "destructive",
+   581→   581→        });
+   582→   582→      } finally {
+   583→   583→        setActionPending(null);
+   584→   584→      }
+   585→   585→    },
+   586→   586→    [clientId, actionPending, toast, t]
+   587→   587→  );
+   588→   588→
+   589→   589→  // ========================================================================
+   590→   590→  // Izbriši (samo avtor)
+   591→   591→  // ========================================================================
+   592→   592→  const deletePoll = useCallback(
+   593→   593→    async (pollId: string) => {
+   594→   594→      if (!clientId || actionPending) return;
+   595→   595→      setActionPending(pollId);
+   596→   596→      try {
+   597→   597→        const res = await fetch("/api/poll", {
+   598→   598→          method: "DELETE",
+   599→   599→          headers: { "Content-Type": "application/json" },
+   600→   600→          body: JSON.stringify({ pollId, clientId }),
+   601→   601→        });
+   602→   602→        const data: unknown = await res.json().catch(() => null);
+   603→   603→        const d = data as { success?: unknown } | null;
+   604→   604→        if (!res.ok || d?.success !== true) {
+   605→   605→          throw new Error(
+   606→   606→            (data as { error?: unknown } | null)?.error instanceof Error
+   607→   607→              ? String((data as { error?: unknown }).error)
+   608→   608→              : `HTTP ${res.status}`
+   609→   609→          );
+   610→   610→        }
+   611→   611→        setPolls((all) => all.filter((p) => p.id !== pollId));
+   612→   612→        toast({ title: t.okDeletedTitle });
+   613→   613→      } catch (err) {
+   614→   614→        const message = err instanceof Error ? err.message : t.tryAgain;
+   615→   615→        toast({
+   616→   616→          title: t.errDeleteTitle,
+   617→   617→          description: message,
+   618→   618→          variant: "destructive",
+   619→   619→        });
+   620→   620→      } finally {
+   621→   621→        setActionPending(null);
+   622→   622→      }
+   623→   623→    },
+   624→   624→    [clientId, actionPending, toast, t]
+   625→   625→  );
+   626→   626→
+   627→   627→  const openCount = useMemo(
+   628→   628→    () => polls.filter((p) => !p.closed).length,
+   629→   629→    [polls]
+   630→   630→  );
+   631→   631→
+   632→   632→  // ========================================================================
+   633→   633→  // RENDER
+   634→   634→  // ========================================================================
+   635→   635→  return (
+   636→   636→    <Card className="print-hide print:hidden overflow-hidden">
+   637→   637→      <CardContent className="p-4 sm:p-6">
+   638→   638→        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+   639→   639→          <div className="flex items-center gap-2">
+   640→   640→            <Vote className="size-5 text-primary" aria-hidden="true" />
+   641→   641→            <h2 className="text-lg font-semibold">{t.heading}</h2>
+   642→   642→            <span className="text-sm text-muted-foreground">
+   643→   643→              {openCount > 0
+   644→   644→                ? t.openCountLabel(openCount)
+   645→   645→                : polls.length > 0
+   646→   646→                  ? t.allClosed
+   647→   647→                  : t.noPolls}
+   648→   648→            </span>
+   649→   649→          </div>
+   650→   650→          <Button
+   651→   651→            type="button"
+   652→   652→            variant={formOpen ? "outline" : "default"}
+   653→   653→            size="sm"
+   654→   654→            onClick={() => setFormOpen((o) => !o)}
+   655→   655→            aria-expanded={formOpen}
+   656→   656→            aria-controls="poll-form"
+   657→   657→            className="gap-1.5"
+   658→   658→          >
+   659→   659→            {formOpen ? (
+   660→   660→              <>
+   661→   661→                <X className="size-4" aria-hidden="true" /> {t.close}
+   662→   662→              </>
+   663→   663→            ) : (
+   664→   664→              <>
+   665→   665→                <Plus className="size-4" aria-hidden="true" /> {t.newPoll}
+   666→   666→              </>
+   667→   667→            )}
+   668→   668→          </Button>
+   669→   669→        </div>
+   670→   670→
+   671→   671→        <p className="mb-4 text-sm text-muted-foreground">{t.description}</p>
+   672→   672→
+   673→   673→        {/* === Obrazec za novo anketo === */}
+   674→   674→        {formOpen && (
+   675→   675→          <form
+   676→   676→            id="poll-form"
+   677→   677→            onSubmit={(e) => void submitPoll(e)}
+   678→   678→            className="mb-6 space-y-3 rounded-lg border border-border bg-muted/30 p-4"
+   679→   679→          >
+   680→   680→            <Input
+   681→   681→              value={question}
+   682→   682→              onChange={(e) => setQuestion(e.target.value)}
+   683→   683→              placeholder={t.questionPlaceholder}
+   684→   684→              required
+   685→   685→              maxLength={QUESTION_MAX}
+   686→   686→              minLength={2}
+   687→   687→              aria-label={t.questionAria}
+   688→   688→              className="h-11"
+   689→   689→              disabled={creating}
+   690→   690→            />
+   691→   691→
+   692→   692→            <div className="space-y-2">
+   693→   693→              {options.map((opt, i) => (
+   694→   694→                <div key={`opt-${i}`} className="flex items-center gap-2">
+   695→   695→                  <span
+   696→   696→                    className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary"
+   697→   697→                    aria-hidden="true"
+   698→   698→                  >
+   699→   699→                    {String.fromCharCode(65 + i)}
+   700→   700→                  </span>
+   701→   701→                  <Input
+   702→   702→                    value={opt}
+   703→   703→                    onChange={(e) =>
+   704→   704→                      setOptions((prev) =>
+   705→   705→                        prev.map((o, j) => (j === i ? e.target.value : o))
+   706→   706→                      )
+   707→   707→                    }
+   708→   708→                    placeholder={t.optionPlaceholder(String.fromCharCode(65 + i))}
+   709→   709→                    maxLength={OPTION_MAX}
+   710→   710→                    aria-label={t.optionAria(String.fromCharCode(65 + i))}
+   711→   711→                    className="h-11"
+   712→   712→                    disabled={creating}
+   713→   713→                  />
+   714→   714→                  {options.length > OPTIONS_MIN && (
+   715→   715→                    <Button
+   716→   716→                      type="button"
+   717→   717→                      variant="ghost"
+   718→   718→                      size="icon"
+   719→   719→                      onClick={() =>
+   720→   720→                        setOptions((prev) => prev.filter((_, j) => j !== i))
+   721→   721→                      }
+   722→   722→                      aria-label={t.removeOptionAria(String.fromCharCode(65 + i))}
+   723→   723→                      disabled={creating}
+   724→   724→                      className="size-9 shrink-0"
+   725→   725→                    >
+   726→   726→                      <X className="size-4" aria-hidden="true" />
+   727→   727→                    </Button>
+   728→   728→                  )}
+   729→   729→                </div>
+   730→   730→              ))}
+   731→   731→              {options.length < OPTIONS_MAX && (
+   732→   732→                <Button
+   733→   733→                  type="button"
+   734→   734→                  variant="outline"
+   735→   735→                  size="sm"
+   736→   736→                  onClick={() => setOptions((prev) => [...prev, ""])}
+   737→   737→                  disabled={creating}
+   738→   738→                  className="gap-1.5"
+   739→   739→                >
+   740→   740→                  <Plus className="size-4" aria-hidden="true" /> {t.addOption}
+   741→   741→                </Button>
+   742→   742→              )}
+   743→   743→            </div>
+   744→   744→
+   745→   745→            <Input
+   746→   746→              value={authorName}
+   747→   747→              onChange={(e) => setAuthorName(e.target.value)}
+   748→   748→              placeholder={t.namePlaceholder}
+   749→   749→              maxLength={AUTHOR_NAME_MAX}
+   750→   750→              aria-label={t.nameAria}
+   751→   751→              className="h-11"
+   752→   752→              disabled={creating}
+   753→   753→            />
+   754→   754→
+   755→   755→            <div className="flex items-center justify-between gap-3">
+   756→   756→              <span className="text-xs text-muted-foreground">
+   757→   757→                {question.trim().length}/{QUESTION_MAX}
+   758→   758→              </span>
+   759→   759→              <Button type="submit" disabled={creating} className="gap-1.5">
+   760→   760→                {creating ? (
+   761→   761→                  <Loader2
+   762→   762→                    className="size-4 animate-spin"
+   763→   763→                    aria-hidden="true"
+   764→   764→                  />
+   765→   765→                ) : (
+   766→   766→                  <BarChart3 className="size-4" aria-hidden="true" />
+   767→   767→                )}
+   768→   768→                {t.createPoll}
+   769→   769→              </Button>
+   770→   770→            </div>
+   771→   771→          </form>
+   772→   772→        )}
+   773→   773→
+   774→   774→        {/* === Seznam anket === */}
+   775→   775→        {polls.length === 0 ? (
+   776→   776→          <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+   777→   777→            {mounted ? t.emptyPolls : t.loadingPolls}
+   778→   778→          </p>
+   779→   779→        ) : (
+   780→   780→          <ul className="space-y-4" aria-live="polite">
+   781→   781→            {polls.map((poll) => (
+   782→   782→              <li
+   783→   783→                key={poll.id}
+   784→   784→                className="rounded-lg border border-border p-4"
+   785→   785→              >
+   786→   786→                <PollCard
+   787→   787→                  poll={poll}
+   788→   788→                  mounted={mounted}
+   789→   789→                  tripCreatedAt={createdAt}
+   790→   790→                  votePendingIdx={
+   791→   791→                    votePending[poll.id] !== undefined
+   792→   792→                      ? votePending[poll.id]
+   793→   793→                      : null
+   794→   794→                  }
+   795→   795→                  actionPending={actionPending === poll.id}
+   796→   796→                  onVote={(idx) => void castVote(poll.id, idx)}
+   797→   797→                  onToggleClose={() =>
+   798→   798→                    void toggleClose(poll.id, !poll.closed)
+   799→   799→                  }
+   800→   800→                  onDelete={() => void deletePoll(poll.id)}
+   801→   801→                />
+   802→   802→              </li>
+   803→   803→            ))}
+   804→   804→          </ul>
+   805→   805→        )}
+   806→   806→      </CardContent>
+   807→   807→    </Card>
+   808→   808→  );
+   809→   809→}
+   810→   810→
+   811→   811→// ============================================================================
+   812→   812→// POSAMEZNA ANKETA
+   813→   813→// ============================================================================
+   814→   814→interface PollCardProps {
+   815→   815→  poll: TripPollItem;
+   816→   816→  mounted: boolean;
+   817→   817→  tripCreatedAt: string;
+   818→   818→  /** Index opcije, katere glas je v teku (null = nič). */
+   819→   819→  votePendingIdx: number | null;
+   820→   820→  actionPending: boolean;
+   821→   821→  onVote: (optionIdx: number) => void;
+   822→   822→  onToggleClose: () => void;
+   823→   823→  onDelete: () => void;
+   824→   824→}
+   825→   825→
+   826→   826→function PollCard({
+   827→   827→  poll,
+   828→   828→  mounted,
+   829→   829→  tripCreatedAt,
+   830→   830→  votePendingIdx,
+   831→   831→  actionPending,
+   832→   832→  onVote,
+   833→   833→  onToggleClose,
+   834→   834→  onDelete,
+   835→   835→}: PollCardProps) {
+   836→   836→  // ISSUE #24 Sklop 1 (1.164.0): besedila ankete po locale gledalca (L-vzorec).
+   837→   837→  const locale = useLocale();
+   838→   838→  const lang: "sl" | "en" = locale === "en" ? "en" : "sl";
+   839→   839→  const t = L[lang];
+   840→   840→  const maxCount = Math.max(1, ...poll.counts);
+   841→   841→  const total = poll.total;
+   842→   842→
+   843→   843→  return (
+   844→   844→    <div>
+   845→   845→      {/* Vprašanje + meta */}
+   846→   846→      <div className="mb-1 flex items-start justify-between gap-2">
+   847→   847→        <h3 className="font-semibold leading-snug">{poll.question}</h3>
+   848→   848→        {poll.closed && (
+   849→   849→          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+   850→   850→            <Lock className="size-3" aria-hidden="true" />
+   851→   851→            {t.closedBadge}
+   852→   852→          </span>
+   853→   853→        )}
+   854→   854→      </div>
+   855→   855→      <p className="mb-3 text-xs text-muted-foreground">
+   856→   856→        {poll.authorName ? `${poll.authorName} · ` : ""}
+   857→   857→        {mounted ? timeAgo(poll.createdAt, tripCreatedAt, lang) : ""}
+   858→   858→      </p>
+   859→   859→
+   860→   860→      {/* Možnosti — klikljive vrstice z rezultati */}
+   861→   861→      <div className="space-y-2">
+   862→   862→        {poll.options.map((opt, i) => {
+   863→   863→          const count = poll.counts[i] ?? 0;
+   864→   864→          const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+   865→   865→          const isMyVote = poll.myVote === i;
+   866→   866→          const isPending = votePendingIdx === i;
+   867→   867→          const widthPct = total > 0 ? Math.round((count / maxCount) * 100) : 0;
+   868→   868→
+   869→   869→          return (
+   870→   870→            <button
+   871→   871→              key={`${poll.id}-opt-${i}`}
+   872→   872→              type="button"
+   873→   873→              onClick={() => onVote(i)}
+   874→   874→              disabled={poll.closed || isPending}
+   875→   875→              aria-pressed={isMyVote}
+   876→   876→              aria-label={t.voteAria(opt, count)}
+   877→   877→              className={cn(
+   878→   878→                "relative flex w-full items-center gap-2.5 overflow-hidden rounded-lg border px-3 py-2.5 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-default",
+   879→   879→                !poll.closed &&
+   880→   880→                  "hover:border-primary/50 focus-visible:border-primary/50",
+   881→   881→                isMyVote
+   882→   882→                  ? "border-primary bg-primary/5 font-medium"
+   883→   883→                  : "border-border bg-background",
+   884→   884→                poll.closed && "cursor-default opacity-90"
+   885→   885→              )}
+   886→   886→            >
+   887→   887→              {/* Progress fill (za tekstom, širina glede na zmagovalca) */}
+   888→   888→              <span
+   889→   889→                aria-hidden="true"
+   890→   890→                className={cn(
+   891→   891→                  "absolute inset-y-0 left-0 transition-[width] duration-500",
+   892→   892→                  isMyVote ? "bg-primary/15" : "bg-muted"
+   893→   893→                )}
+   894→   894→                style={{ width: `${widthPct}%` }}
+   895→   895→              />
+   896→   896→
+   897→   897→              <span className="relative z-10 flex min-w-0 flex-1 items-center gap-2">
+   898→   898→                <span
+   899→   899→                  className={cn(
+   900→   900→                    "flex size-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold",
+   901→   901→                    isMyVote
+   902→   902→                      ? "border-primary bg-primary text-primary-foreground"
+   903→   903→                      : "border-border text-muted-foreground"
+   904→   904→                  )}
+   905→   905→                  aria-hidden="true"
+   906→   906→                >
+   907→   907→                  {isMyVote ? (
+   908→   908→                    <Check className="size-3" aria-hidden="true" />
+   909→   909→                  ) : (
+   910→   910→                    String.fromCharCode(65 + i)
+   911→   911→                  )}
+   912→   912→                </span>
+   913→   913→                <span className="min-w-0 truncate">{opt}</span>
+   914→   914→              </span>
+   915→   915→
+   916→   916→              <span className="relative z-10 flex shrink-0 items-center gap-2 text-xs">
+   917→   917→                {isPending && (
+   918→   918→                  <Loader2
+   919→   919→                    className="size-3.5 animate-spin text-primary"
+   920→   920→                    aria-hidden="true"
+   921→   921→                  />
+   922→   922→                )}
+   923→   923→                <span className="text-muted-foreground" aria-hidden="true">
+   924→   924→                  {pct}%
+   925→   925→                </span>
+   926→   926→                <span
+   927→   927→                  className={cn(
+   928→   928→                    "min-w-6 text-right font-semibold tabular-nums",
+   929→   929→                    isMyVote ? "text-primary" : "text-foreground"
+   930→   930→                  )}
+   931→   931→                  aria-hidden="true"
+   932→   932→                >
+   933→   933→                  {count}
+   934→   934→                </span>
+   935→   935→                <span className="sr-only">{t.votesCount(count)}</span>
+   936→   936→              </span>
+   937→   937→            </button>
+   938→   938→          );
+   939→   939→        })}
+   940→   940→      </div>
+   941→   941→
+   942→   942→      {/* Noga: skupno + avtorska dejanja */}
+   943→   943→      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+   944→   944→        <span className="text-xs text-muted-foreground">
+   945→   945→          {votesLabel(total, lang)}
+   946→   946→          {poll.myVote !== null && t.yourVoteCounted}
+   947→   947→        </span>
+   948→   948→        {poll.isAuthor && (
+   949→   949→          <span className="flex items-center gap-1.5">
+   950→   950→            <Button
+   951→   951→              type="button"
+   952→   952→              variant="outline"
+   953→   953→              size="sm"
+   954→   954→              onClick={onToggleClose}
+   955→   955→              disabled={actionPending}
+   956→   956→              className="h-8 gap-1.5 px-2.5 text-xs"
+   957→   957→            >
+   958→   958→              {actionPending ? (
+   959→   959→                <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+   960→   960→              ) : (
+   961→   961→                <Lock className="size-3.5" aria-hidden="true" />
+   962→   962→              )}
+   963→   963→              {poll.closed ? t.reopenPoll : t.closePoll}
+   964→   964→            </Button>
+   965→   965→            <Button
+   966→   966→              type="button"
+   967→   967→              variant="outline"
+   968→   968→              size="sm"
+   969→   969→              onClick={onDelete}
+   970→   970→              disabled={actionPending}
+   971→   971→              aria-label={t.deleteAria}
+   972→   972→              className="h-8 gap-1.5 px-2.5 text-xs text-destructive hover:text-destructive"
+   973→   973→            >
+   974→   974→              {actionPending ? (
+   975→   975→                <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+   976→   976→              ) : (
+   977→   977→                <Trash2 className="size-3.5" aria-hidden="true" />
+   978→   978→              )}
+   979→   979→              {t.delete}
+   980→   980→            </Button>
+   981→   981→          </span>
+   982→   982→        )}
+   983→   983→      </div>
+   984→   984→    </div>
+   985→   985→  );
+   986→   986→}
+   987→   987→
+   988→   988→export default TripPolls;
+   989→   989→

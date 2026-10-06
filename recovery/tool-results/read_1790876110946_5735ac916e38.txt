@@ -1,0 +1,324 @@
+     1→---
+     2→Task ID: issue20-faza1
+     3→Agent: Z.ai Code (glavni)
+     4→Task: Discover-Slovenia-AI — izvedba Issue #20 (Production Activation & Live Supply Readiness) FAZA 1: §3 lastna tržnica produkcijska verifikacija, §11 activation:check, §5 statusna matrika, §12 README uskladitev; push 1.157.0 na main.
+     5→
+     6→Work Log:
+     7→- Analiziral odprti issue #20 (192 vrstic, P0/P1/P2 sklopi) + stanje CI (3 stari prod-monitor feili = že rešen incident: Render build_failed → catch-up; Vercel 1.156.0 drift → oba zdaj 1.156.2)
+     8→- Bazna linija: bun test 4413 (4412 pass + 1 DB-gated skip v CI-semantiki; 1 fail le z neveljavnim sandbox DATABASE_URL — vzrok identificiran), lint 0, tsc 0
+     9→- §11: napisal src/lib/supply/activation-check.ts (mehanska preslikava matrika→4 stanja, Boolean-only env), scripts/activation-check.ts (tanjek CLI), package.json activation:check; 12 testov (issue20-activation-check.test.ts) vključno s kanarčkom proti izdaji env vrednosti
+    10→- §3: odkril, da 0/20 objavljenih zapisov v produkciji (Neon, poverilnica pridobljena iz Vercel env API z žetonom uporabnika) ima koordinate; izvedel transparenten geo-popravek 2 realnih lokalov (Postojnska jama, Kavarna Zvezda — Ljubljana)
+    11→- §3 verifikacija v produkciji (Render): supply search → own produkti (provider=own, own_marketplace, exact geo) → agent-browser na živi strani: iskanje → Lokal zadetek → 940 markerjev → produktni popup → '+ Dodaj v mojo pot' → '✓ Dodano' → localStorage refId=own:… source=zemljevid → hub 'Moja pot 1'; 3 PNG dokaza v docs/evidence/issue20/
+    12→- Matrika: own PRODUCTION_CONFIGURED → LIVE_DATA_VERIFIED (blockedReason NO_LIVE_DATA → NOT_CONFIGURED [Stripe checkout]); posodobljeni testi task53 ⑦, task84, task87 (+task52 §0 invarianta ostala zelena)
+    13→- §5: docs/PRODUCTION-ACTIVATION-STATUS.md (master matrika 16 providerjev + statusi §4/§6/§7/§9/§10); §12: README 4142→4413 popravek + activation:check omemba + statusna vrstica 1.157.0; docs/evidence/issue20/summary.md; PROVIDER-APPLICATIONS.md usklajen
+    14→- Regresija: 4425 testov (4424 pass + 1 skip), 73.026 expect, lint 0, tsc 0; skrivnosti: 0 (grep pregled vseh sprememb)
+    15→- Commit d89f280 (feat 1.157.0 #20 FAZA 1, konvencionalno sporočilo z DoD) → push na main; CI run 36840889884 v teku
+    16→
+    17→Stage Summary:
+    18→- Issue #20 FAZA 1 zaključena kodno+testno; produkcijska verifikacija §3 = 5/5 dokazov (supply/marker/Add/hub/izpuščanje brez koordinat)
+    19→- own dvignjen na LIVE_DATA_VERIFIED z dokazi (prvi živi produkti lastne tržnice na zemljevidu produkcije)
+    20→- NOVA zmožnost: bun run activation:check (16 providerjev, 4 stanja, Boolean-only) — testno zaklenjena
+    21→- Čaka: CI zelen → deploja (Render AutoDeploy ~7 min + Vercel) → verzija 1.157.0 na obeh → prod-monitor zelen → komentar na issue #20
+    22→- Varnost: žetona sta bila izpostavljena v pogovoru — uporabniku svetovana rotacija po koncu
+    23→
+    24→---
+    25→Task ID: 2-a
+    26→Agent: Explore (neodvisna verifikacija)
+    27→Task: Verifikacija trditev §4 (checkout fail-closed) in §9 (booking lifecycle) iz docs/PRODUCTION-ACTIVATION-STATUS.md proti dejanski kodi/testom repozitorija /tmp/Discover-Slovenia-AI (1.157.0) pred zaključkom issue #20. Brez sprememb kode.
+    28→
+    29→Work Log:
+    30→- Prebral worklog (faza 1 kontekst) + docs/PRODUCTION-ACTIVATION-STATUS.md §3/§9 + docs/evidence/issue20/summary.md
+    31→- TRDITEV A: preveril src/app/api/stripe/checkout/route.ts (503 @146-155, 501 @156-161, demo veja @98), src/lib/stripe-server.ts (isStripeConfigured @7-10, isStripeDemo @24-30 — produkcija zahteva DSA_DEMO_PAYMENTS=1) → fail-closed POTRJENO
+    32→- KLJUČNA UGOTOVITEV: lastni B2C checkout (/api/checkout izdelki, /api/bookings izkušnje) je SAMO-DEMO — produkcijska veja je TODO in vrne 501 TUDI ob prisotnih STRIPE_SECRET_KEY (checkout/route.ts:350-358+549-552, bookings/route.ts:576-592); webhook nima NOBEGA primera za Order/Booking (samo subscription/sponsorship/commission_invoice) → §4 veriga product/experience→session→webhook→state NI implementirana v produkciji; doc trditev "TEHNIČNO DOKONČAN" drži le za 3 B2B tokove
+    33→- TRDITEV B: webhook signature+constructEvent+ProcessedStripeEvent P2002 dedup POTRJENO (19-93); JourneyBooking statusi: dejansko 14 (13 TASK 99 + DRAFT iz Issue #4 val 3 — types.ts:83-97, task99 test ① šteje 14; doc pravi 13 = zastarelo); Booking.paymentStatus/payoutStatus + PayoutEntry.bookingId @unique POTRJENO (schema 674/681/1179); payoutStatus nima runtime writerja (samo tipi+izpeljava — iskreno not_due)
+    34→- Klient NE MORE ponarediti "confirmed": JourneyBooking POST sprejema SAMO INITIAL_CONFIRMATION_STATUSES [SELECTED, EXTERNAL, BOOKING_REQUESTED, DRAFT] (route:258) + S1 hardening (klient nikoli ne prinese atestacij, 283-287) + validator zahteva providerBookingId+ceno za CONFIRMED; PATCH žeton-zaklenjen fail-closed (503 brez JOURNEY_PROVIDER_TOKEN); marketplace Booking status strežniško podrt; lastniški prehodi z compare-and-swap → POTRJENO ("TASK 49 vzorec" je analogija — dejansko S1/C2/C3/C4 hardening)
+    35→- Testi: task99-booking-lifecycle (38), task81 (13), task100b (10) obstajajo; NATANKO 7 testnih datotek omenja Stripe (število POTRJENO), a pokritost je source-contract/config-stanjska — 0 vedenjskih testov webhook podpisa/dedup ali 503/501 (rg constructEvent|stripe-signature|isStripeDemo|DSA_DEMO_PAYMENTS v testih → prazno)
+    36→- Inventura 14 Stripe-povezanih rut (6 /api/stripe*|checkout|bookings|orders + owner sponsorship/commissions/subscription/bookings + journey bookings 4); ostale ugotovitve: atomarnost (SERIALIZABLE+P2034, CAS) dobro pokrita; UI checkout-modal obljublja "prava plačila ob ključih", kar nasprotuje 501 TODO; demo Order="paid" vs demo Booking="confirmed+unpaid" (namerna razlika — provizijska osnova)
+    37→
+    38→Stage Summary:
+    39→- Trditev A: fail-closed mehanika (503/501, DSA_DEMO_PAYMENTS=1) POTRJENA; vendar "lastni checkout tehnično dokončan" je DELNO/OVRSANO za §4 obseg (izdelki/izkušnje B2C): produkcija = TODO 501, webhook brez Order/Booking primerov — dodaja ključev NE aktivira B2C plačil (samo B2B subscription/sponsorship/commission)
+    40→- Trditev B: v jedru POTRJENA (webhook hardening, modeli, strežniška prevlada statusov, atomarnost), z nuansami: 14 ne 13 statusov, payoutStatus brez writerja, "7 Stripe datotek" nominalno (brez vedenjskih testov), TASK 49 referenca analogična
+    41→- Priporočilo za zaključek issue #20: §4 ne smemo označiti kot "tehnično dokončan" v B2C obsegu — odkrito dokumentirati manjkajočo produkcijsko vejo /api/checkout + /api/bookings + webhook primerov; 501 varovalke so iskrene, a aktivacijska pot zahteva implementacijo, ne le ključe
+    42→
+    43→---
+    44→Task ID: 2-b (FAZA 2)
+    45→Agent: Z.ai Code (glavni) + Explore podagent (verifikacija §4/§9)
+    46→Task: Discover-Slovenia-AI — Issue #20 FAZA 2: §4 P0 lastni checkout (B2C) — implementacija tehnične aktivacijske poti + push 1.158.0 na main + poročilo na issue.
+    47→
+    48→Work Log:
+    49→- Neodvisna verifikacija FAZE 1 (podagent 2-a): trditev A (fail-closed 503/501, demo izrecen) POTRJENA; trditev »§4 tehnično dokončan« DELNO OVRSANA — /api/checkout in /api/bookings sta bila 501 TODO CELO s prisotnimi ključi (zaključeni samo B2B tokovi: subscription/sponsorship/commission); webhook brez primerov za Order/Booking; UI obljubljal nasprotno. §9: klient ne more ponarediti confirmed (POTRJENO), 14 (ne 13) statusov, payoutStatus brez runtime writerja (dokumentirano).
+    50→- Verifikacija produkcije: Render + Vercel oba 1.157.0, health ok (Render mrzli zagon ubešen z dvostopenjskim klicem); CI na d89f280 zelen.
+    51→- FAZA 2 implementacija (commit 9120d2c, 18 datotek, +1662/−100):
+    52→  * NOVO src/lib/marketplace-checkout.ts (pure: buildOrderCheckoutLineItems, validateMarketplacePayment P3b-6, resolveMarketplaceType, checkoutExpiresAt 60 min, orderItemsForStockRestore strogo, ORDER_/BOOKING_ACTIVE_STATUSES)
+    53→  * NOVO src/lib/marketplace-checkout-server.ts (releasePendingOrder PREKLIČI-NATO-SPROSTI zaloga+saleCount; releasePendingBooking prek statusa cancelled)
+    54→  * /api/checkout: produkcijska veja — atomarna pending rezervacija (dedup samo aktivne vrstice) → Stripe Checkout Session (payment mode, metadata marketplace_order, expires_at 60 min, uspeh/preklic na /trznica) → { url }; kompenzacija releasePendingOrder ob napaki seje; 503 brez ključa (prej 501)
+    55→  * /api/bookings: enako (pending ZASEDA kapaciteto prek TASK 33 koledarja; metadata marketplace_booking; /dozivetja URL-ji)
+    56→  * webhook: veji marketplace_order/marketplace_booking v checkout.session.completed (ZA constructEvent + P2002 dedup; preverba payment_status+zneska; pogojni prehodi pending→paid oz. pending→confirmed+paymentStatus paid; e-pošte; bookingCount) + NOVA primera checkout.session.expired in async_payment_failed (idempotentne sprostitve)
+    57→  * frontend: checkout-modal + experience-modal preusmeritev ob { url } (zgodovina + clearCart/atribucija); NOV PaymentReturnBanner pripet na /trznica + /dozivetja (izris samo ob ?placilo=)
+    58→  * dokumentacija: PRODUCTION-ACTIVATION-STATUS.md §3 prepisana (iskrena popravka oznake faze 1) + §9 regresija 4462; CHANGELOG 1.158.0; README (5 mest, 4413→4462, 13→14 statusov, plačilni razdelek); .env.example (webhook dogodki); production-matrix own note; PROVIDER-APPLICATIONS
+    59→  * NOVI testi: issue20-marketplace-checkout.test.ts (37: vedenjski + source-contract)
+    60→- Regresija: bun test 4462 (4461 pass + 1 znan DB-gated fail v peskovniku brez baze — issue7-g11, CI zelen z Postgresom), lint 0, tsc 0; skrivnosti v diffu: 0 (grep pregled)
+    61→- Commit 9120d2c pushan na main; CI run 36850465751 v teku; komentar FAZE 2 na issue #20 objavljen (issuecomment-5929689864)
+    62→
+    63→Stage Summary:
+    64→- §4 B2C aktivacijska pot ZAKLJUČENA: izdelki/izkušnje → pending rezervacija → Stripe seja → webhook (edini writer paid/confirmed) → sprostitve ob poteku → uporabniška potrditev; stanje iskreno NOT CONFIGURED do Stripe računa (čisto zunanje dejanje: račun + ključi + prijava webhook dogodkov)
+    65→- Odprta ostane: refund (charge.refunded) dokumentiran kot zunanja meja do aktivacije računa
+    66→- Čaka: CI zelen → deploja (Render AutoDeploy + Vercel) → verzija 1.158.0 na obeh → prod-monitor
+    67→- Varnost: žetona izpostavljena v pogovoru — uporabniku svetovana rotacija
+    68→
+    69→---
+    70→Task ID: 2-c (FAZA 2 zaključek)
+    71→Agent: Z.ai Code (glavni)
+    72→Task: Produkcijski smoke 1.158.0/1.158.1, TDZ popravek, čiščenje smok dokaza, Vercel catch-up deploy, dopolnilo na issue #20.
+    73→
+    74→Work Log:
+    75→- Produkcijski smoke na Render (1.158.0): veljaven izdelek → 500 (TDZ: dedupStatusFilter deklariran za prvim klicem findRecentDuplicate) → 1.158.1 (0cde09c): blok prestavljen pred dedup pre-check + 2 regresijska testov vrstnega reda; suite 4464, lint 0, tsc 0; CI zelen
+    76→- Ponovni smoke (1.158.1): 400/404 validacijska vrata ✅; veljaven izdelek → 200 demo:true — ugotovitev: produkcija ima IZRECNI DSA_DEMO_PAYMENTS=1 (Vercel env potrjen; STRIPE_SECRET_KEY NI nastavljen) → 503 se pokaže šele po umiku demo zastavice; ob dodaji ključa isStripeConfigured prevlada (testno zaklenjeno)
+    77→- Čiščenje: smok naročilo IF-2026-bdaa45c9d570 izbrisano iz produkcijske baze (Neon, poverilnica pridobljena iz Vercel env API, posamični endpoint decrypt), zaloga 40 + saleCount 0 povrnjena; začasni skript + poverilnica uničena; rep čist (git status prazen)
+    78→- Vercel: build za 0cde09c se ni sam sprožil → ročno zagnan prek API (repoId 1225489306, target production); obe produkciji zdaj 1.158.1
+    79→- Dopolnilo na issue #20 objavljeno (issuecomment-5930366601): smoke dokazi, TDZ popravek, demo-mode ugotovitev, transparentno čiščenje
+    80→
+    81→Stage Summary:
+    82→- FAZA 2 (1.158.0 + 1.158.1) zaključena: §4 B2C aktivacijska pot delujoča v produkciji (demo način), CI zelen, obe produkciji ≡ main 1.158.1
+    83→- Živi produkcijski smoke je ujel runtime regresijo, ki je pobegla tsc/lint/source-contract testom — dodana nova vrsta regresijskih vrat (vrstni red deklaracij)
+    84→- Issue #20: preostalo izključno zunanje (Stripe račun+ključi, affiliate prijave, partner žetoni, SendGrid) — tehnični obseg P0/P1/P2 izvedljivega je zaključen
+    85→- Varnost: oba žetona izpostavljena v pogovoru — uporabniku obvezno svetovana ROTACIJA
+    86→
+    87→---
+    88→Task ID: 2-a
+    89→Agent: Explore (Go Mode / GPS / navigacija)
+    90→Task: Issue #21 FAZA 1 — arhitekturna karta žive plasti (Go Mode, GPS, navigacija, voice) pred ARCHITECTURE DECISION. Brez sprememb kode.
+    91→Work Log:
+    92→- Prebral worklog (kontekst #20/#21) + struktura repo (src/app, src/lib/journey, src/components/sections)
+    93→- /na-poti: src/app/na-poti/page.tsx (99 vrstic, server komponenta TASK 64) → GoMode (src/components/sections/go-mode.tsx, 1280 vrstic) — edini potrošnik; /go NI stran ampak affiliate redirect API (src/app/go/[provider]/route.ts, 365 vrstic)
+    94→- use-geolocation.ts (107 vrstic): 6 stanj, watchPosition (high accuracy, timeout 10s, maximumAge 30s), error → clearWatch + denied/error, unmount cleanup, 0 persistenc
+    95→- go-persist.ts: ključa dai:go-trip (v1 TravelJourney + v2 MyTripView+shareId) in dai:go-progress (map ključ→ISO, max 200); validacija oblike; clear pobriše oba
+    96→- go-view.ts (390 vrstic): buildGoView čist gradilnik — pickActiveDay (danes→prvi prihodnji→zadnji pretekli→dan 1), next = PRVI neopravljeni PO VRSTNEM REDU načrta (ne najbližji!), haversine premica + bearingDeg/kardinal 8 sektorjev, countdown samo iz realnih HH:MM, dayOverride (§16 val 4)
+    97→- go-nav.ts (191 vrstic): geo: RFC 5870 (mobilni, pointer:coarse prestrežen ob kliku) + Google Maps dir URL (desktop, origin=živi GPS); brez geo → gumb NI (fail-closed)
+    98→- geo-distance.ts (en vir: R=6371, ROAD_FACTOR 1,3, 55 km/h) + road-routing.ts/server: OSRM SAMO ob generaciji načrta (/api/itinerary:732, refine:476, plan-check:107) → Itinerary.legs → Go Mode bere legFromPrev (0 klicev med vožnjo)
+    99→- go-weather.ts + /api/weather (rate limit 60/min, Open-Meteo, revalidate 600s): cilj = geo NASLEDNJEGA postanka; striktna validacija polj; 10-min refresh + AbortController + weatherFor skeleton
+   100→- go-audio.ts (367) + go-audio-button.tsx (223): Web Speech API, chunkNarration ≤960, določljivo iz dejstev + DESTINATIONS dataset (0 AI/omrežja — testno zaklenjeno), nearby ≤100 km/≤4 z izvzemom postankov ≤2 km, tekstovni padec brez TTS
+   101→- Offline: sw.js (sw3) — /na-poti + /en/na-poti v PLANS cache (40) ne SHELL (400); offline.html (742) bere dai:go-trip v1+v2, caches.match iskrena opomba; navigator.onLine samo v pwa-header-icons (globalni čip/toast)
+   102→- Vhodne točke: /potovanje (journey-planner:363-367,913), /nacrtuj (itinerary-planner:2050-2069,5547 + go_mode_started telemetrija), /pot/[shareId] (shared-trip:968-986), hub /moja-potovanja (goActive L245-248,370-395), navigacija/tabbar/footer
+   103→- Testi: 18 datotek; vedenjski (task64/65/67, w7-go-audio, issue4-wave2 §2, issue4-wave4 §16, task73 offline VM) + source-contract (task8-f2b/e/f3cd/f-homepage, issue16-f2/f4, fa-acceptance, w1-2b, w12, task8-f4e, issue3)
+   104→- POTRJENO MANJKA (grep dokazi): 0 geofence/arrival detection, 0 wake lock, 0 samodejni zagon GPS po refreshu (idle), 0 samodejna pripoved ob bližini, 0 PWA bližnjica na /na-poti (manifest samo nacrtuj/zemljevid/tržnica/destinacije), 0 auto-retry watchPositionja, timestamp fiksacije se ne preverja (samo maximumAge 30s)
+   105→Stage Summary:
+   106→- Živa plast je ČIST sloj nad localStorage (načrt na napravi) + brskalniškimi API-ji (Geolocation watchPosition, speechSynthesis) + enim živim API klicem (/api/weather) — 0 lastnega routinga (AGENTS.md §13 spoštovan)
+   107→- Naslednji postanek = prvi neopravljeni PO VRSTNEM REDU (ne po bližini); prihod se NE zazna (ni geofence) — opravljanje je izključno ročni gumb
+   108→- ETA = haversine ×1,3 pri 55 km/h s pošteno labelo; OSRM noge so zamrznjene ob generaciji načrta (Itinerary.legs), živa razdalja pa je premica — Issue #21 mora ohraniti kanon iskrenosti (NEZNANO ≠ izmislek)
+   109→- Za Issue #21 glavne vrzeli: arrival detection (geofence + avto-označitev), wake lock/hibernacija, persistent GPS privolitev po refreshu, proximity-based next-stop izbira ali vsaj opozorilo, samodejna glasovna pripoved ob prihodu, PWA shortcut, retry/backoff GPS
+   110→
+   111→---
+   112→Task ID: 2-b
+   113→Agent: Explore (My Trip / potovanja / planner)
+   114→Task: Issue #21 FAZA 1 — arhitekturna karta plasti konteksta poti (Moja pot, shranjena potovanja, planner, shared pot, Go Mode prenos) pred ARCHITECTURE DECISION. Samo branje/analiza, 0 sprememb kode.
+   115→
+   116→Work Log:
+   117→- Prebral worklog (kontekst #20/#21) + strukturo src/app, src/lib/journey, src/components
+   118→- Zbirka "Moja pot": src/lib/my-trip.ts (dai:my-trip-items, MyTripItem kind/refId, FIFO 200, handoff), use-my-trip.ts hook, my-trip-sync.ts (/api/my-trip union-merge + diff-sync), supply/my-trip-item.ts (supplyTripItem), add-to-trip-button.tsx (kanonski gumb, 21 površin)
+   119→- Hub: my-trip-view.tsx (/moja-potovanja + #moja-pot, goActive trak "Kam zdaj?"), moja-potovanja-view.tsx (gost=dai:my-trips lokalne karte → /pot/{shareId}; prijavljen=/api/user/trips), mobile-tab-bar.tsx sredinski zavihek z značko
+   120→- Planner: itinerary-planner.tsx (6044 vrstic — samo struktura: mount ?odpri=/heroQuery/lastItinerary, MY_TRIP_PREFILL_EVENT listener, handleSaveShare→saveItinerary+addSavedTrip, handleStartGoMode→buildItineraryGoView+saveItineraryGoTrip), planner-my-trip-strip.tsx (trak, prefill dogodek, toSelectionFromMyTrip), itinerary-share.ts (save/update/fetch + editToken)
+   121→- /potovanje: journey-planner.tsx (TravelJourney iz /api/journey/plan, izbire=ogledalo zbirke prek selection-mirror.ts reconcileSelectionFromCollection, write-through 767-774, startGoMode→saveGoTrip V1, handoff→dai:supply-selection)
+   122→- /pot/[shareId]: shared-trip-screen.tsx (RSC bere SavedItinerary direktno, isPublic vrata, views), shared-trip.tsx (TripForkButton "Shrani kot svojo kopijo", "Zaženi Na poti", "Odpri v načrtovalniku" → /?odpri=), + TripReservations/TripBudgetCard/TripDocumentsCard/TripGuide/TripPolls/TripSocial/TripDiary/TripPushCard/TripCollaboration/TripPresence
+   123→- Go Mode: go-persist.ts (dai:go-trip V1 TravelJourney+selectedIds / V2 MyTripView+shareId; dai:go-progress), go-view.ts (buildGoView — next stop = prvi NE-opravljeni po vrstnem redu, pickActiveDay po datumu/override), go-mode.tsx (hidracija, 0 odvisnosti od Moje poti — potrjeno z grepom), itinerary-go.ts (buildItineraryGoView — ključ `itin-d{N}-i{i}-{destId}`, geo=lastna→T1 fallback), go-nav.ts (geo:/Maps handoff), handoff-record.ts (recordExternalHandoff EXTERNAL)
+   124→- Rezervacije: journey/booking.ts (bookingCapabilityOf, 14 statusov), journey-trip.tsx (JourneyBooking prekrivka GET ?products&sessionKey=dsa_planner_sid + recordHandoff POST), trip-timeline.tsx (isti overlay v plannerju), trip-reservations.tsx (parse/import USER/IMPORTED/DRAFT), /api/journey/bookings; Go Mode NIMA booking overlayja (samo piše handoff)
+   125→- Modeli: prisma schema (SavedItinerary:100, UserTripItem:135, JourneyBooking:773), types.ts (LocationVisit booking_* polja 204-207, Itinerary.legs), journey/types.ts (JourneyProduct id=`provider:providerProductId`)
+   126→- Kanonična identiteta: issue17-canonical-add-identity.test.ts + chat-add-place.ts (T1→slug, OSM→`osm:node-X` pod kind product) — zbrana divergenca ID-jev čez plasti
+   127→- Testi: naštel ~25 relevantnih datotek s številom testov (task8-my-trip-core 17, f2a-sync 27, d-surfaces 24, issue16-f2-hub 13, f3-map-write-through 6, issue17-identity 11, f2c-fork 21, task64-go-mode 24, task73-offline 17, f2b-calm 6, task67-go-nav 37, task58-journey 26, task99-booking-lifecycle 38, …)
+   128→
+   129→Stage Summary:
+   130→- Obstajajo 4 LOČENE predstavitve poti: (1) zbirka MyTripItem (dai:my-trip-items — RAVEN SEZNAM brez dni/vrstnega reda/rezervacij, refId=slug ali `provider:productId`), (2) Itinerary (DayPlan/LocationVisit — planner + SavedItinerary DB + shared pot), (3) TravelJourney/JourneyProduct (/potovanje — lastna kategorijska struktura), (4) MyTripView/TripEntry (Go Mode + journey-trip prikaz). NI enotnega kanonskega modela cilja — identiteta se prevaja: supply id → refId (celoten niz) → provider+providerProductId (split) → destination_id (T1/osm sintetični) → GoTripEntry.key (SINTETIČNI pozicijski `itin-dN-iI-destId`)
+   131→- Go Mode je SAMOSTOJNA KOPIJA (snapshot): zapisan oblike "Zaženi Na poti" iz 3 vhodov (/nacrtuj v2+shareId opcijsko, /pot/[shareId] v2+shareId vedno, /potovanje v1). Ne bere dai:my-trip-items (0 uvozov), ne prejema posodobitev (planner edit/CAS PATCH na shranjeni poti ne osvežita dai:go-trip), done postanki (dai:go-progress) ne tečejo nazaj v načrt/pot
+   132→- Active/next stop ni persistiran — izračuna ga buildGoView ob vsakem tiku (prvi ne-opravljeni v vrstnem redu aktivnega dneva; aktivni dan po datumu ali ročni dayOverride); done stanje živi SAMO v dai:go-progress pod TripEntry.key
+   133→- Kontekst se prenaša: localStorage (5 ključev poti) + sessionStorage (handoff zastavica, supply-selection, heroQuery) + CustomEvent (dai:my-trip-prefill, dai:my-trip-changed, heroQuery, CHAT_ADD_PLACE) + URL (?odpri=, hash #moja-pot/#start-kjerkoli) + DB (SavedItinerary/UserTripItem/JourneyBooking)
+   134→- Rezervacije: JourneyBooking (14 statusov, sessionKey dsa_planner_sid efemerno / shareId po shranitvi) se prekrivno prikažejo v journey-trip + trip-timeline; Go Mode piše EXTERNAL handoff a NE prikazuje statusov nazaj; TripReservations na /pot omogoča uvoz (DRAFT/USER/IMPORTED)
+   135→- Vrzel za #21: My Trip ↔ Go Mode most je ENOSMEREN (zgolj "Kam zdaj?" link); ni kanoničnega prenosnega modela "Moja pot → Začni pot", ni sinhronizacije snapshot↔vir, Go Trip V2 nima contentVersion (stari snapshot po PATCHu poti), done-status se izgubi ob ponovnem zagonu z novim snapshotom (isti ključi vstopanj so pozicijski → reorder načrta razveljavi progress), MyTripItem nima dneva/vrstnega reda (za navigator bi ga bilo trebavesti ali dodati)
+   136→- Vsi ugotovki podprti z datoteko+vrstico v končnem poročilu; rep ni bil spremenjen (git status čist)
+   137→
+   138→---
+   139→Task ID: 2-c
+   140→Agent: Explore (podatkovni modeli / rezervacije / geo)
+   141→Task: Issue #21 FAZA 1 — arhitekturna karta podatkovne plasti (LIVE TRIP NAVIGATOR, raziskava pred ARCHITECTURE DECISION)
+   142→Work Log:
+   143→- Prebral worklog (issue #20 zaključen na 1.158.1, CI zelen) + docs/TRIP-DOMAIN-MAP.md (v1.92.0 predhodni audit — potrditev s sedanjim stanjem 1.158.1)
+   144→- Prisma schema (1266 vrst.): pot = SavedItinerary (JSON blob itinerary/formData, schema:100-127) + 11 satelitskih modelov ključanih na shareId; JourneyBooking (773-821) brez geo polj; geo SAMO na Listing.lat/lng (401-402) in Experience.lat/lng (548-549); NI modelov Journey/JourneyDay/JourneyStop/SavedTrip; 0 Prisma enumov (vse String + komentarji); brez DB CHECKConstraint
+   145→- JourneyBooking lifecycle: 14 statusov (types.ts:83-97, DRAFT dodan val 3), INITIAL_CONFIRMATION_STATUSES (123-128), ALLOWED_TRANSITIONS (booking.ts:160-206), validateConfirmationRecord (266-323); write poti: POST (samo začetni, S1 brez atestacij, route.ts:258+283-287), PATCH (JOURNEY_PROVIDER_TOKEN fail-closed 503 @420-429, timing-safe @435, CAS updateMany @485-496), import (source USER/IMPORTED, samo DRAFT/CONFIRMED @64); iskal "travelState|upcoming|navigating|arrived|skipped" po celotnem src → 0 pojmov travel state (zadetki so nepovezani: eventi/upcomingRevenue)
+   146→- Travel state danes = IZPELJAN, ne shranjen: GoDoneMap (entryKey→ISO, go-view.ts:39) v localStorage dai:go-progress (go-persist.ts:21, kapa 200); done/remaining izračuna buildGoView (256-348) čisto iz MyTripView + done map; TripItemStatus (trip-view.ts:31-38) je PRIKAZni status iz zmožnosti rezervacije, NE travel state
+   147→- Provider viri: ProviderProduct id = `${provider}:${providerProductId}` (supply/types.ts:164-165); own:{id} (own/adapter.ts:216+265), osm:{type}-{id} (osm-adapter.ts:226), fsq:{fsq_id} (fsq/mapper.ts:158); NI enotnega čez-vir ID-ja istega kraja — dedupeOnly local skupina (geohash7+tip+naslov, dedupe.ts:83-93+128-168), altSources se NE shranjuje (types.ts:224-227); resolucija: orchestrator.ts resolveDestination (276-290) / resolveOrigin (297-331, transfer-inventory→destinations→unresolved)
+   148→- Geo utils: geo-distance.ts (haversineKm:53, ROAD_FACTOR 1.3, 55 km/h — konsolidacija 11 podvojitev); geo-corridor.ts pointToSegmentKm; go-view bearingDeg (95-108)/cardinalLabel; validacija: listing-geo-validation.ts (±90/±180 + SI_BBOX hint, trda/mehka vrata), sanitize.ts:108-109 (klientov lat/lng), selection-verify.ts:44-67 (GEO_PLAUSIBILITY_BBOX SI+1,5°/2,0° — sicer geo ODSTRANJENO), own adapter fail-closed (201-210), go-nav isValidCoord (34-43), geo-validation coordsOfStop (199-212, (0,0) null-island); NI enega isValidCoordinate utila — kontekstualni validatorji; GeoPrecision = exact|city|destination_center|country|route (supply/types.ts:116-121) — NI oznak approximate/missing/invalid
+   149→- OSRM/route: brez DB modela — LegRoute km/min/source(osrm|heuristic)/geometry (road-routing.ts:57-69), ključ "idA|idB"; strežnik road-routing-server.ts: pomnilniški cache 24h/600 (44-46), circuit breaker 4→10min (75-93), router.project-osrm.org prek node:https family:4 (107-109+145-183), NaN/negativna varovalka (210-221); SAMO pari dataset destinacij (collectLegPairs 249-266 filtrira DESTINATION_COORDS — NE arbitrarni lat/lng supply postanki!); znano/neznano razkrito prek LegSource + RoutingMethod osrm|heuristic|mixed (legIndexMethod 108-119) v geoValidation.method/quality.routingMethod/Itinerary.legs (LegSummary brez geometrije, types.ts:375-379)
+   150→- Zasebnost: GPS SAMO klient (use-geolocation.ts watchPosition, "NE shranjuje sledi"); pozicija gre IZKLJUČNO v lokalni haversine/bearing, audio narracijo (go-audio:344 čisto) in origin param zunanjih nav URL (go-nav:98-113) — NIKOLI na naš strežnik; 0 reverse geocoding (nominatim 0 zadetkov); /api/weather?lat&lng (regex validacija route.ts:57-63, rate-limit 60/min, Open-Meteo proxy, 0 shranjevanja — Go Mode pošilja koordinate NASLEDNJEGA POSTANKA ne uporabnika, go-weather.ts:41-54); /api/supply/search + /api/map/pins sprejemata bbox viewporta (search.ts:177-188 validacija); DB lat/lng pišejo SAMO owner portali (partnerjev vnos); analytics = števci/enumeracije brez lat/lng/IP/UA (observability.ts:18-19+50-51, supply search route:124-133, planner-analytics props)
+   151→- Shranjena pot: SavedItinerary (DB, isPublic/contentVersion CAS/editTokenHash) je vir resnice; localStorage plasti: dai:my-trips (claim zgodovina), dai:my-trip-items (zbirka), dai:go-trip V1(journey)/V2(MyTripView+shareId most, go-persist.ts:43-50), dai:go-progress, dai:supply-selection (sessionStorage); done postanki se NIKOLI ne sinhronizirajo na strežnik
+   152→- Offline: SW (public/sw.js) — /api/itinerary/shared/* network-first+cache (193-214), /pot/*+/na-poti v PLANS cache 40 (81-91+278-302), OSM tiles 600 (218-230), /api/* sicer nikoli (249), offline.html samoizpolnitvena; go-audio = brskalniški speechSynthesis (0 omrežja)
+   153→- Testi podatkovne plasti (št. it/test stavkov): task58-journey 35, task99-booking-lifecycle 44, task81-journey-booking-migration 16, task100b 12, task99b-state-consolidation 37, geo-validation 52, task51-geo-coherence 47, task85-listing-geo-form 62, task87-experience-geo 45, hardening-selection-geo-plausibility 11, task51-routing-failure 18 (pravi TLS failure server fixture), issue4-wave6-route-regression 55, task64-go-mode 30, task67-go-nav 44, task65-go-weather 49, task66-trip-weather 61, task73-offline-gomode 20, task78-offline-days 19, issue4-wave4-offline 21, supply-contract 61, booking-adapter 34
+   154→- Rep čist (git status prazen), glava 0cde09c (1.158.1), NIČ nisem spreminjal
+   155→
+   156→Stage Summary:
+   157→- POT = SavedItinerary JSON + čiste izpeljane plasti; NI normaliziranih JourneyDay/JourneyStop modelov — vsak "stop" je LocationVisit z opcijskim lat/lng + booking_provider/product_id/url žetoni
+   158→- REZERVACIJSKI state (14 statusov JourneyBooking, strežniško avtoritativni) in TRAVEL state sta danes ČISTO ločena po nesreči: travel state NE OBSTAJA — Go Mode progres je le localStorage done-map na napravi (0 sinhronizacije, 0 multi-device, 0 strežniške zgodovine)
+   159→- Geo data contract: koordinate opcijske na vseh nivojih (Listing/Experience nullable, LocationVisit.lat/lng opcijsko, TripEntry.lat/lng opcijsko); validacija plastiasta (±90/±180 → SI plausibility → fail-closed adapter) brez enega utila; GeoPrecision obstaja samo na supply produktih (exact za OSM/FSQ/own), NI na postankih poti
+   160→- Route: OSRM noge samo med dataset destinacijami (38), pomnilniški cache, iskreno osrm|heuristic|mixed razkritje; Go Mode razdalja = premica (haversine) — NI vozne razdalje od uporabnikove pozicije
+   161→- Zasebnost: GPS nikoli ne zapusti naprave (razen origin param zunanjim navigacijskim aplikacijam) — močna osnova za Issue #21; kandidatne luknje za navigator: manjkajoči stop ID model, manjkajoči travel state, OSRM samo za dataset koordinate, done-progress nesinhroniziran, ni geofence/arrival detekcije
+   162→- Vsa priporočila so podprta z datoteko+vrstico v končnem poročilu; za ARCHITECTURE DECISION Issue #21 je karta popolna
+   163→
+   164→---
+   165→Task ID: 3 (#21 FAZA 1+2)
+   166→Agent: Z.ai Code (glavni) + 3 Explore podagenti (2-a/2-b/2-c)
+   167→Task: Discover-Slovenia-AI — Issue #21 (LIVE TRIP NAVIGATOR): FAZA 1 raziskava (3 vzporedne arhitekturne karte) + FAZA 2 implementacija jedra (travel state, arrival detection, stabilni ključi, preskok, GPS cikel, rezervacijska prekrivka) — commit 98bcbfa (1.159.0) LOKALNO.
+   168→
+   169→Work Log:
+   170→- Preverjeno stanje: GitHub main = 0cde09c (1.158.1), #20 tehnično zaključen (worklog 2-b/2-c); klon ohranjen na /home/z/Discover-Slovenia-AI; žetona NISTA več na voljo (truncirana v kontekstu) → push in komentar na issue NISTA mogoča brez ponovne delitve
+   171→- FAZA 1 (§23 zahtevana raziskava): 3 vzporedni Explore agenti — 2-a Go Mode/GPS/navigacija/voice (18 testnih datotek, ključna vrzel: arrival detection NE OBSTOJA, done = ročni kliki, GPS ignorira naslednjega), 2-b My Trip/potovanja/planner/shared (kanonični model cilja = 4 identitetne oblike; Go snapshot lastna kopija; pozicijski ključi itin-dN-iI krhki; Go Mode ne bere JourneyBooking), 2-c podatkovna plast (travel state ne obstaja nikjer; OSRM samo plan-time; GPS nikoli na strežnik; geo validacija plastiasta)
+   172→- ARCHITECTURE DECISION (10 vprašanj §23): TripEntry ostaja kanonični model; GPS v seji hooka; active stop čisto izpeljan; next = vrstni red načrta (GPS ne prerazporeja); arrival = classifyArrival (geofence accuracy-aware + hystereza + stabilnost); travel state NOVA plast ločena od rezervacij; offline = prihod je lokalni izračun; 0 sledi na disku; refresh = iskren ponovni zagon klasifikacije; divergenca = stabilni vsebinski ključi
+   173→- FAZA 2 implementacija (13 datotek, +2036/−24, commit 98bcbfa, verzija 1.159.0):
+   174→  * NOVO src/lib/journey/travel-state.ts — TravelStatus (7 stanj), classifyArrival (clamp(60, acc+10, 150)m + hystereza 75m + minStable 8s), resolveTravelStatus, positionAgeMs/isPositionStale, dvojezične oznake; 0 uvozov rezervacijskih modulov
+   175→  * go-view.ts — GoEntryCard.travel, view.skipped/positionStale/arrivalContext, buildGoView opts {skipped, arrivalContext}; naslednji dobi travel iz klasifikacije
+   176→  * go-persist.ts — GO_SKIPPED_KEY dai:go-skipped (load/save/clear, isti varnostni vzorec)
+   177→  * use-geolocation.ts — 1× auto-retry prehodnih napak (4s, ref indirekcija zaradi react-hooks/immutability), denied BREZ ponovitve, clearRetryTimer ob stop/unmount, uspeh resetira proračun
+   178→  * itinerary-go.ts — STABILNI VSEBINSKI KLJUČI itin-d{dan}-{slug(dest)} (+-2/-3 ponovitve); napredek preživi preureditev načrta; stari zapisi veljavni (ključi v shranjenem view)
+   179→  * go-audio.ts — fraze prihoda (near metre / arrived, SL+EN, deterministično)
+   180→  * go-mode.tsx — arrival trakova (role=status, izrecna ločitev GPS≠rezervacija), preskok (gumb + razdelek + Obnovi), zastarelost fiksacije, rezervacijska prekrivka SAMO BRANJE (GET /api/journey/bookings, isti kanal kot MOJA POT), zaključek ostaja izrecna uporabnikova potrditev
+   181→  * docs/LIVE-TRIP-NAVIGATOR.md — 10 odločitev, matrika napak §18 (20 vrstic), offline matrika, zasebnost, meje
+   182→  * testi: issue21-travel-state.test.ts (43) + issue21-go-travel.test.ts (38) — vedenjski + source-contract (ločitev rezervacij, SAMO-GET, ključna regresija preureditve ⑥/⑦)
+   183→- Regresija: bun test 4545 (4544 pass + 1 znan DB-gated fail issue7-g11 brez baze — CI-semantika), lint 0 (1 popravek immutability → ref indirekcija), tsc 0; skrivnosti v difu 0 (grep pregled)
+   184→
+   185→Stage Summary:
+   186→- Issue #21 FAZA jedra ZAKLJUČENA KODNO+TESTNO: travel state (7 stanj) + arrival detection (accuracy-aware geofence/hystereza/stabilnost) + preskok + stabilni ključi + GPS cikel + rezervacijska prekrivka (branje) + glasovne fraze; 81 novih testov, suite 4464 → 4545
+   187→- NADALJEVANJE potrebno: (a) PUSH na main + CI + deploja + komentar na issue #21 — ZHETON ZAHTEVAN (stari trunciran/izgubljen v kontekstu), (b) produkcijski smoke /na-poti na mobilni širini (agent-browser), (c) #22 Travel Guardian ima pripravljena vhoda (TravelStatus + ArrivalContext + rezervacijska prekrivka)
+   188→- Varnost: stara žetona (GitHub + Vercel) sta bila izpostavljena v pogovoru — uporabniku OBVEZNO svetovana ROTACIJA pred naslednjo delitvijo
+   189→
+   190→---
+   191→Task ID: 1
+   192→Agent: Z.ai Code (glavni agent)
+   193→Task: Obravnava odprtih GitHub issue-jev repozitorija markec12345678/Discover-Slovenia-AI (nadaljevanje analize iz prejšnje seje, ocena 7.5/10)
+   194→
+   195→Work Log:
+   196→- Preveril odprte issue-je prek GitHub HTML strani (unavtenticirano — API je bil rate-limited; repo je javen, žeton iz prejšnje seje NI bil uporabljen niti zapisan)
+   197→- Izluščil 4 odprte issue-je (#20–#23, vsi ustvarjeni 2026-10-01, avtor markec12345678) z vloženih React JSON podatkov
+   198→- Shranil polna telesa vseh 4 issue-jev v /tmp/issue_{20..23}_body.md in jih prebral v celoti
+   199→- Plitvo kloniral repozitorij (HEAD 1.158.1, +60 commitov zgodovine) — koda se je premaknila z 1.156.2 na 1.158.1
+   200→- Ugotovil: issue #20 je v teku (FAZA 1: lastna tržnica LIVE_DATA_VERIFIED; FAZA 2: B2C Stripe checkout aktivacijska pot zaključena; suite 4462 testov); #21–#23 še NIČ ni začeto (rg potrdil)
+   201→- Prebral docs/PRODUCTION-ACTIVATION-STATUS.md v celoti — matrika 16 ponudnikov: 4 ACTIVE, 1 CONFIGURED, 2 NOT CONFIGURED, 9 BLOCKED
+   202→- Analiziral temelje za #21: src/lib/journey/ (19 modulov, 4.596 vrstic), use-geolocation.ts (GPS hook, iskreni statusi, brez sledenja), go-persist.ts (dai:go-trip V1/V2 + dai:go-progress), booking.ts (state machine ConfirmationStatus z varovalkami), go-view.ts (buildGoView — NI arrival detekcije, samo razdalja/smER/ETA honesty)
+   203→- Sestavil odvisnostno verigo: #21 (temelj) → #22 (nadanjuje na #21) → #23 (usklajen z #21+#22); #20 preostanek = zunanji blokerji (Stripe račun, partnerski ključi)
+   204→
+   205→Stage Summary:
+   206→- 4 odprti issue-ji uspešno pridobljeni in analizirani; #20 tehnično v osnovi zaključen (zunanji blokerji), #21–#23 niso začeti
+   207→- Pripravljena priporočena obravnava: vrstni red #20-dokumentacija → #21 (LIVE TRIP NAVIGATOR, največja vrzel: arrival detection, active/next stop engine, canonical travel state) → #22 (TRAVEL GUARDIAN) → #23 (GUIDED PLATFORM EXPERIENCE)
+   208→- Osnutek ARCHITECTURE DECISION za #21 (10 vprašanj iz §23) izpeljan iz dejanske kode
+   209→- Varnost: GitHub/Vercel žetona nista bila uporabljena ali zapisana; uporabniku priporočena rotacija
+   210→
+   211→---
+   212→Task ID: 2
+   213→Agent: Z.ai Code (glavni agent)
+   214→Task: Izdelava implementacijskega načrta za Issue #21 (LIVE TRIP NAVIGATOR) — FAZA A ARCHITECTURE DECISION
+   215→
+   216→Work Log:
+   217→- Poglobil raziskavo dejanske kode: prebral v celoti types.ts (kanonski modeli JourneyProduct/TravelJourney/ConfirmationStatus), trip-view.ts (TripEntry/MyTripView — V2 kanonična oblika), go-view.ts (buildGoView — deterministični NOW&NEXT pogled), go-nav.ts (navigacijski handoff geo:/web URL), capabilities.ts (matrika zmožnosti), use-geolocation.ts + go-persist.ts (že prebrana)
+   218→- Ugotovil ključne vrzeli: arrival detekcija NE obstaja (samo razdalja/smer + iskrena opomba »neznan prihod«), ni active-stop engine-a, GPS hook brez stale detekcije, travel state = samo GoDoneMap
+   219→- Ugotovil ključne prednosti: ConfirmationStatus state machine (14 statusov, zaklenjeni prehodi), V2 persistenca = ISTA MyTripView oblika (0 divergence), navigacijski handoff fail-closed, čiste testirljive plasti
+   220→- Izdelal celovit implementacijski načrt: 10 arhitekturnih odločitev (odgovori na §23 vprašanja), 8 novih/razširjenih modulov, fazni načrt A–G z DoD, 5 tveganj z mitigacijami, skladnost s §22 pravili
+   221→- Shranil dokument: /home/z/my-project/agent-ctx/issue21-implementation-plan.md
+   222→
+   223→Stage Summary:
+   224→- Izdelan FAZA A deliverable za Issue #21: ARCHITECTURE DECISION + fazni načrt (A–G), popolnoma utemeljen na dejanski kodi (vse reference z datotekami in vrsticami)
+   225→- Ključne odločitve: TripEntry ostane kanonični model; NOVI TravelStatus (upcoming/active/navigating/near_destination/arrived/completed/skipped) strogo ločen od ConfirmationStatus; novi moduli travel-state.ts, active-stop-engine.ts, arrival-engine.ts, go-travel-persist.ts; nadgradnja use-geolocation (stale) in go-view (travel polje); prenova go-mode.tsx (1.279 vrstic) z razbitjem na subkomponente
+   226→- Ocena obsega: 7 faz, ~2–3 tedne pri dokumentiranem tempu agenta
+   227→- Dokument uporabljiv kot neposreden vhod za agenta lastnika repozitorija
+   228→
+   229→---
+   230→Task ID: issue21-plan
+   231→Agent: Z.ai Code (glavni)
+   232→Task: Izdelaj podroben implementacijski načrt za Issue #21 (LIVE TRIP NAVIGATOR) — arhitekturna odločitev + fazni načrt A–G, kot vhod za uporabnikovega AI agenta.
+   233→
+   234→Work Log:
+   235→- Ponovno preveril obstoj klonov: /tmp/Discover-Slovenia-AI (HEAD 1.158.1, 0cde09c) + vsa 4 telesa issue-jev nedotaknjena
+   236→- Re-verificiral ključna dejstva kode: use-geolocation.ts (106 vrstic, 6 statusov, session-only, BREZ stale detekcije/accuracy klasifikacije), go-view.ts (buildGoView, haversine premica izrecno NE vozna, BREZ arrival detekcije), booking.ts (ConfirmationStatus 14 stanj, ALLOWED_TRANSITIONS, EXTERNAL absorpcijsko), go-persist.ts (dai:go-trip V1/V2 + dai:go-progress GoDoneMap, max 200 ključev), go-nav.ts (geo:/web handoff, isCoarsePointer), selection-mirror.ts (reconcile vzorec), types.ts/trip-view.ts (JourneyProduct, TripEntry, buildMyTrip)
+   237→- Ugotovil: go-mode.tsx je 1.279-vrstični monolit (glavno tveganje faze E); test infrastruktura = bun test, brez Playwright (E2E po #20 vzorcu z agent-browserjem na produkciji); OSRM obstaja v road-routing.ts/geo-order.ts (planner plast), ne v Go Mode
+   238→- Napisal celovit načrt v /home/z/my-project/issue-21-implementation-plan.md (7 delov):
+   239→  - DEL 1: ARCHITECTURE DECISION — odgovori na vseh 10 vprašanj §23, vsak zasnovan na preverjeni kodi
+   240→  - DEL 2: faze A–G (A ADR; B tipi+geo pogodba+persistanca V3; C GPS v2 stale/accuracy; D live-stop engine+arrival z hysteresis; E Go Mode UX ZDAJ hierarhija z monolit strategijo; F offline matrika+privatnost+konsistenca; G regresija+produkcijski dokazi+status) z datotečnimi nalogami in testnimi zahtevami
+   241→  - DEL 3: matrika vseh 20 failure modes §18 (vedenje→UI→test)
+   242→  - DEL 4: 7 invariant prisiljenih s testi (GPS nikoli ne piše ConfirmationStatus; brez persistiranja GPS zgodovine; fail-closed geo; ...)
+   243→  - DEL 5: preslikava §24 dosežkov na faze
+   244→  - DEL 6: tveganja + ocena 12–18 agent-dni
+   245→  - DEL 7: pravila za agenta
+   246→- Ključne arhitekturne odločitve dokumentirane: LiveStop kot projekcija (ne vzporedni model); active stop se NE persistira (deterministični preračun iz pot+progress+now); TravelStatus ločen od ConfirmationStatus na tipovni ravni; GPS ostaja izključno v useGeolocation (nadgradnja v isti datoteki); enotna resolveStopGeo() resolucija za vse poglede
+   247→
+   248→Stage Summary:
+   249→- Dokumentiran izdelek: /home/z/my-project/issue-21-implementation-plan.md (~340 vrstic, slovenščina, neposreden vhod za AI agenta)
+   250→- Načrt temelji izključno na preverjeni kodi HEAD 1.158.1; bazna linija 4.462 testov
+   251→- Naslednji možni koraki za uporabnika: (a) predati načrt agentu za izvedbo #21, (b) #20 zunanja aktivacija (Stripe/Viator/affiliate — zunaj kode), (c) ostale izboljšave (čistitev git PNG zgodovine, razbitje monolitov)
+   252→- Opozorilo o varnosti ostaja: uporabnikova prejšnja GitHub + Vercel žetona sta bila izpostavljena v pogovoru — priporočena rotacija/odvzem; žetona nista bila uporabljena niti zapisana nikjer
+   253→
+   254→---
+   255→Task ID: competitive-analysis-1.160.0
+   256→Agent: Z.ai Code (glavni)
+   257→Task: "Analiziraj splet, analiziraj najboljše kaj imajo in naredi boljše kot imajo najboljši, delaj profesionalno" — spletna konkurenčna analiza trip plannerjev + implementacija 1.160.0 (dnevni pregled) v repozitorij Discover-Slovenia-AI.
+   258→
+   259→Work Log:
+   260→- SPLETNA RAZISKAVA (z-ai web_search, 12 poizvedb): najboljši trip plannerji 2025/2026 — Wanderlog (vizualni zemljevid, kolaboracija; slabosti: lag, offline = plačljiv Pro), TripIt (email agregacija; brez zemljevida/vodenja), Sygic (offline karte; naročnina, težki prenosi), Roadtrippers, Komoot, Polarsteps (continuous tracking = zasebnostno nasprotje), GYG/Viator (SI trg); Reddit boleče točke: "med potjo končam na Google Maps", AI planerji izmišljujejo detajle, clutter/missing features
+   261→- ODKRITJE: v /home/z/Discover-Slovenia-AI je obstajal NOVEJŠI klon z nepushanim commitom 98bcbfa (1.159.0, prejšnja seja — #21 jedro: travel-state.ts 332 vrstic z arrival histerezo, skip/restore, stabilni ključi, GPS retry, Go Mode arrival UX, 845 novih testov) — moj /tmp klon je bil zastarel; prenesen del na obstoječi klon
+   262→- BAZNA LINIJA 1.159.0: 4544 pass + 1 znana sandbox DB napaka (issue7-g11 ④, DATABASE_URL → nerelevantna SQLite; produkcija Neon)
+   263→- IMPLEMENTACIJA 1.160.0 (TASK 102 — ISSUE #21 §10/§12):
+   264→  - NOVO src/lib/journey/day-line.ts: GoDayLineItem (shema dneva) + buildDayMapUrl (Maps URL API s waypoints; fail-closed po postanku, strop 10, 0 besedila v URL) + dvojezične oznake
+   265→  - go-view.ts: NOVI polji line (projekcija celotnega dneva po vrstnem redu: done/skipped/current/arrived/upcoming + razdalja samo na trenutnem + geo prenos) in nextAfter (NASLEDNJE PO TEM)
+   266→  - NOVA komponenta go-day-line.tsx: horizontalna shema z a11y (role=list/listitem, aria-current=step, sr-only stanja, 44px targeti) + gumb "Odpri dan v zemljevidu"
+   267→  - go-mode.tsx: GoDayLine pod hero kartico + nextAfter trak na hero
+   268→  - fix: 2 tipovni napaki fixture-a iz 1.159.0 (issue21-go-travel.test — DayPlan.weather obvezen)
+   269→  - testi: task102-day-line.test.ts (22) — URL semantika (waypoint=prvi sidra začetek), strop 10, injekcijska varnost, vrstni red, stabilen arrival po minStableMs, nextAfter tok
+   270→  - docs/COMPETITIVE-ANALYSIS-TRIP-NAVIGATOR.md (celotna analiza z viri) + LIVE-TRIP-NAVIGATOR.md 1.160.0 odsek
+   271→- REGRESIJA: 4566 pass (4544 + 22), tsc 0, lint 0; commit 1.160.0 lokalno (ahead 2 — push NEUSPEL: ni poverilnic; izpostavljenih žetonov NISEM uporabil iz varnostnih razlogov)
+   272→- PREDOGLED (my-project): profesionalna analitska nadzorna plošča na / (src/app/page.tsx — 6 konkurentov, boleče točke, tab zmage/izenačitve, iskrene vrzeli, izvedba; smaragdna paleta, sticky footer, a11y) + metadata; agent-browser preverba: render ✓, tab interakcija ✓, mobile 390px + footer na dnu ✓, 0 napak v konzoli/dev.log; lint 0
+   273→
+   274→Stage Summary:
+   275→- Raziskava: 12 spletnih poizvedb → docs/COMPETITIVE-ANALYSIS-TRIP-NAVIGATOR.md (kaj imajo najboljši, njihove šibkosti, kje Discover vodi/izenačuje/zaostaja)
+   276→- Izvedba 1.160.0: SHEMA DNEVA (offline vizualni pregled — odgovor Wanderlogu brez paywalla) + ZEMLJEVID DNEVA (cel dan kot pot, Maps URL API) + NASLEDNJE PO TEM (§10/§12)
+   277→- Discoverovi aduti, ki jih NIHČE od najboljših nima: živi sopotnik z arrival detekcijo, GPS≠rezervacija, zasebnost GPS (seja), offline jedro brezplačno, determinizem, stabilni ključi
+   278→- stanje: 2 lokalna commita (1.159.0 + 1.160.0) pripravljena za push — uporabnik mora dati veljaven žeton ali potisniti sam (git push origin main)
+   279→- Varnost: izpostavljena GitHub/Vercel žetona NISTA uporabljena; ponovno priporočilo rotacije
+   280→
+   281→---
+   282→Task ID: 3
+   283→Agent: main (Z.ai Code)
+   284→Task: Tekmovanaliza spleta — kaj imajo najboljši potovalni aplikaciji in kako DSAI naredimo boljše od najboljših (naročilo: "analiziraj splet, analiziraj najboljse, kaj imajo in naredi boljse kot imajo najboljsi, delaj profesionalno"), odgovor na "kaj predlagas?"
+   285→
+   286→Work Log:
+   287→- Izvedel 6 spletnih iskanj (z-ai web_search CLI) v /tmp/comp_search/: landscape (najboljši plannerji 2025), Wanderlog, Sygic, AI plannerji (Layla/Mindtrip), uradne SI aplikacije, Live Activities + pritožbe uporabnikov (Reddit/App Store/Trustpilot).
+   288→- Sintetiziral kategorije zmagovalcev: Wanderlog (kolaborativno načrtovanje), TripIt (rezervacije — a razpadajoče), Roadtrippers (road trip, samo NA!, Autopilot™), Sygic (offline nav), Layla (AI+booking), Mindtrip (UX), uradne SI aplikacije (fragmentirane, brez AI).
+   289→- Prepoznal modri ocean: vsi optimizirajo PRED potovanje; "med potovanjem" izvedbeni sloj (živi itinerar, detekcija prihoda, zaklenjen zaslon) je popolnoma prazen pri vseh zmagovalcih — natančno #21→#22→#23.
+   290→- Zgradil 10-vrstično primerjalno matriko DSAI (danes/+#21–#23) vs. 6 zmagovalcev.
+   291→- Formuliral 6 potez za preseganje + 3 konkretne delte za #21 (D1 Live Activities karta, D2 offline-first izvedba, D3 navigacijski hand-off s pravim waypointom) + 4 anti-cilje.
+   292→- Celoten dokument shranil: /home/z/my-project/competitive-analysis-beat-the-best.md (v slovenščini, z dokazi iz virov).
+   293→
+   294→Stage Summary:
+   295→- Ključna ugotovitev: "najboljši" so vsi planning-first; nihče nima žive izvedbe itinerarja — DSAI #21 je že usklajen s tem modrim oceanom, dodati je treba le delte D1–D3.
+   296→- Konkurenčni aduti DSAI: regionalni jarek SI·HR·ME·AL (Roadtrippers ne pokriva Evrope), pošten statusni avtomat rezervacij (vs. TripIt krhkost), GPS-nikoli-ne-piše-statusa arhitektura.
+   297→- Priporočilo uporabniku: nadaljevati z izvedbo #21 po obstoječem načrtu + vplesti D1–D3; dokument competitive-analysis-beat-the-best.md + issue-21-implementation-plan.md skupaj = vhodni paket za agenta.
+   298→- Naslednji korak na čakanju uporabnika: začetek izvedbe #21 (faza A) ali druge smeri po želji.
+   299→
+   300→---
+   301→Task ID: 4
+   302→Agent: main (Z.ai Code)
+   303→Task: Izvedba #21 po odobritvi uporabnika ("odlično se strinjam začni") — faza 5: dopolnitev vrzeli po analizi stanja (1.159.0 + 1.160.0 sta že obstajala iz izgubljenega konteksta seje).
+   304→
+   305→Work Log:
+   306→- Preveril stanje: oba klona (home/z + /tmp) na istem HEAD d492ae8 (1.160.0); bazna linija 4566 pass + 1 znana sandbox DB napaka (issue7-g11 ④).
+   307→- Analiza vrzeli proti načrtu A–G in §24: manjkalo je §4 GEO POGODBA (GeoPrecision klasifikacija, vir, naslov), §6 razred natančnosti, §18-5 stale-arrival guard (zastarela fiksacija je LAHKO sprožila "Prišel si" — resna pomanjkljivost), §24-F3 konsistenčni test, delta D1 (wake lock).
+   308→- Implementacija 1.161.0 (commit 6d7b9e0, 21 datotek, +1317 vrstic):
+   309→  - NOVO src/lib/journey/resolve-stop-geo.ts: resolveStopGeo() (ena kanonska geo resnica; exact=samo own, approximate=zunanji poimenovani, missing/invalid fail-closed) + isNavigableGeo + STOP_GEO_LABELS
+   310→  - go-view.ts: geo projekcija na VSEH karticah (next/nextAfter/remaining/done/skipped), stale-arrival guard (arrivalPosition = null če >60s), positionAccuracyClass
+   311→  - travel-state.ts: AccuracyClass + accuracyClassOf (≤50 high / ≤200 medium / >200 low, null kadar neznano) + ACCURACY_CLASS_LABELS
+   312→  - go-mode.tsx: geo znacke (Preverjena/Približna lokacija), izrecna opomba kadar navigacija ni mogoča, razred natančnosti ob ±X m, wake lock indikator
+   313→  - NOVO src/lib/journey/use-wake-lock.ts: screen wake lock dokler GPS aktiven (W3C semantika, iskrena opustitev brez podpore)
+   314→  - 3 nove testne datoteke (stop-geo 15, wake-lock 10, consistency 6) + razširitve (go-travel ⑦/⑦b/⑨, travel-state 5b) = 42 novih testov
+   315→- Dokazi (agent-browser, next dev -p 3100): docs/evidence/issue21/ — 6 PNG: prazno stanje, geo znacke (vse tri resnice exact/approximate/missing), GPS prihod Bled (simuliran vtič — sandbox zavrne dovoljenje, pošteno dokumentirano v README), progresija Vintgar, brez-lokacije opomba, mobilni 390px; 0 konzolnih napak
+   316→- Regresija: 4608 pass (4566 + 42), lint 0, tsc 0; edini fail = znana sandbox DB odvisnost
+   317→- Dokumentacija: CHANGELOG 1.161.0, LIVE-TRIP-NAVIGATOR.md (odsek 1.161.0 + ZUNANJE MEJE osvežene — wake lock zdaj DELA, native Live Activities ostaja platformna meja)
+   318→
+   319→Stage Summary:
+   320→- #21 je sedaj funkcionalno POPOLN: vseh 16 §24 dostavljivcev pokritih (edino "production evidence" čaka na push — 3 lokalni commiti pripravljeni, push brez poverilnic nemogoč, izpostavljeni žetoni NE bodo uporabljeni)
+   321→- Ključne izboljšave te faze: §4 geo pogodba (iskrenejši od vseh konkurentov — Wanderlog ne ločuje exact/approximate), §18-5 stale guard (popravek resne pomanjkljivosti), wake lock (delta D1 — nihče od vodilčih nima), konsistenčni test (§19 dokaz)
+   322→- Napredek zaporedja: 1.158.1 → 1.159.0 (jedro) → 1.160.0 (dnevni pregled) → 1.161.0 (geo pogodba + wake lock)
+   323→- Naslednji koraki za uporabnika: (1) push 3 commitov (git push origin main), (2) produkcijski G2 dokazi na mobilni napravi, (3) issue #21 zaključek po §27 formatu, (4) nadaljevanje na #22 Travel Guardian
+   324→

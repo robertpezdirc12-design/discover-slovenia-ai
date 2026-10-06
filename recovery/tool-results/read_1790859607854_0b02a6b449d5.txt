@@ -1,0 +1,699 @@
+     1→"use client";
+     2→
+     3→import { useEffect, useState } from "react";
+     4→import Link from "next/link";
+     5→import { useRouter } from "next/navigation";
+     6→import { useLocale } from "next-intl";
+     7→import { signOut, useSession } from "next-auth/react";
+     8→import {
+     9→  Loader2,
+    10→  LogOut,
+    11→  Mail,
+    12→  Send,
+    13→  Map,
+    14→  CalendarDays,
+    15→  Eye,
+    16→  MessageSquareText,
+    17→  CheckCircle2,
+    18→  Clock,
+    19→  Sparkles,
+    20→  ArrowRight,
+    21→  HardDrive,
+    22→  CloudUpload,
+    23→} from "lucide-react";
+    24→
+    25→import { Button } from "@/components/ui/button";
+    26→import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+    27→import { Badge } from "@/components/ui/badge";
+    28→import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+    29→// TASK 8 / F3-B (D8-A P-STATE-2): družina stanj — LoadingState (2× pulse
+    30→// bloka + hardcoded aria oznaki sta zamenjana), ErrorState
+    31→// (destructive Alert) in EmptyState (lokalni klon poenoten, ISTO besedilo
+    32→// in akcije). Oznake nalaganja so L-pattern SL/EN (predpogoj F3-E).
+    33→import { LoadingState } from "@/components/states/loading-state";
+    34→import { ErrorState } from "@/components/states/error-state";
+    35→import { EmptyState } from "@/components/states/empty-state";
+    36→import { useToast } from "@/hooks/use-toast";
+    37→// FW2-C: lokalna zgodovina naročil/rezervacij (localStorage številke + javni
+    38→// lookup API-ji) — neodvisna od /api/user/trips, zato render tudi med nalaganjem.
+    39→import { MyOrdersSection } from "@/components/my-orders-section";
+    40→// TASK 4 / K-6 (UX FIX PASS): gostov pogled — LOKALNA potovanja (dai:my-trips)
+    41→// namesto login zida v zlati poti.
+    42→import { getSavedTrips, type TrackedTrip } from "@/lib/my-trips-storage";
+    43→// TASK 8 / D8-B §4: zbirka "Moja pot" (ADD sloj) — kanonski pogled nad
+    44→// dai:my-trip-items, skupen gostu in prijavljenemu uporabniku.
+    45→import { MyTripView } from "@/components/my-trip-view";
+    46→// TASK 8 / F2-A: pull sinhronizacija zbirke ob obisku (prijavljeni uporabnik)
+    47→import { syncMyTripToServer } from "@/lib/my-trip-sync";
+    48→
+    49→// ============================================================================
+    50→// /moja-potovanja — KLIENTNI pogled (TASK 8 / D8-E): vsebina strani brez
+    51→// lastnega headerja/noge — lupino (Navigation solid + Footer) izrisuje
+    52→// server ovoj page.tsx (Footer je async server komponenta). Račun akcije
+    53→// (Prijavi se / Račun / Odjavi se) so preložene v account vrstico znotraj
+    54→// vsebine (zero-loss).
+    55→// ============================================================================
+    56→// - Gost: lokalna potovanja (dai:my-trips) + ponudba računa
+    57→// - Verifikacijski banner (amber), če e-pošta ni potrjena + ponovno pošiljanje
+    58→// - "Shranjena potovanja": kartice itinererjev (ime, dnevi, datum, ogledi)
+    59→// - "Moje AI konzultacije": SAMO s potrjeno e-pošto (zasebni dostavni kanal)
+    60→// ============================================================================
+    61→// TASK 8 / F4-C (issue #8 — faza 4 "EN razširitev"): CELoten chrome strani
+    62→// je L-pattern dvojezičen (isti vzorec kot journey-planner / states družina
+    63→// / my-trip-view). SL ostaja privzeti jezik površine; EN pokrije naslove,
+    64→// account vrstico, gostov pogled, verifikacijski banner, kartice, števce,
+    65→// toaste in prazna stanja. Datotečni nizi (imena potovanj, vprašanja
+    66→// konzultacij, sporočila API-jev) prihajajo iz podatkov in ostanejo takšni,
+    67→// kot so jih zapisali uporabniki/strežnik.
+    68→// ============================================================================
+    69→
+    70→// === Odgovor GET /api/user/trips ===
+    71→interface TripItem {
+    72→  shareId: string;
+    73→  name: string | null;
+    74→  createdAt: string;
+    75→  views: number;
+    76→  dayCount: number;
+    77→}
+    78→
+    79→interface ConsultationItem {
+    80→  token: string;
+    81→  status: string;
+    82→  createdAt: string;
+    83→  questionPreview: string;
+    84→  deliveredAt: string | null;
+    85→}
+    86→
+    87→interface TripsResponse {
+    88→  trips: TripItem[];
+    89→  consultations: ConsultationItem[];
+    90→  emailVerified: boolean;
+    91→  user: { name: string | null; email: string };
+    92→}
+    93→
+    94→// F4-C: jezikovno zavesten format datuma (SL izhod nespremenjen — "sl-SI";
+    95→// EN dobi "en-GB" danev-mesec-leto, ista zgradba kot prej).
+    96→function formatDate(iso: string, lang: "sl" | "en"): string {
+    97→  try {
+    98→    return new Intl.DateTimeFormat(lang === "en" ? "en-GB" : "sl-SI", {
+    99→      day: "numeric",
+   100→      month: "long",
+   101→      year: "numeric",
+   102→    }).format(new Date(iso));
+   103→  } catch {
+   104→    return iso.slice(0, 10);
+   105→  }
+   106→}
+   107→
+   108→// TASK 8 / F4-C: L-pattern slovar celotnega chroma strani (SL privzet).
+   109→// Funkcijski listi pokrijejo slovensko množinsko logiko (1 načrt /
+   110→// 2–4 načrti / 5+ načrtov — ISTA pogojna kot prej, nič se ne spremeni)
+   111→// in angleško (1 plan / n plans).
+   112→const L = {
+   113→  title: { sl: "Moja potovanja", en: "My trips" },
+   114→  open: { sl: "Odpri", en: "Open" },
+   115→  errorTitle: { sl: "Napaka", en: "Error" },
+   116→  errors: {
+   117→    loadFailed: { sl: "Nalaganje ni uspelo.", en: "Loading failed." },
+   118→    sendFailed: { sl: "Pošiljanje ni uspelo.", en: "Sending failed." },
+   119→  },
+   120→  toast: {
+   121→    linkSent: { sl: "Povezava poslana", en: "Link sent" },
+   122→    checkInbox: {
+   123→      sl: "Preverite vaš e-poštni predal (tudi mapo neželena pošta).",
+   124→      en: "Check your inbox (including the spam folder).",
+   125→    },
+   126→    tryAgain: { sl: "Poskusite znova.", en: "Please try again." },
+   127→  },
+   128→  guest: {
+   129→    subtitleA: { sl: "Tvoji shranjeni načrti na", en: "Your saved plans live on" },
+   130→    subtitleStrong: { sl: "tej napravi", en: "this device" },
+   131→    subtitleB: { sl: "— brez računa.", en: "— no account needed." },
+   132→    signIn: { sl: "Prijavi se", en: "Sign in" },
+   133→    alertTitle: {
+   134→      sl: "Načrti so shranjeni na tej napravi",
+   135→      en: "Your plans are stored on this device",
+   136→    },
+   137→    alertText: {
+   138→      sl: "Deljive povezave so javne in delujejo povsod. Z računom pa se načrti ob prijavi samodejno prenesejo v tvoj profil — videti jih boš na vsaki napravi.",
+   139→      en: "Share links are public and work everywhere. With an account your plans sync into your profile at sign-in — you'll see them on every device.",
+   140→    },
+   141→    createAccount: { sl: "Ustvari račun", en: "Create an account" },
+   142→    onThisDevice: { sl: "na tej napravi", en: "on this device" },
+   143→  },
+   144→  user: {
+   145→    greeting: { sl: "Pozdravljeni,", en: "Welcome," },
+   146→    signOut: { sl: "Odjavi se", en: "Sign out" },
+   147→    account: { sl: "Račun", en: "Account" },
+   148→  },
+   149→  verify: {
+   150→    title: { sl: "Potrdite svojo e-pošto", en: "Confirm your email" },
+   151→    textA: {
+   152→      sl: "Potrdite svojo e-pošto, da vidite zgodovino konzultacij — na",
+   153→      en: "Confirm your email to see your consultation history — we've sent a link to",
+   154→    },
+   155→    textB: { sl: " ste prejeli povezavo.", en: "." },
+   156→    resend: { sl: "Pošlji povezavo znova", en: "Send the link again" },
+   157→  },
+   158→  trips: {
+   159→    heading: { sl: "Shranjena potovanja", en: "Saved trips" },
+   160→    count: {
+   161→      sl: (n: number) =>
+   162→        n === 1 ? `${n} načrt` : n < 5 ? `${n} načrti` : `${n} načrtov`,
+   163→      en: (n: number) => (n === 1 ? `${n} plan` : `${n} plans`),
+   164→    },
+   165→    days: {
+   166→      sl: (n: number) =>
+   167→        n === 1 ? `${n} dan` : n < 5 ? `${n} dnevi` : `${n} dni`,
+   168→      en: (n: number) => (n === 1 ? `${n} day` : `${n} days`),
+   169→    },
+   170→    views: {
+   171→      sl: (n: number) =>
+   172→        n === 1 ? `${n} ogled` : n < 5 ? `${n} ogledi` : `${n} ogledov`,
+   173→      en: (n: number) => (n === 1 ? `${n} view` : `${n} views`),
+   174→    },
+   175→    fallbackName: {
+   176→      sl: (d: string) => `Potovanje ${d}`,
+   177→      en: (d: string) => `Trip from ${d}`,
+   178→    },
+   179→    saved: {
+   180→      sl: (d: string) => `Shranjeno ${d}`,
+   181→      en: (d: string) => `Saved ${d}`,
+   182→    },
+   183→    emptyAction: { sl: "Načrtuj potovanje", en: "Plan a trip" },
+   184→    emptyGuestTitle: {
+   185→      sl: "Nimaš še shranjenih potovanj",
+   186→      en: "No saved trips yet",
+   187→    },
+   188→    emptyGuestDesc: {
+   189→      sl: "Načrtuj potovanje z AI načrtovalcem in ga shrani — pojavi se tukaj (na tej napravi).",
+   190→      en: "Plan a trip with the AI planner and save it — it shows up here (on this device).",
+   191→    },
+   192→    emptyTitle: {
+   193→      sl: "Nimate še shranjenih potovanj",
+   194→      en: "No saved trips yet",
+   195→    },
+   196→    emptyDesc: {
+   197→      sl: "Načrtujte potovanje z AI načrtovalcem in ga shranite — pojavi se tukaj.",
+   198→      en: "Plan a trip with the AI planner and save it — it shows up here.",
+   199→    },
+   200→  },
+   201→  consult: {
+   202→    heading: { sl: "Moje AI konzultacije", en: "My AI consultations" },
+   203→    count: {
+   204→      sl: (n: number) =>
+   205→        n === 1
+   206→          ? `${n} konzultacija`
+   207→          : n < 5
+   208→          ? `${n} konzultacije`
+   209→          : `${n} konzultacij`,
+   210→      en: (n: number) => (n === 1 ? `${n} consultation` : `${n} consultations`),
+   211→    },
+   212→    answered: { sl: "Odgovorjen", en: "Answered" },
+   213→    pending: { sl: "V pripravi", en: "In progress" },
+   214→    answeredOn: {
+   215→      sl: (d: string) => `Odgovorjen ${d}`,
+   216→      en: (d: string) => `Answered ${d}`,
+   217→    },
+   218→    answerByEmail: {
+   219→      sl: "Odgovor prispe na vašo e-pošto",
+   220→      en: "The answer will arrive by email",
+   221→    },
+   222→    emptyTitle: {
+   223→      sl: "Niste še oddali konzultacije",
+   224→      en: "No consultations yet",
+   225→    },
+   226→    emptyDesc: {
+   227→      sl: "Poiščite brezplačen nasvet lokalca — vpišite vprašanje in AI ekspert vam bo odgovoril po e-pošti.",
+   228→      en: "Get free local advice — ask a question and the AI expert will answer by email.",
+   229→    },
+   230→    emptyAction: { sl: "Brezplačna konzultacija", en: "Free consultation" },
+   231→  },
+   232→} as const;
+   233→
+   234→export function MojaPotovanjaView() {
+   235→  const router = useRouter();
+   236→  const { toast } = useToast();
+   237→  const { data: session, status } = useSession();
+   238→  // F4-C: jezik chroma (SL privzet — EN le, kadar locale zahteva; P4-8).
+   239→  const locale = useLocale();
+   240→  const lang: "sl" | "en" = locale === "en" ? "en" : "sl";
+   241→
+   242→  const [data, setData] = useState<TripsResponse | null>(null);
+   243→  const [loadError, setLoadError] = useState<string | null>(null);
+   244→  const [resending, setResending] = useState(false);
+   245→  // TASK 4 / K-6: gostova LOKALNA potovanja (hidrirajo se TEKOM mounta —
+   246→  // localStorage je klient-only, da ni hydration mismatcha).
+   247→  const [localTrips, setLocalTrips] = useState<TrackedTrip[] | null>(null);
+   248→
+   249→  const isUserSession =
+   250→    status === "authenticated" && session?.user?.accountType === "user";
+   251→
+   252→  // TASK 4 / K-6 (UX FIX PASS): NEPREUSMERJENI gost — prej je klik
+   253→  // "Moja potovanja" gosta vrgel na /prijava BREZ sporočila, da je pravkar
+   254→  // shranjen načrt DEJANSKO še dostopen (deljiva povezava + localStorage).
+   255→  // Prelom zlate poti točno pri MY TRIP (živi dokaz revizije, korak 10).
+   256→  // Zdaj: gost vidi SVOJA lokalna potovanja + iskreno ponudbo računa.
+   257→  // B2B seja še vedno nima kaj iskati tukaj — nazaj na domačo stran.
+   258→  useEffect(() => {
+   259→    if (
+   260→      status === "authenticated" &&
+   261→      session?.user?.accountType !== "user"
+   262→    ) {
+   263→      router.replace("/");
+   264→    }
+   265→  }, [status, session, router]);
+   266→
+   267→  // K-6: hidratacija lokalnih potovanj (samo gost — prijavljeni uporablja
+   268→  // strežniški seznam iz /api/user/trips + claim plast pri prijavi).
+   269→  useEffect(() => {
+   270→    if (isUserSession) return;
+   271→    const hydrate = setTimeout(() => setLocalTrips(getSavedTrips()), 0);
+   272→    return () => clearTimeout(hydrate);
+   273→  }, [isUserSession]);
+   274→
+   275→  // Nalaganje podatkov (samo za B2C sejo)
+   276→  useEffect(() => {
+   277→    if (!isUserSession) return;
+   278→    let cancelled = false;
+   279→
+   280→    // TASK 8 / F2-A: pull sinhronizacija zbirke "Moja pot" — prinese
+   281→    // predmete z drugih naprav (union-merge v localStorage; MyTripView se
+   282→    // osveži prek dogodka dai:my-trip-changed). Neblokirajoče + fail-open.
+   283→    void syncMyTripToServer();
+   284→
+   285→    fetch("/api/user/trips", { cache: "no-store" })
+   286→      .then(async (r) => {
+   287→        if (!r.ok) {
+   288→          const d = await r.json().catch(() => ({}));
+   289→          throw new Error(d?.error ?? L.errors.loadFailed[lang]);
+   290→        }
+   291→        return r.json() as Promise<TripsResponse>;
+   292→      })
+   293→      .then((d) => {
+   294→        if (!cancelled) setData(d);
+   295→      })
+   296→      .catch((e) => {
+   297→        if (!cancelled) {
+   298→          setLoadError(
+   299→            e instanceof Error ? e.message : L.errors.loadFailed[lang]
+   300→          );
+   301→        }
+   302→      });
+   303→
+   304→    return () => {
+   305→      cancelled = true;
+   306→    };
+   307→  }, [isUserSession, lang]);
+   308→
+   309→  // Ponovno pošiljanje verifikacijske povezave
+   310→  const resendVerification = async () => {
+   311→    setResending(true);
+   312→    try {
+   313→      const res = await fetch("/api/user/verify-email", {
+   314→        method: "POST",
+   315→        headers: { "Content-Type": "application/json" },
+   316→        body: JSON.stringify({ action: "request" }),
+   317→      });
+   318→      const d = await res.json().catch(() => ({}));
+   319→      if (!res.ok) throw new Error(d?.error ?? L.errors.sendFailed[lang]);
+   320→      toast({
+   321→        title: L.toast.linkSent[lang],
+   322→        description:
+   323→          d?.message ??
+   324→          L.toast.checkInbox[lang],
+   325→      });
+   326→    } catch (err) {
+   327→      toast({
+   328→        variant: "destructive",
+   329→        title: L.errorTitle[lang],
+   330→        description: err instanceof Error ? err.message : L.toast.tryAgain[lang],
+   331→      });
+   332→    } finally {
+   333→      setResending(false);
+   334→    }
+   335→  };
+   336→
+   337→  // Spinner SAMO med nalaganjem seje (gost ne čaka več na preusmeritev —
+   338→  // TASK 4 / K-6: takoj dobi svoj pogled). TASK 8 / F3-B: LoadingState
+   339→  // (block) — oznaka je L-pattern SL/EN (družinski privzetek).
+   340→  if (status === "loading" || (status === "authenticated" && !isUserSession)) {
+   341→    return (
+   342→      <main
+   343→        className="flex-1 flex items-center justify-center py-24"
+   344→        aria-busy="true"
+   345→      >
+   346→        <LoadingState variant="block" />
+   347→      </main>
+   348→    );
+   349→
+   350→  }
+   351→
+   352→  // TASK 4 / K-6: GOSTOV POGLED — lokalna potovanja te naprave + iskrena
+   353→  // ponudba računa (sinhronizacija). Ni login zida: načrti so DEJANSKO
+   354→  // dostopni (deljive povezave so javne; localStorage nosi seznam).
+   355→  if (!isUserSession) {
+   356→    const trips = localTrips ?? [];
+   357→    return (
+   358→      <main className="flex-1 flex flex-col bg-muted/30">
+   359→        <section className="flex-1 mx-auto w-full max-w-5xl px-4 py-8 sm:py-10">
+   360→          <h1 className="text-2xl font-bold sm:text-3xl">{L.title[lang]}</h1>
+   361→          <p className="mt-1 text-sm text-muted-foreground">
+   362→            {L.guest.subtitleA[lang]}{" "}
+   363→            <strong>{L.guest.subtitleStrong[lang]}</strong>{" "}
+   364→            {L.guest.subtitleB[lang]}
+   365→          </p>
+   366→
+   367→          {/* TASK 8 / D8-E: account vrstica — gumb "Prijavi se" preložen iz
+   368→              odstranjenega lastnega headerja (logotip → Navigation). */}
+   369→          <div className="mt-3">
+   370→            <Button asChild size="sm" className="gap-1.5 h-10">
+   371→              <Link href="/prijava">{L.guest.signIn[lang]}</Link>
+   372→            </Button>
+   373→          </div>
+   374→
+   375→          {/* Iskrena razlaga lokalnega shranjevanja + ponudba sinhronizacije */}
+   376→          <Alert className="mt-6 border-primary/30 bg-primary/5">
+   377→            <CloudUpload className="size-4 text-primary" aria-hidden="true" />
+   378→            <AlertTitle>{L.guest.alertTitle[lang]}</AlertTitle>
+   379→            <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+   380→              <span className="text-sm">
+   381→                {L.guest.alertText[lang]}
+   382→              </span>
+   383→              <Button asChild size="sm" className="gap-1.5 shrink-0">
+   384→                <Link href="/prijava">
+   385→                  {L.guest.createAccount[lang]}
+   386→                  <ArrowRight className="size-3.5" aria-hidden="true" />
+   387→                </Link>
+   388→              </Button>
+   389→            </AlertDescription>
+   390→          </Alert>
+   391→
+   392→          {/* TASK 8 / D8-B: zbirka "Moja pot" — odkrivanje → dodaj → nadaljuj */}
+   393→          <MyTripView className="mt-8" />
+   394→
+   395→          {/* Lokalna potovanja (iste kartice kot prijavljeni) */}
+   396→          <section aria-labelledby="lokalna-potovanja" className="mt-8">
+   397→            <div className="flex items-center justify-between gap-3">
+   398→              <h2
+   399→                id="lokalna-potovanja"
+   400→                className="flex items-center gap-2 text-lg font-semibold"
+   401→              >
+   402→                <HardDrive className="size-5 text-primary" aria-hidden="true" />
+   403→                {L.trips.heading[lang]}
+   404→              </h2>
+   405→              <Badge variant="secondary">
+   406→                {L.trips.count[lang](trips.length)}
+   407→              </Badge>
+   408→            </div>
+   409→
+   410→            {localTrips === null ? (
+   411→              /* TASK 8 / F3-B: skeleton vrstice družine (status nosi vrstica,
+   412→                  skeleti so dekorativni) — prej pulse bloki s hardcoded
+   413→                  slovensko aria oznako. */
+   414→              <LoadingState variant="block" rows={2} className="mt-4 items-stretch" />
+   415→            ) : trips.length === 0 ? (
+   416→              <EmptyState
+   417→                icon={Map}
+   418→                title={L.trips.emptyGuestTitle[lang]}
+   419→                description={L.trips.emptyGuestDesc[lang]}
+   420→                action={{ label: L.trips.emptyAction[lang], href: "/nacrtuj" }}
+   421→                className="mt-4"
+   422→              />
+   423→            ) : (
+   424→              <ul className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+   425→                {trips.map((trip) => (
+   426→                  <li key={trip.shareId}>
+   427→                    <Card className="h-full transition-shadow hover:shadow-md">
+   428→                      <CardHeader className="pb-2">
+   429→                        <CardTitle className="text-base line-clamp-1">
+   430→                          {trip.name ??
+   431→                            L.trips.fallbackName[lang](
+   432→                              formatDate(trip.savedAt, lang)
+   433→                            )}
+   434→                        </CardTitle>
+   435→                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+   436→                          <span className="inline-flex items-center gap-1">
+   437→                            <HardDrive className="size-3.5" aria-hidden="true" />
+   438→                            {L.guest.onThisDevice[lang]}
+   439→                          </span>
+   440→                        </div>
+   441→                      </CardHeader>
+   442→                      <CardContent className="flex items-center justify-between gap-3 pt-0">
+   443→                        <span className="text-xs text-muted-foreground">
+   444→                          {L.trips.saved[lang](formatDate(trip.savedAt, lang))}
+   445→                        </span>
+   446→                        <Button asChild size="sm" className="gap-1.5 shrink-0">
+   447→                          <Link href={`/pot/${trip.shareId}`}>
+   448→                            {L.open[lang]}
+   449→                            <ArrowRight className="size-3.5" aria-hidden="true" />
+   450→                          </Link>
+   451→                        </Button>
+   452→                      </CardContent>
+   453→                    </Card>
+   454→                  </li>
+   455→                ))}
+   456→              </ul>
+   457→            )}
+   458→          </section>
+   459→        </section>
+   460→      </main>
+   461→    );
+   462→  }
+   463→
+   464→  const userName = session?.user?.name ?? data?.user.name ?? data?.user.email;
+   465→  const emailVerified = data?.emailVerified ?? false;
+   466→
+   467→  return (
+   468→    <main className="flex-1 flex flex-col bg-muted/30">
+   469→      {/* Vsebina */}
+   470→      <section className="flex-1 mx-auto w-full max-w-5xl px-4 py-8 sm:py-10">
+   471→        <h1 className="text-2xl font-bold sm:text-3xl">
+   472→          {L.title[lang]}
+   473→        </h1>
+   474→        <p className="mt-1 text-sm text-muted-foreground">
+   475→          {L.user.greeting[lang]} <strong>{userName}</strong>!
+   476→        </p>
+   477→
+   478→        {/* TASK 8 / D8-E: account vrstica — "Odjavi se" + "Račun" preložena
+   479→            iz odstranjenega lastnega headerja (logotip → Navigation; e-pošta
+   480→            ostaja v pozdravu + verifikacijskem bannerju). Zero-loss. */}
+   481→        <div className="mt-3 flex flex-wrap items-center gap-3">
+   482→          <Button
+   483→            variant="outline"
+   484→            size="sm"
+   485→            className="gap-1.5 h-10"
+   486→            onClick={() => void signOut({ callbackUrl: "/" })}
+   487→          >
+   488→            <LogOut className="size-4" aria-hidden="true" />
+   489→            {L.user.signOut[lang]}
+   490→          </Button>
+   491→          <Link
+   492→            href="/prijava"
+   493→            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+   494→          >
+   495→            {L.user.account[lang]}
+   496→          </Link>
+   497→        </div>
+   498→
+   499→        {/* Verifikacijski banner */}
+   500→        {data && !emailVerified && (
+   501→          <Alert className="mt-6 border-amber-300/60 bg-amber-50 dark:bg-amber-950/20">
+   502→            <Mail className="size-4 text-amber-600" aria-hidden="true" />
+   503→            <AlertTitle>{L.verify.title[lang]}</AlertTitle>
+   504→            <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+   505→              <span className="text-sm">
+   506→                {L.verify.textA[lang]}{" "}
+   507→                <strong>{data.user.email}</strong>
+   508→                {L.verify.textB[lang]}
+   509→              </span>
+   510→              <Button
+   511→                size="sm"
+   512→                onClick={resendVerification}
+   513→                disabled={resending}
+   514→                className="gap-1.5 shrink-0"
+   515→              >
+   516→                {resending ? (
+   517→                  <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+   518→                ) : (
+   519→                  <Send className="size-3.5" aria-hidden="true" />
+   520→                )}
+   521→                {L.verify.resend[lang]}
+   522→              </Button>
+   523→            </AlertDescription>
+   524→          </Alert>
+   525→        )}
+   526→
+   527→        {/* Napaka nalaganja — TASK 8 / F3-B: ErrorState (destructive) z
+   528→            istim naslovom „Napaka" in istim sporočilom (brez ponovitve —
+   529→            enako vedenje kot prej, samo enotna slovnica). */}
+   530→        {loadError && (
+   531→          <ErrorState message={loadError} title={L.errorTitle[lang]} className="mt-6" />
+   532→        )}
+   533→
+   534→        {/* Skeleton nalaganja — TASK 8 / F3-B: LoadingState (rows=2),
+   535→            prej pulse bloka s hardcoded slovensko aria oznako. */}
+   536→        {!data && !loadError && (
+   537→          <LoadingState variant="block" rows={2} className="mt-6 items-stretch" />
+   538→        )}
+   539→
+   540→        {/* TASK 8 / D8-B: zbirka "Moja pot" — odkrivanje → dodaj → nadaljuj */}
+   541→        <MyTripView className="mt-8" />
+   542→
+   543→        {data && (
+   544→          <div className="mt-8 space-y-10">
+   545→            {/* === SHRANJENA POTOVANJA === */}
+   546→            <section aria-labelledby="shr-potovanja">
+   547→              <div className="flex items-center justify-between gap-3">
+   548→                <h2
+   549→                  id="shr-potovanja"
+   550→                  className="flex items-center gap-2 text-lg font-semibold"
+   551→                >
+   552→                  <Map className="size-5 text-primary" aria-hidden="true" />
+   553→                  {L.trips.heading[lang]}
+   554→                </h2>
+   555→                <Badge variant="secondary">
+   556→                  {L.trips.count[lang](data.trips.length)}
+   557→                </Badge>
+   558→              </div>
+   559→
+   560→              {data.trips.length === 0 ? (
+   561→                <EmptyState
+   562→                  icon={Map}
+   563→                  title={L.trips.emptyTitle[lang]}
+   564→                  description={L.trips.emptyDesc[lang]}
+   565→                  action={{ label: L.trips.emptyAction[lang], href: "/nacrtuj" }}
+   566→                  className="mt-4"
+   567→                />
+   568→              ) : (
+   569→                <ul className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+   570→                  {data.trips.map((trip) => (
+   571→                    <li key={trip.shareId}>
+   572→                      <Card className="h-full transition-shadow hover:shadow-md">
+   573→                        <CardHeader className="pb-2">
+   574→                          <CardTitle className="text-base line-clamp-1">
+   575→                            {trip.name ??
+   576→                              L.trips.fallbackName[lang](
+   577→                                formatDate(trip.createdAt, lang)
+   578→                              )}
+   579→                          </CardTitle>
+   580→                          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+   581→                            <span className="inline-flex items-center gap-1">
+   582→                              <CalendarDays className="size-3.5" aria-hidden="true" />
+   583→                              {L.trips.days[lang](trip.dayCount)}
+   584→                            </span>
+   585→                            <span className="inline-flex items-center gap-1">
+   586→                              <Eye className="size-3.5" aria-hidden="true" />
+   587→                              {L.trips.views[lang](trip.views)}
+   588→                            </span>
+   589→                          </div>
+   590→                        </CardHeader>
+   591→                        <CardContent className="flex items-center justify-between gap-3 pt-0">
+   592→                          <span className="text-xs text-muted-foreground">
+   593→                            {L.trips.saved[lang](formatDate(trip.createdAt, lang))}
+   594→                          </span>
+   595→                          <Button asChild size="sm" className="gap-1.5 shrink-0">
+   596→                            <Link href={`/pot/${trip.shareId}`}>
+   597→                              {L.open[lang]}
+   598→                              <ArrowRight className="size-3.5" aria-hidden="true" />
+   599→                            </Link>
+   600→                          </Button>
+   601→                        </CardContent>
+   602→                      </Card>
+   603→                    </li>
+   604→                  ))}
+   605→                </ul>
+   606→              )}
+   607→            </section>
+   608→
+   609→            {/* === MOJE AI KONZULTACIJE (samo potrjena e-pošta) === */}
+   610→            {emailVerified && (
+   611→              <section aria-labelledby="moje-konzultacije">
+   612→                <div className="flex items-center justify-between gap-3">
+   613→                  <h2
+   614→                    id="moje-konzultacije"
+   615→                    className="flex items-center gap-2 text-lg font-semibold"
+   616→                  >
+   617→                    <MessageSquareText className="size-5 text-primary" aria-hidden="true" />
+   618→                    {L.consult.heading[lang]}
+   619→                  </h2>
+   620→                  <Badge variant="secondary">
+   621→                    {L.consult.count[lang](data.consultations.length)}
+   622→                  </Badge>
+   623→                </div>
+   624→
+   625→                {data.consultations.length === 0 ? (
+   626→                  <EmptyState
+   627→                    icon={Sparkles}
+   628→                    title={L.consult.emptyTitle[lang]}
+   629→                    description={L.consult.emptyDesc[lang]}
+   630→                    action={{ label: L.consult.emptyAction[lang], href: "/#vprasi-lokalca" }}
+   631→                    className="mt-4"
+   632→                  />
+   633→                ) : (
+   634→                  <ul className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+   635→                    {data.consultations.map((c) => (
+   636→                      <li key={c.token}>
+   637→                        <Card className="h-full transition-shadow hover:shadow-md">
+   638→                          <CardHeader className="pb-2">
+   639→                            <div className="flex items-center justify-between gap-2">
+   640→                              {c.status === "delivered" ? (
+   641→                                <Badge className="gap-1 border-emerald-300/60 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800">
+   642→                                  <CheckCircle2 className="size-3" aria-hidden="true" />
+   643→                                  {L.consult.answered[lang]}
+   644→                                </Badge>
+   645→                              ) : (
+   646→                                <Badge variant="outline" className="gap-1 text-amber-700 dark:text-amber-400">
+   647→                                  <Clock className="size-3" aria-hidden="true" />
+   648→                                  {L.consult.pending[lang]}
+   649→                                </Badge>
+   650→                              )}
+   651→                              <span className="text-xs text-muted-foreground">
+   652→                                {formatDate(c.createdAt, lang)}
+   653→                              </span>
+   654→                            </div>
+   655→                          </CardHeader>
+   656→                          <CardContent className="pt-0">
+   657→                            <p className="text-sm text-muted-foreground line-clamp-2">
+   658→                              {c.questionPreview}
+   659→                              {(c.questionPreview ?? "").length >= 140 ? "…" : ""}
+   660→                            </p>
+   661→                            <div className="mt-3 flex items-center justify-between gap-3">
+   662→                              <span className="text-xs text-muted-foreground">
+   663→                                {c.status === "delivered" && c.deliveredAt
+   664→                                  ? L.consult.answeredOn[lang](
+   665→                                      formatDate(c.deliveredAt, lang)
+   666→                                    )
+   667→                                  : L.consult.answerByEmail[lang]}
+   668→                              </span>
+   669→                              <Button asChild size="sm" className="gap-1.5 shrink-0">
+   670→                                <Link href={`/konzultacija/${c.token}`}>
+   671→                                  {L.open[lang]}
+   672→                                  <ArrowRight className="size-3.5" aria-hidden="true" />
+   673→                                </Link>
+   674→                              </Button>
+   675→                            </div>
+   676→                          </CardContent>
+   677→                        </Card>
+   678→                      </li>
+   679→                    ))}
+   680→                  </ul>
+   681→                )}
+   682→              </section>
+   683→            )}
+   684→          </div>
+   685→        )}
+   686→        {/* === MOJA NAROČILA IN REZERVACIJE (FW2-C — lokalna zgodovina) === */}
+   687→        <div className="mt-10">
+   688→          <MyOrdersSection defaultEmail={session?.user?.email ?? ""} />
+   689→        </div>
+   690→      </section>
+   691→    </main>
+   692→  );
+   693→}
+   694→
+   695→/* ====================== PRAZNO STANJE ======================
+   696→ * TASK 8 / F3-B: lokalni klon EmptyState je ODSTRANJEN — površina
+   697→ * uporablja družinsko komponento @/components/states/empty-state
+   698→ * (isto besedilo, iste akcije, enotna črtkasta slovnika + CTA ≥44px). */
+   699→

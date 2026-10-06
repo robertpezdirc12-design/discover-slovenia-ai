@@ -1,0 +1,1142 @@
+     1→"use client";
+     2→
+     3→import { useCallback, useEffect, useMemo, useState } from "react";
+     4→import { useLocale } from "next-intl";
+     5→import {
+     6→  BookOpen,
+     7→  Loader2,
+     8→  MapPin,
+     9→  NotebookPen,
+    10→  Pencil,
+    11→  Plus,
+    12→  Star,
+    13→  Trash2,
+    14→  X,
+    15→} from "lucide-react";
+    16→import { Button } from "@/components/ui/button";
+    17→import { Card, CardContent } from "@/components/ui/card";
+    18→import { Input } from "@/components/ui/input";
+    19→import {
+    20→  Select,
+    21→  SelectContent,
+    22→  SelectItem,
+    23→  SelectTrigger,
+    24→  SelectValue,
+    25→} from "@/components/ui/select";
+    26→import { Textarea } from "@/components/ui/textarea";
+    27→import { useToast } from "@/hooks/use-toast";
+    28→import { cn } from "@/lib/utils";
+    29→// 99-b: anonimni clientId + prihranjeno ime — deljena knjižnica
+    30→// (enkraten vir ključev; prej duplicirana v 4 socialnih komponentah)
+    31→import {
+    32→  getVoterId,
+    33→  getAuthorName,
+    34→  saveAuthorName,
+    35→} from "@/lib/client-identity";
+    36→
+    37→// TASK 8 / F3-B: hydration placeholder v L-pattern (SL/EN — D8-A §13
+    38→// „Nalagam…" uhodi so trdi predpogoj za F3-E EN razširitev).
+    39→// ISSUE #24 Sklop 1 (1.164.0): L-vzorec {sl,en} razširjen na celo komponento — prej SL-only (samo nalagalni placeholder)
+    40→// (prejšnja per-ključ oblika placeholderja, iz katere je zrasel ta slovar:
+    41→//   loadingDiary: { sl: "Nalagam dnevnik …", en: "Loading diary …" })
+    42→const L = {
+    43→  sl: {
+    44→    loadingDiary: "Nalagam dnevnik …",
+    45→    heading: "Potni dnevnik",
+    46→    close: "Zapri",
+    47→    addMemory: "Zapiši spomin",
+    48→    cardIntro:
+    49→      "Skupni dnevnik vašega potovanja: vsak član lahko zapiše spomin iz določenega dne, doda kraj in oceno. Ko se poslavlja od vas,",
+    50→    cardPrintStrong: "natisnite stran",
+    51→    cardOutro:
+    52→      "(gumb zgoraj) — dnevnik je del PDF-ja, vaš papirnati spominskat. Zavestno brez fotografij: vaše slike ostanejo pri vas.",
+    53→    dayLabel: "Dan",
+    54→    selectDayAria: "Izberi dan",
+    55→    generalOption: "Splošno (brez dneva)",
+    56→    placeLabel: "Kraj",
+    57→    optionalSuffix: "(opcijsko)",
+    58→    placePlaceholder: "npr. Blejski otok",
+    59→    ratingLabel: "Ocena",
+    60→    clearRating: "Počisti",
+    61→    memoryLabel: "Spomin",
+    62→    memoryPlaceholder: "Kaj se je zgodilo, da si ga boš želel-a zapomniti?",
+    63→    nameLabel: "Tvoje ime",
+    64→    nameOptional: "(opcijsko — vidno ob vpisu)",
+    65→    namePlaceholder: "npr. Ana",
+    66→    entryHint: "Vpis lahko kasneje urejaš ali izbrišeš (isti brskalnik).",
+    67→    saving: "Zapisujem…",
+    68→    emptyDiary: "Dnevnik je še prazen — zapiši prvi spomin in povabi ostale.",
+    69→    generalMemories: "Splošni spomini",
+    70→    // Vnos (EntryCard)
+    71→    anonymousAuthor: "Anonimni popotnik",
+    72→    editMemoryAria: "Uredi spomin",
+    73→    cancel: "Prekliči",
+    74→    save: "Shrani",
+    75→    edit: "Uredi",
+    76→    delete: "Izbriši",
+    77→    edited: "Urejeno",
+    78→    // Zvezdice (Stars)
+    79→    starsLabel: (n: number) =>
+    80→      `Ocena: ${n} ${slUnit(n, "zvezdica", "zvezdici", "zvezdice", "zvezdic")}`,
+    81→    noRating: "Brez ocene",
+    82→    rateLabel: (n: number) =>
+    83→      `Oceni z ${n} ${slUnit(n, "zvezdico", "zvezdicama", "zvezdicami", "zvezdicami")}`,
+    84→    // Toasti (validacija + optimistični tok)
+    85→    errTextTitle: "Spomin ni primeren",
+    86→    errTextDesc: (n: number) =>
+    87→      `Besedilo mora imeti med ${TEXT_MIN} in ${TEXT_MAX} znakov (dobljenih ${n}).`,
+    88→    errPlaceTitle: "Kraj je predolg",
+    89→    errPlaceDesc: () => `Kraj je lahko dolg največ ${PLACE_MAX} znakov.`,
+    90→    errNameTitle: "Ime je predolgo",
+    91→    errNameDesc: () => `Ime je lahko dolgo največ ${AUTHOR_NAME_MAX} znakov.`,
+    92→    okSavedTitle: "Spomin je zapisan",
+    93→    errSaveTitle: "Spomina ni bilo mogoče zapisati",
+    94→    tryAgain: "Poskusi znova.",
+    95→    errShortTitle: "Spomin je prekratek",
+    96→    errShortDesc: () => `Vsaj ${TEXT_MIN} znakov.`,
+    97→    okUpdatedTitle: "Spomin je posodobljen",
+    98→    errEditTitle: "Urejanje ni uspelo",
+    99→    okDeletedTitle: "Spomin je izbrisan",
+   100→    errDeleteTitle: "Brisanje ni uspelo",
+   101→  },
+   102→  en: {
+   103→    loadingDiary: "Loading diary …",
+   104→    heading: "Travel diary",
+   105→    close: "Close",
+   106→    addMemory: "Add a memory",
+   107→    cardIntro:
+   108→      "Your trip's shared diary: every member can record a memory from a specific day, add a place and a rating. As your trip draws to a close,",
+   109→    cardPrintStrong: "print the page",
+   110→    cardOutro:
+   111→      "(button above) — the diary is part of the PDF, your paper memory book. Deliberately no photos: your pictures stay with you.",
+   112→    dayLabel: "Day",
+   113→    selectDayAria: "Select day",
+   114→    generalOption: "General (no day)",
+   115→    placeLabel: "Place",
+   116→    optionalSuffix: "(optional)",
+   117→    placePlaceholder: "e.g. Bled Island",
+   118→    ratingLabel: "Rating",
+   119→    clearRating: "Clear",
+   120→    memoryLabel: "Memory",
+   121→    memoryPlaceholder: "What happened that you'll want to remember?",
+   122→    nameLabel: "Your name",
+   123→    nameOptional: "(optional — shown with your entry)",
+   124→    namePlaceholder: "e.g. Ana",
+   125→    entryHint: "You can edit or delete your entry later (same browser).",
+   126→    saving: "Saving…",
+   127→    emptyDiary:
+   128→      "The diary is still empty — add the first memory and invite the others.",
+   129→    generalMemories: "General entries",
+   130→    // Vnos (EntryCard)
+   131→    anonymousAuthor: "Anonymous traveller",
+   132→    editMemoryAria: "Edit memory",
+   133→    cancel: "Cancel",
+   134→    save: "Save",
+   135→    edit: "Edit",
+   136→    delete: "Delete",
+   137→    edited: "Edited",
+   138→    // Zvezdice (Stars)
+   139→    starsLabel: (n: number) => `Rating: ${n} ${n === 1 ? "star" : "stars"}`,
+   140→    noRating: "No rating",
+   141→    rateLabel: (n: number) => `Rate ${n} ${n === 1 ? "star" : "stars"}`,
+   142→    // Toasti (validacija + optimistični tok)
+   143→    errTextTitle: "Memory is invalid",
+   144→    errTextDesc: (n: number) =>
+   145→      `Text must be between ${TEXT_MIN} and ${TEXT_MAX} characters (got ${n}).`,
+   146→    errPlaceTitle: "Place name is too long",
+   147→    errPlaceDesc: () => `The place name can be at most ${PLACE_MAX} characters.`,
+   148→    errNameTitle: "Name is too long",
+   149→    errNameDesc: () => `The name can be at most ${AUTHOR_NAME_MAX} characters.`,
+   150→    okSavedTitle: "Memory saved",
+   151→    errSaveTitle: "Could not save the memory",
+   152→    tryAgain: "Try again.",
+   153→    errShortTitle: "Memory is too short",
+   154→    errShortDesc: () => `At least ${TEXT_MIN} characters.`,
+   155→    okUpdatedTitle: "Memory updated",
+   156→    errEditTitle: "Editing failed",
+   157→    okDeletedTitle: "Memory deleted",
+   158→    errDeleteTitle: "Deleting failed",
+   159→  },
+   160→} as const;
+   161→
+   162→// ============================================================================
+   163→// TRIP DIARY — skupinski potni dnevnik na javni strani deljenega tripa (F12)
+   164→// ============================================================================
+   165→//
+   166→// Vrzel #3 (Stippl "travel reel / photobook"): naš pošteni pristop je
+   167→// TEKSTOVNI dnevnik brez računov na /pot/[shareId]. Vsak obiskovalec
+   168→// (anonimni clientId iz localStorage — ENAK ID kot za glasovanje/ankete/
+   169→// komentARJE) lahko:
+   170→//   - zapiše spomin: dan iz načrta (opcijsko) + kraj (opcijsko) + oceno
+   171→//     1–5 zvezdic (opcijsko) + besedilo
+   172→//   - svoj vpis ureja ali izbriše
+   173→//
+   174→// Zavestno BREZ slik/fotografij: upload bi pomenil zasebne fotografije +
+   175→// stroške shrambe. Natisnjena stran (Natisni → PDF) = naš "photobook".
+   176→//
+   177→// API: /api/diary (GET/POST/PATCH/DELETE).
+   178→// Optimistični UI z revertom ob napaki (isti vzorec kot trip-social/polls).
+   179→// ============================================================================
+   180→
+   181→// Anonimni clientId + prihranjeno ime avtorja prihajata iz deljene
+   182→// knjižnice src/lib/client-identity.ts (99-b — enkraten vir: isti
+   183→// brskalnik = isti anonimni obiskovalec za glasovanje, všečke,
+   184→// komentarje, ankete IN dnevnik).
+   185→
+   186→const TEXT_MAX = 2000;
+   187→const TEXT_MIN = 2;
+   188→const PLACE_MAX = 80;
+   189→const AUTHOR_NAME_MAX = 60;
+   190→
+   191→export interface DiaryEntry {
+   192→  id: string;
+   193→  dayIndex: number | null;
+   194→  placeName: string | null;
+   195→  rating: number | null;
+   196→  text: string;
+   197→  authorName: string | null;
+   198→  createdAt: string;
+   199→  updatedAt: string;
+   200→  isAuthor: boolean;
+   201→}
+   202→
+   203→interface TripDiaryProps {
+   204→  shareId: string;
+   205→  /** Začetni vpisi iz RSC (brez isAuthor — ta pride s klientom). */
+   206→  initialEntries: Omit<DiaryEntry, "isAuthor">[];
+   207→  /**
+   208→   * Oznake dni iz načrta (index 0 = Dan 1): "Dan 1 — Bled".
+   209→   * Prazno polje → izbirnik dneva se ne pokaže (samo splošni vpisi).
+   210→   */
+   211→  dayLabels: string[];
+   212→  /** ISO datum ustvarjanja potovanja (spodnja meja relativnega časa). */
+   213→  createdAt: string;
+   214→}
+   215→
+   216→// ============================================================================
+   217→// Slovenski helperji (ednina / dvojina / množina)
+   218→// ============================================================================
+   219→
+   220→function slUnit(
+   221→  n: number,
+   222→  one: string,
+   223→  two: string,
+   224→  few: string,
+   225→  many: string
+   226→): string {
+   227→  if (n === 1) return one;
+   228→  const r = n % 100;
+   229→  if (r === 2) return two;
+   230→  if (r === 3 || r === 4) return few;
+   231→  return many;
+   232→}
+   233→
+   234→/** "pred 2 min", "pred 3 h" — relativni čas z varnostnim stropom. */
+   235→function slTimeAgo(iso: string, floorIso?: string): string {
+   236→  const ms = Date.parse(iso);
+   237→  if (Number.isNaN(ms)) return "neznano";
+   238→
+   239→  // Sanity cap: vpis ne more biti starejši od potovanja
+   240→  if (floorIso) {
+   241→    const floor = Date.parse(floorIso);
+   242→    if (!Number.isNaN(floor) && ms < floor) {
+   243→      return new Date(ms).toLocaleDateString("sl-SI", {
+   244→        day: "numeric",
+   245→        month: "short",
+   246→        year: "numeric",
+   247→      });
+   248→    }
+   249→  }
+   250→
+   251→  const seconds = Math.max(0, Math.floor((Date.now() - ms) / 1000));
+   252→  if (seconds < 45) return "pravkar";
+   253→
+   254→  const minutes = Math.floor(seconds / 60);
+   255→  if (minutes < 60) {
+   256→    return `pred ${minutes} ${slUnit(minutes, "minuto", "minutama", "minutami", "minutami")}`;
+   257→  }
+   258→  const hours = Math.floor(minutes / 60);
+   259→  if (hours < 24) {
+   260→    return `pred ${hours} ${slUnit(hours, "uro", "urama", "urami", "urami")}`;
+   261→  }
+   262→  const days = Math.floor(hours / 24);
+   263→  if (days < 30) {
+   264→    return `pred ${days} ${slUnit(days, "dnem", "dnevoma", "dnevi", "dnevi")}`;
+   265→  }
+   266→  return new Date(ms).toLocaleDateString("sl-SI", {
+   267→    day: "numeric",
+   268→    month: "short",
+   269→    year: "numeric",
+   270→  });
+   271→}
+   272→
+   273→/** EN dvojnik slTimeAgo ("2 min ago") — isti varnostni strop, "en-GB" datumi. */
+   274→function enTimeAgo(iso: string, floorIso?: string): string {
+   275→  const ms = Date.parse(iso);
+   276→  if (Number.isNaN(ms)) return "unknown";
+   277→
+   278→  // Sanity cap: vpis ne more biti starejši od potovanja
+   279→  if (floorIso) {
+   280→    const floor = Date.parse(floorIso);
+   281→    if (!Number.isNaN(floor) && ms < floor) {
+   282→      return new Date(ms).toLocaleDateString("en-GB", {
+   283→        day: "numeric",
+   284→        month: "short",
+   285→        year: "numeric",
+   286→      });
+   287→    }
+   288→  }
+   289→
+   290→  const seconds = Math.max(0, Math.floor((Date.now() - ms) / 1000));
+   291→  if (seconds < 45) return "just now";
+   292→
+   293→  const minutes = Math.floor(seconds / 60);
+   294→  if (minutes < 60) {
+   295→    return `${minutes} min ago`;
+   296→  }
+   297→  const hours = Math.floor(minutes / 60);
+   298→  if (hours < 24) {
+   299→    return `${hours} h ago`;
+   300→  }
+   301→  const days = Math.floor(hours / 24);
+   302→  if (days < 30) {
+   303→    return `${days} ${days === 1 ? "day" : "days"} ago`;
+   304→  }
+   305→  return new Date(ms).toLocaleDateString("en-GB", {
+   306→    day: "numeric",
+   307→    month: "short",
+   308→    year: "numeric",
+   309→  });
+   310→}
+   311→
+   312→/** ISSUE #24 Sklop 1 (1.164.0): jezikovni dispenser — SL pot ostane
+   313→ *  byte-identična (slTimeAgo), EN gre po enTimeAgo. */
+   314→function timeAgo(
+   315→  iso: string,
+   316→  floorIso: string | undefined,
+   317→  lang: "sl" | "en"
+   318→): string {
+   319→  return lang === "en" ? enTimeAgo(iso, floorIso) : slTimeAgo(iso, floorIso);
+   320→}
+   321→
+   322→/** "3 spomini" / "3 memories" — pravilne oblike po jeziku (SL dual/množina). */
+   323→function entriesLabel(n: number, lang: "sl" | "en" = "sl"): string {
+   324→  if (n === 0)
+   325→    return lang === "en" ? "no memories yet" : "še ni spominov";
+   326→  return lang === "en"
+   327→    ? `${n} ${n === 1 ? "memory" : "memories"}`
+   328→    : `${n} ${slUnit(n, "spomin", "spomina", "spomini", "spominov")}`;
+   329→}
+   330→
+   331→// ============================================================================
+   332→// ZVEZDICE (ocena 1–5) — skupna za obrazec in prikaz
+   333→// ============================================================================
+   334→
+   335→interface StarsProps {
+   336→  value: number;
+   337→  onChange?: (v: number) => void;
+   338→  size?: "sm" | "md";
+   339→  ariaLabel?: string;
+   340→}
+   341→
+   342→function Stars({ value, onChange, size = "sm", ariaLabel }: StarsProps) {
+   343→  // ISSUE #24 Sklop 1 (1.164.0): privzete aria oznake zvezdic po locale gledalca.
+   344→  const locale = useLocale();
+   345→  const lang: "sl" | "en" = locale === "en" ? "en" : "sl";
+   346→  const t = L[lang];
+   347→  const interactive = onChange !== undefined;
+   348→  const cls = size === "md" ? "size-5" : "size-4";
+   349→  return (
+   350→    <div
+   351→      className={cn(
+   352→        "flex items-center gap-0.5",
+   353→        interactive && "print:hidden"
+   354→      )}
+   355→      role={interactive ? "radiogroup" : "img"}
+   356→      aria-label={
+   357→        ariaLabel ?? (value > 0 ? t.starsLabel(value) : t.noRating)
+   358→      }
+   359→    >
+   360→      {[1, 2, 3, 4, 5].map((i) => (
+   361→        <button
+   362→          key={i}
+   363→          type="button"
+   364→          disabled={!interactive}
+   365→          onClick={interactive ? () => onChange(value === i ? 0 : i) : undefined}
+   366→          className={cn(
+   367→            "rounded transition-colors",
+   368→            interactive &&
+   369→              "cursor-pointer hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+   370→            !interactive && "cursor-default"
+   371→          )}
+   372→          aria-label={interactive ? t.rateLabel(i) : undefined}
+   373→          aria-checked={interactive ? value === i : undefined}
+   374→          role={interactive ? "radio" : undefined}
+   375→        >
+   376→          <Star
+   377→            className={cn(
+   378→              cls,
+   379→              i <= value
+   380→                ? "fill-amber-500 text-amber-500"
+   381→                : "text-muted-foreground/40"
+   382→            )}
+   383→            aria-hidden="true"
+   384→          />
+   385→        </button>
+   386→      ))}
+   387→    </div>
+   388→  );
+   389→}
+   390→
+   391→// ============================================================================
+   392→// EN VNOS DNEVNIKA
+   393→// ============================================================================
+   394→
+   395→interface EntryCardProps {
+   396→  entry: DiaryEntry;
+   397→  dayLabel: string | null;
+   398→  tripCreatedAt: string;
+   399→  pending: boolean;
+   400→  onSaveEdit: (entryId: string, text: string) => Promise<void>;
+   401→  onDelete: (entryId: string) => Promise<void>;
+   402→}
+   403→
+   404→function EntryCard({
+   405→  entry,
+   406→  dayLabel,
+   407→  tripCreatedAt,
+   408→  pending,
+   409→  onSaveEdit,
+   410→  onDelete,
+   411→}: EntryCardProps) {
+   412→  // ISSUE #24 Sklop 1 (1.164.0): besedila vpisa po locale gledalca (L-vzorec).
+   413→  const locale = useLocale();
+   414→  const lang: "sl" | "en" = locale === "en" ? "en" : "sl";
+   415→  const t = L[lang];
+   416→  const [editing, setEditing] = useState(false);
+   417→  const [editText, setEditText] = useState(entry.text);
+   418→  const [busy, setBusy] = useState(false);
+   419→
+   420→  const startEdit = () => {
+   421→    setEditText(entry.text);
+   422→    setEditing(true);
+   423→  };
+   424→
+   425→  const saveEdit = async () => {
+   426→    if (busy) return;
+   427→    setBusy(true);
+   428→    try {
+   429→      await onSaveEdit(entry.id, editText);
+   430→      setEditing(false);
+   431→    } finally {
+   432→      setBusy(false);
+   433→    }
+   434→  };
+   435→
+   436→  return (
+   437→    <article
+   438→      className={cn(
+   439→        "rounded-lg border border-border bg-background p-3 sm:p-4",
+   440→        pending && "opacity-60"
+   441→      )}
+   442→    >
+   443→      {/* Glava: avtor + čas + ocena */}
+   444→      <div className="mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+   445→        <span className="font-medium text-foreground">
+   446→          {entry.authorName || t.anonymousAuthor}
+   447→        </span>
+   448→        <span className="text-muted-foreground" aria-hidden="true">·</span>
+   449→        <time
+   450→          className="text-muted-foreground"
+   451→          dateTime={entry.createdAt}
+   452→          title={new Date(entry.createdAt).toLocaleString(
+   453→            lang === "en" ? "en-GB" : "sl-SI"
+   454→          )}
+   455→        >
+   456→          {timeAgo(entry.createdAt, tripCreatedAt, lang)}
+   457→        </time>
+   458→        {entry.rating !== null && entry.rating > 0 && (
+   459→          <Stars value={entry.rating} />
+   460→        )}
+   461→      </div>
+   462→
+   463→      {/* Kontekst: dan + kraj */}
+   464→      {(dayLabel || entry.placeName) && (
+   465→        <div className="mb-2 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+   466→          {dayLabel && (
+   467→            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 font-medium">
+   468→              {dayLabel}
+   469→            </span>
+   470→          )}
+   471→          {entry.placeName && (
+   472→            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5">
+   473→              <MapPin className="size-3" aria-hidden="true" />
+   474→              {entry.placeName}
+   475→            </span>
+   476→          )}
+   477→        </div>
+   478→      )}
+   479→
+   480→      {/* Besedilo (ali urejanje) */}
+   481→      {editing ? (
+   482→        <div className="space-y-2">
+   483→          <Textarea
+   484→            value={editText}
+   485→            onChange={(e) => setEditText(e.target.value)}
+   486→            maxLength={TEXT_MAX}
+   487→            rows={4}
+   488→            className="resize-y"
+   489→            aria-label={t.editMemoryAria}
+   490→          />
+   491→          <div className="flex items-center justify-between">
+   492→            <span className="text-xs text-muted-foreground">
+   493→              {editText.length}/{TEXT_MAX}
+   494→            </span>
+   495→            <div className="flex gap-2">
+   496→              <Button
+   497→                type="button"
+   498→                variant="outline"
+   499→                size="sm"
+   500→                onClick={() => setEditing(false)}
+   501→                disabled={busy}
+   502→              >
+   503→                {t.cancel}
+   504→              </Button>
+   505→              <Button
+   506→                type="button"
+   507→                size="sm"
+   508→                onClick={() => void saveEdit()}
+   509→                disabled={busy || editText.trim().length < TEXT_MIN}
+   510→              >
+   511→                {busy ? (
+   512→                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+   513→                ) : (
+   514→                  t.save
+   515→                )}
+   516→              </Button>
+   517→            </div>
+   518→          </div>
+   519→        </div>
+   520→      ) : (
+   521→        <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+   522→          {entry.text}
+   523→        </p>
+   524→      )}
+   525→
+   526→      {/* Avtorske kontrole — samo lastnik vpisa */}
+   527→      {entry.isAuthor && !editing && (
+   528→        <div className="mt-2 flex gap-2 print:hidden">
+   529→          <Button
+   530→            type="button"
+   531→            variant="ghost"
+   532→            size="sm"
+   533→            onClick={startEdit}
+   534→            disabled={pending}
+   535→            className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+   536→          >
+   537→            <Pencil className="size-3" aria-hidden="true" /> {t.edit}
+   538→          </Button>
+   539→          <Button
+   540→            type="button"
+   541→            variant="ghost"
+   542→            size="sm"
+   543→            onClick={() => void onDelete(entry.id)}
+   544→            disabled={pending}
+   545→            className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-destructive"
+   546→          >
+   547→            <Trash2 className="size-3" aria-hidden="true" /> {t.delete}
+   548→          </Button>
+   549→        </div>
+   550→      )}
+   551→
+   552→      {/* Urejeno-opomba (če se je besedilo spreminjalo) */}
+   553→      {entry.updatedAt !== entry.createdAt && !editing && (
+   554→        <p className="mt-1.5 text-xs text-muted-foreground">
+   555→          {t.edited} {timeAgo(entry.updatedAt, tripCreatedAt, lang)}
+   556→        </p>
+   557→      )}
+   558→    </article>
+   559→  );
+   560→}
+   561→
+   562→// ============================================================================
+   563→// GLAVNA KOMPONENTA
+   564→// ============================================================================
+   565→
+   566→export function TripDiary({
+   567→  shareId,
+   568→  initialEntries,
+   569→  dayLabels,
+   570→  createdAt,
+   571→}: TripDiaryProps) {
+   572→  const { toast } = useToast();
+   573→  // TASK 8 / F3-B: jezik za L-pattern placeholder nalaganja (SL privzeto).
+   574→  const locale = useLocale();
+   575→  const lang: "sl" | "en" = locale === "en" ? "en" : "sl";
+   576→  const t = L[lang];
+   577→
+   578→  const [clientId, setClientId] = useState<string>("");
+   579→  const [mounted, setMounted] = useState<boolean>(false);
+   580→  const [entries, setEntries] = useState<DiaryEntry[]>(() =>
+   581→    (initialEntries ?? []).map((e) => ({ ...e, isAuthor: false }))
+   582→  );
+   583→
+   584→  // Obrazec za nov vpis
+   585→  const [formOpen, setFormOpen] = useState<boolean>(false);
+   586→  const [dayValue, setDayValue] = useState<string>("general");
+   587→  const [place, setPlace] = useState<string>("");
+   588→  const [rating, setRating] = useState<number>(0);
+   589→  const [text, setText] = useState<string>("");
+   590→  const [authorName, setAuthorName] = useState<string>("");
+   591→  const [creating, setCreating] = useState<boolean>(false);
+   592→
+   593→  const [actionPending, setActionPending] = useState<string | null>(null);
+   594→
+   595→  /** Znova pridobi vpise z isAuthor (GET /api/diary?clientId=). */
+   596→  const refreshEntries = useCallback(
+   597→    async (cid: string) => {
+   598→      try {
+   599→        const res = await fetch(
+   600→          `/api/diary?shareId=${encodeURIComponent(shareId)}&clientId=${encodeURIComponent(cid)}`,
+   601→          { cache: "no-store" }
+   602→        );
+   603→        if (!res.ok) return;
+   604→        const data = (await res.json().catch(() => null)) as {
+   605→          entries?: DiaryEntry[];
+   606→        } | null;
+   607→        if (Array.isArray(data?.entries)) {
+   608→          setEntries(data.entries);
+   609→        }
+   610→      } catch {
+   611→        // Off-line / napaka — ohranimo trenutno stanje
+   612→      }
+   613→    },
+   614→    [shareId]
+   615→  );
+   616→
+   617→  // Mount: clientId (isti ID kot ostale socialne funkcije) + prihranjeno ime
+   618→  useEffect(() => {
+   619→    setMounted(true);
+   620→    if (!shareId) return;
+   621→    try {
+   622→      // 99-b: read-or-create anonimni ID (private mode → null → stanje
+   623→      // ostane nedotaknjeno, dnevnik ostane berljiv)
+   624→      const cid = getVoterId();
+   625→      if (cid) {
+   626→        setClientId(cid);
+   627→
+   628→        // Prihranjeno ime (skupno s komentarji in anketami)
+   629→        const savedName = getAuthorName() ?? "";
+   630→        if (savedName) setAuthorName(savedName);
+   631→
+   632→        // Dopolni isAuthor (server-side podatki ga ne poznajo)
+   633→        void refreshEntries(cid);
+   634→      }
+   635→    } catch {
+   636→      // private mode — dnevnik ostane berljiv, brez urejanja
+   637→    }
+   638→  }, [shareId, refreshEntries]);
+   639→
+   640→  // ========================================================================
+   641→  // Dodaj vpis
+   642→  // ========================================================================
+   643→  const submitEntry = useCallback(
+   644→    async (e: React.FormEvent<HTMLFormElement>) => {
+   645→      e.preventDefault();
+   646→      if (creating || !shareId || !clientId) return;
+   647→
+   648→      const txt = text.trim();
+   649→      const p = place.trim();
+   650→      const a = authorName.trim();
+   651→
+   652→      if (txt.length < TEXT_MIN || txt.length > TEXT_MAX) {
+   653→        toast({
+   654→          title: t.errTextTitle,
+   655→          description: t.errTextDesc(txt.length),
+   656→          variant: "destructive",
+   657→        });
+   658→        return;
+   659→      }
+   660→      if (p.length > PLACE_MAX) {
+   661→        toast({
+   662→          title: t.errPlaceTitle,
+   663→          description: t.errPlaceDesc(),
+   664→          variant: "destructive",
+   665→        });
+   666→        return;
+   667→      }
+   668→      if (a.length > AUTHOR_NAME_MAX) {
+   669→        toast({
+   670→          title: t.errNameTitle,
+   671→          description: t.errNameDesc(),
+   672→          variant: "destructive",
+   673→        });
+   674→        return;
+   675→      }
+   676→
+   677→      const dayIndex =
+   678→        dayValue === "general" ? null : Number(dayValue) || null;
+   679→
+   680→      // Prihrani ime za naslednjič (skupno s komentarji; defenzivno —
+   681→      // private mode se mirno preskoči znotraj lib-a)
+   682→      if (a) {
+   683→        saveAuthorName(a);
+   684→      }
+   685→
+   686→      // Optimistični vpis (začasen id, negativen)
+   687→      const optimisticId = `tmp-${Date.now()}`;
+   688→      const optimistic: DiaryEntry = {
+   689→        id: optimisticId,
+   690→        dayIndex,
+   691→        placeName: p || null,
+   692→        rating: rating > 0 ? rating : null,
+   693→        text: txt,
+   694→        authorName: a || null,
+   695→        createdAt: new Date().toISOString(),
+   696→        updatedAt: new Date().toISOString(),
+   697→        isAuthor: true,
+   698→      };
+   699→      setEntries((all) => [...all, optimistic]);
+   700→      setCreating(true);
+   701→
+   702→      try {
+   703→        const res = await fetch("/api/diary", {
+   704→          method: "POST",
+   705→          headers: { "Content-Type": "application/json" },
+   706→          body: JSON.stringify({
+   707→            shareId,
+   708→            dayIndex,
+   709→            placeName: p || undefined,
+   710→            rating: rating > 0 ? rating : undefined,
+   711→            text: txt,
+   712→            authorName: a || undefined,
+   713→            clientId,
+   714→          }),
+   715→        });
+   716→        const data = (await res.json().catch(() => null)) as {
+   717→          success?: unknown;
+   718→          entry?: Omit<DiaryEntry, "isAuthor">;
+   719→          error?: string;
+   720→        } | null;
+   721→
+   722→        if (!res.ok || data?.success !== true || !data?.entry) {
+   723→          throw new Error(data?.error ?? `HTTP ${res.status}`);
+   724→        }
+   725→
+   726→        // Zamenjaj optimistični z pravim (server čas + id)
+   727→        setEntries((all) =>
+   728→          all.map((en) =>
+   729→            en.id === optimisticId
+   730→              ? { ...data.entry!, isAuthor: true }
+   731→              : en
+   732→          )
+   733→        );
+   734→        toast({ title: t.okSavedTitle });
+   735→
+   736→        // Počisti obrazec (ime ostane)
+   737→        setText("");
+   738→        setPlace("");
+   739→        setRating(0);
+   740→        setDayValue("general");
+   741→        setFormOpen(false);
+   742→      } catch (err) {
+   743→        // Revert optimističnega vpisa
+   744→        setEntries((all) => all.filter((en) => en.id !== optimisticId));
+   745→        toast({
+   746→          title: t.errSaveTitle,
+   747→          description: err instanceof Error ? err.message : t.tryAgain,
+   748→          variant: "destructive",
+   749→        });
+   750→      } finally {
+   751→        setCreating(false);
+   752→      }
+   753→    },
+   754→    [
+   755→      creating,
+   756→      shareId,
+   757→      clientId,
+   758→      text,
+   759→      place,
+   760→      authorName,
+   761→      rating,
+   762→      dayValue,
+   763→      toast,
+   764→      t,
+   765→    ]
+   766→  );
+   767→
+   768→  // ========================================================================
+   769→  // Uredi svoj vpis
+   770→  // ========================================================================
+   771→  const saveEdit = useCallback(
+   772→    async (entryId: string, newText: string) => {
+   773→      if (!clientId || entryId.startsWith("tmp-")) return;
+   774→      const txt = newText.trim();
+   775→      if (txt.length < TEXT_MIN) {
+   776→        toast({
+   777→          title: t.errShortTitle,
+   778→          description: t.errShortDesc(),
+   779→          variant: "destructive",
+   780→        });
+   781→        return;
+   782→      }
+   783→
+   784→      setActionPending(entryId);
+   785→      const before = entries.find((e) => e.id === entryId)?.text;
+   786→      // Optimistična sprememba
+   787→      setEntries((all) =>
+   788→        all.map((e) => (e.id === entryId ? { ...e, text: txt } : e))
+   789→      );
+   790→      try {
+   791→        const res = await fetch("/api/diary", {
+   792→          method: "PATCH",
+   793→          headers: { "Content-Type": "application/json" },
+   794→          body: JSON.stringify({ entryId, text: txt, clientId }),
+   795→        });
+   796→        const data = (await res.json().catch(() => null)) as {
+   797→          success?: unknown;
+   798→          error?: string;
+   799→        } | null;
+   800→        if (!res.ok || data?.success !== true) {
+   801→          throw new Error(data?.error ?? `HTTP ${res.status}`);
+   802→        }
+   803→        toast({ title: t.okUpdatedTitle });
+   804→      } catch (err) {
+   805→        // Revert
+   806→        setEntries((all) =>
+   807→          all.map((e) =>
+   808→            e.id === entryId && before !== undefined ? { ...e, text: before } : e
+   809→          )
+   810→        );
+   811→        toast({
+   812→          title: t.errEditTitle,
+   813→          description: err instanceof Error ? err.message : t.tryAgain,
+   814→          variant: "destructive",
+   815→        });
+   816→      } finally {
+   817→        setActionPending(null);
+   818→      }
+   819→    },
+   820→    [clientId, entries, toast, t]
+   821→  );
+   822→
+   823→  // ========================================================================
+   824→  // Izbriši svoj vpis
+   825→  // ========================================================================
+   826→  const deleteEntry = useCallback(
+   827→    async (entryId: string) => {
+   828→      if (!clientId || entryId.startsWith("tmp-")) return;
+   829→      setActionPending(entryId);
+   830→      const snapshot = entries;
+   831→      // Optimistična odstranitev
+   832→      setEntries((all) => all.filter((e) => e.id !== entryId));
+   833→      try {
+   834→        const res = await fetch("/api/diary", {
+   835→          method: "DELETE",
+   836→          headers: { "Content-Type": "application/json" },
+   837→          body: JSON.stringify({ entryId, clientId }),
+   838→        });
+   839→        const data = (await res.json().catch(() => null)) as {
+   840→          success?: unknown;
+   841→          error?: string;
+   842→        } | null;
+   843→        if (!res.ok || data?.success !== true) {
+   844→          throw new Error(data?.error ?? `HTTP ${res.status}`);
+   845→        }
+   846→        toast({ title: t.okDeletedTitle });
+   847→      } catch (err) {
+   848→        // Revert
+   849→        setEntries(snapshot);
+   850→        toast({
+   851→          title: t.errDeleteTitle,
+   852→          description: err instanceof Error ? err.message : t.tryAgain,
+   853→          variant: "destructive",
+   854→        });
+   855→      } finally {
+   856→        setActionPending(null);
+   857→      }
+   858→    },
+   859→    [clientId, entries, toast, t]
+   860→  );
+   861→
+   862→  // ========================================================================
+   863→  // RAZVRSTITEV PO DNEVIH (kronološko, "splošno" na koncu)
+   864→  // ========================================================================
+   865→  const grouped = useMemo(() => {
+   866→    const groups: {
+   867→      key: number | null;
+   868→      label: string;
+   869→      items: DiaryEntry[];
+   870→    }[] = [];
+   871→
+   872→    // Zaporedni dnevi iz načrta (tudi če so prazni — vrstni red!)
+   873→    dayLabels.forEach((label, i) => {
+   874→      groups.push({ key: i + 1, label, items: [] });
+   875→    });
+   876→
+   877→    // Splošni vpisi (brez dneva) — zadnja skupina
+   878→    const general = { key: null as number | null, label: t.generalMemories, items: [] as DiaryEntry[] };
+   879→
+   880→    for (const e of entries) {
+   881→      const g =
+   882→        e.dayIndex !== null
+   883→          ? groups.find((gr) => gr.key === e.dayIndex)
+   884→          : undefined;
+   885→      if (g) g.items.push(e);
+   886→      else general.items.push(e);
+   887→    }
+   888→
+   889→    // Skupine z dnevi: vse iz načrta (prazne preskočimo pri renderu)
+   890→    const dayGroups = groups.filter((g) => g.items.length > 0);
+   891→    const generalGroup =
+   892→      general.items.length > 0 ? [general] : [];
+   893→
+   894→    return [...dayGroups, ...generalGroup];
+   895→  }, [entries, dayLabels, t]);
+   896→
+   897→  // Dnevnik se NATISNE (to je naš "photobook") — skriti so samo obrazec,
+   898→  // kontrole in interaktivne zvezdice (spodaj s print:hidden).
+   899→  return (
+   900→    <Card className="overflow-hidden">
+   901→      <CardContent className="p-4 sm:p-6">
+   902→        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+   903→          <div className="flex items-center gap-2">
+   904→            <BookOpen className="size-5 text-primary" aria-hidden="true" />
+   905→            <h2 className="text-lg font-semibold">{t.heading}</h2>
+   906→            <span className="text-sm text-muted-foreground">
+   907→              {entriesLabel(entries.length, lang)}
+   908→            </span>
+   909→          </div>
+   910→          <Button
+   911→            type="button"
+   912→            variant={formOpen ? "outline" : "default"}
+   913→            size="sm"
+   914→            onClick={() => setFormOpen((o) => !o)}
+   915→            aria-expanded={formOpen}
+   916→            aria-controls="diary-form"
+   917→            className="gap-1.5 print:hidden"
+   918→          >
+   919→            {formOpen ? (
+   920→              <>
+   921→                <X className="size-4" aria-hidden="true" /> {t.close}
+   922→              </>
+   923→            ) : (
+   924→              <>
+   925→                <Plus className="size-4" aria-hidden="true" /> {t.addMemory}
+   926→              </>
+   927→            )}
+   928→          </Button>
+   929→        </div>
+   930→
+   931→        <p className="mb-4 text-sm text-muted-foreground">
+   932→          {t.cardIntro}{" "}
+   933→          <strong className="font-medium text-foreground">
+   934→            {t.cardPrintStrong}
+   935→          </strong>{" "}
+   936→          {t.cardOutro}
+   937→        </p>
+   938→
+   939→        {/* === Obrazec za nov vpis === */}
+   940→        {formOpen && (
+   941→          <form
+   942→            id="diary-form"
+   943→            onSubmit={(e) => void submitEntry(e)}
+   944→            className="mb-6 space-y-3 rounded-lg border border-border bg-muted/30 p-4 print:hidden"
+   945→          >
+   946→            <div className="grid gap-3 sm:grid-cols-2">
+   947→              {/* Dan (samo če načrt ima dneve) */}
+   948→              {dayLabels.length > 0 && (
+   949→                <div className="space-y-1.5">
+   950→                  <label
+   951→                    htmlFor="diary-day"
+   952→                    className="text-sm font-medium leading-none"
+   953→                  >
+   954→                    {t.dayLabel}
+   955→                  </label>
+   956→                  <Select
+   957→                    value={dayValue}
+   958→                    onValueChange={setDayValue}
+   959→                  >
+   960→                    <SelectTrigger id="diary-day" aria-label={t.selectDayAria}>
+   961→                      <SelectValue placeholder={t.generalOption} />
+   962→                    </SelectTrigger>
+   963→                    <SelectContent>
+   964→                      <SelectItem value="general">
+   965→                        {t.generalOption}
+   966→                      </SelectItem>
+   967→                      {dayLabels.map((label, i) => (
+   968→                        <SelectItem key={i + 1} value={String(i + 1)}>
+   969→                          {label}
+   970→                        </SelectItem>
+   971→                      ))}
+   972→                    </SelectContent>
+   973→                  </Select>
+   974→                </div>
+   975→              )}
+   976→
+   977→              {/* Kraj (opcijsko) */}
+   978→              <div className="space-y-1.5">
+   979→                <label
+   980→                  htmlFor="diary-place"
+   981→                  className="text-sm font-medium leading-none"
+   982→                >
+   983→                  {t.placeLabel}{" "}
+   984→                  <span className="text-muted-foreground">
+   985→                    {t.optionalSuffix}
+   986→                  </span>
+   987→                </label>
+   988→                <div className="relative">
+   989→                  <MapPin
+   990→                    className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+   991→                    aria-hidden="true"
+   992→                  />
+   993→                  <Input
+   994→                    id="diary-place"
+   995→                    value={place}
+   996→                    onChange={(e) => setPlace(e.target.value)}
+   997→                    maxLength={PLACE_MAX}
+   998→                    placeholder={t.placePlaceholder}
+   999→                    className="pl-9"
+  1000→                  />
+  1001→                </div>
+  1002→              </div>
+  1003→            </div>
+  1004→
+  1005→            {/* Ocena (opcijsko) */}
+  1006→            <div className="flex items-center gap-3">
+  1007→              <span className="text-sm font-medium leading-none">
+  1008→                {t.ratingLabel} <span className="text-muted-foreground">{t.optionalSuffix}</span>
+  1009→              </span>
+  1010→              <Stars value={rating} onChange={setRating} size="md" />
+  1011→              {rating > 0 && (
+  1012→                <button
+  1013→                  type="button"
+  1014→                  onClick={() => setRating(0)}
+  1015→                  className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+  1016→                >
+  1017→                  {t.clearRating}
+  1018→                </button>
+  1019→              )}
+  1020→            </div>
+  1021→
+  1022→            {/* Besedilo spomina */}
+  1023→            <div className="space-y-1.5">
+  1024→              <label
+  1025→                htmlFor="diary-text"
+  1026→                className="text-sm font-medium leading-none"
+  1027→              >
+  1028→                {t.memoryLabel}{" "}
+  1029→                <span className="text-xs font-normal text-muted-foreground">
+  1030→                  ({text.length}/{TEXT_MAX})
+  1031→                </span>
+  1032→              </label>
+  1033→              <Textarea
+  1034→                id="diary-text"
+  1035→                value={text}
+  1036→                onChange={(e) => setText(e.target.value)}
+  1037→                maxLength={TEXT_MAX}
+  1038→                rows={4}
+  1039→                required
+  1040→                placeholder={t.memoryPlaceholder}
+  1041→                className="resize-y"
+  1042→              />
+  1043→            </div>
+  1044→
+  1045→            {/* Ime (opcijsko, deljeno s komentarji) */}
+  1046→            <div className="space-y-1.5">
+  1047→              <label
+  1048→                htmlFor="diary-name"
+  1049→                className="text-sm font-medium leading-none"
+  1050→              >
+  1051→                {t.nameLabel}{" "}
+  1052→                <span className="text-muted-foreground">
+  1053→                  {t.nameOptional}
+  1054→                </span>
+  1055→              </label>
+  1056→              <Input
+  1057→                id="diary-name"
+  1058→                value={authorName}
+  1059→                onChange={(e) => setAuthorName(e.target.value)}
+  1060→                maxLength={AUTHOR_NAME_MAX}
+  1061→                placeholder={t.namePlaceholder}
+  1062→              />
+  1063→            </div>
+  1064→
+  1065→            <div className="flex items-center justify-between gap-3">
+  1066→              <p className="text-xs text-muted-foreground">
+  1067→                {t.entryHint}
+  1068→              </p>
+  1069→              <Button type="submit" disabled={creating} className="gap-1.5">
+  1070→                {creating ? (
+  1071→                  <>
+  1072→                    <Loader2
+  1073→                      className="size-4 animate-spin"
+  1074→                      aria-hidden="true"
+  1075→                    />{" "}
+  1076→                    {t.saving}
+  1077→                  </>
+  1078→                ) : (
+  1079→                  <>
+  1080→                    <NotebookPen className="size-4" aria-hidden="true" />{" "}
+  1081→                    {t.addMemory}
+  1082→                  </>
+  1083→                )}
+  1084→              </Button>
+  1085→            </div>
+  1086→          </form>
+  1087→        )}
+  1088→
+  1089→        {/* === VNOSI (razvrščeni po dneh) === */}
+  1090→        {entries.length === 0 ? (
+  1091→          <div className="rounded-lg border border-dashed border-border p-6 text-center">
+  1092→            <NotebookPen
+  1093→              className="mx-auto mb-2 size-6 text-muted-foreground"
+  1094→              aria-hidden="true"
+  1095→            />
+  1096→            <p className="text-sm text-muted-foreground">
+  1097→              {mounted ? t.emptyDiary : t.loadingDiary}
+  1098→            </p>
+  1099→          </div>
+  1100→        ) : (
+  1101→          <div className="space-y-5">
+  1102→            {grouped.map((group) => (
+  1103→              <section
+  1104→                key={group.key === null ? "general" : `day-${group.key}`}
+  1105→                aria-label={group.label}
+  1106→              >
+  1107→                <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+  1108→                  <span
+  1109→                    className="inline-block size-1.5 rounded-full bg-primary"
+  1110→                    aria-hidden="true"
+  1111→                  />
+  1112→                  {group.label}
+  1113→                  <span className="font-normal normal-case tracking-normal">
+  1114→                    ({entriesLabel(group.items.length, lang)})
+  1115→                  </span>
+  1116→                </h3>
+  1117→                <div className="space-y-3">
+  1118→                  {group.items.map((entry) => (
+  1119→                    <EntryCard
+  1120→                      key={entry.id}
+  1121→                      entry={entry}
+  1122→                      dayLabel={
+  1123→                        entry.dayIndex === null
+  1124→                          ? null
+  1125→                          : (dayLabels[entry.dayIndex - 1] ?? null)
+  1126→                      }
+  1127→                      tripCreatedAt={createdAt}
+  1128→                      pending={actionPending === entry.id}
+  1129→                      onSaveEdit={saveEdit}
+  1130→                      onDelete={deleteEntry}
+  1131→                    />
+  1132→                  ))}
+  1133→                </div>
+  1134→              </section>
+  1135→            ))}
+  1136→          </div>
+  1137→        )}
+  1138→      </CardContent>
+  1139→    </Card>
+  1140→  );
+  1141→}
+  1142→

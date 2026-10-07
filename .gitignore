@@ -21,3 +21,4 @@ agent-ctx/
 
 # sistem
 .DS_Store
+tsconfig.tsbuildinfo

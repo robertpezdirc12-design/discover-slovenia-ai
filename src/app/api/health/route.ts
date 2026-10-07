@@ -9,13 +9,13 @@ export const dynamic = "force-dynamic";
 /**
  * /api/health — vzorec produkcije (snapshots/render-api-health.json):
  * {status, version, checkedAt, startup:[{name, status, detail, at}]}.
- * Startup preverbe so iskrene: ok / skipped z dejanskim razlogom.
+ * Startup preverbe so iskrene: ok / degraded / skipped z dejanskim razlogom.
  */
 export async function GET() {
   const now = () => new Date().toISOString();
   const startup: {
     name: string;
-    status: "ok" | "skipped";
+    status: "ok" | "degraded" | "skipped";
     detail: string;
     at: string;
   }[] = [];
@@ -85,19 +85,28 @@ export async function GET() {
     });
   }
 
-  // 5) Provizijski sloj (v2.5.0): register partnerjev + nabor črpalk
+  // 5) Provizijski sloj (v2.5.0) + partner kanal booking verige (v2.6.0):
+  //    register partnerjev + nabor črpalk + partner rezervacije v My Trips
   //    ( AFFILIATE_*_ID žetoni se NAMENOMA ne preverjajo — fail-closed
   //    pomeni: brez žetona povezave delujejo javno, klikanja se štejejo).
   try {
     const { AFFILIATE_PROVIDERS } = await import("@/lib/affiliate-providers");
     const { FUEL_STATIONS } = await import("@/lib/fuel-stations");
+    const { BOOKING_CHANNELS, searchPartnerOffers } = await import(
+      "@/lib/journey/booking-provider",
+    );
     const commissionable = AFFILIATE_PROVIDERS.filter(
       (p) => p.category !== "fuel",
     ).length;
+    const partnerSearchOk =
+      BOOKING_CHANNELS.includes("partner") &&
+      searchPartnerOffers("bled").length === commissionable;
     startup.push({
       name: "booking:affiliate",
-      status: "ok",
-      detail: `${commissionable} provizijskih partnerjev + ${FUEL_STATIONS.length} črpalk (gorivo brez provizije — odprti podatki)`,
+      status: partnerSearchOk ? "ok" : "degraded",
+      detail: partnerSearchOk
+        ? `${commissionable} provizijskih partnerjev (rezervacija v booking verigi, PENDING → potrditev) + ${FUEL_STATIONS.length} črpalk (gorivo brez provizije — odprti podatki)`
+        : `Register partnerjev (${commissionable}) ni uskladen s partner iskanjem — preveri booking-provider`,
       at: now(),
     });
   } catch {
@@ -111,7 +120,7 @@ export async function GET() {
 
   return NextResponse.json({
     status: "ok",
-    version: "2.5.0",
+    version: "2.6.0",
     startup,
     checkedAt: now(),
   });

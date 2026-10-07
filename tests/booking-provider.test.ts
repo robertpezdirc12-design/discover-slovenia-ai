@@ -50,22 +50,29 @@ const pletnaOffer = resolveDemoOffer("izk-bled-pletna")!;
 
 const NOW = new Date("2026-10-07T10:00:00Z");
 
-// ─── Kanala (real | demo) — stroga ločitev ──────────────────────────────────
+// ─── Kanali (real | demo | partner) — stroga ločitev ────────────────────────
 
-describe("booking-provider: kanala (real | demo — strogo ločena)", () => {
-  test("natančno dva kanala: real in demo", () => {
-    expect([...BOOKING_CHANNELS]).toEqual(["real", "demo"]);
+describe("booking-provider: kanali (real | demo | partner — strogo ločeni)", () => {
+  test("natančno trije kanali: real, demo in partner (razširitev 2.6.0)", () => {
+    // Zaklep POSODOBLJEN iz ["real","demo"] — kanal se je zavestno razširil
+    // (partner = realna rezervacija pri partnerju po vzorcu MindTrip, 2.6.0).
+    expect([...BOOKING_CHANNELS]).toEqual(["real", "demo", "partner"]);
     expect(isBookingChannel("real")).toBe(true);
     expect(isBookingChannel("demo")).toBe(true);
+    expect(isBookingChannel("partner")).toBe(true);
     expect(isBookingChannel("simulator")).toBe(false);
+    expect(isBookingChannel("affiliate")).toBe(false);
     expect(isBookingChannel("")).toBe(false);
   });
 
-  test("oznaki kanalov za UI (SL kanon + EN prevod)", () => {
+  test("oznaki kanalov za UI (SL kanon + EN prevod; partner 2.6.0)", () => {
     expect(CHANNEL_LABELS.real.sl).toBe("Realni ponudnik");
     expect(CHANNEL_LABELS.real.en).toBe("Real provider");
     expect(CHANNEL_LABELS.demo.sl).toBe("Demo simulator");
     expect(CHANNEL_LABELS.demo.en).toBe("Demo simulator");
+    // Partner kanal (2.6.0) ima obe oznaki (nikoli undefined).
+    expect(CHANNEL_LABELS.partner.sl.length).toBeGreaterThan(0);
+    expect(CHANNEL_LABELS.partner.en.length).toBeGreaterThan(0);
   });
 
   test("realProviderStatus: VEDNO fail-closed (0 poverilnic = 0 laži)", () => {

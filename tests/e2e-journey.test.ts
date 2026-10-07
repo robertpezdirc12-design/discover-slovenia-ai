@@ -14,7 +14,10 @@
  *                 cancelDemoBooking (CANCELLED terminalen);
  *  4. NAVIGATION — go-gps veriga (razdalja/smer/ETA/odklon/napredek) +
  *                 zunanji handoff (parseRerouteBody, osmDirectionsUrl);
- *  5. ZAKLJUČEK — Go Mode aktiven → „Nadaljuj svojo pot".
+ *  5. ZAKLJUČEK — Go Mode aktiven → „Nadaljuj svojo pot";
+ *  6. PARTNER (2.6.0) — isti načrt, rezervacija PRI partnerju (Booking.com
+ *     idr.): searchPartnerOffers → createPartnerBooking (PENDING) →
+ *     confirmPartnerBooking (uporabnikova atestacija) → navigacija ostane.
  *
  * Invariante čez CEL journey (zaklenjene v ločenih testih):
  *  - DETERMINIZEM: isti vhodi → isti izhodi v VSEH fazah;
@@ -53,13 +56,20 @@ import {
   DEMO_BOOKING_ID_PREFIX,
   DEMO_BOOKING_ID_RE,
   buildDemoNote,
+  buildPartnerNote,
   cancelDemoBooking,
+  cancelPartnerBooking,
+  confirmPartnerBooking,
   createDemoBooking,
+  createPartnerBooking,
   modifyDemoBooking,
+  modifyPartnerBooking,
+  parsePartnerNote,
   realProviderStatus,
   reservationChannelOf,
   resolveDemoOffer,
   searchDemoOffers,
+  searchPartnerOffers,
 } from "../src/lib/journey/booking-provider";
 import {
   ALLOWED_TRANSITIONS,
@@ -571,5 +581,129 @@ describe("E2E robni primeri — iskrene meje", () => {
     }
     // Neobstoječ ID ponudbe se ne razreši (null — ne izmišljene cene).
     expect(resolveDemoOffer("ne-obstojeca-ponudba")).toBeNull();
+  });
+});
+
+// ─── 6. PARTNER SEGMENT (2.6.0 — vzorec MindTrip) ───────────────────────────
+
+/**
+ * PARTNER kanal (2.6.0): realna rezervacija PRI partnerju (Booking.com,
+ * GetYourGuide, Kiwi, Rentalcars, Omio) prek vodenih povezav
+ * /api/affiliate/go. Aplikacija sledi stanju: PENDING (čaka partnerjevo
+ * potrditev) → CONFIRMED (uporabnikova atestacija s številko + ceno iz
+ * potrdila) → MODIFIED/CANCELLED (dejavnost teče pri partnerju).
+ * Isti načrt iz SCENARIJA 2 — le rezervacijski kanal je partner, ne demo.
+ */
+describe("E2E 6 · PARTNER — načrt → partner booking → navigacija", () => {
+  /** Partner ponudba Booking.com za postanek Bled NAŠEGA načrta. */
+  function partnerOfferForBled() {
+    const offer = searchPartnerOffers("bled").find((o) => o.providerId === "booking");
+    if (!offer) throw new Error("setup: pričakovana partner ponudba za Bled");
+    return offer;
+  }
+
+  /** Sveža PENDING partner rezervacija za postanek načrta. */
+  function partnerPending() {
+    const r = createPartnerBooking(partnerOfferForBled(), BOOKING_INPUT, NOW);
+    if (!r.ok) throw new Error("setup: partner rezervacija mora uspeti");
+    return r.booking;
+  }
+
+  test("plan → partner iskanje za postanek načrta: 5 ponudb, vse vezane na dest=bled", () => {
+    const stops = draft().plan.days[0]!;
+    const bledStop = stops.find((s) => s.slug === "bled")!;
+    expect(bledStop).toBeDefined();
+    // Iskanje po slugu postanka NAŠEGA načrta (faza PLAN → BOOKING).
+    const offers = searchPartnerOffers(bledStop.slug!);
+    expect(offers.length).toBe(5);
+    for (const o of offers) {
+      expect(o.goPath).toBe(`/api/affiliate/go?provider=${o.providerId}&dest=bled`);
+      expect(o.match).toBe("destination");
+      expect(o.destinationName).toBe("Bled");
+      // Vodena povezava je RELATIVNA pot lastnega API-ja (žeton nikoli v klientu).
+      expect(o.goPath.startsWith("/api/affiliate/go?")).toBe(true);
+    }
+    // Gorivo NI rezervacijska kategorija — nikoli med partner ponudbami.
+    expect(offers.some((o) => o.category === "fuel")).toBe(false);
+    // Leti za gorenjsko nosijo letališče regije (iskreno razkritje).
+    const flights = offers.find((o) => o.category === "flights")!;
+    expect(flights.airport!.code).toBe("LJU");
+  });
+
+  test("createPartnerBooking → PENDING (rezervacija se zgodi pri partnerju, ne pri nas)", () => {
+    const b = partnerPending();
+    expect(b.status).toBe("PENDING");
+    expect(b.channel).toBe("partner");
+    expect(b.partner).toBe(true);
+    expect(b.providerBookingId).toBeNull(); // številko izstavi partner
+    expect(b.confirmedPrice).toBeNull(); // ceno določi partner na svoji strani
+    expect(b.date).toBe(BOOKING_INPUT.date);
+    expect(b.people).toBe(BOOKING_INPUT.people);
+    // Zapis v `note` je zvest tretji osebi (partnerju) — round-trip.
+    const again = parsePartnerNote(buildPartnerNote(b));
+    expect(again).toEqual(b);
+    expect(again!.status).toBe("PENDING");
+  });
+
+  test("confirmPartnerBooking (atestacija iz potrdila) → CONFIRMED; kanal je partner", () => {
+    const r = confirmPartnerBooking(partnerPending(), {
+      providerBookingId: "BK-2026-114",
+      confirmedPrice: 189.9,
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.booking.status).toBe("CONFIRMED");
+    expect(r.booking.providerBookingId).toBe("BK-2026-114");
+    expect(r.booking.confirmedPrice).toBe(189.9);
+    // KLJUČNO: partner zapis nosi source:"USER", a je kanal IZRECNO partner.
+    const note = buildPartnerNote(r.booking);
+    expect(reservationChannelOf(note)).toBe("partner");
+    expect(parsePartnerNote(note)).toEqual(r.booking);
+    // Kontrast z demo fazo: kanala se NE mešata (isti načrt, dva kanala).
+    expect(reservationChannelOf(buildDemoNote(confirmedBooking()))).toBe("demo");
+  });
+
+  test("navigacija: osmDirectionsUrl do postanka Bled ostane uporaben (zunanji handoff)", () => {
+    // Rezervacija pri partnerju NE odvzame navigacije do postanka —
+    // isti zunanji handoff kot v SCENARIJU 4.
+    const { next } = firstLeg(); // naslednji postanek = Bled iz NAŠEGA načrta
+    expect(next).toBeDefined();
+    expect(osmDirectionsUrl(next)).toBe(
+      `https://www.openstreetmap.org/directions?to=${next.lat}%2C${next.lng}`
+    );
+    const mid = midOfLeg();
+    expect(osmDirectionsUrlWithOrigin(mid, next)).toContain(`from=${mid.lat}%2C${mid.lng}`);
+    // ETA do postanka ostane ista iskrena ocena (neodvisna od kanala rezervacije).
+    expect(etaMinutes(haversineKm(mid, next))).toBeGreaterThan(0);
+  });
+
+  test("cel partner cikel na našem načrtu: PENDING → CONFIRMED → MODIFIED → CANCELLED, kanal partner povsod", () => {
+    const pending = partnerPending();
+    const confirmed = confirmPartnerBooking(pending, {
+      providerBookingId: "BK-2026-114",
+      confirmedPrice: 189.9,
+    });
+    expect(confirmed.ok).toBe(true);
+    if (!confirmed.ok) return;
+    const modified = modifyPartnerBooking(confirmed.booking, { people: 4 });
+    expect(modified.ok).toBe(true);
+    if (!modified.ok) return;
+    expect(modified.booking.status).toBe("MODIFIED");
+    const cancelled = cancelPartnerBooking(modified.booking);
+    expect(cancelled.ok).toBe(true);
+    if (!cancelled.ok) return;
+    expect(cancelled.booking.status).toBe("CANCELLED");
+    expect(isTerminal(cancelled.booking.status)).toBe(true);
+    // Iskrenost čez cel cikel: vsak zapis je partner, vsaka nota razkrije partner.
+    for (const b of [pending, confirmed.booking, modified.booking, cancelled.booking]) {
+      expect(b.channel).toBe("partner");
+      expect(b.partner).toBe(true);
+      expect(reservationChannelOf(buildPartnerNote(b))).toBe("partner");
+      expect(parsePartnerNote(buildPartnerNote(b))).toEqual(b);
+    }
+    // PENDING faza je iskreno brez atestacije; CONFIRMED jo nosi naprej.
+    expect(pending.providerBookingId).toBeNull();
+    expect(confirmed.booking.providerBookingId).toBe("BK-2026-114");
+    expect(modified.booking.providerBookingId).toBe("BK-2026-114");
   });
 });

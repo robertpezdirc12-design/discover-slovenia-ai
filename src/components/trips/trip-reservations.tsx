@@ -17,6 +17,12 @@
 //    cikla — brez povratkov v zamisel);
 //  · poskus provider kanala (source: "PROVIDER") na strežniku propade
 //    zaprto (503) — kanal v peskovniku ne obstaja; napaka se izpiše;
+//  · PARTNER kanal (v2.6.0, vzorec MindTrip): REALNA rezervacija PRI
+//    partnerju (Booking.com, GetYourGuide, Kiwi, Rentalcars, Omio) prek
+//    vodene povezave /api/affiliate/go — rezervacija se zaključi pri
+//    partnerju (status PENDING), potrditev je uporabnikova atestacija s
+//    številko iz partnerjevega potrdila; sprememba/odpoved DEJANSKO
+//    tečeta pri partnerju (iskrena povezava), tu vodimo samo stanje;
 //  · vsaka napaka API-ja se izpiše (brez tihih padcev).
 //
 // Mutacije (POST/PATCH/DELETE) so EDITOR+ — vlogo je izračunal strežnik,
@@ -53,6 +59,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   TicketCheck,
   Plus,
@@ -64,6 +71,9 @@ import {
   PenLine,
   BadgeCheck,
   FlaskConical,
+  Handshake,
+  Hourglass,
+  Plane,
   CalendarDays,
   Users,
   ChevronDown,
@@ -91,9 +101,12 @@ import {
   RESERVATION_CHANNEL_LABELS,
   isValidBookingDate,
   parseDemoNote,
+  parsePartnerNote,
   reservationChannelOf,
   searchDemoOffers,
+  searchPartnerOffers,
   type DemoOffer,
+  type PartnerOffer,
 } from "@/lib/journey/booking-provider";
 
 interface ReservationRow {
@@ -112,6 +125,9 @@ type ConfirmTarget =
   | { kind: "create" } // nov potrjen vnos iz obrazca → POST + atestacija
   | { kind: "confirm"; row: ReservationRow } // IDEA → CONFIRMED (PATCH)
   | { kind: "update"; row: ReservationRow }; // CONFIRMED/MODIFIED → MODIFIED (PATCH)
+
+/** Zavihek modala „Išči ponudbo" (issue #1: strogo ločena kanala). */
+type SearchTab = "partner" | "demo";
 
 // Dvojezične oznake novih površin (SL je resnica, EN je prevod — kanon L).
 const L = {
@@ -219,9 +235,108 @@ const DEMO_L = {
   },
 } as const;
 
-/** Kanalne značke vrstic (issue #1: demo/uporabniška/realna — razkritje ob statusu). */
+// ── Partner kanal (issue #1 dokončanje, v2.6.0 — vzorec MindTrip) ────────────
+// REALNA rezervacija PRI partnerju prek vodene povezave /api/affiliate/go:
+// iskanje → kartice ponudb → „Odpri pri partnerju" → „Sem rezerviral —
+// dodaj na pot" (PENDING) → atestacija s partnerjevim potrdilom
+// (CONFIRMED). Demo simulator in partner kanal sta STROGO ločena.
+const PARTNER_L = {
+  bookPartner: { sl: "Rezerviraj pri partnerju", en: "Book with a partner" },
+  tabPartner: { sl: "Pri partnerju", en: "With a partner" },
+  tabDemo: { sl: "Demo simulator", en: "Demo simulator" },
+  modalTitle: { sl: "Išči ponudbo", en: "Search an offer" },
+  modalDesc: {
+    sl: "Dva jasno ločena kanala: realna rezervacija pri partnerju ali demo simulator — nikoli pomešano.",
+    en: "Two clearly separated channels: a real booking with a partner or the demo simulator — never mixed.",
+  },
+  honesty: {
+    sl: "Rezervacija se zaključi pri partnerju (odpre se njihova stran). Če rezerviraš prek naše povezave, portal podpiramo z ocenjeno provizijo partnerja (pogodbena).",
+    en: "The booking is completed with the partner (their site opens). If you book through our link, you support the portal with the partner's estimated commission (contractual).",
+  },
+  day: { sl: "Dan", en: "Day" },
+  stop: { sl: "Postanek", en: "Stop" },
+  customStopLabel: { sl: "Ime postanka (ročni vnos)", en: "Stop name (manual entry)" },
+  offersLabel: { sl: "Ponudbe partnerjev", en: "Partner offers" },
+  offerEmpty: { sl: "Ni ponudb — izberi drug postanek", en: "No offers — pick another stop" },
+  commission: {
+    sl: (pct: number) => `ocena ${pct} %, pogodbena`,
+    en: (pct: number) => `estimate ${pct} %, contractual`,
+  },
+  airportLabel: { sl: "Letališče regije", en: "Region airport" },
+  customSearchNote: {
+    sl: "splošno iskanje pri partnerju (brez destinacije)",
+    en: "general search with the partner (no destination)",
+  },
+  openAtPartner: { sl: "Odpri pri partnerju", en: "Open with the partner" },
+  bookedFormTitle: { sl: "Sem rezerviral — dodaj na pot", en: "I have booked — add to my trip" },
+  pickPartnerHint: {
+    sl: "Najprej izberi partnerja zgoraj — povezava te odpelje na njegovo stran.",
+    en: "First pick a partner above — the link takes you to their site.",
+  },
+  dateLabel: { sl: "Datum", en: "Date" },
+  peopleLabel: { sl: "Število ljudi (1–12)", en: "People (1–12)" },
+  nameLabel: { sl: "Ime na rezervaciji (neobvezno)", en: "Name on the booking (optional)" },
+  formNote: {
+    sl: "Rezervacijo in plačilo zaključiš pri partnerju; tu vodimo stanje, dokler ne vpišeš številke iz njegovega potrdila.",
+    en: "You complete the booking and payment with the partner; here we track the status until you enter the number from their confirmation.",
+  },
+  submit: { sl: "Dodaj na pot", en: "Add to my trip" },
+  successTitle: { sl: "Zapis dodan na pot", en: "Record added to your trip" },
+  pendingBadge: {
+    sl: "ČAKA POTRDITEV — partner bo poslal potrdilo; številko vnesi, ko pride.",
+    en: "AWAITING CONFIRMATION — the partner will send a confirmation; enter its number when it arrives.",
+  },
+  errOffer: { sl: "Izberi partnerja iz seznama ponudb.", en: "Pick a partner from the offer list." },
+  errDate: { sl: "Vpiši veljaven datum (YYYY-MM-DD).", en: "Enter a valid date (YYYY-MM-DD)." },
+  errPeople: {
+    sl: "Število ljudi mora biti celo število med 1 in 12.",
+    en: "People must be a whole number between 1 and 12.",
+  },
+  // Vrstice seznama (partner zapis iz note)
+  rowStatusPending: { sl: "Čaka potrditev partnerja", en: "Awaiting partner confirmation" },
+  rowStatusConfirmed: { sl: "Potrjena (partner)", en: "Confirmed (partner)" },
+  rowStatusModified: { sl: "Spremenjena (partner)", en: "Modified (partner)" },
+  rowStatusCancelled: { sl: "Preklicana", en: "Cancelled" },
+  manageAtPartner: { sl: "Upravljaj pri partnerju", en: "Manage with the partner" },
+  enterProof: { sl: "Vnesi potrdilo partnerja", en: "Enter the partner confirmation" },
+  modify: { sl: "Spremeni", en: "Modify" },
+  cancel: { sl: "Odpovej", en: "Cancel booking" },
+  rowHint: {
+    sl: "Dejansko spremembo ali preklic opraviš pri partnerju — tu označujemo stanje na poti.",
+    en: "The actual change or cancellation is made with the partner — here we only track the status on your trip.",
+  },
+  confirmTitle: { sl: "Vnesi potrdilo partnerja", en: "Enter the partner confirmation" },
+  confirmDesc: {
+    sl: "Prepiši številko rezervacije in ceno iz potrdila, ki ga je poslal partner — shranita se kot tvoja atestacija.",
+    en: "Copy the booking number and price from the confirmation the partner sent you — they are saved as your attestation.",
+  },
+  bookingIdLabel: {
+    sl: "Številka rezervacije (potrdilo partnerja)",
+    en: "Booking number (partner confirmation)",
+  },
+  bookingIdPlaceholder: { sl: "npr. 4529-8871", en: "e.g. 4529-8871" },
+  priceLabel: { sl: "Cena (EUR)", en: "Price (EUR)" },
+  pricePlaceholder: { sl: "npr. 89,90", en: "e.g. 89.90" },
+  errBookingId: {
+    sl: "Vpiši številko rezervacije iz partnerjevega potrdila.",
+    en: "Enter the booking number from the partner's confirmation.",
+  },
+  errPrice: {
+    sl: "Vpiši ceno iz partnerjevega potrdila (število, večje od 0).",
+    en: "Enter the price from the partner's confirmation (a number greater than 0).",
+  },
+  submitConfirm: { sl: "Shrani kot potrjeno", en: "Save as confirmed" },
+  editTitle: { sl: "Spremeni partner rezervacijo", en: "Modify partner booking" },
+  editDesc: {
+    sl: "Spremeni datum, število ljudi ali ime. Dejansko spremembo opraviš pri partnerju — tu vodimo stanje na poti.",
+    en: "Change the date, people or name. The actual change is made with the partner — here we track the status on your trip.",
+  },
+  editSubmit: { sl: "Shrani spremembo", en: "Save change" },
+} as const;
+
+/** Kanalne značke vrstic (issue #1: demo/uporabniška/realna/partner — razkritje ob statusu). */
 const CHANNEL_BADGES: Record<
-  "demo" | "user" | "real",
+  "demo" | "user" | "real" | "partner",
   { label: { sl: string; en: string }; cls: string }
 > = {
   demo: {
@@ -239,6 +354,12 @@ const CHANNEL_BADGES: Record<
     // Realni kanal bi bil smaragno „provider potrjen" — v peskovniku se
     // NIKOLI ne izriše (fail-closed 503 na strežniku).
     cls: "border-primary/50 text-primary bg-primary/5",
+  },
+  partner: {
+    label: RESERVATION_CHANNEL_LABELS.partner,
+    // Partner kanal (2.6.0) = SMARAGDNA jakost: rezervacija je REALNA in
+    // živi pri partnerju (provizijsko razkrito) — nikoli indigo/modra.
+    cls: "border-emerald-500/50 text-emerald-700 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
   },
 };
 
@@ -263,6 +384,34 @@ const STATUS_BADGES: Record<string, { label: { sl: string; en: string }; cls: st
   CANCELLED: {
     label: { sl: L.statusCancelled.sl, en: L.statusCancelled.en },
     cls: "border-border text-muted-foreground",
+  },
+};
+
+/**
+ * Statusni žetoni PARTNER vrstic (2.6.0 — življenjski cikel pri
+ * partnerju): PENDING amber (čaka partnerja), CONFIRMED smaragdno
+ * (uporabniška atestacija s partnerjevim potrdilom), MODIFIED vijolično,
+ * CANCELLED rdeče (terminalno).
+ */
+const PARTNER_STATUS_BADGES: Record<
+  string,
+  { label: { sl: string; en: string }; cls: string }
+> = {
+  PENDING: {
+    label: { sl: PARTNER_L.rowStatusPending.sl, en: PARTNER_L.rowStatusPending.en },
+    cls: "border-amber-500/50 text-amber-700 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-300",
+  },
+  CONFIRMED: {
+    label: { sl: PARTNER_L.rowStatusConfirmed.sl, en: PARTNER_L.rowStatusConfirmed.en },
+    cls: "border-emerald-500/50 text-emerald-700 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300",
+  },
+  MODIFIED: {
+    label: { sl: PARTNER_L.rowStatusModified.sl, en: PARTNER_L.rowStatusModified.en },
+    cls: "border-violet-500/50 text-violet-700 bg-violet-50 dark:bg-violet-950/30 dark:text-violet-300 dark:border-violet-700",
+  },
+  CANCELLED: {
+    label: { sl: PARTNER_L.rowStatusCancelled.sl, en: PARTNER_L.rowStatusCancelled.en },
+    cls: "border-red-500/50 text-red-700 bg-red-50 dark:border-red-700 dark:bg-red-950/30 dark:text-red-300",
   },
 };
 
@@ -341,7 +490,10 @@ export function TripReservations({
   const { data: session } = useSession();
   const myUserId = session?.user?.id ?? null;
 
-  const [demoOpen, setDemoOpen] = useState(false);
+  // Modal „Išči ponudbo" (issue #1): zgornja izbira KANALA — partner
+  // (REALNO, smaragdno) ali demo simulator (oranžno); strogo ločeno.
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchTab, setSearchTab] = useState<SearchTab>("partner");
   const [demoDay, setDemoDay] = useState("1");
   const [demoStop, setDemoStop] = useState("");
   const [demoCustomStop, setDemoCustomStop] = useState("");
@@ -364,6 +516,39 @@ export function TripReservations({
   const [demoEditPeople, setDemoEditPeople] = useState("");
   const [demoEditName, setDemoEditName] = useState("");
   const [demoEditError, setDemoEditError] = useState<string | null>(null);
+
+  // ── Partner kanal (issue #1 dokončanje, v2.6.0): zavihek „PRI PARTNERJU" ──
+  // Izbira dneva + postanka je ločena od demo stanj (čisto, brez prepletov).
+  const [ptDay, setPtDay] = useState("1");
+  const [ptStop, setPtStop] = useState("");
+  const [ptCustomStop, setPtCustomStop] = useState("");
+  const [ptProvider, setPtProvider] = useState("");
+  const [ptDate, setPtDate] = useState("");
+  const [ptPeople, setPtPeople] = useState("2");
+  const [ptName, setPtName] = useState("");
+  const [partnerError, setPartnerError] = useState<string | null>(null);
+  const [partnerDone, setPartnerDone] = useState<{
+    providerName: string;
+    stopName: string;
+    date: string;
+    people: number;
+    goPath: string | null;
+  } | null>(null);
+
+  // Partner „Vnesi potrdilo" (PENDING → CONFIRMED — uporabnikova
+  // atestacija s številko/ceno iz partnerjevega potrdila).
+  const [partnerConfirm, setPartnerConfirm] = useState<ReservationRow | null>(null);
+  const [partnerConfirmId, setPartnerConfirmId] = useState("");
+  const [partnerConfirmPrice, setPartnerConfirmPrice] = useState("");
+  const [partnerConfirmError, setPartnerConfirmError] = useState<string | null>(null);
+
+  // Partner „Spremeni" (PATCH modify — indikativno; dejanska sprememba
+  // teče PRI partnerju, tu vodimo stanje).
+  const [partnerEdit, setPartnerEdit] = useState<ReservationRow | null>(null);
+  const [partnerEditDate, setPartnerEditDate] = useState("");
+  const [partnerEditPeople, setPartnerEditPeople] = useState("");
+  const [partnerEditName, setPartnerEditName] = useState("");
+  const [partnerEditError, setPartnerEditError] = useState<string | null>(null);
 
   const days = plan.days ?? [];
   const dayNumber = Math.min(Number(dayValue) || 1, Math.max(days.length, 1));
@@ -432,14 +617,40 @@ export function TripReservations({
     }
   }, [demoOffers, demoOfferId]);
 
-  const closeDemoModal = useCallback(() => {
-    setDemoOpen(false);
+  // Partner izpeljave: dan → postanek → slug destinacije → REALNE ponudbe
+  // partnerjev (searchPartnerOffers — do 5, z vodenimi povezavami).
+  const ptDayNumber = Math.min(Number(ptDay) || 1, Math.max(days.length, 1));
+  const ptSelectedDay = days.find((d) => d.day === ptDayNumber) ?? days[0];
+  const ptStops = ptSelectedDay?.locations ?? [];
+  const ptStopSlug =
+    ptStop === CUSTOM_STOP
+      ? null
+      : ptStops[Number(ptStop)]?.destSlug ?? null;
+  const ptOffers = useMemo<PartnerOffer[]>(
+    () => searchPartnerOffers(ptStopSlug),
+    [ptStopSlug]
+  );
+  const selectedPtOffer =
+    ptOffers.find((o) => o.providerId === ptProvider) ?? null;
+
+  // Ob spremenjenem dnevu ponastavi izbiro partner postanka.
+  useEffect(() => {
+    setPtStop(ptStops.length > 0 ? String(0) : CUSTOM_STOP);
+  }, [ptDay, ptStops.length]);
+
+  const closeSearchModal = useCallback(() => {
+    setSearchOpen(false);
     setDemoError(null);
     setDemoDone(null);
+    setPartnerError(null);
+    setPartnerDone(null);
   }, []);
 
-  /** Odpri modal „Išči ponudbo" s čistim stanjem. */
-  const openDemoModal = useCallback(() => {
+  /**
+   * Odpri modal „Išči ponudbo" s čistim stanjem na izbranem zavihku
+   * (partner = REALNA rezervacija pri partnerju; demo = simulator).
+   */
+  const openSearchModal = useCallback((tab: SearchTab) => {
     setDemoDay("1");
     setDemoCustomStop("");
     setDemoOfferId("");
@@ -448,7 +659,16 @@ export function TripReservations({
     setDemoName("");
     setDemoError(null);
     setDemoDone(null);
-    setDemoOpen(true);
+    setPtDay("1");
+    setPtCustomStop("");
+    setPtProvider("");
+    setPtDate("");
+    setPtPeople("2");
+    setPtName("");
+    setPartnerError(null);
+    setPartnerDone(null);
+    setSearchTab(tab);
+    setSearchOpen(true);
   }, []);
 
   /** POST /api/journey/bookings — demo rezervacija (server kuje DSA-DEMO-XXXX). */
@@ -604,6 +824,229 @@ export function TripReservations({
       setBusy(false);
     }
   }, [demoEdit, demoEditDate, demoEditPeople, demoEditName, l, load]);
+
+  /**
+   * POST /api/journey/bookings (channel:"partner") — zapis na pot s
+   * stanjem PENDING: rezervacija in plačilo se DEJANSKO zaključita pri
+   * partnerju (vodena povezava); tu vodimo stanje do njegovega potrdila.
+   * Številke/cene klient POZITIVNO ne pošilja (kujeta se izključno ob
+   * potrditvi prek PATCH confirm).
+   */
+  const submitPartnerBooking = useCallback(async () => {
+    const offer = selectedPtOffer;
+    if (!offer) {
+      setPartnerError(pick(l, PARTNER_L.errOffer));
+      return;
+    }
+    if (!isValidBookingDate(ptDate)) {
+      setPartnerError(pick(l, PARTNER_L.errDate));
+      return;
+    }
+    const people = Math.round(Number(ptPeople));
+    if (!Number.isInteger(people) || people < 1 || people > 12) {
+      setPartnerError(pick(l, PARTNER_L.errPeople));
+      return;
+    }
+    // Ime postanka: seznam ali ročni vnos (≥ 2 znaka); sicer pusti
+    // strežniku, da zgradi iskreno privzeto oznako iz ponudbe partnerja.
+    const customStopName =
+      ptStop === CUSTOM_STOP
+        ? ptCustomStop.trim()
+        : ptStops[Number(ptStop)]?.name ?? "";
+    const stopName = customStopName.length >= 2 ? customStopName : null;
+    const stopSlug =
+      ptStop === CUSTOM_STOP ? null : ptStops[Number(ptStop)]?.destSlug ?? null;
+
+    setBusy(true);
+    setPartnerError(null);
+    try {
+      const r = await fetch("/api/journey/bookings", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          shareId,
+          channel: "partner",
+          provider: offer.providerId,
+          destinationSlug: offer.destinationSlug || "",
+          dayIndex: ptDayNumber,
+          stopSlug,
+          stopName,
+          date: ptDate,
+          people,
+          name: ptName.trim() || null,
+        }),
+      });
+      const data = (await r.json().catch(() => null)) as {
+        success?: boolean;
+        error?: string;
+        providerName?: string;
+        goPath?: string;
+        reservation?: { stopName?: string };
+      } | null;
+      if (!r.ok || !data?.success) {
+        // Iskrena napaka strežnika (400 validacija / 401 / 403 / 404 / 429).
+        setPartnerError(data?.error ?? `Napaka ${r.status}`);
+        return;
+      }
+      setPartnerDone({
+        providerName: data.providerName ?? offer.providerName,
+        stopName: data.reservation?.stopName ?? (stopName ?? offer.providerName),
+        people,
+        date: ptDate,
+        goPath: typeof data.goPath === "string" ? data.goPath : null,
+      });
+      setActionError(null);
+      await load();
+    } catch (e) {
+      setPartnerError(errText(e));
+    } finally {
+      setBusy(false);
+    }
+  }, [shareId, l, selectedPtOffer, ptDate, ptPeople, ptStop, ptCustomStop, ptStops, ptName, ptDayNumber, load]);
+
+  /**
+   * PATCH action:"cancel" — partner rezervacija (DEJANSKI preklic teče
+   * pri partnerju; tu iskreno označimo stanje CANCELLED).
+   */
+  const cancelPartnerReservation = useCallback(
+    async (id: string) => {
+      setBusy(true);
+      setActionError(null);
+      try {
+        const r = await fetch("/api/journey/bookings", {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ reservationId: id, action: "cancel" }),
+        });
+        const data = (await r.json().catch(() => null)) as {
+          success?: boolean;
+          error?: string;
+        } | null;
+        if (!r.ok || !data?.success) {
+          setActionError(data?.error ?? `Napaka ${r.status}`);
+          return;
+        }
+        await load();
+      } catch (e) {
+        setActionError(errText(e));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [load]
+  );
+
+  /** Odpri modal „Vnesi potrdilo partnerja" (PENDING → CONFIRMED). */
+  const openPartnerConfirm = useCallback((row: ReservationRow) => {
+    setPartnerConfirm(row);
+    setPartnerConfirmId("");
+    setPartnerConfirmPrice("");
+    setPartnerConfirmError(null);
+  }, []);
+
+  /**
+   * PATCH action:"confirm" — uporabniška atestacija s partnerjevim
+   * potrdilom (številka + cena sta OBVEZNI in pozitivni).
+   */
+  const submitPartnerConfirm = useCallback(async () => {
+    if (!partnerConfirm) return;
+    const ref = partnerConfirmId.trim();
+    if (ref.length < 1) {
+      setPartnerConfirmError(pick(l, PARTNER_L.errBookingId));
+      return;
+    }
+    const price = Number(partnerConfirmPrice.trim().replace(",", "."));
+    if (!Number.isFinite(price) || price <= 0) {
+      setPartnerConfirmError(pick(l, PARTNER_L.errPrice));
+      return;
+    }
+    setBusy(true);
+    setPartnerConfirmError(null);
+    try {
+      const r = await fetch("/api/journey/bookings", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          reservationId: partnerConfirm.id,
+          action: "confirm",
+          providerBookingId: ref,
+          confirmedPrice: price,
+        }),
+      });
+      const data = (await r.json().catch(() => null)) as {
+        success?: boolean;
+        error?: string;
+      } | null;
+      if (!r.ok || !data?.success) {
+        setPartnerConfirmError(data?.error ?? `Napaka ${r.status}`);
+        return;
+      }
+      setPartnerConfirm(null);
+      setActionError(null);
+      await load();
+    } catch (e) {
+      setPartnerConfirmError(errText(e));
+    } finally {
+      setBusy(false);
+    }
+  }, [partnerConfirm, partnerConfirmId, partnerConfirmPrice, l, load]);
+
+  /** Odpri modal „Spremeni partner rezervacijo" (polnjenje iz note). */
+  const openPartnerEdit = useCallback((row: ReservationRow) => {
+    const record = parsePartnerNote(row.note);
+    setPartnerEdit(row);
+    setPartnerEditDate(record?.date ?? "");
+    setPartnerEditPeople(record ? String(record.people) : "");
+    setPartnerEditName(record?.name ?? "");
+    setPartnerEditError(null);
+  }, []);
+
+  /**
+   * PATCH action:"modify" — indikativna sprememba (datum/ljudje/ime);
+   * DEJANSKA sprememba teče pri partnerju (iskrena povezava v vrstici).
+   */
+  const submitPartnerModify = useCallback(async () => {
+    if (!partnerEdit) return;
+    if (!isValidBookingDate(partnerEditDate)) {
+      setPartnerEditError(pick(l, PARTNER_L.errDate));
+      return;
+    }
+    const people = Math.round(Number(partnerEditPeople));
+    if (!Number.isInteger(people) || people < 1 || people > 12) {
+      setPartnerEditError(pick(l, PARTNER_L.errPeople));
+      return;
+    }
+    setBusy(true);
+    setPartnerEditError(null);
+    try {
+      const r = await fetch("/api/journey/bookings", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          reservationId: partnerEdit.id,
+          action: "modify",
+          date: partnerEditDate,
+          people,
+          name: partnerEditName.trim() || null,
+        }),
+      });
+      const data = (await r.json().catch(() => null)) as {
+        success?: boolean;
+        error?: string;
+      } | null;
+      if (!r.ok || !data?.success) {
+        setPartnerEditError(data?.error ?? `Napaka ${r.status}`);
+        return;
+      }
+      setPartnerEdit(null);
+      setActionError(null);
+      await load();
+    } catch (e) {
+      setPartnerEditError(errText(e));
+    } finally {
+      setBusy(false);
+    }
+  }, [partnerEdit, partnerEditDate, partnerEditPeople, partnerEditName, l, load]);
 
   /** Reši postanek obrazca (seznam ali ročni vnos) — null, če ni veljaven. */
   const resolveStop = useCallback((): { stopName: string; stopSlug: string | null } | null => {
@@ -870,20 +1313,40 @@ export function TripReservations({
         ) : rows.length > 0 ? (
           <ul className="max-h-96 space-y-2 overflow-y-auto pr-1">
             {rows.map((b) => {
-              const badge = STATUS_BADGES[b.status] ?? null;
+              // Kanal zapisa (issue #1): demo simulator / partner /
+              // uporabniška atestacija / realni ponudnik — razkritje ob
+              // statusnem žetonu.
+              const channel = reservationChannelOf(b.note);
+              const channelBadge = channel ? CHANNEL_BADGES[channel] : null;
+              const demoRecord = channel === "demo" ? parseDemoNote(b.note) : null;
+              // Partner zapis (2.6.0): rezervacija ŽIVI pri partnerju —
+              // vrstica nosi ponudnika, stanje in (ob atestaciji)
+              // številko + ceno iz njegovega potrdila.
+              const partnerRecord = channel === "partner" ? parsePartnerNote(b.note) : null;
+              // Statusne žetone partner vrstice nosi partner nabor
+              // (PENDING amber / CONFIRMED smaragdno / …).
+              const badge = partnerRecord
+                ? PARTNER_STATUS_BADGES[b.status] ?? null
+                : STATUS_BADGES[b.status] ?? null;
               // Neznan status → iskrena oznaka kanonske knjižnice (brez
               // izmišljenega prevoda).
               const badgeLabel = badge ? pick(l, badge.label) : statusLabel(b.status, lang);
               const attestation = parseAttestationNote(b.note);
-              const noteText = noteTextOf(b.note);
-              // Kanal zapisa (issue #1): demo simulator / uporabniška
-              // atestacija / realni ponudnik — razkritje ob statusnem žetonu.
-              const channel = reservationChannelOf(b.note);
-              const channelBadge = channel ? CHANNEL_BADGES[channel] : null;
-              const demoRecord = channel === "demo" ? parseDemoNote(b.note) : null;
+              // Partner zapis nima proste opombe — noteTextOf bi za PENDING
+              // (brez številke) vrnil surov JSON; iskreno ne izpišemo nič.
+              const noteText = partnerRecord ? null : noteTextOf(b.note);
               // Demo rezervacijo spreminja SAMO njen lastnik (strežnik
               // preverja createdBy; UI le pošteno skrije tuje akcije).
               const demoMine = channel === "demo" && b.createdBy === myUserId;
+              // Partner akcije (PATCH) prav tako samo za lastnika zapisa.
+              const partnerMine = channel === "partner" && b.createdBy === myUserId;
+              // VODENA povezava „Upravljaj pri partnerju" — dest parameter
+              // SAMO če je destinationSlug znan (custom postanek brez njega).
+              const partnerManageUrl = partnerRecord
+                ? partnerRecord.destinationSlug
+                  ? `/api/affiliate/go?provider=${encodeURIComponent(partnerRecord.provider)}&dest=${encodeURIComponent(partnerRecord.destinationSlug)}`
+                  : `/api/affiliate/go?provider=${encodeURIComponent(partnerRecord.provider)}`
+                : null;
               // MOST v navigacijo (issue #1 področje 5): postanek z znanim
               // destSlug → destinacija s koordinatami; ročni vnosi (brez
               // sluga) ostanejo brez navigacije — do neznane lokacije ne
@@ -909,15 +1372,52 @@ export function TripReservations({
                       >
                         {channel === "demo" ? (
                           <FlaskConical className="size-3" aria-hidden="true" />
+                        ) : channel === "partner" ? (
+                          <Handshake className="size-3" aria-hidden="true" />
                         ) : null}
-                        {pick(l, channelBadge.label)}
+                        {channel === "partner" && partnerRecord
+                          ? `${partnerRecord.providerName} · ${pick(l, channelBadge.label)}`
+                          : pick(l, channelBadge.label)}
                       </Badge>
                     ) : null}
                   </div>
                   <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-                    {/* DEMO razkritje: št. simulirane potrditve + cena + */}
-                    {/* datum/ljudje — izrecno „demo", nikoli provider. */}
-                    {demoRecord ? (
+                    {/* PARTNER razkritje: ponudnik + datum/ljudje/ime + */}
+                    {/* številka iz partnerjevega potrdila (font-mono) + */}
+                    {/* atestirana cena — rezervacija živi pri partnerju. */}
+                    {partnerRecord ? (
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-foreground/80">
+                        <span className="inline-flex items-center gap-1 font-medium">
+                          <Handshake
+                            className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400"
+                            aria-hidden="true"
+                          />
+                          {partnerRecord.providerName}
+                        </span>
+                        <span aria-hidden="true">·</span>
+                        <span>
+                          {DEMO_L.peopleWord[lang](partnerRecord.people)} · {partnerRecord.date}
+                          {partnerRecord.name ? ` · ${partnerRecord.name}` : ""}
+                        </span>
+                        {partnerRecord.providerBookingId ? (
+                          <>
+                            <span aria-hidden="true">·</span>
+                            <span className="font-mono text-[11px]">
+                              {partnerRecord.providerBookingId}
+                            </span>
+                          </>
+                        ) : null}
+                        {partnerRecord.confirmedPrice != null ? (
+                          <>
+                            <span aria-hidden="true">·</span>
+                            <span>{formatPriceEUR(partnerRecord.confirmedPrice, lang)}</span>
+                          </>
+                        ) : null}
+                        <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                          kanal: partner (provizijsko)
+                        </span>
+                      </div>
+                    ) : demoRecord ? (
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-foreground/80">
                         <span className="inline-flex items-center gap-1 font-medium">
                           <FlaskConical
@@ -1010,6 +1510,34 @@ export function TripReservations({
                       </DropdownMenu>
                     </div>
                   ) : null}
+
+                  {/* ── PARTNER: vodena povezava „Upravljaj pri partnerju" ──
+                      Na voljo na VSAKI partner vrstici (tudi ne-urednikom
+                      — povezava ni mutacija): DEJANSKA sprememba/preklic
+                      rezervacije teče pri partnerju (rel sponsored
+                      noopener; klik se šteje prek /api/affiliate/go). */}
+                  {partnerRecord && partnerManageUrl ? (
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="min-h-11 gap-1.5 border-emerald-600/50 font-semibold text-emerald-700 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-300"
+                      >
+                        <a
+                          href={partnerManageUrl}
+                          target="_blank"
+                          rel="nofollow sponsored noopener"
+                          aria-label={`${pick(l, PARTNER_L.manageAtPartner)}: ${partnerRecord.providerName}`}
+                          title={`${pick(l, PARTNER_L.manageAtPartner)}: ${partnerRecord.providerName}`}
+                        >
+                          <Handshake className="size-4" aria-hidden="true" />
+                          {pick(l, PARTNER_L.manageAtPartner)}
+                          <ExternalLink className="size-3.5" aria-hidden="true" />
+                        </a>
+                      </Button>
+                    </div>
+                  ) : null}
                   {canEdit ? (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {/* ── Demo akcije (PATCH /api/journey/bookings) ── */}
@@ -1041,8 +1569,52 @@ export function TripReservations({
                           ) : null}
                         </>
                       ) : null}
+                      {/* ── Partner akcije (PATCH /api/journey/bookings,
+                          kanal partner — življenjski cikel pri partnerju) ── */}
+                      {partnerMine ? (
+                        <>
+                          {b.status === "PENDING" ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openPartnerConfirm(b)}
+                              disabled={busy}
+                              className="min-h-11 gap-1.5 border-amber-500/50 font-semibold text-amber-700 hover:text-amber-800 dark:border-amber-700 dark:text-amber-300"
+                            >
+                              <Hourglass className="size-4" aria-hidden="true" />
+                              {pick(l, PARTNER_L.enterProof)}
+                            </Button>
+                          ) : null}
+                          {b.status === "PENDING" ||
+                          b.status === "CONFIRMED" ||
+                          b.status === "MODIFIED" ? (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openPartnerEdit(b)}
+                                disabled={busy}
+                                className="min-h-11 gap-1.5"
+                              >
+                                <PenLine className="size-4" aria-hidden="true" />
+                                {pick(l, PARTNER_L.modify)}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => void cancelPartnerReservation(b.id)}
+                                disabled={busy}
+                                className="min-h-11 gap-1.5"
+                              >
+                                <Ban className="size-4" aria-hidden="true" />
+                                {pick(l, PARTNER_L.cancel)}
+                              </Button>
+                            </>
+                          ) : null}
+                        </>
+                      ) : null}
                       {/* ── S1 atestacijske akcije (kanon 51-c ostaja) ── */}
-                      {!demoRecord && b.status === "IDEA" ? (
+                      {!demoRecord && !partnerRecord && b.status === "IDEA" ? (
                         <Button
                           size="sm"
                           variant="outline"
@@ -1054,7 +1626,7 @@ export function TripReservations({
                           {pick(l, L.confirmReservation)}
                         </Button>
                       ) : null}
-                      {!demoRecord && (b.status === "CONFIRMED" || b.status === "MODIFIED") ? (
+                      {!demoRecord && !partnerRecord && (b.status === "CONFIRMED" || b.status === "MODIFIED") ? (
                         <Button
                           size="sm"
                           variant="outline"
@@ -1066,7 +1638,7 @@ export function TripReservations({
                           {pick(l, L.updateProof)}
                         </Button>
                       ) : null}
-                      {!demoRecord && b.status !== "CANCELLED" ? (
+                      {!demoRecord && !partnerRecord && b.status !== "CANCELLED" ? (
                         <Button
                           size="sm"
                           variant="ghost"
@@ -1090,6 +1662,13 @@ export function TripReservations({
                         Odstrani
                       </Button>
                     </div>
+                  ) : null}
+                  {/* Partner opomba k akcijam: DEJANSKA sprememba/preklic
+                      tečeta pri partnerju — tu označujemo stanje poti. */}
+                  {canEdit && partnerMine && b.status !== "CANCELLED" ? (
+                    <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
+                      {pick(l, PARTNER_L.rowHint)}
+                    </p>
                   ) : null}
                 </li>
               );
@@ -1226,12 +1805,25 @@ export function TripReservations({
                 <Plus className="size-4" aria-hidden="true" />
                 Dodaj rezervacijo
               </Button>
+              {/* Partner kanal (issue #1, v2.6.0 — vzorec MindTrip):
+                  REALNA rezervacija pri partnerju; modal „Išči ponudbo"
+                  odpre na zavihku PRI PARTNERJU (smaragdno, provizijsko
+                  razkrito). */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => openSearchModal("partner")}
+                className="min-h-11 gap-1.5 border-emerald-600/50 text-emerald-700 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-300"
+              >
+                <Handshake className="size-4" aria-hidden="true" />
+                {pick(l, PARTNER_L.bookPartner)}
+              </Button>
               {/* Demo simulator (issue #1): celotna veriga iskanje → izbor →
                   rezervacija → potrditev — IZRECNO označena kot demo. */}
               <Button
                 variant="outline"
                 size="sm"
-                onClick={openDemoModal}
+                onClick={() => openSearchModal("demo")}
                 className="min-h-11 gap-1.5 border-orange-500/50 text-orange-700 hover:text-orange-800 dark:border-orange-700 dark:text-orange-300"
               >
                 <FlaskConical className="size-4" aria-hidden="true" />
@@ -1336,208 +1928,520 @@ export function TripReservations({
           </DialogContent>
         </Dialog>
 
-        {/* ── Modal: Išči ponudbo — DEMO SIMULATOR (issue #1) ─────────── */}
+        {/* ── Modal: Išči ponudbo — PRI PARTNERJU / DEMO SIMULATOR ──────
+            (issue #1: ZGORNJA izbira kanala — strogo ločena kanala).
+            Partner = REALNA rezervacija pri partnerju (smaragdno,
+            provizijsko razkrito); demo = simulator (oranžno, simulirano). */}
         <Dialog
-          open={demoOpen}
+          open={searchOpen}
           onOpenChange={(open) => {
-            if (!open) closeDemoModal();
+            if (!open) closeSearchModal();
           }}
         >
           <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <FlaskConical
-                  className="size-5 text-orange-600 dark:text-orange-400"
-                  aria-hidden="true"
-                />
-                {pick(l, DEMO_L.modalTitle)}
+                <TicketCheck className="size-5 text-primary" aria-hidden="true" />
+                {pick(l, PARTNER_L.modalTitle)}
               </DialogTitle>
-              <DialogDescription>{pick(l, DEMO_L.modalDesc)}</DialogDescription>
+              <DialogDescription>{pick(l, PARTNER_L.modalDesc)}</DialogDescription>
             </DialogHeader>
 
-            {/* IZRECNA pasica — oranžna jakost, NIKOLI zelena */}
-            <p
-              role="note"
-              className="flex items-start gap-2 rounded-md border border-orange-500/50 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-800 dark:border-orange-700 dark:bg-orange-950/40 dark:text-orange-300"
+            <Tabs
+              value={searchTab}
+              onValueChange={(v) => setSearchTab(v === "demo" ? "demo" : "partner")}
             >
-              <FlaskConical className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-              {pick(l, DEMO_L.honesty)}
-            </p>
+              <TabsList className="grid h-auto w-full grid-cols-2">
+                <TabsTrigger
+                  value="partner"
+                  className="min-h-11 gap-1.5 px-3 uppercase tracking-wide data-[state=active]:border-emerald-600/50 data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-800 dark:data-[state=active]:border-emerald-700 dark:data-[state=active]:bg-emerald-950/40 dark:data-[state=active]:text-emerald-300"
+                >
+                  <Handshake className="size-4" aria-hidden="true" />
+                  {pick(l, PARTNER_L.tabPartner)}
+                </TabsTrigger>
+                <TabsTrigger
+                  value="demo"
+                  className="min-h-11 gap-1.5 px-3 uppercase tracking-wide data-[state=active]:border-orange-600/50 data-[state=active]:bg-orange-50 data-[state=active]:text-orange-800 dark:data-[state=active]:border-orange-700 dark:data-[state=active]:bg-orange-950/40 dark:data-[state=active]:text-orange-300"
+                >
+                  <FlaskConical className="size-4" aria-hidden="true" />
+                  {pick(l, PARTNER_L.tabDemo)}
+                </TabsTrigger>
+              </TabsList>
 
-            {demoDone ? (
-              <div className="space-y-3" role="status">
-                <div className="flex items-start gap-2 rounded-md border border-orange-500/40 bg-orange-50/60 p-3 dark:border-orange-700/60 dark:bg-orange-950/30">
-                  <CircleCheck
-                    className="mt-0.5 size-5 shrink-0 text-orange-600 dark:text-orange-400"
-                    aria-hidden="true"
-                  />
-                  <div className="space-y-1 text-sm">
-                    <p className="font-semibold">{pick(l, DEMO_L.successTitle)}</p>
-                    <p className="text-xs text-muted-foreground">
-                      <span className="font-medium text-foreground">
-                        {demoDone.stopName}
-                      </span>{" "}
-                      · {formatPriceEUR(demoDone.price, lang)} ·{" "}
-                      {DEMO_L.peopleWord[lang](demoDone.people)} · {demoDone.date}
-                    </p>
-                    <p className="font-mono text-xs">{demoDone.providerBookingId}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {DEMO_L.successBody[lang](demoDone.providerBookingId)}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-[11px] leading-snug text-muted-foreground">
-                  {pick(l, DEMO_L.realNote)}
+              {/* ── Zavihek PRI PARTNERJU (REALNO — rezervacija se zaključi ──
+                  pri partnerju prek vodene povezave, provizijsko razkrito) ── */}
+              <TabsContent value="partner" className="mt-3 space-y-3">
+                {/* IZRECNO razkritje (vzorec MindTrip): provizija je OCENA
+                    (pogodbena) — nikoli obljuba. */}
+                <p
+                  role="note"
+                  className="flex items-start gap-2 rounded-md border border-emerald-600/50 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                >
+                  <Handshake className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+                  {pick(l, PARTNER_L.honesty)}
                 </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="grid gap-2.5 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="demo-day">{pick(l, DEMO_L.day)}</Label>
-                    <Select value={String(demoDayNumber)} onValueChange={setDemoDay}>
-                      <SelectTrigger id="demo-day" className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {days.map((d) => (
-                          <SelectItem key={d.day} value={String(d.day)}>
-                            Dan {d.day}
-                            {d.title ? ` — ${d.title}` : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="demo-stop">{pick(l, DEMO_L.stop)}</Label>
-                    <Select value={demoStop} onValueChange={setDemoStop}>
-                      <SelectTrigger id="demo-stop" className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {demoStops.map((s, i) => (
-                          <SelectItem key={`demo-${s.name}-${i}`} value={String(i)}>
-                            {s.name}
-                          </SelectItem>
-                        ))}
-                        <SelectItem value={CUSTOM_STOP}>
-                          Drugo (ročni vnos)
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                {demoStop === CUSTOM_STOP ? (
-                  <div className="space-y-1.5">
-                    <Label htmlFor="demo-custom-stop">{pick(l, DEMO_L.customStopLabel)}</Label>
-                    <Input
-                      id="demo-custom-stop"
-                      value={demoCustomStop}
-                      maxLength={200}
-                      onChange={(e) => setDemoCustomStop(e.target.value)}
-                      placeholder="npr. Gostilna Pri Lovcu"
-                    />
-                  </div>
-                ) : null}
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="demo-offer">{pick(l, DEMO_L.offerLabel)}</Label>
-                  {demoOffers.length > 0 ? (
-                    <Select value={demoOfferId} onValueChange={setDemoOfferId}>
-                      <SelectTrigger id="demo-offer" className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {demoOffers.map((o) => (
-                          <SelectItem key={o.offerId} value={o.offerId}>
-                            {pick(l, o.title)} ({o.destinationName}) —{" "}
-                            {formatPriceEUR(o.pricePerPerson, lang)}
-                            {pick(l, DEMO_L.perPerson)} ·{" "}
-                            {o.match === "exact"
-                              ? pick(l, DEMO_L.matchExact)
-                              : o.match === "region"
-                                ? pick(l, DEMO_L.matchRegion)
-                                : pick(l, DEMO_L.matchSuggested)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      {pick(l, DEMO_L.offerEmpty)}
-                    </p>
-                  )}
-                  {selectedDemoOffer ? (
+                {partnerDone ? (
+                  <div className="space-y-3" role="status">
+                    <div className="flex items-start gap-2 rounded-md border border-amber-500/50 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950/30">
+                      <Hourglass
+                        className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-400"
+                        aria-hidden="true"
+                      />
+                      <div className="space-y-1 text-sm">
+                        <p className="font-semibold text-amber-800 dark:text-amber-300">
+                          {pick(l, PARTNER_L.successTitle)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          <span className="font-medium text-foreground">
+                            {partnerDone.providerName}
+                          </span>{" "}
+                          · {partnerDone.stopName} ·{" "}
+                          {DEMO_L.peopleWord[lang](partnerDone.people)} · {partnerDone.date}
+                        </p>
+                        <p className="text-xs font-semibold tracking-wide text-amber-700 dark:text-amber-300">
+                          {pick(l, PARTNER_L.pendingBadge)}
+                        </p>
+                      </div>
+                    </div>
+                    {partnerDone.goPath ? (
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="min-h-11 gap-1.5 border-emerald-600/50 text-emerald-700 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-300"
+                      >
+                        <a
+                          href={partnerDone.goPath}
+                          target="_blank"
+                          rel="nofollow sponsored noopener"
+                        >
+                          <ExternalLink className="size-3.5" aria-hidden="true" />
+                          {pick(l, PARTNER_L.manageAtPartner)}
+                        </a>
+                      </Button>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="grid gap-2.5 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="pt-day">{pick(l, PARTNER_L.day)}</Label>
+                        <Select value={String(ptDayNumber)} onValueChange={setPtDay}>
+                          <SelectTrigger id="pt-day" className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {days.map((d) => (
+                              <SelectItem key={`pt-day-${d.day}`} value={String(d.day)}>
+                                Dan {d.day}
+                                {d.title ? ` — ${d.title}` : ""}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="pt-stop">{pick(l, PARTNER_L.stop)}</Label>
+                        <Select value={ptStop} onValueChange={setPtStop}>
+                          <SelectTrigger id="pt-stop" className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ptStops.map((s, i) => (
+                              <SelectItem key={`pt-stop-${s.name}-${i}`} value={String(i)}>
+                                {s.name}
+                              </SelectItem>
+                            ))}
+                            <SelectItem value={CUSTOM_STOP}>Drugo (ročni vnos)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    {ptStop === CUSTOM_STOP ? (
+                      <div className="space-y-1.5">
+                        <Label htmlFor="pt-custom-stop">{pick(l, PARTNER_L.customStopLabel)}</Label>
+                        <Input
+                          id="pt-custom-stop"
+                          value={ptCustomStop}
+                          maxLength={200}
+                          onChange={(e) => setPtCustomStop(e.target.value)}
+                          placeholder="npr. Gostilna Pri Lovcu"
+                        />
+                      </div>
+                    ) : null}
+
+                    {/* REALNE ponudbe partnerjev (do 5 kategorij) — vodene
+                        povezave /api/affiliate/go (klik se šteje). */}
+                    <div className="space-y-1.5">
+                      <Label>{pick(l, PARTNER_L.offersLabel)}</Label>
+                      {ptOffers.length > 0 ? (
+                        <ul className="space-y-2">
+                          {ptOffers.map((offer) => {
+                            const selected = offer.providerId === ptProvider;
+                            return (
+                              <li
+                                key={offer.providerId}
+                                className={`rounded-lg border p-3 transition-colors ${
+                                  selected
+                                    ? "border-emerald-600/60 bg-emerald-50/60 dark:border-emerald-700 dark:bg-emerald-950/30"
+                                    : ""
+                                }`}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => setPtProvider(offer.providerId)}
+                                  aria-pressed={selected}
+                                  className="flex w-full items-start gap-2 text-left"
+                                >
+                                  {selected ? (
+                                    <CircleCheck
+                                      className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400"
+                                      aria-hidden="true"
+                                    />
+                                  ) : (
+                                    <span
+                                      className="mt-1 size-4 shrink-0 rounded-full border border-current opacity-40"
+                                      aria-hidden="true"
+                                    />
+                                  )}
+                                  <span className="min-w-0 flex-1">
+                                    <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                      <span className="text-sm font-semibold">
+                                        {offer.providerName}
+                                      </span>
+                                      <Badge variant="secondary" className="font-normal">
+                                        {pick(l, offer.categoryLabel)}
+                                      </Badge>
+                                    </span>
+                                    <span className="mt-1 block text-xs text-muted-foreground">
+                                      {PARTNER_L.commission[lang](offer.commissionPct)}
+                                      {offer.category === "flights" && offer.airport ? (
+                                        <span className="ml-2 inline-flex items-center gap-1">
+                                          <Plane className="size-3" aria-hidden="true" />
+                                          {pick(l, PARTNER_L.airportLabel)}:{" "}
+                                          {offer.airport.name} ({offer.airport.code})
+                                        </span>
+                                      ) : null}
+                                    </span>
+                                    {offer.match === "custom" || !offer.destinationSlug ? (
+                                      <span className="mt-0.5 block text-xs italic text-muted-foreground">
+                                        {pick(l, PARTNER_L.customSearchNote)}
+                                      </span>
+                                    ) : null}
+                                  </span>
+                                </button>
+                                <div className="mt-2">
+                                  <Button
+                                    asChild
+                                    size="sm"
+                                    variant="outline"
+                                    className="min-h-11 gap-1.5"
+                                  >
+                                    <a
+                                      href={offer.goPath}
+                                      target="_blank"
+                                      rel="nofollow sponsored noopener"
+                                      aria-label={`${pick(l, PARTNER_L.openAtPartner)}: ${offer.providerName}`}
+                                      title={`${pick(l, PARTNER_L.openAtPartner)}: ${offer.providerName}`}
+                                    >
+                                      {pick(l, PARTNER_L.openAtPartner)}
+                                      <ExternalLink className="size-3.5" aria-hidden="true" />
+                                    </a>
+                                  </Button>
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          {pick(l, PARTNER_L.offerEmpty)}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Obrazec „Sem rezerviral — dodaj na pot" (POST partner
+                        → PENDING; številko/ceno prinese uporabnik ŠELE ob
+                        potrditvi — PATCH confirm, nikoli ob ustvarjanju). */}
+                    <div className="space-y-2.5 rounded-lg border p-3">
+                      <p className="text-sm font-semibold">
+                        {pick(l, PARTNER_L.bookedFormTitle)}
+                      </p>
+                      {selectedPtOffer ? (
+                        <p className="text-xs text-muted-foreground">
+                          {selectedPtOffer.providerName} ·{" "}
+                          {pick(l, selectedPtOffer.categoryLabel)}
+                          {selectedPtOffer.destinationSlug
+                            ? ` · ${selectedPtOffer.destinationName}`
+                            : ` · ${pick(l, PARTNER_L.customSearchNote)}`}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          {pick(l, PARTNER_L.pickPartnerHint)}
+                        </p>
+                      )}
+                      <div className="grid gap-2.5 sm:grid-cols-3">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="pt-date" className="flex items-center gap-1.5">
+                            <CalendarDays className="size-3.5" aria-hidden="true" />
+                            {pick(l, PARTNER_L.dateLabel)} *
+                          </Label>
+                          <Input
+                            id="pt-date"
+                            type="date"
+                            value={ptDate}
+                            onChange={(e) => setPtDate(e.target.value)}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="pt-people" className="flex items-center gap-1.5">
+                            <Users className="size-3.5" aria-hidden="true" />
+                            {pick(l, PARTNER_L.peopleLabel)} *
+                          </Label>
+                          <Input
+                            id="pt-people"
+                            inputMode="numeric"
+                            value={ptPeople}
+                            onChange={(e) => setPtPeople(e.target.value)}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="pt-name">{pick(l, PARTNER_L.nameLabel)}</Label>
+                          <Input
+                            id="pt-name"
+                            value={ptName}
+                            maxLength={120}
+                            onChange={(e) => setPtName(e.target.value)}
+                            placeholder={session?.user?.name ?? ""}
+                            autoComplete="off"
+                          />
+                        </div>
+                      </div>
+                      {partnerError ? (
+                        <p
+                          className="flex items-start gap-1.5 text-xs text-destructive"
+                          role="alert"
+                        >
+                          <CircleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+                          {partnerError}
+                        </p>
+                      ) : null}
+                      <p className="text-[11px] leading-snug text-muted-foreground">
+                        {pick(l, PARTNER_L.formNote)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* ── Zavihek DEMO SIMULATOR (obstoječa demo funkcionalnost ──
+                  NEspremenjena: iskanje → izbor → POST → DSA-DEMO-XXXX →
+                  Spremeni/Odpovej; izrecno oranžno). ── */}
+              <TabsContent value="demo" className="mt-3 space-y-3">
+                {/* IZRECNA pasica — oranžna jakost, NIKOLI zelena */}
+                <p
+                  role="note"
+                  className="flex items-start gap-2 rounded-md border border-orange-500/50 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-800 dark:border-orange-700 dark:bg-orange-950/40 dark:text-orange-300"
+                >
+                  <FlaskConical className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+                  {pick(l, DEMO_L.honesty)}
+                </p>
+                <p className="text-xs text-muted-foreground">{pick(l, DEMO_L.modalDesc)}</p>
+
+                {demoDone ? (
+                  <div className="space-y-3" role="status">
+                    <div className="flex items-start gap-2 rounded-md border border-orange-500/40 bg-orange-50/60 p-3 dark:border-orange-700/60 dark:bg-orange-950/30">
+                      <CircleCheck
+                        className="mt-0.5 size-5 shrink-0 text-orange-600 dark:text-orange-400"
+                        aria-hidden="true"
+                      />
+                      <div className="space-y-1 text-sm">
+                        <p className="font-semibold">{pick(l, DEMO_L.successTitle)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          <span className="font-medium text-foreground">
+                            {demoDone.stopName}
+                          </span>{" "}
+                          · {formatPriceEUR(demoDone.price, lang)} ·{" "}
+                          {DEMO_L.peopleWord[lang](demoDone.people)} · {demoDone.date}
+                        </p>
+                        <p className="font-mono text-xs">{demoDone.providerBookingId}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {DEMO_L.successBody[lang](demoDone.providerBookingId)}
+                        </p>
+                      </div>
+                    </div>
                     <p className="text-[11px] leading-snug text-muted-foreground">
-                      {pick(l, selectedDemoOffer.title)} ·{" "}
-                      {formatPriceEUR(selectedDemoOffer.pricePerPerson, lang)}
-                      {pick(l, DEMO_L.perPerson)} →{" "}
-                      <span className="font-medium text-foreground">
-                        {formatPriceEUR(selectedDemoOffer.totalPrice, lang)}
-                      </span>{" "}
-                      ({DEMO_L.peopleWord[lang](demoPeopleNum)})
+                      {pick(l, DEMO_L.realNote)}
                     </p>
-                  ) : null}
-                </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="grid gap-2.5 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="demo-day">{pick(l, DEMO_L.day)}</Label>
+                        <Select value={String(demoDayNumber)} onValueChange={setDemoDay}>
+                          <SelectTrigger id="demo-day" className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {days.map((d) => (
+                              <SelectItem key={d.day} value={String(d.day)}>
+                                Dan {d.day}
+                                {d.title ? ` — ${d.title}` : ""}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="demo-stop">{pick(l, DEMO_L.stop)}</Label>
+                        <Select value={demoStop} onValueChange={setDemoStop}>
+                          <SelectTrigger id="demo-stop" className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {demoStops.map((s, i) => (
+                              <SelectItem key={`demo-${s.name}-${i}`} value={String(i)}>
+                                {s.name}
+                              </SelectItem>
+                            ))}
+                            <SelectItem value={CUSTOM_STOP}>
+                              Drugo (ročni vnos)
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    {demoStop === CUSTOM_STOP ? (
+                      <div className="space-y-1.5">
+                        <Label htmlFor="demo-custom-stop">{pick(l, DEMO_L.customStopLabel)}</Label>
+                        <Input
+                          id="demo-custom-stop"
+                          value={demoCustomStop}
+                          maxLength={200}
+                          onChange={(e) => setDemoCustomStop(e.target.value)}
+                          placeholder="npr. Gostilna Pri Lovcu"
+                        />
+                      </div>
+                    ) : null}
 
-                <div className="grid gap-2.5 sm:grid-cols-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="demo-date" className="flex items-center gap-1.5">
-                      <CalendarDays className="size-3.5" aria-hidden="true" />
-                      {pick(l, DEMO_L.dateLabel)} *
-                    </Label>
-                    <Input
-                      id="demo-date"
-                      type="date"
-                      value={demoDate}
-                      onChange={(e) => setDemoDate(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="demo-people" className="flex items-center gap-1.5">
-                      <Users className="size-3.5" aria-hidden="true" />
-                      {pick(l, DEMO_L.peopleLabel)} *
-                    </Label>
-                    <Input
-                      id="demo-people"
-                      inputMode="numeric"
-                      value={demoPeople}
-                      onChange={(e) => setDemoPeople(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="demo-name">{pick(l, DEMO_L.nameLabel)}</Label>
-                    <Input
-                      id="demo-name"
-                      value={demoName}
-                      maxLength={120}
-                      onChange={(e) => setDemoName(e.target.value)}
-                      placeholder={session?.user?.name ?? ""}
-                      autoComplete="off"
-                    />
-                  </div>
-                </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="demo-offer">{pick(l, DEMO_L.offerLabel)}</Label>
+                      {demoOffers.length > 0 ? (
+                        <Select value={demoOfferId} onValueChange={setDemoOfferId}>
+                          <SelectTrigger id="demo-offer" className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {demoOffers.map((o) => (
+                              <SelectItem key={o.offerId} value={o.offerId}>
+                                {pick(l, o.title)} ({o.destinationName}) —{" "}
+                                {formatPriceEUR(o.pricePerPerson, lang)}
+                                {pick(l, DEMO_L.perPerson)} ·{" "}
+                                {o.match === "exact"
+                                  ? pick(l, DEMO_L.matchExact)
+                                  : o.match === "region"
+                                    ? pick(l, DEMO_L.matchRegion)
+                                    : pick(l, DEMO_L.matchSuggested)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          {pick(l, DEMO_L.offerEmpty)}
+                        </p>
+                      )}
+                      {selectedDemoOffer ? (
+                        <p className="text-[11px] leading-snug text-muted-foreground">
+                          {pick(l, selectedDemoOffer.title)} ·{" "}
+                          {formatPriceEUR(selectedDemoOffer.pricePerPerson, lang)}
+                          {pick(l, DEMO_L.perPerson)} →{" "}
+                          <span className="font-medium text-foreground">
+                            {formatPriceEUR(selectedDemoOffer.totalPrice, lang)}
+                          </span>{" "}
+                          ({DEMO_L.peopleWord[lang](demoPeopleNum)})
+                        </p>
+                      ) : null}
+                    </div>
 
-                {demoError ? (
-                  <p className="flex items-start gap-1.5 text-xs text-destructive" role="alert">
-                    <CircleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-                    {demoError}
-                  </p>
-                ) : null}
-                <p className="text-[11px] leading-snug text-muted-foreground">
-                  {pick(l, DEMO_L.realNote)}
-                </p>
-              </div>
-            )}
+                    <div className="grid gap-2.5 sm:grid-cols-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="demo-date" className="flex items-center gap-1.5">
+                          <CalendarDays className="size-3.5" aria-hidden="true" />
+                          {pick(l, DEMO_L.dateLabel)} *
+                        </Label>
+                        <Input
+                          id="demo-date"
+                          type="date"
+                          value={demoDate}
+                          onChange={(e) => setDemoDate(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="demo-people" className="flex items-center gap-1.5">
+                          <Users className="size-3.5" aria-hidden="true" />
+                          {pick(l, DEMO_L.peopleLabel)} *
+                        </Label>
+                        <Input
+                          id="demo-people"
+                          inputMode="numeric"
+                          value={demoPeople}
+                          onChange={(e) => setDemoPeople(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="demo-name">{pick(l, DEMO_L.nameLabel)}</Label>
+                        <Input
+                          id="demo-name"
+                          value={demoName}
+                          maxLength={120}
+                          onChange={(e) => setDemoName(e.target.value)}
+                          placeholder={session?.user?.name ?? ""}
+                          autoComplete="off"
+                        />
+                      </div>
+                    </div>
+
+                    {demoError ? (
+                      <p className="flex items-start gap-1.5 text-xs text-destructive" role="alert">
+                        <CircleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+                        {demoError}
+                      </p>
+                    ) : null}
+                    <p className="text-[11px] leading-snug text-muted-foreground">
+                      {pick(l, DEMO_L.realNote)}
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
 
             <DialogFooter>
-              <Button variant="outline" size="sm" onClick={closeDemoModal} disabled={busy}>
+              <Button variant="outline" size="sm" onClick={closeSearchModal} disabled={busy}>
                 {pick(l, L.close)}
               </Button>
-              {demoDone ? null : (
+              {searchTab === "partner" && !partnerDone ? (
+                <Button
+                  size="sm"
+                  onClick={() => void submitPartnerBooking()}
+                  disabled={busy || !selectedPtOffer}
+                  className="gap-1.5 border-emerald-600/50 bg-emerald-600 text-white hover:bg-emerald-700 dark:border-emerald-700 dark:bg-emerald-700 dark:text-white dark:hover:bg-emerald-600"
+                >
+                  {busy ? (
+                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Handshake className="size-4" aria-hidden="true" />
+                  )}
+                  {pick(l, PARTNER_L.submit)}
+                </Button>
+              ) : null}
+              {searchTab === "demo" && !demoDone ? (
                 <Button
                   size="sm"
                   onClick={() => void submitDemoBooking()}
@@ -1551,7 +2455,7 @@ export function TripReservations({
                   )}
                   {pick(l, DEMO_L.submit)}
                 </Button>
-              )}
+              ) : null}
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -1657,6 +2561,216 @@ export function TripReservations({
                   <FlaskConical className="size-4" aria-hidden="true" />
                 )}
                 {pick(l, DEMO_L.editSubmit)}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* ── Modal: Vnesi potrdilo partnerja (PENDING → CONFIRMED, ──────
+            uporabniška atestacija s številko + ceno iz partnerjevega
+            potrdila — enak kanon kot 51-c, nikoli ponarejeno). */}
+        <Dialog
+          open={partnerConfirm !== null}
+          onOpenChange={(open) => {
+            if (!open) setPartnerConfirm(null);
+          }}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Handshake
+                  className="size-5 text-emerald-600 dark:text-emerald-400"
+                  aria-hidden="true"
+                />
+                {pick(l, PARTNER_L.confirmTitle)}
+              </DialogTitle>
+              <DialogDescription>{pick(l, PARTNER_L.confirmDesc)}</DialogDescription>
+            </DialogHeader>
+
+            {partnerConfirm ? (
+              <p className="text-xs text-muted-foreground">
+                {partnerConfirm.stopName}
+                {parsePartnerNote(partnerConfirm.note) ? (
+                  <>
+                    {" · "}
+                    <span className="font-medium text-foreground">
+                      {parsePartnerNote(partnerConfirm.note)?.providerName}
+                    </span>
+                  </>
+                ) : null}
+              </p>
+            ) : null}
+
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="pt-confirm-booking-id">
+                  {pick(l, PARTNER_L.bookingIdLabel)}{" "}
+                  <span aria-hidden="true" className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="pt-confirm-booking-id"
+                  value={partnerConfirmId}
+                  maxLength={200}
+                  onChange={(e) => setPartnerConfirmId(e.target.value)}
+                  placeholder={pick(l, PARTNER_L.bookingIdPlaceholder)}
+                  autoComplete="off"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="pt-confirm-price">
+                  {pick(l, PARTNER_L.priceLabel)}{" "}
+                  <span aria-hidden="true" className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="pt-confirm-price"
+                  inputMode="decimal"
+                  value={partnerConfirmPrice}
+                  onChange={(e) => setPartnerConfirmPrice(e.target.value)}
+                  placeholder={pick(l, PARTNER_L.pricePlaceholder)}
+                  autoComplete="off"
+                />
+              </div>
+              {partnerConfirmError ? (
+                <p className="flex items-start gap-1.5 text-xs text-destructive" role="alert">
+                  <CircleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+                  {partnerConfirmError}
+                </p>
+              ) : null}
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPartnerConfirm(null)}
+                disabled={busy}
+              >
+                {pick(l, L.close)}
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => void submitPartnerConfirm()}
+                disabled={busy}
+                className="gap-1.5 border-emerald-600/50 bg-emerald-600 text-white hover:bg-emerald-700 dark:border-emerald-700 dark:bg-emerald-700 dark:text-white dark:hover:bg-emerald-600"
+              >
+                {busy ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <CircleCheck className="size-4" aria-hidden="true" />
+                )}
+                {pick(l, PARTNER_L.submitConfirm)}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* ── Modal: Spremeni partner rezervacijo (PATCH modify — ────────
+            indikativno; DEJANSKA sprememba teče pri partnerju). */}
+        <Dialog
+          open={partnerEdit !== null}
+          onOpenChange={(open) => {
+            if (!open) setPartnerEdit(null);
+          }}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Handshake
+                  className="size-5 text-emerald-600 dark:text-emerald-400"
+                  aria-hidden="true"
+                />
+                {pick(l, PARTNER_L.editTitle)}
+              </DialogTitle>
+              <DialogDescription>{pick(l, PARTNER_L.editDesc)}</DialogDescription>
+            </DialogHeader>
+
+            {partnerEdit ? (
+              <p className="text-xs text-muted-foreground">
+                {partnerEdit.stopName}
+                {parsePartnerNote(partnerEdit.note) ? (
+                  <>
+                    {" · "}
+                    <span className="font-medium text-foreground">
+                      {parsePartnerNote(partnerEdit.note)?.providerName}
+                    </span>
+                    {parsePartnerNote(partnerEdit.note)?.providerBookingId ? (
+                      <>
+                        {" · "}
+                        <span className="font-mono">
+                          {parsePartnerNote(partnerEdit.note)?.providerBookingId}
+                        </span>
+                      </>
+                    ) : null}
+                  </>
+                ) : null}
+              </p>
+            ) : null}
+
+            <div className="grid gap-2.5 sm:grid-cols-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="pt-edit-date" className="flex items-center gap-1.5">
+                  <CalendarDays className="size-3.5" aria-hidden="true" />
+                  {pick(l, PARTNER_L.dateLabel)} *
+                </Label>
+                <Input
+                  id="pt-edit-date"
+                  type="date"
+                  value={partnerEditDate}
+                  onChange={(e) => setPartnerEditDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="pt-edit-people" className="flex items-center gap-1.5">
+                  <Users className="size-3.5" aria-hidden="true" />
+                  {pick(l, PARTNER_L.peopleLabel)} *
+                </Label>
+                <Input
+                  id="pt-edit-people"
+                  inputMode="numeric"
+                  value={partnerEditPeople}
+                  onChange={(e) => setPartnerEditPeople(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="pt-edit-name">{pick(l, PARTNER_L.nameLabel)}</Label>
+                <Input
+                  id="pt-edit-name"
+                  value={partnerEditName}
+                  maxLength={120}
+                  onChange={(e) => setPartnerEditName(e.target.value)}
+                  autoComplete="off"
+                />
+              </div>
+            </div>
+
+            {partnerEditError ? (
+              <p className="flex items-start gap-1.5 text-xs text-destructive" role="alert">
+                <CircleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+                {partnerEditError}
+              </p>
+            ) : null}
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPartnerEdit(null)}
+                disabled={busy}
+              >
+                {pick(l, L.close)}
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => void submitPartnerModify()}
+                disabled={busy}
+                className="gap-1.5"
+              >
+                {busy ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <PenLine className="size-4" aria-hidden="true" />
+                )}
+                {pick(l, PARTNER_L.editSubmit)}
               </Button>
             </DialogFooter>
           </DialogContent>

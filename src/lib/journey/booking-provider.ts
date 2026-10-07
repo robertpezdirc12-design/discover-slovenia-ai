@@ -2,16 +2,24 @@
  * BOOKING-PROVIDER — KANON KANALOV REZERVACIJ (issue #1 področje 2).
  * ============================================================================
  * Real booking veriga: iskanje ponudbe → izbor → rezervacija → potrditev →
- * My Trips → status → sprememba/odpoved — z VEDNO STROGO ločenima
- * kanaloma:
+ * My Trips → status → sprememba/odpoved — z VEDNO STROGO ločenimi
+ * kanali:
  *
- *   BookingChannel = "real" | "demo"
+ *   BookingChannel = "real" | "demo" | "partner"
  *
- * ISKRENOSTNI KANON (izvirnik, faza 3 — 51-c):
- *  - REAL kanal je VEDNO fail-closed: v peskovniku ni poverilnic
- *    ponudnikov (0 poverilnic = 0 laži) — realProviderStatus() vrača
- *    vedno { configured: false, reason } in API odgovarja 503. Realni
+ * ISKRENOSTNI KANON (izvirnik, faza 3 — 51-c; partner 2.6.0):
+ *  - REAL kanal (direktni API ponudnika) je VEDNO fail-closed: v peskovniku
+ *    ni poverilnic ponudnikov (0 poverilnic = 0 laži) — realProviderStatus()
+ *    vrača vedno { configured: false, reason } in API odgovarja 503. Realni
  *    kanal nikoli ne obljublja; to je IZRECNO razkrito v UI;
+ *  - PARTNER kanal (2.6.0 — vzorec MindTrip) je REALNA rezervacija PRI
+ *    partnerju (Booking.com, GetYourGuide, Kiwi, Rentalcars, Omio) prek
+ *    provizijskih povezav /api/affiliate/go (klik se šteje; piškotek
+ *    dsa_aff 180 dni). Rezervacija se ZAKLJUČI pri partnerju — aplikacija
+ *    sledi stanju: PENDING (čaka partnerjevo potrditev) → CONFIRMED
+ *    (uporabnikova atestacija s številko iz partnerjevega potrdila) →
+ *    MODIFIED/CANCELLED. Sprememba/odpoved DEJANSKO teče pri partnerju
+ *    (iskrena povezava „Upravljaj pri partnerju") — tu le UTC stanje.
  *  - DEMO kanal je strežniški, DETERMINISTIČEN simulator: „potrdi"
  *    takoj (status CONFIRMED) — to je njegov namen: prikaz celotnega
  *    flowa. Demo rezervacija je VEDNO izrecno razkrita (badge
@@ -19,10 +27,14 @@
  *  - klient NE MORE ponarediti provider polj: providerBookingId (oblika
  *    DSA-DEMO-XXXX) kuje SAMO strežnik iz semena; vsak poskus, da bi
  *    klient prinesel providerBookingId/confirmedPrice v telesu zahtevka,
- *    se zavrne (validacija spodaj);
+ *    se zavrne (validacija spodaj); pri PARTNER kanalu sta številka
+ *    rezervacije in cena DOVOLJENI SAMO ob atestaciji potrditve
+ *    (PATCH confirm — prek kanonskega validateConfirmationRecord);
  *  - ponudbe DEMO iskanja so IZKLJUČNO obstoječi lastni izdelki
  *    (OWN_PRODUCTS iz trznica-data — imena izkušenj in cene
- *    costPerPerson iz kanonskega nabora destinacij; NIČ izmišljenega).
+ *    costPerPerson iz kanonskega nabora destinacij; NIČ izmišljenega);
+ *    ponudbe PARTNER iskanja so IZKLJUČNO vpisani partnerji registra
+ *    AFFILIATE_PROVIDERS (brez izmišljenih cen — partner ceno določi sam).
  *
  * Vse funkcije so ČISTE (brez DB, brez omrežja) — client-safe in
  * testabilne (tests/booking-provider.test.ts). Prehodi statusov tečejo
@@ -34,27 +46,37 @@
 import {
   assertTransition,
   isConfirmationStatus,
+  validateConfirmationRecord,
   type ConfirmationStatus,
 } from "./booking";
 import { getDestination } from "../slovenia-data";
 import { OWN_PRODUCTS, type OwnProduct } from "../trznica-data";
+import {
+  AFFILIATE_CATEGORIES,
+  AFFILIATE_PROVIDERS,
+  getProvider,
+  nearestAirportForRegion,
+  type AffiliateCategory,
+  type AffiliateProviderId,
+} from "../affiliate-providers";
 
-// ─── Kanala (STROGO ločena) ─────────────────────────────────────────────────
+// ─── Kanali (STROGO ločeni) ─────────────────────────────────────────────────
 
-/** Kanal rezervacije — realni ponudnik ali demo simulator (nikoli mešano). */
-export type BookingChannel = "real" | "demo";
+/** Kanal rezervacije — realni ponudnik, partner (provizijsko) ali demo simulator (nikoli mešano). */
+export type BookingChannel = "real" | "demo" | "partner";
 
-export const BOOKING_CHANNELS = ["real", "demo"] as const;
+export const BOOKING_CHANNELS = ["real", "demo", "partner"] as const;
 
 /** Ali je niz veljaven kanal? */
 export function isBookingChannel(s: string): s is BookingChannel {
   return (BOOKING_CHANNELS as readonly string[]).includes(s);
 }
 
-/** Oznaki kanalov za UI (SL kanon + EN prevod). */
+/** Oznake kanalov za UI (SL kanon + EN prevod). */
 export const CHANNEL_LABELS: Record<BookingChannel, { sl: string; en: string }> = {
   real: { sl: "Realni ponudnik", en: "Real provider" },
   demo: { sl: "Demo simulator", en: "Demo simulator" },
+  partner: { sl: "Partner (provizijsko)", en: "Partner (affiliate)" },
 };
 
 // ─── REAL kanal — izvirniški fail-closed kanon ──────────────────────────────
@@ -79,13 +101,13 @@ export function realProviderStatus(): RealProviderStatus {
     channel: "real",
     configured: false,
     reason:
-      "Realni ponudniški kanal ni aktiven: v tem okolju ni konfiguriranih poverilnic ponudnikov (0 poverilnic = 0 laži). Rezervacije potekajo izključno prek demo simulatorja, ki je izrecno razkrit.",
+      "Direktni ponudniški kanal (API) ni aktiven: v tem okolju ni konfiguriranih poverilnic ponudnikov (0 poverilnic = 0 laži). Realne rezervacije potekajo pri partnerjih (provizijske povezave, izrecno razkrite) in prek demo simulatorja.",
   };
 }
 
 /** Sporočilo 503 za poskus realnega kanala (API fail-closed). */
 export const REAL_CHANNEL_FAIL_CLOSED_MESSAGE =
-  "Realni ponudniški kanal ni aktiviran — brez poverilnic nikoli ne lažemo. Na voljo je samo demo simulator (izrecno označen).";
+  "Direktni ponudniški kanal (API) ni aktiviran — brez poverilnic nikoli ne lažemo. Realne rezervacije potečejo pri partnerjih (provizijske povezave, izrecno označene); za prikaz toka je na voljo demo simulator.";
 
 // ─── DEMO simulator — iskanje ponudb ────────────────────────────────────────
 
@@ -698,21 +720,672 @@ export function parseDemoNote(note: string | null | undefined): DemoBookingRecor
   };
 }
 
+// ─── PARTNER kanal — iskanje ponudb (2.6.0, vzorec MindTrip) ────────────────
+
+/** Kako je partnerska ponudba povezana na iskani postanek (iskrenost). */
+export type PartnerOfferMatch = "destination" | "custom";
+
+/**
+ * Ponudba partnerja — REALNA rezervacija pri partnerju (vpis registra
+ * AFFILIATE_PROVIDERS). Cene NI — ceno določi partner na svoji strani
+ * (nikoli ne izmišljujemo). Povezava je VODENA (prek /api/affiliate/go):
+ * klik se šteje, provizija poteče, če je lastnik aktiviral žeton.
+ */
+export interface PartnerOffer {
+  providerId: AffiliateProviderId;
+  providerName: string;
+  category: AffiliateCategory;
+  /** Oznaka kategorije {sl,en} iz registra. */
+  categoryLabel: { sl: string; en: string };
+  /** Kanonski slug destinacije ("" za custom postanek). */
+  destinationSlug: string;
+  /** Iskalno ime destinacije ("" za custom postanek). */
+  destinationName: string;
+  /** Vodena povezava — /api/affiliate/go (klik + morebitna provizija). */
+  goPath: string;
+  /** Ocena provizije v % (pogodbena — razkritje, ne obljuba). */
+  commissionPct: number;
+  /** Letališče regije (samo za kategorijo flights). */
+  airport: { code: string; name: string } | null;
+  match: PartnerOfferMatch;
+}
+
+/** Kanonski vrstni red kategorij v partnerskem iskanju. */
+const PARTNER_SEARCH_CATEGORIES: readonly AffiliateCategory[] = [
+  "stays",
+  "experiences",
+  "car",
+  "transfers",
+  "flights",
+];
+
+/** Vodena povezava do partnerja (dest je kanonski slug, če je znan). */
+function partnerGoPath(providerId: AffiliateProviderId, destSlug: string): string {
+  const params = new URLSearchParams({ provider: providerId });
+  if (destSlug) params.set("dest", destSlug);
+  return `/api/affiliate/go?${params.toString()}`;
+}
+
+/** Skupni gradnik ponudbe iz registrskega vpisa (+ destinacija). */
+function toPartnerOffer(
+  provider: (typeof AFFILIATE_PROVIDERS)[number],
+  destSlug: string
+): PartnerOffer {
+  const dest = destSlug ? getDestination(destSlug) : undefined;
+  const airport =
+    provider.category === "flights" && dest
+      ? nearestAirportForRegion(dest.region)
+      : null;
+  return {
+    providerId: provider.id,
+    providerName: provider.name,
+    category: provider.category,
+    categoryLabel: AFFILIATE_CATEGORIES[provider.category],
+    destinationSlug: dest?.slug ?? "",
+    destinationName: dest?.name ?? "",
+    goPath: partnerGoPath(provider.id, dest?.slug ?? ""),
+    commissionPct: provider.commissionPct,
+    airport: airport ? { code: airport.code, name: airport.nameSl } : null,
+    match: dest ? "destination" : "custom",
+  };
+}
+
+/**
+ * Poišči partnerjeve ponudbe za postanek (REALNI kanal, vzorec MindTrip):
+ *  - poznan slug destinacije → do 5 ponudb (nastanitev, doživetje,
+ *    rent-a-car, prevoz + leti z letališča regije), vsaka z vodeno
+ *    povezavo /api/affiliate/go?provider=…&dest=… (klik se šteje);
+ *  - custom postanek → enake ponudbe brez dest parametra (partnerjeva
+ *    splošna iskanja — iskreno match:"custom").
+ * Gorivo NI rezervacijska kategorija (odprti podatki, 0 %) — nikoli
+ * ni del partnerskega iskanja.
+ */
+export function searchPartnerOffers(
+  stopSlug: string | null | undefined
+): PartnerOffer[] {
+  const slug =
+    typeof stopSlug === "string" ? stopSlug.trim().toLowerCase() : "";
+  const out: PartnerOffer[] = [];
+  for (const provider of AFFILIATE_PROVIDERS) {
+    if (!PARTNER_SEARCH_CATEGORIES.includes(provider.category)) continue;
+    out.push(toPartnerOffer(provider, slug));
+  }
+  return out;
+}
+
+/**
+ * Razreši ENO partner ponudbo (strežniška razrešitev za POST): provider
+ * in destinacijo potrdita REGISTER oz. KANONSKI nabor — klient nikoli
+ * ne prinese imena partnerja, povezave ali kategorije.
+ */
+export function resolvePartnerOffer(
+  providerId: string,
+  destinationSlug: string | null | undefined
+): PartnerOffer | null {
+  const provider = getProvider(providerId);
+  if (!provider) return null;
+  if (!PARTNER_SEARCH_CATEGORIES.includes(provider.category)) return null;
+  const slug =
+    typeof destinationSlug === "string"
+      ? destinationSlug.trim().toLowerCase()
+      : "";
+  if (slug && !getDestination(slug)) return null;
+  return toPartnerOffer(provider, slug);
+}
+
+// ─── PARTNER kanal — življenjski cikel (PENDING → CONFIRMED → …) ───────────
+
+/** Zapis partner rezervacije (živi v stolpcu `note` kot JSON). */
+export interface PartnerBookingRecord {
+  /** Registrski ID partnerja (AFFILIATE_PROVIDERS). */
+  provider: AffiliateProviderId;
+  providerName: string;
+  category: AffiliateCategory;
+  /** Kanonski slug destinacije ("" za custom postanek). */
+  destinationSlug: string;
+  /** Iskalno ime destinacije (iz kanona; "" za custom). */
+  destinationName: string;
+  date: string;
+  people: number;
+  name: string | null;
+  /** Življenjski cikel: PENDING → CONFIRMED → MODIFIED / CANCELLED. */
+  status: ConfirmationStatus;
+  channel: "partner";
+  /** IZRECNI razkritji kanala (nikoli brez oznake). */
+  partner: true;
+  /** Številka rezervacije partnerja (ob uporabnikovi atestaciji; sicer null). */
+  providerBookingId: string | null;
+  /** Uporabnikova atestacija cene iz partnerjevega potrdila (EUR; sicer null). */
+  confirmedPrice: number | null;
+  createdAt: string;
+}
+
+export type PartnerBookingResult =
+  | { ok: true; booking: PartnerBookingRecord }
+  | { ok: false; error: string };
+
+/**
+ * Ustvari partner rezervacijo — status PENDING (iskreno: potrditev
+ * izstavi partner NA SVOJI STRANI; aplikacija stanja NE pozna, dokler
+ * ga uporabnik ne atestira s partnerjevim potrdilom — vzorec MindTrip
+ * „pending"). Dejanska rezervacija se zgodi pri partnerju (vodena
+ * povezava); ta zapis je sledenje v Moja potovanja.
+ */
+export function createPartnerBooking(
+  offer: PartnerOffer,
+  input: { date: string; people: number; name?: string | null },
+  now: Date = new Date()
+): PartnerBookingResult {
+  const v = validateDemoBookingFields(input.date, input.people, input.name);
+  if (!v.ok) return v;
+  const people = input.people as number;
+  const name =
+    typeof input.name === "string" && input.name.trim() ? input.name.trim() : null;
+  return {
+    ok: true,
+    booking: {
+      provider: offer.providerId,
+      providerName: offer.providerName,
+      category: offer.category,
+      destinationSlug: offer.destinationSlug,
+      destinationName: offer.destinationName,
+      date: input.date as string,
+      people,
+      name,
+      status: "PENDING",
+      channel: "partner",
+      partner: true,
+      providerBookingId: null,
+      confirmedPrice: null,
+      createdAt: now.toISOString(),
+    },
+  };
+}
+
+/**
+ * Potrdi partner rezervacijo z ATESTACIJO iz partnerjevega potrdila
+ * (PENDING → CONFIRMED): številka rezervacije + cena iz potrdila sta
+ * OBVEZNI — prek kanonskega validateConfirmationRecord (ISTI kanon kot
+ * uporabniška atestacija 51-c: klient NE MORE ponarediti „potrjeno").
+ */
+export function confirmPartnerBooking(
+  booking: PartnerBookingRecord,
+  attestation: { providerBookingId: string; confirmedPrice: number }
+): PartnerBookingResult {
+  if (booking.status !== "PENDING") {
+    return {
+      ok: false,
+      error: `Potrditev je mogoča samo iz statusa PENDING (sedaj: ${booking.status}).`,
+    };
+  }
+  const canon = validateConfirmationRecord({
+    status: "CONFIRMED",
+    source: "USER",
+    providerBookingId: attestation.providerBookingId,
+    confirmedPrice: attestation.confirmedPrice,
+  });
+  if (!canon.ok) return { ok: false, error: canon.error };
+  const t = assertTransition(booking.status, "CONFIRMED");
+  if (!t.ok) return t;
+  return {
+    ok: true,
+    booking: {
+      ...booking,
+      status: "CONFIRMED",
+      providerBookingId: attestation.providerBookingId.trim(),
+      confirmedPrice: attestation.confirmedPrice,
+    },
+  };
+}
+
+export type PartnerBookingChange = {
+  date?: string;
+  people?: number;
+  name?: string | null;
+};
+
+/**
+ * Spremeni partner rezervacijo — DEJANSKA sprememba teče PRI PARTNERJU
+ * (UI ponuja iskreno povezavo „Upravljaj pri partnerju"); tu vodimo
+ * samo stanje:
+ *  - PENDING → polja se posodobijo, status OSTANE PENDING (sprememba
+ *    lahko prestavi partnerjevo potrditev — iskreno);
+ *  - CONFIRMED/MODIFIED → prehod v MODIFIED (kanon ALLOWED_TRANSITIONS).
+ */
+export function modifyPartnerBooking(
+  booking: PartnerBookingRecord,
+  change: PartnerBookingChange
+): PartnerBookingResult {
+  if (
+    booking.status === "CANCELLED" ||
+    booking.status === "REFUNDED" ||
+    booking.status === "EXPIRED"
+  ) {
+    return {
+      ok: false,
+      error: `Rezervacija je v terminalnem statusu (${booking.status}) — sprememba ni mogoča.`,
+    };
+  }
+  const date = change.date ?? booking.date;
+  const people = change.people ?? booking.people;
+  const name = change.name !== undefined ? change.name : booking.name;
+  const v = validateDemoBookingFields(date, people, name);
+  if (!v.ok) return v;
+
+  let status = booking.status;
+  if (booking.status === "CONFIRMED" || booking.status === "MODIFIED") {
+    const t = assertTransition(booking.status, "MODIFIED");
+    if (!t.ok) return t;
+    status = "MODIFIED";
+  }
+  return {
+    ok: true,
+    booking: {
+      ...booking,
+      date: date as string,
+      people: people as number,
+      name: typeof name === "string" && name.trim() ? name.trim() : null,
+      status,
+    },
+  };
+}
+
+/**
+ * Prekliči partner rezervacijo — DEJANSKI preklic teče PRI PARTNERJU
+ * (UI ponuja povezavo); tu le pošteno stanje. PENDING/CONFIRMED/
+ * MODIFIED → CANCELLED (terminalen — brez povratkov, kanon faze 3).
+ */
+export function cancelPartnerBooking(
+  booking: PartnerBookingRecord
+): PartnerBookingResult {
+  const t = assertTransition(booking.status, "CANCELLED");
+  if (!t.ok) return t;
+  return { ok: true, booking: { ...booking, status: "CANCELLED" } };
+}
+
+// ─── Partner zapis v stolpcu `note` (S1-združljiv) ──────────────────────────
+
+/**
+ * Zgradi JSON partner zapisa za stolpec `note`. Oblika je ZDRUŽLJIVA z
+ * atestacijskim JSON (source/providerBookingId/confirmedPrice) PLUS
+ * izrecna partner razkritja (channel:"partner", partner:true, provider,
+ * category …) — obstoječi parseAttestationNote jo brez težav razčleni
+ * (dodatna polja ignorira).
+ */
+export function buildPartnerNote(booking: PartnerBookingRecord): string {
+  return JSON.stringify({
+    source: "USER" as const,
+    channel: "partner" as const,
+    partner: true as const,
+    provider: booking.provider,
+    providerName: booking.providerName,
+    category: booking.category,
+    destinationSlug: booking.destinationSlug,
+    destinationName: booking.destinationName,
+    date: booking.date,
+    people: booking.people,
+    name: booking.name ?? "",
+    status: booking.status,
+    providerBookingId: booking.providerBookingId ?? "",
+    ...(booking.confirmedPrice != null ? { confirmedPrice: booking.confirmedPrice } : {}),
+    createdAt: booking.createdAt,
+  });
+}
+
+/**
+ * Strogi parser partner zapisa iz stolpca `note` (fail-closed): zahteva
+ * IZRECNI partner razkritji (channel:"partner" + partner:true) in vsa
+ * ključna polja; karkoli manjka → null (klicar naj zapis obravnava kot
+ * navadno atestacijo/legacy opombo — nikoli ne ugiba, da je partner).
+ * Kanon invarianta: status CONFIRMED ZAHTEVA številko IN ceno.
+ */
+export function parsePartnerNote(
+  note: string | null | undefined
+): PartnerBookingRecord | null {
+  if (typeof note !== "string" || note.length === 0 || !note.startsWith("{")) {
+    return null;
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(note);
+  } catch {
+    return null;
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    return null;
+  }
+  const o = parsed as Record<string, unknown>;
+
+  // Izrecni partner razkritvi sta obvezni (iskrenost: brez oznak ni partner).
+  if (o.channel !== "partner" || o.partner !== true) return null;
+  if (typeof o.provider !== "string") return null;
+  const provider = getProvider(o.provider);
+  if (!provider) return null;
+  if (o.providerName !== provider.name) return null;
+  if (o.category !== provider.category) return null;
+  if (typeof o.destinationSlug !== "string") return null;
+  if (typeof o.destinationName !== "string") return null;
+  if (!isValidBookingDate(o.date)) return null;
+  if (
+    typeof o.people !== "number" ||
+    !Number.isInteger(o.people) ||
+    o.people < BOOKING_PEOPLE_MIN ||
+    o.people > BOOKING_PEOPLE_MAX
+  ) {
+    return null;
+  }
+  const status = o.status;
+  if (typeof status !== "string" || !isConfirmationStatus(status)) return null;
+  if (typeof o.providerBookingId !== "string") return null;
+  if (o.providerBookingId.length > MAX_PARTNER_REF_LENGTH) return null;
+  if (o.confirmedPrice !== undefined) {
+    if (
+      typeof o.confirmedPrice !== "number" ||
+      !Number.isFinite(o.confirmedPrice) ||
+      o.confirmedPrice <= 0 ||
+      o.confirmedPrice > MAX_PARTNER_PRICE
+    ) {
+      return null;
+    }
+  }
+  if (typeof o.createdAt !== "string" || o.createdAt.length === 0) return null;
+
+  // Kanon invarianta: CONFIRMED brez številke/cene NI partner zapis.
+  if (status === "CONFIRMED" && (o.providerBookingId === "" || o.confirmedPrice === undefined)) {
+    return null;
+  }
+
+  const name = typeof o.name === "string" && o.name.trim() ? o.name.trim() : null;
+  const price =
+    typeof o.confirmedPrice === "number" && o.confirmedPrice > 0
+      ? o.confirmedPrice
+      : null;
+  const ref = o.providerBookingId.length > 0 ? o.providerBookingId : null;
+
+  return {
+    provider: provider.id,
+    providerName: provider.name,
+    category: provider.category,
+    destinationSlug: o.destinationSlug,
+    destinationName: o.destinationName,
+    date: o.date,
+    people: o.people,
+    name,
+    status: status as ConfirmationStatus,
+    channel: "partner",
+    partner: true,
+    providerBookingId: ref,
+    confirmedPrice: price,
+    createdAt: o.createdAt,
+  };
+}
+
+// ─── PARTNER kanal — validacija teles (POST/PATCH, čisti funkciji) ──────────
+
+/** Največja dolžina številke rezervacije partnerja (kanon MAX_BOOKING_ID_LENGTH). */
+export const MAX_PARTNER_REF_LENGTH = 200;
+
+/** Zgornja meja atestirane cene (kanon MAX_CONFIRMED_PRICE). */
+export const MAX_PARTNER_PRICE = 1_000_000;
+
+/** Normalizirana oblika telesa POST partner veje. */
+export interface PartnerRequestBody {
+  dayIndex: number;
+  stopSlug: string | null;
+  stopName: string | null;
+  provider: AffiliateProviderId;
+  /** Kanonski slug destinacije ponudbe (null za custom postanek). */
+  destinationSlug: string | null;
+  date: string;
+  people: number;
+  name: string | null;
+}
+
+export type PartnerRequestValidation =
+  | { ok: true; value: PartnerRequestBody }
+  | { ok: false; error: string };
+
+/**
+ * Validacija telesa POST partner veje. ISKRENOST:
+ *  - provider in destinationSlug razreši SAMO register/kanon (klient ne
+ *    prinese imena partnerja niti povezave);
+ *  - telo NE SME nositi številke rezervacije niti cene — ti sta
+ *    uporabnikova atestacija ob PATCH confirm (nikoli ob ustvarjanju).
+ */
+export function validatePartnerRequestBody(body: unknown): PartnerRequestValidation {
+  if (typeof body !== "object" || body === null) {
+    return { ok: false, error: "Neveljavno telo zahteve (pričakovan objekt)." };
+  }
+  const b = body as Record<string, unknown>;
+
+  if (b.channel !== "partner") {
+    return { ok: false, error: 'Partner veja zahteva channel:"partner".' };
+  }
+  if (
+    b.providerBookingId != null ||
+    b.confirmedPrice != null ||
+    b.confirmationUrl != null ||
+    b.bookingRef != null ||
+    b.price != null
+  ) {
+    return {
+      ok: false,
+      error:
+        "Partner telo ne sme nositi številke rezervacije niti cene — ti sta uporabnikova atestacija ob potrditvi (PATCH confirm).",
+    };
+  }
+  if (typeof b.provider !== "string" || !getProvider(b.provider)) {
+    return { ok: false, error: "Neznan rezervacijski partner." };
+  }
+  const provider = getProvider(b.provider)!;
+  if (!PARTNER_SEARCH_CATEGORIES.includes(provider.category)) {
+    return { ok: false, error: "Ta partner ni rezervacijska kategorija." };
+  }
+
+  const fields = validateDemoBookingFields(b.date, b.people, b.name);
+  if (!fields.ok) return fields;
+
+  let destinationSlug: string | null = null;
+  if (
+    b.destinationSlug !== undefined &&
+    b.destinationSlug !== null &&
+    b.destinationSlug !== ""
+  ) {
+    if (typeof b.destinationSlug !== "string") {
+      return {
+        ok: false,
+        error: "Neznana destinacija ponudbe (destinationSlug mora biti iz kanonskega nabora).",
+      };
+    }
+    // Normaliziraj NAJPREJ (trim + lowercase) — nato kanonska preverba.
+    const normalized = b.destinationSlug.trim().toLowerCase();
+    if (!normalized || !getDestination(normalized)) {
+      return {
+        ok: false,
+        error: "Neznana destinacija ponudbe (destinationSlug mora biti iz kanonskega nabora).",
+      };
+    }
+    destinationSlug = normalized;
+  }
+
+  let dayIndex = 1;
+  if (b.dayIndex !== undefined && b.dayIndex !== null) {
+    if (
+      typeof b.dayIndex !== "number" ||
+      !Number.isInteger(b.dayIndex) ||
+      b.dayIndex < BOOKING_DAY_INDEX_MIN ||
+      b.dayIndex > BOOKING_DAY_INDEX_MAX
+    ) {
+      return {
+        ok: false,
+        error: `Dan poti (dayIndex) mora biti celo število med ${BOOKING_DAY_INDEX_MIN} in ${BOOKING_DAY_INDEX_MAX}.`,
+      };
+    }
+    dayIndex = b.dayIndex;
+  }
+
+  let stopSlug: string | null = null;
+  if (b.stopSlug !== undefined && b.stopSlug !== null) {
+    if (typeof b.stopSlug !== "string" || b.stopSlug.length > BOOKING_STOP_SLUG_MAX) {
+      return { ok: false, error: "Neveljaven slug postanka." };
+    }
+    stopSlug = b.stopSlug;
+  }
+
+  let stopName: string | null = null;
+  if (b.stopName !== undefined && b.stopName !== null && b.stopName !== "") {
+    if (typeof b.stopName !== "string" || b.stopName.trim().length < 2) {
+      return { ok: false, error: "Ime postanka mora imeti vsaj 2 znaka." };
+    }
+    stopName = b.stopName.trim().slice(0, BOOKING_STOP_NAME_MAX);
+  }
+
+  const name = typeof b.name === "string" && b.name.trim() ? b.name.trim() : null;
+
+  return {
+    ok: true,
+    value: {
+      dayIndex,
+      stopSlug,
+      stopName,
+      provider: provider.id,
+      destinationSlug,
+      date: b.date as string,
+      people: b.people as number,
+      name,
+    },
+  };
+}
+
+/** Normalizirana oblika telesa PATCH partner veje. */
+export interface PartnerPatchBody {
+  reservationId: string;
+  action: "confirm" | "cancel" | "modify";
+  /** Številka iz partnerjevega potrdila (samo action:"confirm"). */
+  providerBookingId?: string;
+  /** Cena iz partnerjevega potrdila EUR (samo action:"confirm"). */
+  confirmedPrice?: number;
+  date?: string;
+  people?: number;
+  name?: string | null;
+}
+
+export type PartnerPatchValidation =
+  | { ok: true; value: PartnerPatchBody }
+  | { ok: false; error: string };
+
+/** Validacija telesa PATCH partner veje (confirm | cancel | modify). */
+export function validatePartnerPatchBody(body: unknown): PartnerPatchValidation {
+  if (typeof body !== "object" || body === null) {
+    return { ok: false, error: "Neveljavno telo zahteve (pričakovan objekt)." };
+  }
+  const b = body as Record<string, unknown>;
+
+  if (typeof b.reservationId !== "string" || b.reservationId.length === 0) {
+    return { ok: false, error: "Manjka id rezervacije." };
+  }
+  if (b.action !== "confirm" && b.action !== "cancel" && b.action !== "modify") {
+    return {
+      ok: false,
+      error: 'Dejanje partner rezervacije mora biti "confirm", "cancel" ali "modify".',
+    };
+  }
+
+  const out: PartnerPatchBody = {
+    reservationId: b.reservationId,
+    action: b.action,
+  };
+
+  if (b.action === "confirm") {
+    if (typeof b.providerBookingId !== "string" || !b.providerBookingId.trim()) {
+      return {
+        ok: false,
+        error: "Za potrditev vnesi številko rezervacije iz partnerjevega potrdila.",
+      };
+    }
+    if (b.providerBookingId.trim().length > MAX_PARTNER_REF_LENGTH) {
+      return {
+        ok: false,
+        error: `Številka rezervacije je predolga (največ ${MAX_PARTNER_REF_LENGTH} znakov).`,
+      };
+    }
+    if (
+      typeof b.confirmedPrice !== "number" ||
+      !Number.isFinite(b.confirmedPrice) ||
+      b.confirmedPrice <= 0 ||
+      b.confirmedPrice > MAX_PARTNER_PRICE
+    ) {
+      return {
+        ok: false,
+        error: "Cena iz partnerjevega potrdila mora biti pozitivno število (EUR).",
+      };
+    }
+    out.providerBookingId = b.providerBookingId.trim();
+    out.confirmedPrice = b.confirmedPrice;
+    return { ok: true, value: out };
+  }
+
+  if (b.action === "modify") {
+    if (b.providerBookingId != null || b.confirmedPrice != null) {
+      return {
+        ok: false,
+        error: "Sprememba ne spreminja atestacije — številko/ceno partnerja se potrdi enkrat (confirm).",
+      };
+    }
+    if (b.date !== undefined && b.date !== null && !isValidBookingDate(b.date)) {
+      return { ok: false, error: "Datum rezervacije mora biti veljaven ISO datum (YYYY-MM-DD)." };
+    }
+    if (b.date != null) out.date = b.date;
+    if (b.people !== undefined && b.people !== null) {
+      if (
+        typeof b.people !== "number" ||
+        !Number.isInteger(b.people) ||
+        b.people < BOOKING_PEOPLE_MIN ||
+        b.people > BOOKING_PEOPLE_MAX
+      ) {
+        return {
+          ok: false,
+          error: `Število ljudi mora biti celo število med ${BOOKING_PEOPLE_MIN} in ${BOOKING_PEOPLE_MAX}.`,
+        };
+      }
+      out.people = b.people;
+    }
+    if (b.name !== undefined) {
+      if (b.name !== null && typeof b.name !== "string") {
+        return { ok: false, error: "Ime na rezervaciji mora biti besedilo." };
+      }
+      if (typeof b.name === "string" && b.name.trim().length > BOOKING_NAME_MAX) {
+        return {
+          ok: false,
+          error: `Ime na rezervaciji je predolgo (največ ${BOOKING_NAME_MAX} znakov).`,
+        };
+      }
+      out.name = b.name;
+    }
+  }
+
+  return { ok: true, value: out };
+}
+
 // ─── Kanal obstoječe rezervacije (razkritje v UI/GET) ──────────────────────
 
-/** Kanal obstoječe rezervacije (demo simulator / uporabniška atestacija / realni provider). */
-export type ReservationChannel = "demo" | "user" | "real";
+/** Kanal obstoječe rezervacije (demo simulator / uporabniška atestacija / realni provider / partner). */
+export type ReservationChannel = "demo" | "user" | "real" | "partner";
 
 /** Oznake kanalov rezervacij za UI. */
 export const RESERVATION_CHANNEL_LABELS: Record<ReservationChannel, { sl: string; en: string }> = {
   demo: { sl: "Demo", en: "Demo" },
   user: { sl: "Uporabniška", en: "User" },
   real: { sl: "Realna", en: "Real" },
+  partner: { sl: "Partner", en: "Partner" },
 };
 
 /**
  * Kanal obstoječe rezervacije iz zapisa `note`:
  *  - demo marker (channel:"demo" / demo:true / predpona DSA-DEMO-) → "demo";
+ *  - partner marker (channel:"partner" / partner:true) → "partner"
+ *    (PREJ od izvora — partner zapis nosi source:"USER", a je kanal
+ *    izrecno partner; razkritje kanala je VEDNO močnejše od izvora);
  *  - atestacija source USER/IMPORTED → "user";
  *  - source PROVIDER → "real" (v peskovniku ne nastopi — fail-closed);
  *  - brez JSON atestacije → null (legacy opomba — iskreno brez kanala).
@@ -731,6 +1404,9 @@ export function reservationChannelOf(note: string | null | undefined): Reservati
   const id = typeof o.providerBookingId === "string" ? o.providerBookingId : "";
   if (o.channel === "demo" || o.demo === true || id.startsWith(DEMO_BOOKING_ID_PREFIX)) {
     return "demo";
+  }
+  if (o.channel === "partner" || o.partner === true) {
+    return "partner";
   }
   if (o.source === "PROVIDER") return "real";
   if (o.source === "USER" || o.source === "IMPORTED") return "user";

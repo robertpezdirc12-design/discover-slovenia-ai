@@ -5,10 +5,10 @@
 > realnimi koordinatami in deterministični načrtovalnik poti (isti vhod → isti načrt,
 > 0 AI žetonov v jedru).
 
-**Verzija: 2.5.0 — REZERVACIJSKI SLOJ S PROVIZIJO (2026-10-08).**
+**Verzija: 2.6.0 — PARTNER KANAL V BOOKING VERIGI (2026-10-07).**
 Izdaje rekonstrukcije: 2.1.0 skupnostne funkcije → 2.2.0 aplikacijska lupina →
 2.3.0 issue #1 (živi GPS, booking, pomočnik) → 2.3.1 infra CI → 2.4.0 PWA
-offline → 2.5.0 rezervacijski sloj.
+offline → 2.5.0 rezervacijski sloj → 2.6.0 partner kanal booking verige.
 Izvorni repozitorij (626 commitov, v1.190.0) je bil dvakrat izgubljen v posledici
 vdorov v GitHub račun (2026-10-06). Ta aplikacija je temeljita rekonstrukcija iz
 obnovitvenih virov (delovni dnevnik + izpisi izvorne kode + produkcijski posnetek +
@@ -55,6 +55,21 @@ ter testna vrata (86 testov) + GitLab CI.
   dnevnik in klikanja za skrbnike (`/owner/provizije`, dostop
   `DSA_ADMIN_EMAILS`); izplačilni koledar T+3 meseci, 28. v mesecu
   (vzorec MindTrip)
+- **Partner kanal v booking verigi (2.6.0 — issue #1 dokončanje po plasti
+  2.5.0)** — modal „Išči ponudbo“ na poti ima ZDAJ dva izrecno ločena kanala:
+  **PRI PARTNERJU** (realno; kartice 5 partnerjev z vodeno povezavo
+  `/api/affiliate/go`, provizijskim razkritjem in letališčem regije za leti;
+  obrazec „Sem rezerviral — dodaj na pot“ → rezervacija v Moja potovanja s
+  statusom **PENDING** — potrditev izstavi partner na svoji strani, uporabnik
+  jo atestira s številko in ceno iz potrdila (PENDING → CONFIRMED, kanonska
+  atestacija); „Upravljaj pri partnerju“ za spremembo/preklic — DEJANSKA
+  sprememba teče pri partnerju, tu iskreno stanje) in **DEMO SIMULATOR**
+  (izrecno oranžen, nespremenjen). Kanal zapisa razrešuje STREŽNIK iz zapisa
+  `note` (nikoli iz telesa zahteve); POST telo ne sme nositi številke/cene —
+  ti sta atestacija ob PATCH `confirm`. Hub `/moja-potovanja` prikazuje števce
+  po kanalih (partner smaragdno, demo oranžno) in števec „čaka potrditev“.
+  Direktni ponudniški API ostaja fail-closed (503) — realne rezervacije
+  potečejo pri partnerjih, nikoli ne lažemo
 
 ## Tehnični sklad
 
@@ -107,7 +122,7 @@ docs/evidence/        # dokazni posnetki rekonstrukcije
 - dopolnjevanje delnih prevodnih slovarjev (poti in preklopnik pokrivajo vseh 6
   jezikov; del komponent ima še samo sl/en), skupnostni dnevnik potovanj (klepet,
   ankete in vabila so že rekonstruirani), Stripe checkout (demo fail-closed; pravi
-  čaka na ključe lastnika), testi (rekonstrukcija: 460+; izvirnik: 5332)
+  čaka na ključe lastnika), testi (rekonstrukcija: 530+; izvirnik: 5332)
 - pravi affiliate žetoni (`AFFILIATE_*_ID`) — registracija v partnerskih
   programih je lastnikovo dejanje; brez žetona povezave delujejo javno
   (brez provizije), klikanja se štejejo

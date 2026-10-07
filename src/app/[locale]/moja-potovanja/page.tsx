@@ -15,6 +15,7 @@ import {
   Trash2,
   Wand2,
   X,
+  Handshake,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useLocale } from "next-intl";
@@ -108,14 +109,16 @@ const L = {
 } as const;
 
 // ── REZERVACIJE NA POTEH (issue #1 področje 2 — My Trips statusi) ────────────
-// Števec rezervacij po poteh v oblaku + kanalno razkritje (demo/user).
+// Števec rezervacij po poteh v oblaku + kanalno razkritje (demo/user/partner).
 // ISKRENOST: demo rezervacije so IZRECNO označene (simulator, nikoli
-// ponudnik); realni kanal ni aktiven (fail-closed) in je razkrit v nogi.
+// ponudnik); partner rezervacije so REALNE pri partnerju (status PENDING
+// dokler partner ne pošlje potrdila); direktni ponudniški API je
+// fail-closed in razkrit v nogi.
 const BK_L = {
   title: { sl: "Rezervacije na tvojih poteh", en: "Bookings on your trips" },
   lead: {
-    sl: "Števci rezervacij po poteh v oblaku — z razkritjem kanala (demo simulator ali uporabniška atestacija).",
-    en: "Booking counters per cloud trip — with channel disclosure (demo simulator or user attestation).",
+    sl: "Števci rezervacij po poteh v oblaku — z razkritjem kanala (partner, demo simulator ali uporabniška atestacija).",
+    en: "Booking counters per cloud trip — with channel disclosure (partner, demo simulator or user attestation).",
   },
   loading: { sl: "Nalagam rezervacije …", en: "Loading bookings …" },
   empty: {
@@ -123,8 +126,8 @@ const BK_L = {
     en: "You have no bookings on cloud trips yet.",
   },
   emptyHint: {
-    sl: "Rezerviraš jih v zavihku „Rezervacije“ na posamezni poti (gumb „Rezerviraj (demo)“).",
-    en: "Book them in the “Reservations” tab of a trip (the “Book (demo)” button).",
+    sl: "Rezerviraš jih v zavihku „Rezervacije“ na posamezni poti (gumb „Išči ponudbo“ — pri partnerju ali demo).",
+    en: "Book them in the “Reservations” tab of a trip (the “Search an offer” button — partner or demo).",
   },
   bookingsWord: {
     sl: (n: number) =>
@@ -136,14 +139,20 @@ const BK_L = {
       `${n} ${n === 1 ? "potrjena" : n === 2 ? "potrjeni" : n === 3 || n === 4 ? "potrjene" : "potrjenih"}`,
     en: (n: number) => `${n} confirmed`,
   },
+  pendingWord: {
+    sl: (n: number) =>
+      `${n} ${n === 1 ? "čaka potrditev" : n === 2 ? "čakata potrditev" : n === 3 || n === 4 ? "čakajo potrditev" : "čaka potrditve"}`,
+    en: (n: number) => `${n} awaiting partner confirmation`,
+  },
   cancelledWord: { sl: "preklicanih", en: "cancelled" },
   demoChip: { sl: "demo", en: "demo" },
   userChip: { sl: "uporabniška", en: "user" },
   realChip: { sl: "realna", en: "real" },
+  partnerChip: { sl: "partner", en: "partner" },
   unknownChip: { sl: "brez razkritja", en: "undisclosed" },
   demoFootnote: {
-    sl: "Demo rezervacije so SIMULIRANE (izrecno označene) — realni ponudniški kanal ni aktiven, nikoli ne lažemo.",
-    en: "Demo bookings are SIMULATED (explicitly labelled) — the real provider channel is not active; we never lie.",
+    sl: "Partner rezervacije so REALNE pri partnerju (Booking.com, GetYourGuide, Kiwi, Rentalcars, Omio) — status čaka potrditev, dokler ne vneseš številke iz partnerjevega potrdila. Demo rezervacije so SIMULIRANE (izrecno označene). Direktni ponudniški API ni aktiven — nikoli ne lažemo.",
+    en: "Partner bookings are REAL at the partner (Booking.com, GetYourGuide, Kiwi, Rentalcars, Omio) — the status awaits confirmation until you enter the partner’s reference. Demo bookings are SIMULATED (explicitly labelled). The direct provider API is not active — we never lie.",
   },
   openTrip: { sl: "Odpri pot", en: "Open trip" },
 } as const;
@@ -156,9 +165,12 @@ interface TripBookingsSummaryRow {
   modified: number;
   cancelled: number;
   idea: number;
+  /** Partner rezervacije, ki čakajo na partnerjevo potrditev (PENDING). */
+  pending: number;
   demo: number;
   user: number;
   real: number;
+  partner: number;
   unknownChannel: number;
   latestAt: string;
 }
@@ -253,14 +265,28 @@ function TripBookingsSummary() {
                         · {BK_L.confirmedWord[lang](t.confirmed)}
                       </span>
                     ) : null}
+                    {t.pending > 0 ? (
+                      <span className="text-muted-foreground">
+                        · {BK_L.pendingWord[lang](t.pending)}
+                      </span>
+                    ) : null}
                     {t.cancelled > 0 ? (
                       <span className="text-muted-foreground">
                         · {t.cancelled} × {pick(l, BK_L.cancelledWord)}
                       </span>
                     ) : null}
                   </p>
-                  {/* Kanalno razkritje — demo IZRECNO oranžno, nikoli zelena */}
+                  {/* Kanalno razkritje — partner smaragdno, demo IZRECNO oranžno, nikoli mešano */}
                   <p className="flex flex-wrap items-center gap-1.5">
+                    {t.partner > 0 ? (
+                      <Badge
+                        variant="outline"
+                        className="gap-1 border-emerald-600/50 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                      >
+                        <Handshake className="size-3" aria-hidden="true" />
+                        {t.partner} × {pick(l, BK_L.partnerChip)}
+                      </Badge>
+                    ) : null}
                     {t.demo > 0 ? (
                       <Badge
                         variant="outline"

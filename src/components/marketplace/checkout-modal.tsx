@@ -73,6 +73,12 @@ const L = {
   demoOrderNo: { sl: "Številka naročila", en: "Order number" },
   close: { sl: "Zapri", en: "Close" },
   buyAgain: { sl: "Nakupuj naprej", en: "Continue shopping" },
+  requestCancel: { sl: "Zahtevaj preklic", en: "Request cancellation" },
+  cancelRequested: {
+    sl: "Zahtevek za preklic je podan — povratek NE steče samodejno; obravnava ga lastnik pri plačilnem ponudniku.",
+    en: "Cancellation request submitted — the refund does NOT happen automatically; the owner handles it at the payment provider.",
+  },
+  cancelErr: { sl: "Zahtevek ni uspel. Poskusi znova.", en: "The request failed. Try again." },
   secureNote: {
     sl: "Plačilo poganja Stripe — kartice ne vidimo mi.",
     en: "Payments are powered by Stripe — your card never reaches us.",
@@ -119,6 +125,28 @@ export function CheckoutModal({
     "idle" | "submitting" | "demo-done"
   >("idle");
   const [demoOrderId, setDemoOrderId] = React.useState<string | null>(null);
+  const [cancelState, setCancelState] = React.useState<"idle" | "sending" | "requested" | "error">(
+    "idle"
+  );
+
+  /** ZAHTEVEK KUPCA PO PREKLICU (P0-E §11) — PATCH /api/checkout. */
+  const requestCancel = React.useCallback(async () => {
+    if (!demoOrderId) return;
+    setCancelState("sending");
+    try {
+      const r = await fetch("/api/checkout", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          orderId: demoOrderId,
+          visitorKey: getOrCreateVisitorKey(),
+        }),
+      });
+      setCancelState(r.ok ? "requested" : "error");
+    } catch {
+      setCancelState("error");
+    }
+  }, [demoOrderId]);
   const [error, setError] = React.useState<string | null>(null);
 
   const maxQty = product ? Math.min(MAX_QTY, Math.max(MIN_QTY, product.stock)) : MIN_QTY;
@@ -188,6 +216,7 @@ export function CheckoutModal({
 
       // DEMO veja: izrecno označena potrditev (brez prave bremenitve).
       setDemoOrderId(body.orderId);
+      setCancelState("idle");
       setState("demo-done");
     } catch {
       const message =
@@ -239,14 +268,40 @@ export function CheckoutModal({
             <p className="text-sm leading-relaxed text-muted-foreground">
               {t("demoNote")}
             </p>
-            <Button
-              type="button"
-              variant="outline"
-              className="mt-1 h-11"
-              onClick={() => onOpenChange(false)}
-            >
-              {t("buyAgain")}
-            </Button>
+            {cancelState !== "idle" && (
+              <p
+                role={cancelState === "requested" ? "status" : "alert"}
+                className={
+                  cancelState === "requested"
+                    ? "rounded-lg border border-amber-500/50 bg-amber-50 p-2 text-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+                    : "text-xs text-destructive"
+                }
+                aria-live="polite"
+              >
+                {cancelState === "requested" ? t("cancelRequested") : t("cancelErr")}
+              </p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-1 h-11"
+                onClick={() => onOpenChange(false)}
+              >
+                {t("buyAgain")}
+              </Button>
+              {demoOrderId && cancelState !== "requested" && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="mt-1 h-11"
+                  disabled={cancelState === "sending"}
+                  onClick={() => void requestCancel()}
+                >
+                  {t("requestCancel")}
+                </Button>
+              )}
+            </div>
           </div>
         ) : (
           <div className="flex flex-col gap-4">

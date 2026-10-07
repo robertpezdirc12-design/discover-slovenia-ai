@@ -33,11 +33,15 @@ import {
 import { TripChat } from "@/components/trips/trip-chat";
 import { TripPolls } from "@/components/trips/trip-polls";
 import { TripReservations } from "@/components/trips/trip-reservations";
+import { TripDatesPanel } from "@/components/trips/trip-dates-panel";
+import { ReservationImportDialog } from "@/components/trips/reservation-import-dialog";
+import { PrintableConfirmation } from "@/components/trips/printable-confirmation";
 import { Link } from "@/i18n/navigation";
 import { pick } from "@/lib/i18n-pick";
 import { myTrip } from "@/lib/my-trip";
 import { getDestination } from "@/lib/slovenia-data";
 import { type SharedPlan, sharedPlans } from "@/lib/shared-plan";
+import type { TripDates } from "@/lib/trip-dates";
 
 /**
  * /pot/[shareId] — deljena pot (rekonstrukcija D7 + 48-a skupnostne funkcije).
@@ -62,6 +66,8 @@ interface DbTrip {
   createdAt: string;
   plan: SharedPlan;
   version: { renameVersion: number; updatedAt: string };
+  /** Realni datumi poti (P0-E) — null, če še niso določeni. */
+  tripDates: TripDates | null;
 }
 
 export function SharedTripView({ shareId }: { shareId: string }) {
@@ -73,6 +79,8 @@ export function SharedTripView({ shareId }: { shareId: string }) {
   const [inviteToken, setInviteToken] = React.useState<string | null>(null);
   const [pageUrl, setPageUrl] = React.useState("");
   const [addedCount, setAddedCount] = React.useState(0);
+  /** Verzija seznama rezervacij — remount TripReservations po uvozu (osvežitev). */
+  const [reservationsVersion, setReservationsVersion] = React.useState(0);
   const [savingCloud, setSavingCloud] = React.useState(false);
   const [cloudError, setCloudError] = React.useState<string | null>(null);
 
@@ -87,6 +95,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
         createdAt: agg.createdAt,
         plan: agg.plan,
         version: agg.version,
+        tripDates: agg.tripDates ?? null,
       });
     } else {
       setDb(null);
@@ -327,6 +336,14 @@ export function SharedTripView({ shareId }: { shareId: string }) {
               </Button>
             </div>
 
+            <TripDatesPanel
+              shareId={shareId}
+              canEdit={canEdit}
+              tripDates={db.tripDates}
+              plan={plan}
+              onSaved={() => void loadDb()}
+            />
+
             <PlanDays plan={plan} shareId={shareId} l={l} addLabel={pick(l, L.addTrip)} addedLabel={pick(l, L.added)} exploreLabel={pick(l, L.exploreDest)} />
 
             <div className="grid gap-4 sm:grid-cols-2 print:hidden">
@@ -376,8 +393,28 @@ export function SharedTripView({ shareId }: { shareId: string }) {
           </TabsContent>
 
           {/* ── Zavihek REZERVACIJE ──────────────────────────────────── */}
-          <TabsContent value="reservations" className="mt-4">
-            <TripReservations shareId={shareId} plan={plan} canEdit={canEdit} />
+          <TabsContent value="reservations" className="mt-4 space-y-4">
+            <div className="flex flex-wrap items-center gap-2 print:hidden">
+              {canEdit && (
+                <ReservationImportDialog
+                  shareId={shareId}
+                  plan={plan}
+                  onImported={() => setReservationsVersion((v) => v + 1)}
+                />
+              )}
+              <PrintableConfirmation
+                shareId={shareId}
+                tripName={db.name ?? plan.name ?? ""}
+                tripDates={db.tripDates}
+                plan={plan}
+              />
+            </div>
+            <TripReservations
+              key={reservationsVersion}
+              shareId={shareId}
+              plan={plan}
+              canEdit={canEdit}
+            />
           </TabsContent>
 
           {/* ── Zavihek ANKETE ───────────────────────────────────────── */}

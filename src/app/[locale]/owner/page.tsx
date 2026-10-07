@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Building2, HardDrive, LineChart, Percent, Users } from "lucide-react";
+import { ArrowRight, Banknote, Building2, HardDrive, LineChart, Percent, Users } from "lucide-react";
 import { useLocale } from "next-intl";
 
 import { PageHeader } from "@/components/layout/page-header";
@@ -50,6 +50,11 @@ export default function OwnerPage() {
       en: "Admin dashboard: click statistics for partner links and the commission journal from partner reports (access limited to DSA_ADMIN_EMAILS).",
     },
     provCta: { sl: "Odpri ploščo", en: "Open the dashboard" },
+    payoutTitle: { sl: "Izplačila lastne tržnice", en: "Own marketplace payouts" },
+    payoutBody: {
+      sl: "Življenjski cikel izplačil naročil (še ne zapadlo → zapadlo → v teku → izplačano), zahtevki kupca po preklicu in revizijski dnevnik.",
+      en: "Order payout lifecycle (not yet due → due → processing → paid), customer cancellation requests and the audit log.",
+    },
     statusTitle: { sl: "Stanje v tej rekonstrukciji", en: "Status in this reconstruction" },
     statusBody: {
       sl: "Prijava v portal (e-pošta + geslo) je v produkciji ločena stran; njeno podlogo smo rekonstruirali 1:1, a brez pravega avtentikacijskega strežnika v sandboxu — obrazec je prikaz, povezave in vsebine pa so resnične.",
@@ -126,6 +131,24 @@ export default function OwnerPage() {
           </div>
           <Button asChild variant="outline" size="sm" className="shrink-0 font-semibold">
             <Link href="/owner/provizije">
+              {pick(l, L.provCta)}
+              <ArrowRight className="size-3.5" aria-hidden="true" />
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6">
+        <CardContent className="flex items-start gap-3 p-5">
+          <Banknote className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
+          <div>
+            <p className="text-sm font-semibold">{pick(l, L.payoutTitle)}</p>
+            <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">
+              {pick(l, L.payoutBody)}
+            </p>
+          </div>
+          <Button asChild variant="outline" size="sm" className="shrink-0 font-semibold">
+            <Link href="/owner/izplacila">
               {pick(l, L.provCta)}
               <ArrowRight className="size-3.5" aria-hidden="true" />
             </Link>

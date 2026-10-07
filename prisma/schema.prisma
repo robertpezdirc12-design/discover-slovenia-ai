@@ -117,6 +117,9 @@ model TravelJourney {
   title         String
   isPublic      Boolean  @default(false)
   data          String
+  /// Realni datumi poti (P0-E §10) — lokalni "YYYY-MM-DD" (DST-varno), null = nedoločeno.
+  dateStart     String?
+  dateEnd       String?
   renameVersion Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -272,6 +275,8 @@ model Order {
   status          String      @default("pending")
   /// true IZKLJUČNO za demo plačila (DSA_DEMO_PAYMENTS — brez prave bremenitve).
   demo            Boolean     @default(false)
+  /// Kdaj je naročilo prešlo v "paid" (webhook/demo pot) — osnova izpeljave izplačila.
+  paidAt          DateTime?
   stripeSessionId String?     @unique
   totalCents      Int
   expiresAt       DateTime?
@@ -280,8 +285,17 @@ model Order {
 
   items           OrderItem[]
 
+  /// Življenjski cikel izplačila lastniku (P0-E §11): not_due → due → processing → paid.
+  /// "due" se izpelje (paidAt + zadrževalna doba) — glej src/lib/marketplace-types.ts.
+  payoutStatus         String    @default("not_due")
+  payoutUpdatedAt      DateTime?
+  /// Zahtevek kupca po preklicu/povratilu (P0-E §11) — NE povzroči povratila
+  /// sama; vidi ga lastnik (povratek teče pri plačilnem ponudniku).
+  cancellationRequestedAt DateTime?
+
   @@index([status])
   @@index([userId])
+  @@index([payoutStatus])
 }
 
 /// Vrstica naročila — zaloga se ob sprostitvi obnavlja SAMO iz teh vrstic.
@@ -359,4 +373,26 @@ model CommissionEntry {
   @@unique([providerId, bookingRef])
   @@index([status])
   @@index([payoutDueAt])
+}
+
+/// REVIZIJSKI DNEVNIK (P0-E §11) — en sam dnevnik za tržnico (naročila,
+/// izplačila, zahtevki po preklicu). Vnosi NISO brišljivi (append-only);
+/// meta je kompakten JSON (nikoli skrivnosti).
+model AuditLog {
+  id         String   @id @default(cuid())
+  /// "system" | "owner" | "customer" — kdo je sprožil dejanje.
+  actorType  String
+  /// Identiteta akterja (userId / email skrbnika / null za sistem).
+  actorId    String?
+  /// Kanonsko dejanje, npr. "order.paid", "payout.processing", "order.cancellation_requested".
+  action     String
+  /// Vrsta entitete: "order" | "payout" | "reservation" | ...
+  entityType String
+  entityId   String
+  /// Kompakten JSON z dodatnimi podatki (brez skrivnosti).
+  meta       String
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
 }

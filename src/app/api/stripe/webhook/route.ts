@@ -117,10 +117,28 @@ export async function POST(req: Request) {
           expectedTotalCents: order.totalCents,
         });
         if (valid) {
+          const paidAt = new Date();
           await db.order.update({
             where: { id: order.id },
-            data: { status: "paid" },
+            data: { status: "paid", paidAt },
           });
+          // Revizijska sled (P0-E §11): pravo plačilo je dogodek, viden lastniku.
+          try {
+            await db.auditLog.create({
+              data: {
+                actorType: "system",
+                action: "order.paid",
+                entityType: "order",
+                entityId: order.id,
+                meta: JSON.stringify({
+                  totalCents: order.totalCents,
+                  stripeEvent: event.id,
+                }),
+              },
+            });
+          } catch (auditErr) {
+            console.error("[stripe/webhook] auditLog ni uspel:", auditErr);
+          }
         } else {
           console.error(
             `[stripe/webhook] plačilo za ${order.id} NI potrjeno ` +

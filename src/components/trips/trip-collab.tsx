@@ -85,6 +85,8 @@ export interface TripAggregate {
   createdAt: string;
   /** Razčlenjen načrt poti (oblika SharedPlan). */
   plan: import("@/lib/shared-plan").SharedPlan;
+  /** Realni datumi poti (P0-E) — lokalni "YYYY-MM-DD" | null. */
+  tripDates?: { start: string; end: string } | null;
   collaborators?: CollaboratorRow[];
 }
 

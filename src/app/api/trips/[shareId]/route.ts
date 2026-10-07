@@ -6,14 +6,17 @@ import {
   getTripForWrite,
   parseJourneyPlan,
 } from "@/lib/trip-auth";
+import { validateTripDates, type TripDates } from "@/lib/trip-dates";
 
 /**
  * /api/trips/[shareId] — agregat poti (kanon izvirnikovega /api/trip/:id).
  *
  *  GET   → javna pot (vsi) ali sodelujoči; vrača vlogo, ime, verzijo,
- *          razčlenjen načrt in (za lastnika) seznam sodelujočih.
+ *          razčlenjen načrt, realne datume poti (P0-E) in (za lastnika)
+ *          seznam sodelujočih.
  *  PATCH → preimenovanje s compare-and-swap (baseVersion ne ujema → 409,
- *          iskreno „sočasno urejanje") + preklop isPublic (samo OWNER).
+ *          iskreno „sočasno urejanje") + preklop isPublic (samo OWNER)
+ *          + nastavitev/brisanje realnih datumov poti (P0-E, EDITOR+).
  */
 
 interface RouteParams {
@@ -31,6 +34,11 @@ export async function GET(_request: Request, { params }: RouteParams) {
   }
 
   const plan = parseJourneyPlan(ctx.journey.data);
+  // Realni datumi poti (P0-E) — null, če še niso določeni (iskreno).
+  const tripDates: TripDates | null =
+    ctx.journey.dateStart && ctx.journey.dateEnd
+      ? { start: ctx.journey.dateStart, end: ctx.journey.dateEnd }
+      : null;
   const base = {
     success: true,
     shareId: ctx.journey.shareId,
@@ -43,6 +51,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
       updatedAt: ctx.journey.updatedAt.toISOString(),
     },
     createdAt: ctx.journey.createdAt.toISOString(),
+    tripDates,
     plan: { ...plan, shareId: ctx.journey.shareId, name: ctx.journey.title },
   };
 
@@ -102,6 +111,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     name?: unknown;
     baseVersion?: unknown;
     isPublic?: unknown;
+    tripDates?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -111,12 +121,28 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
   const wantsRename = typeof body.name === "string";
   const wantsPublic = typeof body.isPublic === "boolean";
+  // tripDates: objekt { start, end } (nastavi) ali null (počisti) — P0-E.
+  const wantsDates = body.tripDates !== undefined;
 
-  if (!wantsRename && !wantsPublic) {
+  if (!wantsRename && !wantsPublic && !wantsDates) {
     return NextResponse.json(
-      { error: "Nič za posodobiti (podaj name in/ali isPublic)." },
+      { error: "Nič za posodobiti (podaj name, isPublic in/ali tripDates)." },
       { status: 400 }
     );
+  }
+
+  // Validacija datumov POTI pred kakršno koli pisavo (fail-closed).
+  let dates: { start: string; end: string } | null = null;
+  if (wantsDates) {
+    if (body.tripDates === null) {
+      dates = null; // izrecno brisanje datumov
+    } else {
+      const v = validateTripDates(body.tripDates);
+      if (!v.ok) {
+        return NextResponse.json({ error: v.error }, { status: 400 });
+      }
+      dates = v.dates;
+    }
   }
 
   // Preklop javne povezave — SAMO lastnik; preverimo najstrožjo zahtevo,
@@ -166,9 +192,25 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     });
   }
 
+  if (wantsDates) {
+    await db.travelJourney.update({
+      where: { id: ctx.journey.id },
+      data: {
+        dateStart: dates ? dates.start : null,
+        dateEnd: dates ? dates.end : null,
+      },
+    });
+  }
+
   const updated = await db.travelJourney.findUnique({
     where: { id: ctx.journey.id },
-    select: { title: true, isPublic: true, renameVersion: true },
+    select: {
+      title: true,
+      isPublic: true,
+      renameVersion: true,
+      dateStart: true,
+      dateEnd: true,
+    },
   });
 
   return NextResponse.json({
@@ -176,6 +218,10 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     name: updated?.title ?? null,
     isPublic: updated?.isPublic ?? null,
     renameVersion: updated?.renameVersion ?? null,
+    tripDates:
+      updated?.dateStart && updated?.dateEnd
+        ? { start: updated.dateStart, end: updated.dateEnd }
+        : null,
   });
 }
 

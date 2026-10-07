@@ -156,3 +156,136 @@ describe("weather: isWeatherResponse (tipovska straža odgovora)", () => {
     ).toBe(false);
   });
 });
+
+// ── DNEVNA NAPOVED (P0-E — vreme po dnevih poti) ───────────────────────────
+
+import {
+  isWeatherDailyResponse,
+  mapUpstreamDaily,
+} from "../src/lib/weather";
+
+const upstreamOk = {
+  time: ["2026-10-17", "2026-10-18"],
+  weather_code: [2, 61],
+  temperature_2m_max: [18.34, 14.02],
+  temperature_2m_min: [7.51, 9.26],
+  precipitation_probability_max: [10, 85],
+  precipitation_sum: [0, 4.81],
+};
+
+describe("weather daily: mapUpstreamDaily (preslikava Open-Meteo)", () => {
+  test("kanonska preslikava: zaokrožitve na 1 decimalko, koda na celo", () => {
+    const daily = mapUpstreamDaily(upstreamOk);
+    expect(daily).not.toBeNull();
+    expect(daily).toEqual([
+      {
+        date: "2026-10-17",
+        code: 2,
+        tMaxC: 18.3,
+        tMinC: 7.5,
+        precipProbPct: 10,
+        precipMm: 0,
+      },
+      {
+        date: "2026-10-18",
+        code: 61,
+        tMaxC: 14,
+        tMinC: 9.3,
+        precipProbPct: 85,
+        precipMm: 4.8,
+      },
+    ]);
+  });
+
+  test("verjetnost 105 % se zaceli na 100 (sanity)", () => {
+    const daily = mapUpstreamDaily({
+      ...upstreamOk,
+      precipitation_probability_max: [105, 0],
+    });
+    expect(daily?.[0].precipProbPct).toBe(100);
+  });
+
+  test("manjkajoča verjetnost → 0 (vir dopušča opcijsko polje)", () => {
+    const daily = mapUpstreamDaily({
+      time: ["2026-10-17"],
+      weather_code: [0],
+      temperature_2m_max: [20],
+      temperature_2m_min: [10],
+      precipitation_probability_max: null,
+      precipitation_sum: [0.2],
+    });
+    expect(daily?.[0]).toEqual({
+      date: "2026-10-17",
+      code: 0,
+      tMaxC: 20,
+      tMinC: 10,
+      precipProbPct: 0,
+      precipMm: 0.2,
+    });
+  });
+
+  test("neusklajene dolžine nizov → null (celota fail-closed)", () => {
+    expect(
+      mapUpstreamDaily({
+        ...upstreamOk,
+        weather_code: [2], // 1 namesto 2
+      })
+    ).toBeNull();
+  });
+
+  test("neberljiv dan (NaN temperatura) → null", () => {
+    expect(
+      mapUpstreamDaily({
+        ...upstreamOk,
+        temperature_2m_max: ["toplo", 14.02],
+      })
+    ).toBeNull();
+  });
+
+  test("prazen daily blok → null", () => {
+    expect(
+      mapUpstreamDaily({
+        time: [],
+        weather_code: [],
+        temperature_2m_max: [],
+        temperature_2m_min: [],
+        precipitation_probability_max: [],
+        precipitation_sum: [],
+      })
+    ).toBeNull();
+  });
+});
+
+describe("weather daily: isWeatherDailyResponse (stražar odgovora)", () => {
+  const sampleOk = {
+    ok: true,
+    source: "open-meteo",
+    fetchedAt: "2026-10-07T12:00:00.000Z",
+    daily: [
+      {
+        date: "2026-10-17",
+        code: 2,
+        tMaxC: 18.3,
+        tMinC: 7.5,
+        precipProbPct: 10,
+        precipMm: 0,
+      },
+    ],
+  };
+
+  test("kanonska oblika → true", () => {
+    expect(isWeatherDailyResponse(sampleOk)).toBe(true);
+  });
+
+  test("popačena oblika → false (fail-closed)", () => {
+    expect(isWeatherDailyResponse(null)).toBe(false);
+    expect(isWeatherDailyResponse({ ...sampleOk, daily: "17.10" })).toBe(false);
+    expect(
+      isWeatherDailyResponse({ ...sampleOk, daily: [{ ...sampleOk.daily[0], date: "17.10.2026" }] })
+    ).toBe(false);
+    expect(
+      isWeatherDailyResponse({ ...sampleOk, daily: [{ ...sampleOk.daily[0], tMaxC: "toplo" }] })
+    ).toBe(false);
+    expect(isWeatherDailyResponse({ ...sampleOk, daily: [] })).toBe(false); // prazna napoved NI veljavna
+  });
+});

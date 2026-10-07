@@ -17,6 +17,7 @@ import {
   releasePendingOrder,
   sweepExpiredPendingOrders,
 } from "@/lib/marketplace-checkout-server";
+import { canRequestCancellation } from "@/lib/marketplace-types";
 
 export const dynamic = "force-dynamic";
 
@@ -287,10 +288,30 @@ export async function POST(req: Request) {
 
   // 4b ── DEMO veja (DSA_DEMO_PAYMENTS=1): takoj "paid", IZRECNO demo.
   if (isStripeDemo()) {
+    const paidAt = new Date();
     const paid = await db.order.update({
       where: { id: order.id },
-      data: { status: "paid", demo: true },
+      data: { status: "paid", demo: true, paidAt },
     });
+    // Revizijska sled (P0-E §11): plačilo (demo) je dogodek, viden lastniku.
+    try {
+      await db.auditLog.create({
+        data: {
+          actorType: "system",
+          action: paid.demo ? "order.paid_demo" : "order.paid",
+          entityType: "order",
+          entityId: paid.id,
+          meta: JSON.stringify({
+            totalCents: paid.totalCents,
+            demo: paid.demo,
+            userId,
+            visitorKey: userId ? null : guestKey,
+          }),
+        },
+      });
+    } catch (err) {
+      console.error("[api/checkout] auditLog (demo paid) ni uspel:", err);
+    }
     return NextResponse.json({
       demo: true,
       orderId: paid.id,
@@ -305,4 +326,103 @@ export async function POST(req: Request) {
     { error: "Plačila niso konfigurirana." },
     { status: 503 }
   );
+}
+
+// ── PATCH: ZAHTEVEK KUPCA PO PREKLICU (P0-E §11 — customer state) ──────────
+
+/**
+ * PATCH { orderId, visitorKey? } — kupec ZAPOŠE za preklic/povratek.
+ *
+ * ISKRENOSTNI kanon (marketplace-types.ts):
+ *  - zahtevek NE povzroči povratila sam — povratek teče pri plačilnem
+ *    ponudniku (Stripe); zahtevek je VIDEN lastniku v skrbniškem pregledu;
+ *  - dovoljen SAMO na lastnem naročilu (userId seje ali visitorKey gosta)
+ *    in SAMO na plačanem naročilu (pending/expired/cancelled → odklon);
+ *  - idempotenca: ponovni zahtevek istega naročila ne ustvari novega vnosa
+ *    (vrne 409 z odkrito napako; že obstoječi zahtevek se NE prepiše).
+ */
+export async function PATCH(req: Request) {
+  let body: { orderId?: unknown; visitorKey?: unknown };
+  try {
+    body = (await req.json()) as typeof body;
+  } catch {
+    return NextResponse.json({ error: "Neveljavno telo zahtevka (JSON)." }, { status: 400 });
+  }
+
+  const orderId = typeof body.orderId === "string" ? body.orderId.trim() : "";
+  if (!orderId) {
+    return NextResponse.json({ error: "Manjka orderId naročila." }, { status: 400 });
+  }
+
+  const session = await getServerSession(authOptions);
+  const userId = session?.user?.id ?? null;
+  const visitorKey =
+    typeof body.visitorKey === "string" && body.visitorKey.trim() !== ""
+      ? body.visitorKey.trim()
+      : null;
+  if (!userId && !visitorKey) {
+    return NextResponse.json(
+      { error: "Manjka identiteta (prijava ali visitorKey)." },
+      { status: 401 }
+    );
+  }
+
+  const order = await db.order.findUnique({ where: { id: orderId } });
+  if (!order) {
+    return NextResponse.json({ error: "Naročilo ne obstaja." }, { status: 404 });
+  }
+
+  // Lastništvo: prijavljen uporabnik ALI gost z istim visitorKeyjem.
+  const isOwner =
+    (userId !== null && order.userId === userId) ||
+    (visitorKey !== null && order.visitorKey === visitorKey);
+  if (!isOwner) {
+    return NextResponse.json(
+      { error: "To ni tvoje naročilo." },
+      { status: 403 }
+    );
+  }
+
+  const check = canRequestCancellation({
+    status: order.status,
+    cancellationRequestedAt: order.cancellationRequestedAt,
+  });
+  if (!check.ok) {
+    return NextResponse.json({ error: check.error }, { status: 409 });
+  }
+
+  const requestedAt = new Date();
+  const updated = await db.order.update({
+    where: { id: order.id },
+    data: { cancellationRequestedAt: requestedAt },
+  });
+
+  // Revizijska sled (P0-E §11).
+  try {
+    await db.auditLog.create({
+      data: {
+        actorType: "customer",
+        actorId: userId ?? visitorKey ?? null,
+        action: "order.cancellation_requested",
+        entityType: "order",
+        entityId: order.id,
+        meta: JSON.stringify({
+          orderStatus: order.status,
+          demo: order.demo,
+          totalCents: order.totalCents,
+        }),
+      },
+    });
+  } catch (err) {
+    console.error("[api/checkout] auditLog (cancellation) ni uspel:", err);
+  }
+
+  return NextResponse.json({
+    success: true,
+    orderId: updated.id,
+    cancellationRequestedAt: requestedAt.toISOString(),
+    honest: true,
+    message:
+      "Zahtevek je podan. POVRATILO ne steče samodejno — obravnava ga lastnik tržnice pri plačilnem ponudniku.",
+  });
 }

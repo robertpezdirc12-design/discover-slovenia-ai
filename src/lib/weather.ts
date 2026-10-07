@@ -152,3 +152,151 @@ export async function fetchStopWeather(
     return null;
   }
 }
+
+// ── DNEVNA NAPOVED (P0-E — vreme po dnevih poti, issue #1 §10) ──────────────
+
+/** En dan dnevne napovedi (camelCase kanon, isti vir Open-Meteo). */
+export interface WeatherDay {
+  /** Lokalni datum dneva "YYYY-MM-DD" (vir: daily.time v coni lokacije). */
+  date: string;
+  /** WMO vremenska koda (weather_code). */
+  code: number;
+  /** Najvišja dnevna temperatura °C. */
+  tMaxC: number;
+  /** Najnižja dnevna temperatura °C. */
+  tMinC: number;
+  /** Verjetnost padavin % (0–100; 0, če vir ne izda vrednosti). */
+  precipProbPct: number;
+  /** Količina padavin mm. */
+  precipMm: number;
+}
+
+/** Odgovor /api/weather?daily=1 ob uspehu — samo pretok resničnih polj. */
+export interface WeatherDailyResponse {
+  ok: true;
+  source: "open-meteo";
+  fetchedAt: string;
+  daily: WeatherDay[];
+}
+
+/** Tipovska straža dnevnega odgovora (klient ne zaupa slepo obliki). */
+export function isWeatherDailyResponse(v: unknown): v is WeatherDailyResponse {
+  if (typeof v !== "object" || v === null) return false;
+  const o = v as Record<string, unknown>;
+  if (o.ok !== true || o.source !== "open-meteo") return false;
+  if (typeof o.fetchedAt !== "string" || o.fetchedAt === "") return false;
+  if (!Array.isArray(o.daily) || o.daily.length === 0) return false; // prazna napoved NI veljavna
+  return o.daily.every((d) => {
+    if (typeof d !== "object" || d === null) return false;
+    const day = d as Record<string, unknown>;
+    return (
+      typeof day.date === "string" &&
+      /^\d{4}-\d{2}-\d{2}$/.test(day.date) &&
+      typeof day.code === "number" &&
+      Number.isFinite(day.code) &&
+      typeof day.tMaxC === "number" &&
+      Number.isFinite(day.tMaxC) &&
+      typeof day.tMinC === "number" &&
+      Number.isFinite(day.tMinC) &&
+      typeof day.precipProbPct === "number" &&
+      Number.isFinite(day.precipProbPct) &&
+      typeof day.precipMm === "number" &&
+      Number.isFinite(day.precipMm)
+    );
+  });
+}
+
+/**
+ * Preslikava gorvodnega `daily` bloka Open-Meteo v kanonsko obliko.
+ * Namerno tanka: vse validacije oblike opravlja KLICATELJ (ta funkcija je
+ * čista preslikava polj — fail-closed ostaja na poti API).
+ * Nepoznana polja se NE izmišljujejo: manjkajoča verjetnost → 0 je edina
+ * izjema, ki jo vir dopušča (precipitation_probability_max je opcijsko).
+ */
+export function mapUpstreamDaily(raw: {
+  time: unknown;
+  weather_code: unknown;
+  temperature_2m_max: unknown;
+  temperature_2m_min: unknown;
+  precipitation_probability_max: unknown;
+  precipitation_sum: unknown;
+}): WeatherDay[] | null {
+  const { time, weather_code, temperature_2m_max, temperature_2m_min } = raw;
+  const prob = raw.precipitation_probability_max;
+  const sum = raw.precipitation_sum;
+  if (
+    !Array.isArray(time) ||
+    !Array.isArray(weather_code) ||
+    !Array.isArray(temperature_2m_max) ||
+    !Array.isArray(temperature_2m_min)
+  ) {
+    return null;
+  }
+  const n = time.length;
+  if (
+    n === 0 ||
+    weather_code.length !== n ||
+    temperature_2m_max.length !== n ||
+    temperature_2m_min.length !== n
+  ) {
+    return null;
+  }
+  const out: WeatherDay[] = [];
+  for (let i = 0; i < n; i++) {
+    const date = time[i];
+    const code = weather_code[i];
+    const tMax = temperature_2m_max[i];
+    const tMin = temperature_2m_min[i];
+    const probV = Array.isArray(prob) ? prob[i] : null;
+    const sumV = Array.isArray(sum) ? sum[i] : null;
+    if (
+      typeof date !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+      typeof code !== "number" ||
+      !Number.isFinite(code) ||
+      typeof tMax !== "number" ||
+      !Number.isFinite(tMax) ||
+      typeof tMin !== "number" ||
+      !Number.isFinite(tMin)
+    ) {
+      return null; // neberljiv dan = pokvarjen odgovor (celota fail-closed)
+    }
+    out.push({
+      date,
+      code: Math.round(code),
+      tMaxC: Math.round(tMax * 10) / 10,
+      tMinC: Math.round(tMin * 10) / 10,
+      precipProbPct:
+        typeof probV === "number" && Number.isFinite(probV)
+          ? Math.max(0, Math.min(100, Math.round(probV)))
+          : 0,
+      precipMm:
+        typeof sumV === "number" && Number.isFinite(sumV)
+          ? Math.round(sumV * 10) / 10
+          : 0,
+    });
+  }
+  return out;
+}
+
+/**
+ * Odjemalec: dnevna napoved za koordinate postanka.
+ * Vrača null ob napaki — NIKOLI ne izmišljamo; horizont je omejen z virom
+ * (FORECAST_MAX_DAYS v trip-dates — UI ga spoštuje prek forecastAvailabilityFor).
+ */
+export async function fetchDailyWeather(
+  lat: number,
+  lng: number,
+  signal?: AbortSignal
+): Promise<WeatherDailyResponse | null> {
+  try {
+    const res = await fetch(`/api/weather?lat=${lat}&lng=${lng}&daily=1`, {
+      signal,
+    });
+    if (!res.ok) return null;
+    const data: unknown = await res.json();
+    return isWeatherDailyResponse(data) ? data : null;
+  } catch {
+    return null;
+  }
+}

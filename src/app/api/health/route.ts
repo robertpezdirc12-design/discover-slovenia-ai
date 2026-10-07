@@ -149,7 +149,7 @@ export async function GET() {
     });
   }
 
-  // 7) Podatkovni viri (P0-C, v2.8.0): STO uradna vsebina (ŽIV vir),
+  // 7) Podatkovni viri (P0-C, v2.9.0): STO uradna vsebina (ŽIV vir),
   //    FSQ lokalna množica, KiwiTaxi feed — iskrena stanja vsakega.
   try {
     const { loadStoContent } = await import(
@@ -213,7 +213,7 @@ export async function GET() {
 
   return NextResponse.json({
     status: "ok",
-    version: "2.8.0",
+    version: "2.9.0",
     startup,
     checkedAt: now(),
   });

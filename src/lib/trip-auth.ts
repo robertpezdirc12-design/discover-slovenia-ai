@@ -45,6 +45,9 @@ export interface TripContext {
     title: string;
     isPublic: boolean;
     data: string;
+    /** Realni datumi poti (P0-E) — lokalni "YYYY-MM-DD", null = nedoločeno. */
+    dateStart: string | null;
+    dateEnd: string | null;
     renameVersion: number;
     createdAt: Date;
     updatedAt: Date;
@@ -91,6 +94,8 @@ export async function getTripContext(
       title: journey.title,
       isPublic: journey.isPublic,
       data: journey.data,
+      dateStart: journey.dateStart,
+      dateEnd: journey.dateEnd,
       renameVersion: journey.renameVersion,
       createdAt: journey.createdAt,
       updatedAt: journey.updatedAt,

@@ -5,7 +5,7 @@
 > realnimi koordinatami in deterministični načrtovalnik poti (isti vhod → isti načrt,
 > 0 AI žetonov v jedru).
 
-**Verzija: 2.8.0 — PODATKOVNI SLOJ: STO ŽIVI VIR + FSQ/KIWITAXI RUNBOOKI + OSM OVERPASS (2026-10-07).**
+**Verzija: 2.9.0 — P0-E: UVOZ REZERVACIJ + REALNI DATUMI POTI + DNEVNO VREME + NATISLJIVO POTRDILO + IZPLAČILA TRŽNICE (2026-10-07).**
 Izdaje rekonstrukcije: 2.1.0 skupnostne funkcije → 2.2.0 aplikacijska lupina →
 2.3.0 issue #1 (živi GPS, booking, pomočnik) → 2.3.1 infra CI → 2.4.0 PWA
 offline → 2.5.0 rezervacijski sloj → 2.6.0 partner kanal booking verige →
@@ -13,7 +13,12 @@ offline → 2.5.0 rezervacijski sloj → 2.6.0 partner kanal booking verige →
 (typecheck/build/prisma) + segmentacija dneva Jutro/Popoldan/Večer →
 2.8.0 podatkovni sloj P0-C (STO llms.txt ingest iz ŽIVEGA vira — 752 vnosov
 v 7 jezikih; FSQ loader/ingest; KiwiTaxi shema/ingest; OSM Overpass POI po
-viewportu; cron reingest; vercel.json).
+viewportu; cron reingest; vercel.json) → 2.9.0 P0-E Journey/My Trip
+(deterministični uvoz rezervacij: parse → pregled → potrditev z izvorom
+IMPORTED; realni datumi poti DST-varno + dnevno vreme po dnevih (Open-Meteo
+16 dni, iskren horizont); natisljivo potrdilo poti z rezervacijami in
+atestacijami; izplačila lastne tržnice not_due → due → processing → paid z
+AuditLog + zahtevki kupca po preklicu).
 Izvorni repozitorij (626 commitov, v1.190.0) je bil dvakrat izgubljen v posledici
 vdorov v GitHub račun (2026-10-06). Ta aplikacija je temeljita rekonstrukcija iz
 obnovitvenih virov (delovni dnevnik + izpisi izvorne kode + produkcijski posnetek +

@@ -5,6 +5,9 @@ const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Predogledni pult (preview-chat-*.space-z.ai) streže/_next vire čez izvor —
+  // Next.js 16 opozori, prihodnje veze pa to zahtevajo izrecno.
+  allowedDevOrigins: ["*.space-z.ai"],
   typescript: {
     ignoreBuildErrors: true,
   },

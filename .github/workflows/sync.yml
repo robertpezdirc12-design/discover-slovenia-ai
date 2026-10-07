@@ -98,3 +98,32 @@ jobs:
 
       - name: Povzetek
         run: echo "Sinhronizacija zakljucena."
+
+  # CI VRATA PO SINHRONIZACIJI — pushi, ki jih naredi sync (GITHUB_TOKEN),
+  # NE sprožijo ci.yml (GitHub preprečuje rekurzivne workflowe), zato tu
+  # po vsakem usklajenju pognemo še lint + test nad glavnim stanjem.
+  lint-test:
+    name: lint + test (po sync)
+    needs: sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: "file:/tmp/ci-skip.db"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Namestitev odvisnosti
+        run: bun install --frozen-lockfile
+
+      - name: Prisma generate
+        run: bunx prisma generate
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Test
+        run: bun test

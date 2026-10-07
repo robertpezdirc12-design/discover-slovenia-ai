@@ -371,3 +371,13 @@ gitovske zgodovine tega commita.
 **Standardni tok od zdaj:** commit → push na GitLab → sync (najpozneje
 6 h cron ali dispatch) prenese na GitHub → CI zgori. Iznjema: spremembe
 `.github/workflows/*` (direkten PAT push na GitHub, nato sync v GitLab).
+
+### 13.2 CI tudi po sinhronizaciji (7. 10. 2026 ~13:30 UTC)
+
+Še zadnja zadrga razrešena: pushi, ki jih izvede sync (GITHUB_TOKEN),
+NE sprožijo ci.yml — GitHub po zasnovi preprečuje rekurzivne workflowe
+(dokazano: sync je prinesel 23757f8 na GitHub, CI ni stekel). Zato
+sync.yml dobuje nov job `lint-test` (needs: sync): po vsakem usklajenju
+(push/schedule/dispatch) pognе lint + test nad glavnim stanjem — testna
+vrata so zdaj pokrita na VSEH poteh. Kvota: ~4 schedule runi/dan ≈ 10
+min/dan ≈ 300 min/mes (skupaj z ostalim < 50 % brezplačne kvote).

@@ -341,3 +341,33 @@ dokumentirano čakanje GitLab CI na runnerje (§10.2, lastnikovo dejanje).
 **Preverjanje po pushu:** sync dispatch (API) → CI run na GitHubu zelen →
 keep-warm dispatch → Render odziv < 45 s (topel) — dokazi v komentarju
 gitovske zgodovine tega commita.
+
+### 13.1 Zaključena namestitev + spoznanja o sinhronizaciji (7. 10. 2026 ~13:20 UTC)
+
+**Končno potrjeno stanje (vsi dokazi iz runov):**
+- `main` OBE strani (GitLab + GitHub) na **1ef4bb0** — sync javlja
+  `main: enaka` ✓
+- **CI (lint + test) ZELEN** na GitHub Actions (run #37626427237 in
+  #37626427237+ na 1ef4bb0) — CI ne čaka več na GitLab runnerje (§10.2
+  razrešena na drugi poti; GitLab CI ostane kot sekundarna izbira)
+- **keep-warm deluje** (run 13:12: Render HTTP 200 v 1 s "topla",
+  Vercel HTTP 200 v 2 s) — ročni dispatch; schedule čaka na lastnikovo
+  pot A (javen repo) ali B (zunanji cron), glava keep-warm.yml
+
+**Korenita vzroka dveh zaporednih napak (dokumentirano za prihodnost):**
+1. `workflows: write` v `permissions:` GITHUB_TOKEN ni veljavno
+   dovoljenje → GitHub celoten workflow obravnava kot neveljaven (ime
+   se prikaže kot pot, dispatch 422, runi phantom-failure). Odstranjeno
+   v 1ef4bb0.
+2. Zasnovna omejitev: **GITHUB_TOKEN ne more potiskati commitov, ki
+   spreminjajo `.github/workflows/*`** ("refusing to allow a GitHub App
+   to create or update workflow"). Tehnologija: spremembe workflow
+   datotek se potisnejo na GitHub DIREKTNO s PAT (workflow scope) —
+   push v smeri GitHub → GitLab te omejitve nima.
+3. WAF (Cloudflare) na gitlab.com občasno blokira git push/fetch iz
+   peskovnika (403) — rešitev: ponovni poskus, ali push prek GitHub
+   Actions (sync iz oblaka deluje vedno).
+
+**Standardni tok od zdaj:** commit → push na GitLab → sync (najpozneje
+6 h cron ali dispatch) prenese na GitHub → CI zgori. Iznjema: spremembe
+`.github/workflows/*` (direkten PAT push na GitHub, nato sync v GitLab).

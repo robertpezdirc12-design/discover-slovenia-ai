@@ -10,7 +10,12 @@ on:
 
 permissions:
   contents: write
-  workflows: write   # potrebno za push commitov, ki spreminjajo .github/workflows/* (sicer GitHub zavrne: "refusing to allow a GitHub App to create or update workflow")
+  # OPOMBA: GITHUB_TOKEN NE MORE potiskati commitov, ki spreminjajo
+  # .github/workflows/* ("refusing to allow a GitHub App to create or update
+  # workflow" — zasnovna omejitev, `workflows` ni veljavno dovoljenje
+  # GITHUB_TOKEN in bi workflow datoteko naredilo NEVELJAVNO). Takšne
+  # commite je treba potisniti na GitHub direktno s PAT (workflow scope);
+  # push v obratni smeri (GitHub -> GitLab) te omejitve nima.
 
 concurrency:
   group: gitlab-sync

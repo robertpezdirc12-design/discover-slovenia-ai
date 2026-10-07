@@ -295,3 +295,16 @@ deluje v brskalniku (dokazi: `docs/evidence/reconstruction-faza3/`).
 bundle `discover-slovenia-ai-2.2.0.bundle`. Push na GitLab čaka na žeton
 (novo `glpat-` z omejenim obsegom; prejšnji žetoni so bili rotirani).
 CI še vedno čaka na runnerje (glej §10.2 — lastnikovo dejanje).
+
+### 12. ISSUE #1 „NEXT" — izveden v obsegu peskovnika (7. 10. 2026 ~12:00 UTC)
+
+Nadgradnja **2.2.0 → 2.3.0** (main @ 657a934): živi GPS navigacija v Go
+Mode, booking veriga z demo simulatorjem (real kanal 503 fail-closed),
+proaktivni pomočnik (deterministični stanjski stroj), premium UX + most
+rezervacija→navigacija, E2E testna vrata 255 → **360 testov**.
+Celoten issue + dokazi (6 PNG, brskalniška zlata pot) objavljeni kot
+komentar na GitLab issue #1 (project issue, ne recovery).
+Iskrenostne meje nespremenjene: realni ponudniki/FSQ/promet v peskovniku
+ne obstajajo — vsa nezanesljiva stanja izrecno razkrita.
+CI še čaka na runnerje (§10.2). Žeton uporabljen izključno v pomnilniku;
+lastniku priporočena rotacija po koncu vzdrževanja.

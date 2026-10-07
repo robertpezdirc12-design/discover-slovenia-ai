@@ -25,6 +25,12 @@
  *  ④ Rezervacijske povezave v popupu destinacije (v2.5.0): nastanitev /
  *     doživetje / leti / rent-a-car prek /api/affiliate/go (vodeni klik,
  *     rel="sponsored" — provizijski model po vzorcu MindTrip).
+ *  ⑤ "POI (OSM živo)" (P0-C) — preklop, ki ob moveend (debounce 600 ms)
+ *     pridobi žive POI iz /api/pois (javni Overpass vir; obvezna
+ *     atribucija ODbL, vidna vedno ko je plast vklopljena). Namerni
+ *     limti vira so iskerno izpisani: viewport > 0,25°² → amber pasica
+ *     „približajte zemljevid" (brez markerjev); 429/502 → dostojna amber
+ *     pasica + retry (po 429 ≥ 6 s brez novih klicev — refetchBlock).
  *
  * Hidracija: komponento nalagamo IZKLJUČNO klientno prek next/dynamic
  * ssr:false (glej app/[locale]/zemljevid/page.tsx) — Leaflet potrebuje
@@ -171,6 +177,64 @@ function fuelIcon(): L.DivIcon {
   });
 }
 
+/**
+ * Barve POI markerjev po vrsti (kind) — živi OSM sloj (P0-C). Zemeljski
+ * toni projekta; POI so NAJMANJŠI krožci na zemljevidu (9 px, tanka
+ * bela obroba), ločeni od destinacijskih krogov (14 px) in lokalnih
+ * kvadratov (10 px) po velikosti in gostoti.
+ */
+const POI_KIND_COLORS: Record<string, string> = {
+  tourism: "#C2586E", // atrakcija (turizem)
+  "amenity=restaurant": "#C77D2E", // restavracija
+  "amenity=cafe": "#8B5E3C", // kavarna
+  "amenity=bar": "#A0522D", // bar
+  "amenity=fast_food": "#B08968", // hitra hrana
+  historic: "#757575", // zgodovinska točka
+  "leisure=park": "#6B8E23", // park
+  "natural=beach": "#2A9D8F", // plaža
+  "amenity=fuel": "#57534E", // črpalka
+};
+
+/** Oznake vrst POI (kind → jezik; SL kanon + EN). */
+const POI_KIND_LABELS_SL: Record<string, string> = {
+  tourism: "atrakcija",
+  "amenity=restaurant": "restavracija",
+  "amenity=cafe": "kavarna",
+  "amenity=bar": "bar",
+  "amenity=fast_food": "hitra hrana",
+  historic: "zgodovinska točka",
+  "leisure=park": "park",
+  "natural=beach": "plaža",
+  "amenity=fuel": "bencinska črpalka",
+};
+const POI_KIND_LABELS_EN: Record<string, string> = {
+  tourism: "attraction",
+  "amenity=restaurant": "restaurant",
+  "amenity=cafe": "café",
+  "amenity=bar": "bar",
+  "amenity=fast_food": "fast food",
+  historic: "historic site",
+  "leisure=park": "park",
+  "natural=beach": "beach",
+  "amenity=fuel": "fuel station",
+};
+
+/** divIcon marker živega OSM POI — majhen krogec po kind (P0-C). */
+function poiIcon(kind: string): L.DivIcon {
+  const color = POI_KIND_COLORS[kind] ?? "#7A6C5D";
+  const size = 9;
+  return L.divIcon({
+    className: "dsa-map-pin",
+    html:
+      `<span style="box-sizing:border-box;display:block;width:${size}px;height:${size}px;` +
+      `border-radius:9999px;background:${color};border:2px solid #fff;` +
+      `box-shadow:0 1px 3px rgba(0,0,0,.45)"></span>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -(size / 2 + 4)],
+  });
+}
+
 /** Pin iz /api/map/pins (pins način, zoom ≥ 15). */
 interface MapPinDTO {
   id: string;
@@ -208,6 +272,27 @@ interface FuelApiResponseDTO {
   total: number;
   returned: number;
   precision: string;
+}
+
+/** POI iz /api/pois (P0-C — živi OSM Overpass sloj po viewportu). */
+interface OsmPoiDTO {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  /** Vrsta (prvi ujemajoč filter, npr. „tourism" ali „amenity=cafe"). */
+  kind: string;
+  tags: Record<string, string>;
+}
+
+/** Odgovor /api/pois (ok = pois; error ima razlog + atribucijo ODbL). */
+interface PoisApiResponseDTO {
+  status: "ok" | "error";
+  total?: number;
+  pois?: OsmPoiDTO[];
+  attribution?: string;
+  error?: string;
+  endpoint?: string;
 }
 
 /** Odsek poti iz /api/journey/route. */
@@ -421,6 +506,122 @@ function FuelLayer({
   return null;
 }
 
+/**
+ * PLAST "POI (OSM žIVO)" (P0-C) — krmilnik pridobivanja živih POI iz
+ * /api/pois za trenutni pogled (moveend/zoomend, debounce 600 ms).
+ *
+ * ISKRENO RAVNANJE Z JAVNIM VIROM (Overpass):
+ *  · viewport > 0,25°² → API 400 „viewport prevelik" → amber pasica
+ *    „približajte zemljevid", BREZ markerjev (namerna omejitev vira);
+ *  · 429 (rate limit 5 s) → napaka + po njej ≥ 6 s brez novih klicev
+ *    (refetchBlock timestamp — spoštljivo hlajenje proti javnemu viru);
+ *  · vsak nov fetch prekliče prejšnjega in-flight (AbortController) —
+ *    ob izklopu plasti/odmontiranju ostane 0 obeženih zahtevkov.
+ */
+const POI_FETCH_DEBOUNCE_MS = 600;
+const POI_REFETCH_BLOCK_MS = 6000;
+
+function OsmPoiLayer({
+  enabled,
+  onResult,
+  onViewportTooBig,
+  onError,
+  onLoading,
+  retryKey,
+}: {
+  enabled: boolean;
+  onResult: (pois: OsmPoiDTO[]) => void;
+  onViewportTooBig: () => void;
+  onError: () => void;
+  onLoading: () => void;
+  retryKey: number;
+}) {
+  const map = useMap();
+
+  React.useEffect(() => {
+    if (!enabled) return;
+    let timer: number | undefined;
+    let inflight: AbortController | null = null;
+    // Po 429 (rate limit javnega vira) ≥ 6 s ne ponavljamo klica —
+    // enostavni refetchBlock timestamp (naloga P0-C UI).
+    let refetchBlockedUntil = 0;
+
+    const fetchPois = async () => {
+      const bounds = map.getBounds();
+      onLoading();
+      // Vsak nov fetch prekliče prejšnjega in-flight (brez podvajanja
+      // in brez tvegane zamenjave vrstn reda odzivov).
+      inflight?.abort();
+      const controller = new AbortController();
+      inflight = controller;
+      try {
+        const res = await fetch(
+          `/api/pois?bbox=${bounds.getSouth().toFixed(6)},${bounds
+            .getWest()
+            .toFixed(6)},${bounds.getNorth().toFixed(6)},${bounds
+            .getEast()
+            .toFixed(6)}`,
+          { signal: controller.signal }
+        );
+        if (res.status === 400) {
+          // Uporabniška omejitev (pogled preširok) — ločena od napak
+          // omrežja; razlog iz telesa preverimo, ne ugibamo.
+          let tooBig = false;
+          try {
+            const body = (await res.json()) as { error?: string };
+            tooBig =
+              typeof body.error === "string" &&
+              body.error.includes("viewport prevelik");
+          } catch {
+            /* okvarjeno telo ne sme zlomiti stanja */
+          }
+          if (tooBig) onViewportTooBig();
+          else onError();
+          return;
+        }
+        if (res.status === 429) {
+          // Javni vir nas je omejil — ohladimo vsaj 6 s (limit API-ja 5 s).
+          refetchBlockedUntil = Date.now() + POI_REFETCH_BLOCK_MS;
+          onError();
+          return;
+        }
+        if (!res.ok) {
+          onError(); // 502 ipd. — zunanji vir, dostojna pasica v staršu
+          return;
+        }
+        const data = (await res.json()) as PoisApiResponseDTO;
+        if (data.status !== "ok" || !Array.isArray(data.pois)) {
+          onError();
+          return;
+        }
+        onResult(data.pois);
+      } catch {
+        if (controller.signal.aborted) return; // izklop/nadomestitev — tiho
+        onError();
+      }
+    };
+
+    const schedule = () => {
+      window.clearTimeout(timer);
+      if (Date.now() < refetchBlockedUntil) return; // hlajenje po 429
+      timer = window.setTimeout(fetchPois, POI_FETCH_DEBOUNCE_MS);
+    };
+
+    void fetchPois();
+    map.on("moveend", schedule);
+    map.on("zoomend", schedule);
+
+    return () => {
+      window.clearTimeout(timer);
+      inflight?.abort(); // izklop = preklic in-flight fetcha
+      map.off("moveend", schedule);
+      map.off("zoomend", schedule);
+    };
+  }, [enabled, map, onResult, onViewportTooBig, onError, onLoading, retryKey]);
+
+  return null;
+}
+
 /** Popup ene črpalke (veriga, ime, goriva, iskrena opomba o legi). */
 function FuelPinPopup({
   s,
@@ -454,6 +655,49 @@ function FuelPinPopup({
       <p className="mt-0.5 text-[10px] text-muted-foreground">
         {labels.fuelSource}
       </p>
+    </div>
+  );
+}
+
+/**
+ * Popup enega živega OSM POI (P0-C): vrsta (kind), ime, relevantne
+ * oznake in OBVEZNA atribucija ODbL (vir je vedno razkrit).
+ */
+function OsmPoiPopup({
+  poi,
+  kindLabel,
+  attribution,
+}: {
+  poi: OsmPoiDTO;
+  kindLabel: string;
+  attribution: string;
+}) {
+  return (
+    <div className="w-[190px]">
+      <p className="text-[11px] font-medium text-muted-foreground">{kindLabel}</p>
+      <h3 className="text-sm leading-tight font-bold">{poi.name}</h3>
+      {poi.tags.cuisine && (
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          {poi.tags.cuisine}
+        </p>
+      )}
+      {poi.tags.opening_hours && (
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          {poi.tags.opening_hours}
+        </p>
+      )}
+      {poi.tags.website && (
+        <a
+          href={poi.tags.website}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-1 block truncate text-[11px] font-medium text-primary hover:underline"
+        >
+          {poi.tags.website.replace(/^https?:\/\//, "")}
+        </a>
+      )}
+      {/* ODbL: atribucija ob vsaki uporabi podatkov OSM. */}
+      <p className="mt-1 text-[10px] text-muted-foreground">{attribution}</p>
     </div>
   );
 }
@@ -671,6 +915,16 @@ export default function TravelMap() {
   const [fuelError, setFuelError] = React.useState(false);
   const [fuelEmpty, setFuelEmpty] = React.useState(false);
   const [fuelRetryKey, setFuelRetryKey] = React.useState(0);
+  // ── Plast POI (OSM živo) — P0-C: živi Overpass POI po viewportu;
+  //    enak vzorec stanj (loading/empty/error + retry) + ločeno stanje
+  //    „viewport prevelik" (amber, ni napaka — samo hint za približavo). ──
+  const [poiOn, setPoiOn] = React.useState(false);
+  const [poiList, setPoiList] = React.useState<OsmPoiDTO[]>([]);
+  const [poiLoading, setPoiLoading] = React.useState(false);
+  const [poiEmpty, setPoiEmpty] = React.useState(false);
+  const [poiError, setPoiError] = React.useState(false);
+  const [poiTooBig, setPoiTooBig] = React.useState(false);
+  const [poiRetryKey, setPoiRetryKey] = React.useState(0);
   const [routeState, setRouteState] = React.useState<RouteState>({
     status: "idle",
   });
@@ -823,6 +1077,31 @@ export default function TravelMap() {
     bookFlights: { sl: "Leti", en: "Flights", it: "Voli", de: "Flüge", fr: "Vols", es: "Vuelos" },
     bookCar: { sl: "Rent-a-car", en: "Car rental", it: "Autonoleggio", de: "Mietwagen", fr: "Location de voiture", es: "Alquiler de coches" },
     bookingLinksNote: { sl: "Povezave partnerjev — provizija, cena zate nespremenjena", en: "Partner links — commission, your price unchanged", it: "Link partner — commissione, prezzo invariato", de: "Partnerlinks — Provision, Preis unverändert", fr: "Liens partenaires — commission, prix inchangé", es: "Enlaces de socios — comisión, precio sin cambios" },
+    // ── Plast POI (OSM živo) — P0-C. Slovar sl+en; it/de/fr/es padejo
+    //    nazaj na slovenščino (kanon delnih slovarjev, i18n-pick 48-b). ──
+    poiLabel: { sl: "POI (OSM živo)", en: "POI (OSM live)" },
+    poiLoading: { sl: "Nalagam POI …", en: "Loading POIs …" },
+    poiEmpty: { sl: "V tem območju ni POI", en: "No POIs in this area" },
+    poiTooBig: {
+      sl: "Pogled prevelik za POI sloj — približajte zemljevid",
+      en: "Viewport too large for the POI layer — zoom in",
+    },
+    poiUnavailable: {
+      sl: "POI sloj trenutno nedosegljiv (javni Overpass vir) — podatki © OpenStreetMap avtorji",
+      en: "POI layer currently unreachable (public Overpass source) — data © OpenStreetMap contributors",
+    },
+    poiAttributionLegend: {
+      sl: "POI (OSM živo): podatki © OpenStreetMap avtorji (ODbL)",
+      en: "POI (OSM live): data © OpenStreetMap contributors (ODbL)",
+    },
+    poiPopupAttribution: {
+      sl: "© OpenStreetMap avtorji (ODbL)",
+      en: "© OpenStreetMap contributors (ODbL)",
+    },
+    poiKind: {
+      sl: (k: string) => POI_KIND_LABELS_SL[k] ?? "točka interesa",
+      en: (k: string) => POI_KIND_LABELS_EN[k] ?? "point of interest",
+    },
   } as const;
   const t = <K extends keyof typeof L10n>(k: K) => pick(l, L10n[k]);
 
@@ -907,6 +1186,55 @@ export default function TravelMap() {
       setFuelEmpty(false);
       setFuelError(false);
       setFuelLoading(false);
+    }
+  };
+
+  // ── Plast POI (OSM živo): stabilni callbacki + preklop (isti kanon) ──
+  const handlePoiResult = React.useCallback((pois: OsmPoiDTO[]) => {
+    // Nov fetch = NOV seznam (stari markerji se zamenjajo, nikoli ne
+    // seštevajo — brez podvajanja ob premikanju zemljevida).
+    setPoiList(pois);
+    setPoiEmpty(pois.length === 0);
+    setPoiError(false);
+    setPoiTooBig(false);
+    setPoiLoading(false);
+  }, []);
+
+  /** Viewport > 0,25°² — namerna omejitev vira: hint, ne napaka. */
+  const handlePoiTooBig = React.useCallback(() => {
+    setPoiList([]); // brez markerjev
+    setPoiTooBig(true);
+    setPoiError(false);
+    setPoiEmpty(false);
+    setPoiLoading(false);
+  }, []);
+
+  const handlePoiError = React.useCallback(() => {
+    setPoiError(true);
+    setPoiLoading(false);
+  }, []);
+
+  /** Ob vsakem novem fetchu počistimo prejšnje stanje in markerje. */
+  const handlePoiLoading = React.useCallback(() => {
+    setPoiLoading(true);
+    setPoiList([]);
+    setPoiEmpty(false);
+    setPoiError(false);
+    setPoiTooBig(false);
+  }, []);
+
+  const retryPoi = React.useCallback(() => setPoiRetryKey((k) => k + 1), []);
+
+  /** Preklop plasti POI — izklop = 0 markerjev (+ preklic fetcha v plasti). */
+  const togglePoi = () => {
+    const next = !poiOn;
+    setPoiOn(next);
+    if (!next) {
+      setPoiList([]);
+      setPoiEmpty(false);
+      setPoiError(false);
+      setPoiTooBig(false);
+      setPoiLoading(false);
     }
   };
 
@@ -1124,6 +1452,23 @@ export default function TravelMap() {
           {t("fuelLabel")}
         </button>
 
+        {/* Plast POI (OSM živo) — P0-C: preklop + stanja po vzorcu ostalih
+            plasti; atribucija ODbL je ob vklopu vidna v legendi pod zemljevidom. */}
+        <button
+          type="button"
+          onClick={togglePoi}
+          aria-pressed={poiOn}
+          className={cn(
+            "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+            poiOn
+              ? "border-primary bg-primary text-primary-foreground"
+              : "bg-background hover:border-primary/40 hover:text-primary"
+          )}
+        >
+          <MapPin className="size-4" aria-hidden="true" />
+          {t("poiLabel")}
+        </button>
+
         {tripDestinations.length >= 2 && (
           <Button
             type="button"
@@ -1240,6 +1585,31 @@ export default function TravelMap() {
             </button>
           </motion.span>
         )}
+        {/* Stanja plasti POI (OSM živo) — nalaganje / prazno (isti kanon);
+            „prevelik pogled" in nedosegljivost sta širši amber pasici pod
+            vrstico (daljše sporočilo, dostojno, ne rdeče alarmantne). */}
+        {poiOn && poiLoading && !poiError && !poiTooBig && (
+          <motion.span
+            role="status"
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="inline-flex h-11 items-center gap-2 rounded-full border bg-card px-4 text-xs font-medium text-muted-foreground"
+          >
+            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+            {t("poiLoading")}
+          </motion.span>
+        )}
+        {poiOn && poiEmpty && !poiLoading && !poiError && !poiTooBig && (
+          <motion.span
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="inline-flex h-11 items-center rounded-full border border-dashed bg-card px-4 text-xs font-medium text-muted-foreground"
+          >
+            {t("poiEmpty")}
+          </motion.span>
+        )}
         {routeState.status === "error" && (
           <motion.span
             role="status"
@@ -1271,6 +1641,47 @@ export default function TravelMap() {
           </span>
         )}
       </div>
+
+      {/* ── POI (OSM živo) — iskreni pasici (P0-C) ─────────────────────
+          Obe sta AMBER (dostojni, ne rdeči): prevelik pogled je namerna
+          omejitev javnega vira (hint za približavo), nedosegljivost pa
+          je v peskovniku pričakovano stanje — sloj deluje v produkciji. */}
+      {poiOn && poiTooBig && !poiLoading && (
+        <motion.div
+          role="status"
+          initial={reduceMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+          className="mt-3 rounded-lg border border-amber-500/50 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950/40"
+        >
+          <p className="flex items-center gap-2 text-xs font-semibold text-amber-900 dark:text-amber-200">
+            <MapPin className="size-3.5 shrink-0" aria-hidden="true" />
+            {t("poiTooBig")}
+          </p>
+        </motion.div>
+      )}
+      {poiOn && poiError && (
+        <motion.div
+          role="status"
+          initial={reduceMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+          className="mt-3 flex flex-col items-start gap-2 rounded-lg border border-amber-500/50 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950/40 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <p className="flex items-start gap-2 text-xs font-medium text-amber-900 dark:text-amber-200">
+            <MapPin className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+            {t("poiUnavailable")}
+          </p>
+          <button
+            type="button"
+            onClick={retryPoi}
+            className="focus-green inline-flex h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-amber-600/50 bg-background px-4 text-xs font-semibold text-amber-900 transition-colors hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-900/50"
+          >
+            <RotateCw className="size-3.5" aria-hidden="true" />
+            {t("retry")}
+          </button>
+        </motion.div>
+      )}
 
       {/* ── Zemljevid + stranski seznam ──────────────────────────────── */}
       <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_340px]">
@@ -1311,6 +1722,16 @@ export default function TravelMap() {
               onError={handleFuelError}
               onLoading={handleFuelLoading}
               retryKey={fuelRetryKey}
+            />
+            {/* Plast POI (OSM živo) — P0-C: krmilnik pridobivanja za pogled
+                (debounce 600 ms, refetchBlock po 429, abort ob izklopu). */}
+            <OsmPoiLayer
+              enabled={poiOn}
+              onResult={handlePoiResult}
+              onViewportTooBig={handlePoiTooBig}
+              onError={handlePoiError}
+              onLoading={handlePoiLoading}
+              retryKey={poiRetryKey}
             />
             {results.map((d) => (
               <Marker
@@ -1393,6 +1814,29 @@ export default function TravelMap() {
                         approximate: t("approximate"),
                         venuesLink: t("venuesLink"),
                       }}
+                    />
+                  </Popup>
+                </Marker>
+              ))}
+
+            {/* Plast POI (OSM živo) — P0-C: majhni krožci po kind s tooltipom
+                (ime + vrsta) in popupom z obvezno atribucijo ODbL. Seznam se
+                ob vsakem fetchu ZAMENJA (nikoli ne sešteva — brez podvajanj). */}
+            {poiOn &&
+              poiList.map((p) => (
+                <Marker
+                  key={`poi-${p.id}`}
+                  position={[p.latitude, p.longitude]}
+                  icon={poiIcon(p.kind)}
+                >
+                  <Tooltip direction="top" offset={[0, -6]}>
+                    {p.name} · {t("poiKind")(p.kind)}
+                  </Tooltip>
+                  <Popup className="dsa-popup">
+                    <OsmPoiPopup
+                      poi={p}
+                      kindLabel={t("poiKind")(p.kind)}
+                      attribution={t("poiPopupAttribution")}
                     />
                   </Popup>
                 </Marker>
@@ -1504,6 +1948,14 @@ export default function TravelMap() {
               </li>
             ))}
           </ul>
+          {/* ODbL atribucija živega POI sloja — VIDNA vedno, ko je plast
+              vklopljena (licenčna zahteva vira; tudi brez markerjev). */}
+          {poiOn && (
+            <p className="mt-2.5 flex items-center gap-1.5 border-t pt-2.5 text-xs text-muted-foreground">
+              <MapPin className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
+              {t("poiAttributionLegend")}
+            </p>
+          )}
         </div>
         <p className="text-xs text-muted-foreground">{t("hint")}</p>
       </div>

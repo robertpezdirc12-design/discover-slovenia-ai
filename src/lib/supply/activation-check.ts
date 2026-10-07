@@ -8,6 +8,9 @@
  *
  * PRAVILA (mehansko, po vrsti):
  *  1. gate „restore"                    → NOT_CONFIGURED (prvo obnova P0-x)
+ *  1b. gate „data"                      → NOT_CONFIGURED (koda obnovljena,
+ *                                          čaka podatkovni vir — v naših
+ *          rokah: dataset/feed, ne env in ne zunanja odobritev)
  *  2. codeStatus PENDING_RESTORE        → NOT_CONFIGURED (obnova čaka)
  *  3. codeStatus CONTENT_LIVE
  *     + partner-approval/contract       → BLOCKED (zunanja odobritev)
@@ -89,6 +92,12 @@ export function deriveProductionState(
 ): ProductionState {
   // 1. Prvo obnova — nič ni mogoče, dokler sloj ni obnovljen.
   if (entry.gate === "restore") return "NOT_CONFIGURED";
+
+  // 1b. Koda obnovljena, a čaka PODATKOVNI VIR (P0-C: fsq/kiwitaxi) —
+  //     pridobitev množice je v naših rokah (dump/feed), torej
+  //     NOT_CONFIGURED, ne BLOCKED (ni zunanje ovire) in ne ACTIVE
+  //     (brez podatkov sloj ne deluje).
+  if (entry.gate === "data") return "NOT_CONFIGURED";
 
   // 2. Obnova načrtovana (P0-C/P0-D).
   if (entry.codeStatus === "PENDING_RESTORE") return "NOT_CONFIGURED";

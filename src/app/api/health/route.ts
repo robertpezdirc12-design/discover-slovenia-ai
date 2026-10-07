@@ -149,9 +149,71 @@ export async function GET() {
     });
   }
 
+  // 7) Podatkovni viri (P0-C, v2.8.0): STO uradna vsebina (ŽIV vir),
+  //    FSQ lokalna množica, KiwiTaxi feed — iskrena stanja vsakega.
+  try {
+    const { loadStoContent } = await import(
+      "@/lib/supply/providers/sto/content"
+    );
+    const { loadFsqDataset } = await import(
+      "@/lib/supply/providers/fsq/loader"
+    );
+    const { loadKiwitaxiRoutes } = await import(
+      "@/lib/supply/providers/kiwitaxi/routes"
+    );
+
+    const parts: string[] = [];
+    let degraded = false;
+
+    const sto = await loadStoContent();
+    if (sto.status === "ok") {
+      const days = Math.floor(
+        (Date.now() - Date.parse(sto.dataset.fetchedAt)) / 86_400_000
+      );
+      parts.push(
+        `STO ${sto.dataset.entries.length} vnosov / ${sto.dataset.languages.length} jezikov (ingest ${days === 0 ? "danes" : `pred ${days} d`})`,
+      );
+    } else {
+      degraded = true;
+      parts.push(`STO: ${sto.status === "missing" ? "ni ingesciran" : `neveljaven (${sto.reason})`}`);
+    }
+
+    const fsq = await loadFsqDataset();
+    if (fsq.status === "ok") {
+      parts.push(
+        `FSQ ${fsq.stats.total} POI (snapshot ${fsq.manifest?.snapshotDate ?? "?"})`,
+      );
+    } else {
+      parts.push("FSQ: množica čaka vir (dump na mrtvem GitHubu — gate data)");
+    }
+
+    const kt = await loadKiwitaxiRoutes();
+    if (kt.status === "ok") {
+      parts.push(`KiwiTaxi ${kt.dataset.routes.length} rut`);
+    } else {
+      parts.push("KiwiTaxi: feed čaka vir (partner CSV — gate data)");
+    }
+
+    startup.push({
+      name: "data:feeds",
+      status: degraded ? "degraded" : "ok",
+      detail: `${parts.join(" · ")} — FSQ/KT čakanje vira je iskreno stanje (matrika), ne napaka`,
+      at: now(),
+    });
+  } catch (err) {
+    startup.push({
+      name: "data:feeds",
+      status: "skipped",
+      detail: `Moduli podatkovnih virov niso dosegljivi (${
+        err instanceof Error ? err.message.split("\n")[0] : "neznana napaka"
+      })`,
+      at: now(),
+    });
+  }
+
   return NextResponse.json({
     status: "ok",
-    version: "2.7.0",
+    version: "2.8.0",
     startup,
     checkedAt: now(),
   });

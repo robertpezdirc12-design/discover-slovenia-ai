@@ -1,13 +1,261 @@
 "use client";
 
-import { Database, ExternalLink, ShieldCheck } from "lucide-react";
+import {
+  Database,
+  ExternalLink,
+  Landmark,
+  Loader2,
+  RotateCw,
+  Search,
+  ShieldCheck,
+} from "lucide-react";
 import { useLocale } from "next-intl";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { pick } from "@/lib/i18n-pick";
 import { DESTINATIONS } from "@/lib/slovenia-data";
+
+/** Odziv /api/sto/search (P0-C — uradna STO vsebina, llms.txt ingest). */
+interface StoSearchResponseDTO {
+  query: string;
+  language: string;
+  total: number;
+  results: {
+    section: string;
+    title: string;
+    url: string;
+    description: string;
+  }[];
+  attribution: string;
+  fetchedAt: string;
+}
+
+/** Iskrena stanja iskanja — 503 (ni ingesta) in napaka omrežja sta ločeni. */
+type StoSearchStatus =
+  | "idle"
+  | "loading"
+  | "ok"
+  | "empty"
+  | "not-ingested"
+  | "error";
+
+/** Iskren izpis datuma ingesta (iz fetchedAt odziva, nikoli izmišljen). */
+function formatIngestDate(iso: string, locale: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString(locale === "en" ? "en-GB" : "sl-SI", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+/**
+ * KARTICA „IŠČI PO URADNI VSEBINI STO" (P0-C UI priklop) — iskalnik po
+ * ingesciranem uradnem vodniku slovenia.info (llms.txt). Povezave vodijo
+ * na URADNE strani STO (ni affiliate — brez rel="sponsored"). Iskrena
+ * stanja: HTTP 503 = pasica „še ni ingescirana" (ni napaka uporabnika);
+ * prazen zadetek = prijazen predlog, ne napaka; napaka omrežja = retry.
+ */
+function StoSearchCard({
+  locale,
+  labels,
+}: {
+  locale: string;
+  labels: {
+    heading: string;
+    intro: string;
+    inputLabel: string;
+    inputPlaceholder: string;
+    searchAction: string;
+    searchBusy: string;
+    resultsCount: (n: number) => string;
+    emptyResult: (q: string) => string;
+    openOfficial: string;
+    notIngestedTitle: string;
+    notIngestedBody: string;
+    errorText: string;
+    retry: string;
+  };
+}) {
+  const [q, setQ] = React.useState("");
+  const [status, setStatus] = React.useState<StoSearchStatus>("idle");
+  const [data, setData] = React.useState<StoSearchResponseDTO | null>(null);
+  const [lastQuery, setLastQuery] = React.useState("");
+  const abortRef = React.useRef<AbortController | null>(null);
+
+  // Odmontiranje prekliče morebitni in-flight zahtevek (brez obeženih iskanj).
+  React.useEffect(() => () => abortRef.current?.abort(), []);
+
+  const trimmed = q.trim();
+  const busy = status === "loading";
+
+  const runSearch = async (query: string) => {
+    if (query.length === 0 || busy) return;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setLastQuery(query);
+    setStatus("loading");
+    try {
+      const res = await fetch(
+        `/api/sto/search?q=${encodeURIComponent(query)}&lang=${
+          locale === "sl" ? "sl" : "en"
+        }`,
+        { signal: controller.signal }
+      );
+      if (res.status === 503) {
+        setStatus("not-ingested"); // vsebina še ni ingescirana — pasica
+        return;
+      }
+      if (!res.ok) throw new Error("sto-search");
+      const json = (await res.json()) as StoSearchResponseDTO;
+      setData(json);
+      setStatus(json.total > 0 ? "ok" : "empty");
+    } catch {
+      if (controller.signal.aborted) return; // nadomeščeno z novim iskanjem
+      setStatus("error");
+    }
+  };
+
+  return (
+    <Card className="mt-8">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Landmark className="size-4.5 text-primary" aria-hidden="true" />
+          {labels.heading}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          {labels.intro}
+        </p>
+
+        <form
+          className="mt-4 flex flex-col gap-2 sm:flex-row"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void runSearch(trimmed);
+          }}
+        >
+          <div className="relative flex-1">
+            <Search
+              className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
+            <Input
+              type="search"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder={labels.inputPlaceholder}
+              aria-label={labels.inputLabel}
+              className="h-11 pl-9"
+            />
+          </div>
+          <Button
+            type="submit"
+            disabled={trimmed.length === 0 || busy}
+            aria-busy={busy}
+            className="h-11 sm:w-32"
+          >
+            {busy ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Search className="size-4" aria-hidden="true" />
+            )}
+            {labels.searchAction}
+            {busy && <span className="sr-only">{labels.searchBusy}</span>}
+          </Button>
+        </form>
+
+        {/* 503 — vsebina še ni ingescirana (amber: iskrenost, ni krivda). */}
+        {status === "not-ingested" && (
+          <div
+            role="status"
+            className="mt-4 rounded-lg border border-amber-500/50 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950/30"
+          >
+            <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+              {labels.notIngestedTitle}
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-amber-800 dark:text-amber-300">
+              {labels.notIngestedBody}
+            </p>
+          </div>
+        )}
+
+        {/* Napaka omrežja — jasen retry gumb. */}
+        {status === "error" && (
+          <div
+            role="alert"
+            className="mt-4 flex flex-col items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/10 p-3 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <p className="text-sm font-medium text-destructive">{labels.errorText}</p>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 shrink-0 px-4"
+              onClick={() => void runSearch(lastQuery)}
+            >
+              <RotateCw className="size-4" aria-hidden="true" />
+              {labels.retry}
+            </Button>
+          </div>
+        )}
+
+        {/* Prazno — prijazen predlog (NI napaka). */}
+        {status === "empty" && (
+          <div className="mt-4 rounded-lg border border-dashed p-4 text-center">
+            <p className="text-sm font-semibold">{labels.emptyResult(lastQuery)}</p>
+          </div>
+        )}
+
+        {/* Zadetki + atribucija vira (obvezna ob uporabi uradne vsebine).
+            Med ponovnim iskanjem zadetki ostanejo vidni (spinner v gumbu
+            nosi busy stanje) — brez utripanja seznama. */}
+        {(status === "ok" || (status === "loading" && data !== null)) &&
+          data !== null && (
+            <div className="mt-4" aria-live="polite">
+              <p className="text-xs font-bold tracking-[0.12em] text-muted-foreground uppercase">
+                {labels.resultsCount(data.total)}
+              </p>
+              <ul className="scrollbar-slim mt-2 max-h-96 list-none space-y-2 overflow-y-auto pr-1">
+                {data.results.map((r, i) => (
+                  <li key={`${i}-${r.url}`} className="rounded-lg border bg-card p-3.5">
+                    <span className="inline-flex max-w-full items-center truncate rounded-full border bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                      {r.section}
+                    </span>
+                    <h3 className="mt-1.5 text-sm leading-snug font-bold">{r.title}</h3>
+                    {r.description && (
+                      <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                        {r.description}
+                      </p>
+                    )}
+                    {/* Uradne strani STO — NI affiliate (brez rel=sponsored). */}
+                    <a
+                      href={r.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="focus-green mt-2 inline-flex min-h-9 items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                    >
+                      {labels.openOfficial}
+                      <ExternalLink className="size-3.5" aria-hidden="true" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 border-t pt-2.5 text-[11px] leading-relaxed text-muted-foreground">
+                {data.attribution} · {formatIngestDate(data.fetchedAt, locale)}
+              </p>
+            </div>
+          )}
+      </CardContent>
+    </Card>
+  );
+}
 
 /**
  * /vir-podatkov — viri, svežina in provenanca (1:1 po produkciji).
@@ -65,6 +313,56 @@ export default function DataSourcePage() {
     seeAlso: { sl: "Poglej tudi", en: "See also" },
     apiLabel: { sl: "API destinacij (JSON)", en: "Destinations API (JSON)" },
     trustLabel: { sl: "Zaupanje in varnost", en: "Trust & safety" },
+    // ── P0-C: iskanje po uradni vsebini STO (slovenia.info llms.txt) ──
+    stoHeading: {
+      sl: "Išči po uradni vsebini STO (slovenia.info)",
+      en: "Search official STO content (slovenia.info)",
+    },
+    stoIntro: {
+      sl: "Ta iskalnik teče po URADNEM turističnem vodniku Slovenske turistične organizacije — viru llms.txt na slovenia.info, ki smo ga ingescirali v 7 jezikih (752 vnosov). Iskanje razume slovenske sklonske oblike: poizvedba „blede“ najde „Bled“, „poti“ pa „poteh“.",
+      en: "This search runs on the OFFICIAL travel guide of the Slovenian Tourist Board — the llms.txt source at slovenia.info, ingested in 7 languages (752 entries). The search understands Slovenian inflected forms: the query “blede” finds “Bled”, and “poti” finds “poteh”.",
+    },
+    stoInputLabel: {
+      sl: "Iskalni niz po uradni vsebini STO",
+      en: "Search query for official STO content",
+    },
+    stoInputPlaceholder: {
+      sl: "Npr. Bled, jama, termalno zdravilišče …",
+      en: "E.g. Bled, cave, thermal spa …",
+    },
+    stoSearchAction: { sl: "Išči", en: "Search" },
+    stoSearchBusy: {
+      sl: "Iščem po uradni vsebini …",
+      en: "Searching official content …",
+    },
+    stoResultsCount: {
+      sl: (n: number) =>
+        n === 1 ? "1 zadetek" : n >= 2 && n <= 4 ? `${n} zadetki` : `${n} zadetkov`,
+      en: (n: number) => (n === 1 ? "1 result" : `${n} results`),
+    },
+    stoEmptyResult: {
+      sl: (q: string) =>
+        `Ni zadetkov za „${q}“ — to ni napaka. Poskusi krajše geslo, npr. samo „bled“.`,
+      en: (q: string) =>
+        `No results for “${q}” — that is not an error. Try a shorter term, e.g. just “bled”.`,
+    },
+    stoOpenOfficial: {
+      sl: "Odpri na slovenia.info",
+      en: "Open on slovenia.info",
+    },
+    stoNotIngestedTitle: {
+      sl: "STO vsebina še ni ingescirana",
+      en: "STO content has not been ingested yet",
+    },
+    stoNotIngestedBody: {
+      sl: "Iskalnik čaka na ingest uradnega vodnika (llms.txt, slovenia.info) — poskusi znova kasneje.",
+      en: "The search is waiting for the ingest of the official guide (llms.txt, slovenia.info) — try again later.",
+    },
+    stoErrorText: {
+      sl: "Iskanje trenutno ni dosegljivo — preveri povezavo in poskusi znova.",
+      en: "Search is currently unreachable — check your connection and try again.",
+    },
+    stoRetry: { sl: "Poskusi znova", en: "Try again" },
   } as const;
 
   const t = <K extends keyof typeof L>(k: K) => pick(l, L[k]);
@@ -160,6 +458,26 @@ export default function DataSourcePage() {
           </Card>
         ))}
       </div>
+
+      {/* P0-C — iskanje po uradni STO vsebini (llms.txt ingest, živi API) */}
+      <StoSearchCard
+        locale={l}
+        labels={{
+          heading: t("stoHeading"),
+          intro: t("stoIntro"),
+          inputLabel: t("stoInputLabel"),
+          inputPlaceholder: t("stoInputPlaceholder"),
+          searchAction: t("stoSearchAction"),
+          searchBusy: t("stoSearchBusy"),
+          resultsCount: t("stoResultsCount"),
+          emptyResult: t("stoEmptyResult"),
+          openOfficial: t("stoOpenOfficial"),
+          notIngestedTitle: t("stoNotIngestedTitle"),
+          notIngestedBody: t("stoNotIngestedBody"),
+          errorText: t("stoErrorText"),
+          retry: t("stoRetry"),
+        }}
+      />
 
       {/* Svežina + jezik + iskrenost */}
       <div className="mt-10 space-y-6">

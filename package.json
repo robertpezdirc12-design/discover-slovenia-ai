@@ -1,6 +1,6 @@
 {
   "name": "discover-slovenia-ai",
-  "version": "2.7.0",
+  "version": "2.8.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000 2>&1 | tee dev.log",
@@ -13,7 +13,10 @@
     "db:push": "prisma db push --accept-data-loss",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:reset": "prisma migrate reset"
+    "db:reset": "prisma migrate reset",
+    "sto:ingest": "bun scripts/sto-ingest.ts",
+    "fsq:ingest": "bun scripts/fsq-ingest.ts",
+    "kiwitaxi:ingest": "bun scripts/kiwitaxi-ingest.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

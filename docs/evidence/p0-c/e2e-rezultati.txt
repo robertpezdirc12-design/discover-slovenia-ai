@@ -1,0 +1,67 @@
+[20:33:08] === zagon dev strežnika ===
+[20:33:16] strežnik gor (poskus 3)
+warm /: 200
+[20:33:16] === API preverbe ===
+health: verzija=2.8.0 status=ok
+  [      ok] config:secrets: sandbox rekonstrukcija brez skrivnosti v kodi (avtentikacija še ni priključena — pričakovano)
+  [      ok] schema:stamp: baza dosegljiva — 38 semenskih destinacij v tabeli Destination
+  [      ok] data:destinations: 38 destinacij · 20 regij · 9 tipov · 4 države (seed usklajen: DA)
+  [      ok] pwa:offline: sw.js 2.8.0 + offline.html + manifest prisotni (registracija: produkcija ali ?sw=1)
+  [      ok] booking:affiliate: 5 provizijskih partnerjev (rezervacija v booking verigi, PENDING → potrditev) + 66 črpalk (gorivo brez provizi
+  [      ok] supply:matrix: 19 ponudnikov (register ≡ matrika) — 🟢 3 živih · 🔵 1 konfiguriranih · ⚪ 8 nekonfiguriranih · 🔴 7 zunanjih ovir
+  [      ok] data:feeds: STO 752 vnosov / 7 jezikov (ingest danes) · FSQ: množica čaka vir (dump na mrtvem GitHubu — gate data) · KiwiT
+sto/search blede: total=1 bled-zadetki=['Bled']
+  atribucija: Vir: Slovenska turistična organizacija — slovenia.info (llms.txt, uradna vsebina
+  SKLONSKE OBLIKE: blede -> Bled DELUJE
+sto/search hiking (en): total=1 prvih=['Hiking and Mountaineering']
+pois (Bled bbox): HTTP 502 status=error napaka=Overpass nedosegljiv na vseh zrcalih — overpass-api.de: fetch failed · overpass.kumi.syste
+  atribucija ob napaki: Podatki © OpenStreetMap avtorji, ODbL 1.1 (openstreetmap.org
+  ISKRENA DEGRADACIJA: napaka nosi razlog + atribucijo ODbL (kanon)
+pois prevelik viewport: HTTP 400 (pričakovano 400)
+cron sto/kiwitaxi brez žetona: HTTP 401 / 401 (pričakovano 401/401)
+[20:33:20] === agent-browser: /vir-podatkov STO iskanje ===
+8:  - button "Več" [expanded=false, ref=e18]
+10:- button "Izbira jezika — trenutno slovenščina" [expanded=false, ref=e19]
+11:- button "Preklopi temo (svetla/temna)" [ref=e6]
+19:- button "Išči" [disabled, ref=e20]
+48:- button "Open Next.js Dev Tools" [expanded=false, ref=e48]
+[20:33:26] STO vnos ref= gumb ref=
+[20:33:26] NAPAKA: nisem našel STO vnosa/gumba — preveri snapshot
+[20:33:26] === agent-browser: /zemljevid POI plast ===
+[20:33:31] POI preklop ref=
+[20:33:31] NAPAKA: nisem našel POI preklopa — preveri snapshot
+- button "POI (OSM živo)" [ref=e79]
+[20:33:31] === mobilni 390px ===
+[20:33:34] mobilni 390px: "BREZ PRELIVA"
+[20:33:34] === konzolne napake ===
+[20:33:34] 0 napak strani ✓
+[20:33:34] konsole 'error' vrstic: 0
+0 (filtriraj leaflet tile 404e)
+[20:33:35] === E2E P0-C konec — posnetki v docs/evidence/p0-c ===
+total 256
+drwxrwxr-x  2 z z   4096 Oct  7 20:33 .
+drwxrwxr-x 12 z z   4096 Oct  7 20:33 ..
+-rw-rw-r--  1 z z  70004 Oct  7 20:33 01-vir-podatkov-sto-NAPAKA.png
+-rw-rw-r--  1 z z 112692 Oct  7 20:33 02-zemljevid-NAPAKA.png
+-rw-rw-r--  1 z z  60390 Oct  7 20:33 03-vir-podatkov-mobilni-390.png
+-rw-rw-r--  1 z z   2610 Oct  7 20:33 e2e-rezultati.txt
+[20:34:13] === zagon dev strežnika (2. poskus) ===
+[20:34:14] strežnik gor (poskus 1)
+[20:34:14] === /vir-podatkov STO iskanje (2. poskus) ===
+19:- button "Išči" [disabled, ref=e20]
+[20:34:19] STO vnos ref=e5 gumb ref=e20
+[20:34:25] STO iskanje 'blede': BLED VIDEN NA STRANI ✓
+Bled“, „poti“ pa „poteh“
+[20:34:25] atribucija/uradna povezava vidna ✓
+[20:34:25] === /zemljevid POI plast (2. poskus) ===
+[20:34:30] POI preklop ref=e79
+[20:35:31] POZOR: pasica ni bila zaznana v 60 s
+[20:35:31] ODbL atribucija vidna na strani ✓
+[20:35:31] 0 napak strani ✓
+[20:35:32] === 2. poskus konec ===
+01-vir-podatkov-sto-NAPAKA.png
+01-vir-podatkov-sto-iskanje-blede.png
+02-zemljevid-NAPAKA.png
+02-zemljevid-poi-sloj-iskrena-degradacija.png
+03-vir-podatkov-mobilni-390.png
+e2e-rezultati.txt

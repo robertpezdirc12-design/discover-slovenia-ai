@@ -52,7 +52,9 @@ export type ActivationGate =
   /** Dokaz v produkciji (namerno zadržana eskalacija). */
   | "production-proof"
   /** Prvo obnova sloja (P0-x), šele nato aktivacija. */
-  | "restore";
+  | "restore"
+  /** Koda sloja je obnovljena; čaka PODATKOVNI VIR (dataset/feed). */
+  | "data";
 
 // ── Vnos matrike ───────────────────────────────────────────────────────────
 
@@ -80,54 +82,48 @@ export interface ProviderMatrixEntry {
  * vnos v registru zmožnosti (testno zaklenjeno).
  */
 export const PRODUCTION_MATRIX: readonly ProviderMatrixEntry[] = Object.freeze([
-  // ── Odkritovalna in vsebinska plast (obnova P0-C) ─────────────────────
+  // ── Odkritovalna in vsebinska plast (obnovljena v P0-C, 2.8.0) ───────
   {
     id: "fsq",
-    codeStatus: "PENDING_RESTORE",
-    gate: "restore",
+    codeStatus: "LIVE",
+    gate: "data",
     envKeys: [],
     reasonSl:
-      "Množica 125.446 krajev (SI·HR·ME·AL, Foursquare Open Places) je ostala na mrtvem GitHub računu — sloj čaka obnovo P0-C (dataset, loader, licenčni pregled).",
+      "Koda obnovljena v P0-C (loader .jsonl + stroga validacija: geo bbox države, kanonske kategorije, dedupe + ingest bun run fsq:ingest). Množica 125.446 POI (SI·HR·ME·AL, snapshot 2025-02-06) je ostala na mrtvem GitHub računu — čaka svež dump Foursquare Open Places (Apache-2.0, source.coop/fused.io).",
     stepsSl: [
-      "P0-C: pridobi dataset Foursquare Open Places (Apache-2.0) — svež ali iz arhiva",
-      "P0-C: obnovi loader in kanonično verigo (fetch→normalize→validate→geo-validate→dedupe)",
-      "Potrdi provenance in licenco; naloži v data/fsq-places/",
+      "Pridobi dump Foursquare Open Places za bbox SI·HR·ME·AL (source.coop / fused.io)",
+      "bun run fsq:ingest --raw-dir <dir> --snapshot-date 2025-02-06",
+      "Preveri odmik od baseline (SI 18.010 · HR 88.331 · ME 10.285 · AL 8.820) — izpiše se sam",
     ],
   },
   {
     id: "osm",
-    codeStatus: "PENDING_RESTORE",
-    gate: "restore",
+    codeStatus: "LIVE",
+    gate: "none",
     envKeys: [],
     reasonSl:
-      "OSM ploščice zemljevida so že žive (Leaflet), a živi Overpass POI sloj po viewportu čaka obnovo P0-C (rate limits, atribucija ODbL).",
-    stepsSl: [
-      "P0-C: obnovi Overpass adapter z omejitvami hitrosti in atribucijo",
-      "P0-C: priklopi viewport poizvedbe na zemljevid",
-    ],
+      "Overpass adapter ŽIV (P0-C): POI po viewportu (/api/pois, 3 zrcala, rate limit 5 s, max 0,25°², timeout), atribucija ODbL v Vsakem odzivu. Nedosegljivost vira je iskrena napaka (isti vzorec kot izvirnik na Render) — nikoli izmišljeni POI.",
+    stepsSl: [],
   },
   {
     id: "sto",
-    codeStatus: "PENDING_RESTORE",
-    gate: "restore",
+    codeStatus: "LIVE",
+    gate: "none",
     envKeys: [],
     reasonSl:
-      "Uradna turistična vsebina slovenia.info (llms.txt, RAG) čaka obnovo ingest plasti P0-C.",
-    stepsSl: [
-      "P0-C: obnovi ingest llms.txt vira",
-      "P0-C: priklopi iskanje po uradni vsebini",
-    ],
+      "STO vsebina ŽIVA (P0-C): uradni vodnik slovenia.info (llms.txt) ingesciran iz ŽIVEGA vira — 752 vnosov v 7 jezikih (data/sto-content.json, 209 KB), deterministično iskanje prek /api/sto/search + tedenski cron /api/cron/sto-reingest. Vir je VSEBINA, ne geo feed — nikoli ne nastopa kot zemljevidska plast.",
+    stepsSl: [],
   },
   {
     id: "kiwitaxi",
-    codeStatus: "PENDING_RESTORE",
-    gate: "restore",
+    codeStatus: "LIVE",
+    gate: "data",
     envKeys: [],
     reasonSl:
-      "Transfer feed (CSV z objavljenimi realnimi cenami) je ostal na mrtvem računu — čaka obnovo P0-C (ingest + validacija relacij).",
+      "Koda obnovljena v P0-C (shema FROM_PRICE + validacija relacij ISO-2 + iskanje po krajih + kanon „rute, ki se dotikajo SI“ + ingest bun run kiwitaxi:ingest --csv). Feed z objavljenimi realnimi cenami je ostal na mrtvem GitHub računu — čaka partner CSV iz affiliate programa.",
     stepsSl: [
-      "P0-C: pridobi partnerjev CSV feed",
-      "P0-C: obnovi ingest z validacijo relacij (iz/v SI + regionalne)",
+      "Pridobi partner CSV feed (kiwitaxi.com affiliate program)",
+      "bun run kiwitaxi:ingest --csv <feed.csv>",
     ],
     goSlug: "transfers",
   },

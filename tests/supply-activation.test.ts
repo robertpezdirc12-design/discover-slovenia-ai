@@ -227,6 +227,16 @@ describe("deriveProductionState — mehanska pravila", () => {
     );
   });
 
+  test("P1b: gate data → NOT_CONFIGURED (koda obnovljena, čaka podatkovni vir — P0-C)", () => {
+    expect(deriveProductionState(vnos({ gate: "data" }), {})).toBe(
+      "NOT_CONFIGURED"
+    );
+    // tudi z env (vir podatkov NI env)
+    expect(deriveProductionState(vnos({ gate: "data" }), { KARKOLI: "x" })).toBe(
+      "NOT_CONFIGURED"
+    );
+  });
+
   test("P2: PENDING_RESTORE → NOT_CONFIGURED (obnova čaka)", () => {
     expect(
       deriveProductionState(
@@ -309,17 +319,18 @@ describe("deriveProductionState — mehanska pravila", () => {
 describe("checkAllProviders — dejansko stanje (2.x resnica)", () => {
   const prazno = checkAllProviders({});
 
-  test("števci: 1 ACTIVE · 1 CONFIGURED · 10 NOT_CONFIGURED · 7 BLOCKED", () => {
-    expect(prazno.counts.ACTIVE).toBe(1);
+  test("števci: 3 ACTIVE · 1 CONFIGURED · 8 NOT_CONFIGURED · 7 BLOCKED (po P0-C)", () => {
+    expect(prazno.counts.ACTIVE).toBe(3);
     expect(prazno.counts.CONFIGURED).toBe(1);
-    expect(prazno.counts.NOT_CONFIGURED).toBe(10);
+    expect(prazno.counts.NOT_CONFIGURED).toBe(8);
     expect(prazno.counts.BLOCKED).toBe(7);
     expect(prazno.rows.length).toBe(19);
   });
 
-  test("osm-fuel je edini dejansko živ (odprti podatki, 0 % provizije)", () => {
-    const goriva = checkProviderById("osm-fuel", {});
-    expect(goriva?.state).toBe("ACTIVE");
+  test("odprti/vsebinski viri brez aktivacije so ACTIVE (osm-fuel + osm + sto — P0-C)", () => {
+    expect(checkProviderById("osm-fuel", {})?.state).toBe("ACTIVE");
+    expect(checkProviderById("osm", {})?.state).toBe("ACTIVE");
+    expect(checkProviderById("sto", {})?.state).toBe("ACTIVE");
   });
 
   test("own tržnica je CONFIGURED (čaka dokaz živih partnerjev)", () => {
@@ -346,9 +357,10 @@ describe("checkAllProviders — dejansko stanje (2.x resnica)", () => {
     }
   });
 
-  test("odkritovalna plast čaka obnovo P0-C → NOT_CONFIGURED", () => {
-    for (const id of ["fsq", "osm", "sto", "kiwitaxi"]) {
+  test("fsq/kiwitaxi: koda obnovljena (P0-C), a čakata PODATKOVNI VIR → NOT_CONFIGURED (gate data)", () => {
+    for (const id of ["fsq", "kiwitaxi"]) {
       expect(checkProviderById(id, {})?.state).toBe("NOT_CONFIGURED");
+      expect(getMatrixEntry(id)?.gate).toBe("data");
     }
   });
 
@@ -366,7 +378,7 @@ describe("checkAllProviders — dejansko stanje (2.x resnica)", () => {
       AFFILIATE_OMIO_TMPL: "https://o/{id}",
     };
     const poročilo = checkAllProviders(env);
-    expect(poročilo.counts.ACTIVE).toBe(6); // osm-fuel + 5 partnerjev
+    expect(poročilo.counts.ACTIVE).toBe(8); // osm-fuel + osm + sto + 5 partnerjev
     for (const id of ["booking", "getyourguide", "kiwi", "rentalcars", "omio"]) {
       expect(checkProviderById(id, env)?.state).toBe("ACTIVE");
     }

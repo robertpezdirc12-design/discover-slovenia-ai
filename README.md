@@ -5,12 +5,15 @@
 > realnimi koordinatami in deterministični načrtovalnik poti (isti vhod → isti načrt,
 > 0 AI žetonov v jedru).
 
-**Verzija: 2.7.0 — SUPPLY PLAST + CI VRATA + SEGMENTI DNEVA (2026-10-07).**
+**Verzija: 2.8.0 — PODATKOVNI SLOJ: STO ŽIVI VIR + FSQ/KIWITAXI RUNBOOKI + OSM OVERPASS (2026-10-07).**
 Izdaje rekonstrukcije: 2.1.0 skupnostne funkcije → 2.2.0 aplikacijska lupina →
 2.3.0 issue #1 (živi GPS, booking, pomočnik) → 2.3.1 infra CI → 2.4.0 PWA
 offline → 2.5.0 rezervacijski sloj → 2.6.0 partner kanal booking verige →
 2.7.0 supply plast (register 19 ponudnikov + matrika aktivacij) + CI vrata
-(typecheck/build/prisma) + segmentacija dneva Jutro/Popoldan/Večer.
+(typecheck/build/prisma) + segmentacija dneva Jutro/Popoldan/Večer →
+2.8.0 podatkovni sloj P0-C (STO llms.txt ingest iz ŽIVEGA vira — 752 vnosov
+v 7 jezikih; FSQ loader/ingest; KiwiTaxi shema/ingest; OSM Overpass POI po
+viewportu; cron reingest; vercel.json).
 Izvorni repozitorij (626 commitov, v1.190.0) je bil dvakrat izgubljen v posledici
 vdorov v GitHub račun (2026-10-06). Ta aplikacija je temeljita rekonstrukcija iz
 obnovitvenih virov (delovni dnevnik + izpisi izvorne kode + produkcijski posnetek +
@@ -57,6 +60,20 @@ ter testna vrata (86 testov) + GitLab CI.
   dnevnik in klikanja za skrbnike (`/owner/provizije`, dostop
   `DSA_ADMIN_EMAILS`); izplačilni koledar T+3 meseci, 28. v mesecu
   (vzorec MindTrip)
+- **Podatkovni sloj (2.8.0 — issue #1 P0-C)** — **STO uradna vsebina ŽIVA**:
+  ingest iz živega vira slovenia.info (llms.txt — 752 vnosov v 7 jezikih,
+  `data/sto-content.json`) z determinističnim parserjem (fail-closed: nedovoljeni
+  URL ne vstopi), iskanjem po uradni vsebini z ujemanjem slovenskih sklonov
+  („blede" najde „Bled"; `/api/sto/search`) in tedenskim cronom
+  (`/api/cron/sto-reingest`, `vercel.json`); **OSM Overpass POI sloj** po
+  viewportu (`/api/pois` — 3 zrcala, rate limit 5 s, max 0,25°², atribucija
+  ODbL v vsakem odzivu; nedosegljivost je iskrena napaka, nikoli izmišljeni
+  POI); **FSQ** (Foursquare Open Places, Apache-2.0): loader + stroga
+  validacija (geo bbox države, 12 kategorij, dedupe) + `bun run fsq:ingest` —
+  množica 125.446 POI čaka vir (mrtvi GitHub; matrika gate „data"); **KiwiTaxi**:
+  shema FROM_PRICE + validacija relacij + `bun run kiwitaxi:ingest --csv` —
+  feed čaka partner CSV; licenčni pregled vseh virov v
+  `docs/DATA-PROVENANCE.md`.
 - **Supply plast (2.7.0 — issue #1 P0-B RECOVER+RECONCILE)** — register
   zmožnosti 19 ponudnikov (16 izvirnikovih + Kiwi.com/Rentalcars po MindTrip
   vzorcu + osm-fuel odprti podatki), strojno berljiva matrika življenjskega

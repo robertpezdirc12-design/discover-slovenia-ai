@@ -1384,3 +1384,30 @@ Stage Summary:
 - TESTNA VRATA VZPOSTAVLJENA: determinizem, integriteta podatkov, fail-closed logika in jezikovni kanoni so zaklenjeni z 86 testi (naslednik izvirnikovih 5332)
 - GitLab CI pripravljen na push (pipeline bo tekel samodejno na GitLabu)
 - CI/CD: build+deploy izpuščena namenoma do lastnikove prevezave Render/Vercel
+
+---
+Task ID: 49
+Agent: Z.ai Code (glavni/orkestrator)
+Task: Zaključek FAZE 2 rekonstrukcije: E2E verifikacija agent-browser + sinhronizacija merge-dsa + push GitLab + RECOVERY-REPORT.
+
+Work Log:
+- E2E VERIFIKACIJA (agent-browser, 0 konzolnih napak, 0 novih napak v dev.log):
+  * /trznica: 8 lastnih izdelkov (Pletna/Vogel/kulinariika/jamska tura/rafting/soline/kobarid/vinska) → modal Kupi → količina 3 → Zaključi → DEMO potrditev "Naročilo ustvarjeno … Demo plačilo — brez prave bremenitve" + dai:visitor-key v localStorage; banner ?placilo=uspeh (innerTex "Hvala za nakup" dokaz)
+  * /prijava: gumb "Vnesi demo podatke" izpolni demo račun → prijava → preusmeritev /moja-potovanja; "Poti v oblaku" sekcija (prazna za demo račun — iskreno)
+  * /pot/[shareId]: zavihki Pot|Sodelovanje|Rezervacije|Ankete|Klepet; shranjevanje poti prek fetch v oblak; "2 dni · 3 postankov · ti si lastnik · Vir: baza (oblak)"; @AI klepet: vprašanje → DETERMINISTIČEN odgovor AI svetovalca (0 žetonov, strežniška značka, avtorstvo vkleto v sejo)
+  * 6 jezikov: /it "Cosa vuoi vivere in Slovenia?", /de "Was möchtest du…", /fr "Que souhaitez-vous…", /es "¿Qué quieres vivir…" — naravni prevodi
+  * Regresija: zemljevid 38 markerjev + container; /nacrtuj h1; mobilni 390 px: 0 preliva, tab bar viden, footer pod vsebino
+  * Dokazi: docs/evidence/reconstruction-faza2/ (trznica-banner, pot-cloud-tabs, mobile-home-390)
+- Ugotovitev pri testu: normalizePlanInput pričakuje kanon SharedPlan (days[].locations[], ne stops) — moj prvi API test je bil v napačni obliki; UI/komponente pošiljajo pravilno
+- Sinhronizacija merge-dsa: rsync brez tajnosti/buildov; POČIŠČENO 1097 sumljivih datotek (skills/ sandbox orodja, .zscripts, examples, mini-services, Caddyfile, root PNG-ji, duplikati issue* planov v rootu) — .gitignore razširjen; končni commit: 99 datotek ČISTO
+- Varnostni pregled diffa pred push: 0 skrivnosti (demo geslo slovenija2026 je NAMERNO javni demo račun, jasno označen)
+- Commit 605ff79 (FAZA 2) + 937dcdf (RECOVERY-REPORT §10/§10.1)
+- PUSH NA GITLAB NEUSPEŠEN: glpat žeton ZAVRNJEN (401 na /api/v4/user — pretekel ali PREKLICAN; faza 1 je z istim žetonom delala) → najverjetneje lastnik upošteval priporočilo rotacije (žeton je bil objavljen v klepetu) — PRAVILNO VARNOSTNO DEJANJE
+- VARNOSTNI UKREP (peskovnik se je že 2× resetiral!): git bundle discover-slovenia-ai-2.1.0.bundle (22 MB, --all, VERIFICIRAN, vsebuje 937dcdf s celotno zgodovino + arhivom incidenta) na /home/z/dsa-recovery/
+- RECOVERY-REPORT §10 (faza 2 vsebina) + §10.1 (žeton 401, 3 poti za dokončanje push-a: nov žeton / bundle klon+push / SSH)
+
+Stage Summary:
+- REKONSTRUKCIJA FAZE 2 DOKONČANA IN E2E PREGLEDANA: skupnostne funkcije + 6 jezikov + B2C demo checkout + 86 testov + GitLab CI — vse deluje v brskalniku
+- GitLab: main še @ 037b185 (faza 1); faza 2 LOKALNO pripravljena v merge-dsa @ 937dcdf (2 commita, čisto, 0 skrivnosti) — push čaka na NOV žeton od lastnika (navodila v RECOVERY-REPORT §10.1)
+- Backup celotnega repozitorija: /home/z/dsa-recovery/discover-slovenia-ai-2.1.0.bundle (živi v peskovniku; ob resetu ga lastnik prejme po navodilih iz poročila)
+- Verzija: 2.1.0 (README + package.json posodobljena)

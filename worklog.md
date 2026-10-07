@@ -2031,3 +2031,26 @@ Stage Summary:
 - Provizijska zanka zaprta: vsaka partner rezervacija vodi skozi vodeno povezavo /api/affiliate/go (klik se šteje, piškotek dsa_aff 180 dni, morebitna provizija) — uporabnikova rezervacija in lastnikov provizijski dnevnik se povežeta prek partnerja + datuma
 - 534/534 testov (+61), lint 0, tsc 0 novih, 9 E2E PNG dokazov, baza očiščena testnih vnosov
 - Iskrenostni kanon ohranjen: PENDING je izrecno „čaka partnerja" (nikoli lažno CONFIRMED); atestacija zahteva številko + ceno iz partnerjevega potrdila; sprememba/odpvec DEJANSKO tečeta pri partnerju (iskrene povezave + opombe); POST telo ne more ponarediti atestacije
+
+---
+Task ID: 57
+Agent: Z.ai Code (glavni)
+Task: "nasel sem hakirane moje projekte prenesi na gitlab" — prenos 11 repozitorijev računa markec12345678 na GitLab (recovery/forensic) + nadaljevanje issue #1 (RECOVER + RECONCILE, posodobljen 17:35).
+
+Work Log:
+- FORENZIKA GITHUB VIRA: celoten račun markec12345678 je NEDOSTOPEN (posnetek 18:09:25 UTC: profil 404, vsi 11 repojev 404; izjema griblje-museum → 301 → muzej-griblje (404) — preimenovanje dokazuje žive metapodatke računa = tretja nedostopnost v 24 h po RECOVERY-REPORT 2026-10-06). GitHub API z žetonom: vse Not Found; /users/404; javnih forkov ni (search 0 zadetkov); archive.org iz peskovnika nedosegljiv
+- POKRITOST: lastni avtoritativni izvodi obstajajo za 4 od 11 (Discover-Slovenia-AI=ta projekt v2.6.0, griblje×2=robert.pezdirc12/muzej, Roksal=markec-group/roksal-railing-manager, restaurantos=robert.pezdirc12/restaurantos — vsi zrcaljeni na robertpezdirc12-design GitHub, danes posodobljeni); 6 projektov (agentflow-pro, erpnext_slovenia, odoo-si-hr-tourism-suite, noro-lep-pos-2026, envirodash-monorepo, subwaveradio) obstaja IZKLJUČNO na mrtvem računu → lastniku priporočena pot GitHub account recovery (github.com/account_recovery)
+- ČUVAL (POLLER): /home/z/gh-recovery/poll-and-mirror.sh zagnan v ozadju (PID 20965, interval 180 s, 11 repojev) — ob vrnitvi katerega koli samodejno: mirror-klon → zasebni projekt markec-group (pripona -recovery pri 3 imenskih konfliktih) → push --mirror → quick-secret-scan.py (forenzični sken: sumljiva imena v zgodovini, 20 vzorcev skrivnosti z maskiranjem, CI/deploy/package exfil indikatorji); disk varovalka 3 GB za odoo fork
+- SVEŽI SNAPSHOTI PRODUKCIJE (18:18 UTC, pred izgubo še teh): obe produkciji ŽIVI na 1.190.0 — Render (zdrav po wake) + Vercel; shranjeni health×2 + home HTML 468K + destinacije 40K v /home/z/gh-recovery/snapshots-fresh/
+- BAZNA LINIJA: GitLab main že na 7a369ce (v2.6.0) — "ahead 2" je bilo zastarelo sledenje (vzporedna seja potisnila 17:32); usklajen remote-tracking ref; dev strežnik teče brez napak (200)
+- ISSUE #1 (posodobljen danes 17:35, 32 razdelkov P0 RECOVER+RECONCILE): prebran v celoti; ključni vir = GitHub snapshot 402 commitov (125.446 POI, 16-provider registry, deterministic itinerary, cron/ops, ~30 dokumentov) — padel ~18:00, a inventura je bila napisana iz živega snapshot-a ob 17:35
+- P0-A INVENTURA izvedena (prvi zahtevani dobitek issueja): dejansko preverjena koda GitLab maina proti vsem seznamom issueja (28 preverb modulov/pot/dokumentov) + specifikacije iz arhiva (worklog 2033 vrstic, 57 tool-results 3,2 MB, README originala 40 KB — odkrit v recovered-src z arhitekturo 125.446 POI SI·HR·ME·AL + "jedro 100 % deterministično, 0 AI žetonov"); tabela Modul|GitHub|GitLab|Stanje|Akcija v 11 sklopih (A–K) z vrstnim redom izvedbe prilagojenim nedostopnosti GitHub vira — /home/z/gh-recovery/P0-A-INVENTURA.md
+- Ugotovitve P0-A: manjka celotna supply plast (registry/production-matrix/activation-check/providers), data sloj (fsq-places/kiwitaxi/STO), deterministic-itinerary + day-segments, cron (8 jobov), /konzultacija + /admin, ~30 dokumentov, vercel.json; ◐ reconcile: itinerary engine, affiliate register (5→16 providerjev), Go Mode, PWA, marketplace payout; ✅ KEEP: booking veriga v2.6.0 (issue izrecno: obstoječi model ohrani), kolaboracija, vse glavne UI poti
+- P0-A objavljena kot komentar na GitLab issue #1 (note_id 3972709129, ob 18:24:58 UTC) z dopolnilom o vseh 11 repojih in poti account recovery
+- Varnostni kanon iz issueja upoštevan: UNTRUSTED SOURCE, nič .env/žetonov se ne prenese, README≠koda (RECOVERY_CLAIM_ONLY), vsak modul gre skozi security+typecheck+lint+test+build
+
+Stage Summary:
+- GitHub recovery vir (markec12345678) je mrtev (404 vsem) — prenos 11 repojev NI možen, dokler se račun ne vrne; čuval PID 20965 samodejno izvede mirror prenos ob vrnitvi; 6 projektov brez drugega izvora = GitHub account recovery (lastnikovo dejanje)
+- Produkciji Render+Vercel ŽIVI na 1.190.0 — najmočnejši preživeli vir; sveži snapshoti shranjeni; Neon živ
+- P0-A inventura (issue #1) zaključena in objavljena: P0-J CI vrata (typecheck+build) izvedljiva takoj; P0-B supply registry iz arhiva (spec+deljena koda); P0-C fsq-places zahteva provenance pregled (dataset na mrtvem GitHubu)
+- GitLab main = v2.6.0 bazna osnova; naslednja seja: P0-J CI vrata → P0-B supply plast → P0-D deterministic itinerary

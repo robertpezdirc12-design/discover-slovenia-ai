@@ -1,0 +1,66 @@
+/**
+ * DAY-SEGMENT-HEADER — glava segmenta dneva (Jutro/Popoldan/Večer).
+ *
+ * RECOVER: naslednik komponente izvirnika (izgubljena ob incidentu
+ * 2026-10-06). Prikazuje glyph, oznako v jeziku lokalnosti in število
+ * postankov segmenta — brez izmišljanja ur, ki jih podatki nimajo.
+ */
+
+"use client";
+
+import { useLocale } from "next-intl";
+
+import {
+  DAY_SEGMENT_LABELS,
+  type DaySegment,
+} from "@/lib/day-segments";
+
+const GLYPH: Record<DaySegment, string> = {
+  morning: "☀️",
+  afternoon: "🌤️",
+  evening: "🌙",
+};
+
+export function DaySegmentHeader({
+  segment,
+  count,
+}: {
+  segment: DaySegment;
+  /** Število postankov v segmentu (iskren izpis, ne okrasek). */
+  count: number;
+}) {
+  const l = useLocale();
+  const labels = DAY_SEGMENT_LABELS[segment];
+  const label = l === "en" ? labels.en : labels.sl;
+  const stopsWord =
+    l === "en"
+      ? count === 1
+        ? "stop"
+        : "stops"
+      : count === 1
+        ? "postanek"
+        : count === 2
+          ? "postanka"
+          : "postanki";
+  return (
+    <div
+      className="mt-4 flex items-center gap-2 first:mt-0"
+      role="heading"
+      aria-level={4}
+    >
+      <span aria-hidden="true" className="text-base leading-none">
+        {GLYPH[segment]}
+      </span>
+      <span className="text-sm font-semibold tracking-wide text-foreground">
+        {label}
+      </span>
+      <span className="text-xs text-muted-foreground">
+        · {count} {stopsWord}
+      </span>
+      <span
+        className="h-px flex-1 bg-border"
+        aria-hidden="true"
+      />
+    </div>
+  );
+}

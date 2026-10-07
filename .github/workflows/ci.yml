@@ -1,16 +1,25 @@
 # =============================================================================
 # CI — Discover-Slovenia-AI (rekonstrukcija 2.x) na GitHub Actions
 #
-# NADOMESTEK za GitLab CI, ki čaka na omogočitev runnerjev (lastnikovo
-# dejanje, RECOVERY-REPORT §10.2). Od zdaj tečejo vrata lint → test ob
-# vsakem pushu na main (prek sinhronizacije z GitLab) in vsakem PR-u.
+# P0-J VRATA (issue #1 RECOVER + RECONCILE, izvedeno 2026-10-07):
+# naslednik izvirnikovega ci.yml (lint → test → build → typecheck, 626
+# commitov, izgubljen ob varnostnem incidentu 2026-10-06).
 #
-# Kvota: zasebni repo = 2000 min/mes brezplačno; ta job (~2 min/push) +
-# sync (~1 min/push) + keep-warm (dispatch) — skupajsystemska ~10 % kvote
-# pri običajnem tempu pushanja. Če repo postane javen: neomejeno.
+# Vrata ob vsakem pushu na main in vsakem PR-u:
+#   1. lint        — eslint . (0 napak je pogoj za zlivo)
+#   2. typecheck   — tsc --noEmit (bun-types vključen v tsconfig "types";
+#                    vrata so ČISTA od P0-J — 0 napak, tudi testi so tipizirani)
+#   3. test        — bun test (determinizem, integriteta podatkov, čista logika)
+#   4. prisma      — prisma validate (shema veljavna brez žive baze)
+#   5. build       — next build (standalone; brez DB dostopa ob buildu —
+#                    strani so statika iz lastnih registrov)
+#
+# Kvota: zasebni repo = 2000 min/mes brezplačno; ta job (~4 min/push) +
+# sync (~1 min/push) + keep-warm (dispatch) — varno znotraj kvote pri
+# običajnem tempu pushanja. Če repo postane javen: neomejeno.
 # =============================================================================
 
-name: CI (lint + test)
+name: CI (lint + typecheck + test + prisma + build)
 
 on:
   push:
@@ -27,10 +36,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint-test:
-    name: lint + test (bun)
+  vrata:
+    name: lint + typecheck + test + prisma + build (bun)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       DATABASE_URL: "file:/tmp/ci-skip.db"
     steps:
@@ -49,5 +58,14 @@ jobs:
       - name: Lint (0 napak je pogoj za zlivo)
         run: bun run lint
 
-      - name: Test (360 determinističnih testov)
+      - name: Typecheck (tsc --noEmit, 0 napak od P0-J)
+        run: bun run typecheck
+
+      - name: Test (deterministični testi, 0 omrežja)
         run: bun test
+
+      - name: Prisma validate (shema veljavna)
+        run: bunx prisma validate
+
+      - name: Build (next build, standalone izhod)
+        run: bun run build

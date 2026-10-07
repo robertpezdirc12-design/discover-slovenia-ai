@@ -136,11 +136,12 @@ describe("map-pins: gradnja pinov (38 + 26 = 64, iskrene oznake)", () => {
       if (!pin) continue;
       const d = bySlug.get(x.destinationSlug);
       expect(d).toBeDefined();
+      if (!d) continue;
       expect(pin.precision).toBe("destination_center");
       expect(pin.type).toBe(x.category);
       expect(pin.name).toBe(x.name);
-      expect(pin.lat).toBe(d?.coords.lat);
-      expect(pin.lng).toBe(d?.coords.lng);
+      expect(pin.lat).toBe(d.coords.lat);
+      expect(pin.lng).toBe(d.coords.lng);
     }
   });
 
@@ -174,8 +175,9 @@ describe("map-pins: zoom vrata in agregacija", () => {
     expect(p.mode).toBe("grid");
     expect(p.total).toBe(64);
     expect(p.cells?.length).toBeGreaterThan(0);
-    expect(p.cells?.reduce((s, c) => s + c.count, 0)).toBe(p.total);
-    expect(p.returned).toBe(p.cells?.length);
+    if (!p.cells) throw new Error("grid način mora vrniti celice");
+    expect(p.cells.reduce((s, c) => s + c.count, 0)).toBe(p.total);
+    expect(p.returned).toBe(p.cells.length);
     expect(p.capped).toBe(false);
   });
 

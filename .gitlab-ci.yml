@@ -3,25 +3,33 @@
 #
 # Naslednik GitHub Actions ci.yml izvirnika (626 commitov, izgubljen ob
 # varnostnem incidentu 2026-10-06 — račun markec12345678 je mrtev).
-# Izvirnik je na vsak push poganjal: lint → test → build.
+# Izvirnik je na vsak push poganjal: lint → test → typecheck → build.
 #
-# Ta pipeline pokriva enaka vrata na GitLabu:
-#   1. lint — eslint . (0 napak je pogoj za zlivo)
-#   2. test — bun test (determinizem, integriteta podatkov, pure logika)
+# P0-J VRATA (issue #1 RECOVER + RECONCILE, izvedeno 2026-10-07):
+#   1. lint        — eslint . (0 napak je pogoj za zlivo)
+#   2. typecheck   — tsc --noEmit (bun-types vključen v tsconfig "types";
+#                    vrata so ČISTA od P0-J — 0 napak, tudi testi tipizirani)
+#   3. test        — bun test (determinizem, integriteta podatkov, čista logika)
+#   4. prisma      — prisma validate (shema veljavna brez žive baze)
+#   5. build       — next build (standalone izhod; strani so statika iz
+#                    lastnih registrov — brez DB dostopa ob buildu)
 #
-# build/deploy sta NAMENOMA izpuščena: deploja (Render/Vercel) še vedno
-# služita produkciji 1.190.0 iz izvirnika — prevezava na novi repozitorij
-# je lastnikovo zunanje dejanje (glej docs/recovery/RECOVERY-REPORT.md §8).
+# build/deploy v PRODUKCIJO sta NAMENOMA ločena: produkciji (Render/Vercel)
+# še vedno služita izvirniku 1.190.0 — prevezava na novi repozitorij je
+# lastnikovo zunanje dejanje (glej docs/recovery/RECOVERY-REPORT.md §8).
 #
 # NAMERNO preprosta oblika (brez extends/cache/rules): prvi zeleni pipeline
-# je predpogoj; optimizacije (cache po bun.lock) dodamo po prvem zagonu.
+# je predpogoj; optimizacije (cache po bun.lock) po prvem zagonu.
 # =============================================================================
 
 image: oven/bun:1
 
 stages:
   - lint
+  - typecheck
   - test
+  - prisma
+  - build
 
 variables:
   DATABASE_URL: "file:/tmp/ci-skip.db"
@@ -33,9 +41,29 @@ lint:
     - bunx prisma generate
     - bun run lint
 
+typecheck:
+  stage: typecheck
+  script:
+    - bun install --frozen-lockfile
+    - bunx prisma generate
+    - bun run typecheck
+
 test:
   stage: test
   script:
     - bun install --frozen-lockfile
     - bunx prisma generate
     - bun test
+
+prisma-validate:
+  stage: prisma
+  script:
+    - bun install --frozen-lockfile
+    - bunx prisma validate
+
+build:
+  stage: build
+  script:
+    - bun install --frozen-lockfile
+    - bunx prisma generate
+    - bun run build

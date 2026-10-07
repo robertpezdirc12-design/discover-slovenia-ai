@@ -17,6 +17,7 @@ import { useLocale } from "next-intl";
 import React, { useEffect, useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { DaySegmentHeader } from "@/components/day-segment-header";
 import { StopKindIcon } from "@/components/plan/plan-bits";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ import {
 } from "@/lib/itinerary-engine";
 import { useMyTripList } from "@/lib/my-trip";
 import { loadLastPlan, type SavedPlan } from "@/lib/plan-store";
+import { buildDaySegments } from "@/lib/day-segments";
 import { regionLabel, typeLabel } from "@/lib/slovenia-data";
 import type { ItineraryPlan, MyTripItem, TripStop } from "@/lib/types";
 
@@ -258,16 +260,10 @@ export default function JourneyPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ol>
-                {(data.plan.days[dayIndex] ?? []).map((stop, i) => (
-                  <li key={stop.id}>
-                    {i > 0 && (
-                      <LegRow prev={(data.plan.days[dayIndex] ?? [])[i - 1]} stop={stop} lang={lang} />
-                    )}
-                    <JourneyStopRow stop={stop} lang={lang} />
-                  </li>
-                ))}
-              </ol>
+              <DayTimeline
+                stops={data.plan.days[dayIndex] ?? []}
+                lang={lang}
+              />
             </CardContent>
           </Card>
 
@@ -320,6 +316,41 @@ export default function JourneyPage() {
 // ---------------------------------------------------------------------------
 // Postanek z akcijo Navigiraj (OSM directions — brez ključev)
 // ---------------------------------------------------------------------------
+
+/**
+ * Časovnica dneva s segmenti Jutro/Popoldan/Večer (P0-D, kanon izvirnika):
+ * glava segmenta + poštene etape (~km/~min) tudi preko mej segmentov.
+ */
+function DayTimeline({
+  stops,
+  lang,
+}: {
+  stops: TripStop[];
+  lang: PlannerLang;
+}) {
+  const groups = buildDaySegments(stops);
+  const indexOf = new Map(stops.map((s, i) => [s.id, i]));
+  return (
+    <div>
+      {groups.map((group) => (
+        <section key={group.segment + `-${group.stops[0]?.id ?? "0"}`}>
+          <DaySegmentHeader segment={group.segment} count={group.stops.length} />
+          <ol>
+            {group.stops.map((stop) => {
+              const i = indexOf.get(stop.id) ?? 0;
+              return (
+                <li key={stop.id}>
+                  {i > 0 && <LegRow prev={stops[i - 1]} stop={stop} lang={lang} />}
+                  <JourneyStopRow stop={stop} lang={lang} />
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      ))}
+    </div>
+  );
+}
 
 function JourneyStopRow({ stop, lang }: { stop: TripStop; lang: PlannerLang }) {
   const l = useLocale();

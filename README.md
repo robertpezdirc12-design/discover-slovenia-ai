@@ -5,10 +5,12 @@
 > realnimi koordinatami in deterministični načrtovalnik poti (isti vhod → isti načrt,
 > 0 AI žetonov v jedru).
 
-**Verzija: 2.6.0 — PARTNER KANAL V BOOKING VERIGI (2026-10-07).**
+**Verzija: 2.7.0 — SUPPLY PLAST + CI VRATA + SEGMENTI DNEVA (2026-10-07).**
 Izdaje rekonstrukcije: 2.1.0 skupnostne funkcije → 2.2.0 aplikacijska lupina →
 2.3.0 issue #1 (živi GPS, booking, pomočnik) → 2.3.1 infra CI → 2.4.0 PWA
-offline → 2.5.0 rezervacijski sloj → 2.6.0 partner kanal booking verige.
+offline → 2.5.0 rezervacijski sloj → 2.6.0 partner kanal booking verige →
+2.7.0 supply plast (register 19 ponudnikov + matrika aktivacij) + CI vrata
+(typecheck/build/prisma) + segmentacija dneva Jutro/Popoldan/Večer.
 Izvorni repozitorij (626 commitov, v1.190.0) je bil dvakrat izgubljen v posledici
 vdorov v GitHub račun (2026-10-06). Ta aplikacija je temeljita rekonstrukcija iz
 obnovitvenih virov (delovni dnevnik + izpisi izvorne kode + produkcijski posnetek +
@@ -55,6 +57,27 @@ ter testna vrata (86 testov) + GitLab CI.
   dnevnik in klikanja za skrbnike (`/owner/provizije`, dostop
   `DSA_ADMIN_EMAILS`); izplačilni koledar T+3 meseci, 28. v mesecu
   (vzorec MindTrip)
+- **Supply plast (2.7.0 — issue #1 P0-B RECOVER+RECONCILE)** — register
+  zmožnosti 19 ponudnikov (16 izvirnikovih + Kiwi.com/Rentalcars po MindTrip
+  vzorcu + osm-fuel odprti podatki), strojno berljiva matrika življenjskega
+  cikla (`src/lib/supply/production-matrix.ts`) in mehanska izpeljeka štirih
+  stanj (🟢 dejansko živo / 🔵 konfigurirano / ⚪ ni konfigurirano / 🔴 zunanja
+  ovira) z `bun run activation:check` — env preverba SAMO po Boolean
+  prisotnosti (kanarček: vrednosti se nikoli ne izpišejo); kanonska stanja cen
+  (LIVE_PRICE / FROM_PRICE / UNKNOWN / NOT_SUPPORTED) usklajena čez vse tri
+  registre (supply ← /go hub ← affiliate).
+- **CI vrata (2.7.0 — issue #1 P0-J)** — typecheck (bun-types, 0 napak tudi v
+  testih), prisma validate in build dodana k lint+test vratom na obeh
+  platformah (GitLab CI + GitHub Actions); popravljena pokvarjena veja
+  `branches:` v ci.yml.
+- **Segmentacija dneva + determinizem kot identiteta (2.7.0 — issue #1 P0-D)** —
+  časovnica dneva na /nacrtuj in /potovanje nosi glave segmentov
+  Jutro/Popoldan/Večer (začetna ura postanka odloča; brez ure → podeduje
+  tekoči segment) s poštenimi etapami ~km/~min tudi čez meje segmentov;
+  `/api/itinerary` izdaja `engine: "deterministic"` + prstni odtis načrta
+  (isti vhod → isti odtis — testno dokazano); stikalo „Z AI / Brez AI" iz
+  izvirnika NAMENOMA ni obnovljeno (v 2.x ne obstaja AI pot — izbira bi bila
+  lažna).
 - **Partner kanal v booking verigi (2.6.0 — issue #1 dokončanje po plasti
   2.5.0)** — modal „Išči ponudbo“ na poti ima ZDAJ dva izrecno ločena kanala:
   **PRI PARTNERJU** (realno; kartice 5 partnerjev z vodeno povezavo
@@ -122,7 +145,7 @@ docs/evidence/        # dokazni posnetki rekonstrukcije
 - dopolnjevanje delnih prevodnih slovarjev (poti in preklopnik pokrivajo vseh 6
   jezikov; del komponent ima še samo sl/en), skupnostni dnevnik potovanj (klepet,
   ankete in vabila so že rekonstruirani), Stripe checkout (demo fail-closed; pravi
-  čaka na ključe lastnika), testi (rekonstrukcija: 530+; izvirnik: 5332)
+  čaka na ključe lastnika), testi (rekonstrukcija: 590+; izvirnik: 5332)
 - pravi affiliate žetoni (`AFFILIATE_*_ID`) — registracija v partnerskih
   programih je lastnikovo dejanje; brez žetona povezave delujejo javno
   (brez provizije), klikanja se štejejo

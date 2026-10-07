@@ -118,9 +118,40 @@ export async function GET() {
     });
   }
 
+  // 6) Supply plast (P0-B, v2.7.0): register zmožnosti + matrika življenjskega
+  //    cikla + mehanska izpeljeka stanj — usklajenost med tremi registri
+  //    (supply ← /go hub ← affiliate). Env se NE preverja po vrednostih
+  //    (Boolean-only kanon; izpis samo števci stanj).
+  try {
+    const { SUPPLY_REGISTRY } = await import("@/lib/supply/registry");
+    const { PRODUCTION_MATRIX } = await import("@/lib/supply/production-matrix");
+    const { checkAllProviders } = await import("@/lib/supply/activation-check");
+    const registryIds = new Set(SUPPLY_REGISTRY.map((p) => p.id));
+    const matrixIds = new Set(PRODUCTION_MATRIX.map((e) => e.id));
+    const usklajeno =
+      registryIds.size === matrixIds.size &&
+      [...registryIds].every((id) => matrixIds.has(id));
+    const poročilo = checkAllProviders({});
+    startup.push({
+      name: "supply:matrix",
+      status: usklajeno ? "ok" : "degraded",
+      detail: usklajeno
+        ? `${SUPPLY_REGISTRY.length} ponudnikov (register ≡ matrika) — 🟢 ${poročilo.counts.ACTIVE} živih · 🔵 ${poročilo.counts.CONFIGURED} konfiguriranih · ⚪ ${poročilo.counts.NOT_CONFIGURED} nekonfiguriranih · 🔴 ${poročilo.counts.BLOCKED} zunanjih ovir (iskrena matrika; /api/health ne izpisuje env vrednosti)`
+        : `Register (${registryIds.size}) in matrika (${matrixIds.size}) nista usklajena — preveri src/lib/supply/`,
+      at: now(),
+    });
+  } catch {
+    startup.push({
+      name: "supply:matrix",
+      status: "skipped",
+      detail: "Moduli supply plasti niso dosegljivi",
+      at: now(),
+    });
+  }
+
   return NextResponse.json({
     status: "ok",
-    version: "2.6.0",
+    version: "2.7.0",
     startup,
     checkedAt: now(),
   });

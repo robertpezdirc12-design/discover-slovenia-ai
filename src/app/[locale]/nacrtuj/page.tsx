@@ -22,6 +22,7 @@ import { useSearchParams } from "next/navigation";
 import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { DaySegmentHeader } from "@/components/day-segment-header";
 import { NextStepCard, useNextStepContext } from "@/components/next-step-card";
 import { StopKindIcon } from "@/components/plan/plan-bits";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -52,6 +53,7 @@ import {
 } from "@/lib/itinerary-engine";
 import { myTrip } from "@/lib/my-trip";
 import { saveLastPlan } from "@/lib/plan-store";
+import { buildDaySegments } from "@/lib/day-segments";
 import { normalizeInterests, REGIONS, regionLabel, typeLabel } from "@/lib/slovenia-data";
 import type { Budget, Season } from "@/lib/slovenia-data";
 import type { ItineraryPlan, TripStop } from "@/lib/types";
@@ -880,14 +882,7 @@ function PlanResult({
                 </div>
               </CardHeader>
               <CardContent>
-                <ol>
-                  {stops.map((stop, i) => (
-                    <li key={stop.id}>
-                      {i > 0 && <LegRow prev={stops[i - 1]} stop={stop} lang={lang} />}
-                      <StopRow stop={stop} lang={lang} />
-                    </li>
-                  ))}
-                </ol>
+                <DayTimeline stops={stops} lang={lang} />
               </CardContent>
             </Card>
           );
@@ -961,6 +956,41 @@ function LegRow({
         <span className="sr-only">{label}: </span>
         ~{km} km · ~{min} min · {label}
       </span>
+    </div>
+  );
+}
+
+/**
+ * Časovnica dneva s segmenti Jutro/Popoldan/Večer (P0-D, kanon izvirnika):
+ * glava segmenta + poštene etape (~km/~min) tudi preko mej segmentov.
+ */
+function DayTimeline({
+  stops,
+  lang,
+}: {
+  stops: TripStop[];
+  lang: PlannerLang;
+}) {
+  const groups = buildDaySegments(stops);
+  const indexOf = new Map(stops.map((s, i) => [s.id, i]));
+  return (
+    <div>
+      {groups.map((group) => (
+        <section key={group.segment + `-${group.stops[0]?.id ?? "0"}`}>
+          <DaySegmentHeader segment={group.segment} count={group.stops.length} />
+          <ol>
+            {group.stops.map((stop) => {
+              const i = indexOf.get(stop.id) ?? 0;
+              return (
+                <li key={stop.id}>
+                  {i > 0 && <LegRow prev={stops[i - 1]} stop={stop} lang={lang} />}
+                  <StopRow stop={stop} lang={lang} />
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      ))}
     </div>
   );
 }

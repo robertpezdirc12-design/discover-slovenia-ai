@@ -22,14 +22,11 @@
  * - keepCacheNames ob aktivaciji ohrani natanko trenutna tri imena,
  * - SW_VERSION je usklajena s package.json (kanarček ob izdaji).
  *
- * Uvoz: "../public/sw.js" (relativno iz tests/). Vrstica @ts-expect-error nad
- * uvozom bun:test utiša PREDHODNI šum okolja — projekt nima bun-types v
- * tsconfig "types", zato TS2307 za "bun:test" obstaja v vseh 20 ostalih
- * testih; tukaj jo utišamo lokalno, da testna vrata tsc za to datoteko
- * ostanejo čista, ne da bi kaj spremenili globalno.
+ * Uvoz: "../public/sw.js" (relativno iz tests/). Od P0-J (issue #1) je
+ * bun-types referenciran v tsconfig "types", zato uvoz bun:test tipiziran
+ * brez utišanja.
  */
 
-// @ts-expect-error bun:test tipi niso referencirani v tsconfig (predhodni šum okolja, enak v vseh ostalih testih)
 import { describe, expect, test } from "bun:test";
 
 import swApi from "../public/sw.js";
@@ -39,10 +36,10 @@ import pkg from "../package.json";
 const ORIGIN = "https://app.example";
 
 describe("sw: konstante (verzija, lupina aplikacije, meje)", () => {
-  test("SW_VERSION je usklajena s package.json in trenutno izdajo 2.6.0", () => {
+  test("SW_VERSION je usklajena s package.json in trenutno izdajo 2.7.0", () => {
     // Kanarček ob izdaji: glava sw.js obljublja usklajenost s package.json —
     // pozabljen bump ob izdaji takoj pade na tem testu.
-    expect(swApi.SW_VERSION).toBe("2.6.0");
+    expect(swApi.SW_VERSION).toBe("2.7.0");
     expect(swApi.SW_VERSION).toBe(pkg.version);
   });
 

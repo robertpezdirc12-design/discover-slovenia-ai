@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { buildItinerary, type PlannerLang } from "@/lib/itinerary-engine";
+import { type PlannerLang } from "@/lib/itinerary-engine";
+import { buildDeterministicItinerary } from "@/lib/deterministic-itinerary";
 import { REGIONS } from "@/lib/slovenia-data";
 import type { Budget, Season } from "@/lib/slovenia-data";
 
@@ -10,7 +11,10 @@ import type { Budget, Season } from "@/lib/slovenia-data";
  * da isti izvedek.
  *
  * Vhod: { interests: string[]|string, days: 1–5, region?, season?, budget?, locale? }
- * Izhod: ItineraryPlan (dnevi s postanki, totalCost, coverageNote, dayTitles).
+ * Izhod: ItineraryPlan (dnevi s postanki, totalCost, coverageNote, dayTitles)
+ *        + engine: "deterministic" + fingerprint (P0-D: dokazljiva
+ *        reproducibilnost — isti vhod → isti prstni odtis; geo-validacija
+ *        teče nad vsakim načrtom, izhod je enoten s /potovanje prikazom).
  */
 
 /** Dvojezična helperka po vzorcu PL() izvirnika (sl privzeta). */
@@ -141,7 +145,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const plan = buildItinerary({
+  const result = buildDeterministicItinerary({
     interests,
     days: daysNum,
     region,
@@ -150,9 +154,16 @@ export async function POST(request: Request) {
     locale: lang,
   });
 
-  return NextResponse.json(plan, {
-    headers: { "cache-control": "no-store" },
-  });
+  return NextResponse.json(
+    {
+      ...result.plan,
+      engine: result.engine,
+      fingerprint: result.fingerprint,
+    },
+    {
+      headers: { "cache-control": "no-store" },
+    }
+  );
 }
 
 /** GET ni podprt — načrtovalnik je izključno POST (deterministični vhod). */

@@ -26,6 +26,7 @@ import {
   RoadRouter,
   roundTo1,
   sampleGeometry,
+  type FetchLike,
 } from "../src/lib/road-routing-server";
 
 const LJ = { lat: 46.0569, lng: 14.5058 };
@@ -61,7 +62,7 @@ function jsonFetch(payload: unknown, ok = true) {
       status: ok ? 200 : 500,
       headers: { "content-type": "application/json" },
     });
-  }) as typeof fetch;
+  }) as FetchLike;
   return { impl, calls: () => calls };
 }
 
@@ -71,7 +72,7 @@ function failingFetch() {
   const impl = (async () => {
     calls += 1;
     throw new Error("network down");
-  }) as typeof fetch;
+  }) as FetchLike;
   return { impl, calls: () => calls };
 }
 
@@ -85,7 +86,7 @@ function hangingFetch() {
         reject(new Error("AbortError"))
       );
     });
-  }) as unknown as typeof fetch;
+  }) as unknown as FetchLike;
   return { impl, calls: () => calls };
 }
 
@@ -317,7 +318,7 @@ describe("road-routing: RoadRouter (vbrizgljan fetch — brez omrežja)", () => 
       return new Response(JSON.stringify(VALID_OSRM), {
         headers: { "content-type": "application/json" },
       });
-    }) as typeof fetch;
+    }) as FetchLike;
     const router = new RoadRouter({ fetchImpl: impl });
 
     for (let i = 0; i < 3; i++) await router.routeLeg(LJ, BLED);

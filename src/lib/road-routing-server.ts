@@ -277,8 +277,14 @@ export function osrmFetch(
 
 // ── RoadRouter ─────────────────────────────────────────────────────────
 
+/** Fetchu-podobna funkcija — namerno ozko tipizirana (za vbrizg v testih). */
+export type FetchLike = (
+  input: RequestInfo | URL,
+  init?: RequestInit
+) => Promise<Response>;
+
 export interface RouterDeps {
-  fetchImpl?: typeof fetch;
+  fetchImpl?: FetchLike;
   now?: () => number;
   timeoutMs?: number;
   cacheTtlMs?: number;
@@ -296,7 +302,7 @@ interface CacheEntry {
  * Odvisnosti (fetch/ura/timeout) so vbrizgljive — za teste brez omrežja.
  */
 export class RoadRouter {
-  private readonly fetchImpl: typeof fetch;
+  private readonly fetchImpl: FetchLike;
   private readonly now: () => number;
   private readonly timeoutMs: number;
   private readonly cacheTtlMs: number;

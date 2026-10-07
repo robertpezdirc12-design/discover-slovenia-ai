@@ -1,0 +1,14 @@
+=== E2E P0 19:29:45 UTC ===
+1) dev strežnik: HTTP 200
+2) ogrevanje /sl/nacrtuj: 307
+2) ogrevanje /sl/potovanje: 307
+2) ogrevanje /api/health: 200
+3) API engine: deterministic | fingerprint: 2b8c6d24
+3) determinizem: ENAK (isti vhod → isti odtis)
+3) dnevi: 2 | postankov: 3
+3) ure dneva 1: ['09:00', '13:35']
+3) ure dneva 2: ['09:00']
+"{\"jutro\":true,\"popoldan\":true,\"vecer\":false,\"dan1\":true}"
+"{\"jutro\":true,\"popoldan\":true,\"vecer\":false,\"legKm\":true,\"navigiraj\":true}"
+"mobilni: BREZ preliva"
+=== E2E KONEC ===

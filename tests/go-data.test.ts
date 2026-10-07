@@ -12,11 +12,12 @@ import {
   GO_PARTNERS,
   SUPPLY_STATUS_LABELS,
   getGoRoute,
+  type GoRouteSlug,
   type SupplyStatus,
 } from "../src/lib/go-data";
 
 const STATUSES = Object.keys(SUPPLY_STATUS_LABELS) as SupplyStatus[];
-const EXPECTED_SLUGS = [
+const EXPECTED_SLUGS: readonly GoRouteSlug[] = [
   "hotels",
   "flights",
   "cars",

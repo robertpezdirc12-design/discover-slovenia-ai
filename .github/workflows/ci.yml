@@ -1,0 +1,53 @@
+# =============================================================================
+# CI — Discover-Slovenia-AI (rekonstrukcija 2.x) na GitHub Actions
+#
+# NADOMESTEK za GitLab CI, ki čaka na omogočitev runnerjev (lastnikovo
+# dejanje, RECOVERY-REPORT §10.2). Od zdaj tečejo vrata lint → test ob
+# vsakem pushu na main (prek sinhronizacije z GitLab) in vsakem PR-u.
+#
+# Kvota: zasebni repo = 2000 min/mes brezplačno; ta job (~2 min/push) +
+# sync (~1 min/push) + keep-warm (dispatch) — skupajsystemska ~10 % kvote
+# pri običajnem tempu pushanja. Če repo postane javen: neomejeno.
+# =============================================================================
+
+name: CI (lint + test)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-test:
+    name: lint + test (bun)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: "file:/tmp/ci-skip.db"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Namestitev odvisnosti
+        run: bun install --frozen-lockfile
+
+      - name: Prisma generate
+        run: bunx prisma generate
+
+      - name: Lint (0 napak je pogoj za zlivo)
+        run: bun run lint
+
+      - name: Test (360 determinističnih testov)
+        run: bun test

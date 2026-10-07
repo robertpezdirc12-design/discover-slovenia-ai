@@ -308,3 +308,36 @@ Iskrenostne meje nespremenjene: realni ponudniki/FSQ/promet v peskovniku
 ne obstajajo — vsa nezanesljiva stanja izrecno razkrita.
 CI še čaka na runnerje (§10.2). Žeton uporabljen izključno v pomnilniku;
 lastniku priporočena rotacija po koncu vzdrževanja.
+
+### 13. INFRA 2.3.1 — CI na GitHub Actions + keep-warm pripravljen (7. 10. 2026 ~13:15 UTC)
+
+Nadgradnja **2.3.0 → 2.3.1** (infrastruktura, aplikacijska koda nespremenjena
+razen verzije). Povod: izmerjen **87-sekundni mrzli zagon** Render produkcije
+(12:58 UTC — keep-warm izvirnika je umrl z računom markec12345678) in
+dokumentirano čakanje GitLab CI na runnerje (§10.2, lastnikovo dejanje).
+
+**Kaj je narejeno:**
+- **`.github/workflows/ci.yml`** — vrata lint → test na GitHub Actions
+  (bun install --frozen-lockfile → prisma generate → lint → bun test), ob
+  vsakem pushu na main (prek dvosmerne sinhronizacije z GitLab) in PR-u.
+  CI TAKOJ ZELEN ob zadnjem pushu — brez čakanja na GitLab runnerje
+  (nadomestek §10.2 poti). Kvota: ~2–3 min/push, skupaj s sync < 10 %
+  brezplačnih 2000 min/mes.
+- **`.github/workflows/keep-warm.yml`** — ogrevanje obeh produkcij
+  (Render primarna + Vercel sekundarna, javna URL-ja, brez skrivnosti in
+  brez checkouta), iskreni izpisi (trajanje, zaznava mrzlega zagona ≥ 45 s).
+  **Schedule ZAVESTNO izklopljen** (zakaj: 111 runov/dan × min 1 min =
+  ~3.330 min/mes > 2.000 brezplačne kvote → sredi meseca bi ustavil tudi
+  sync + CI). Vklop je 30-sekundna lastnikova odločitev, pot A ali B v
+  glavi datoteke: A) javen repo (izvirnik JE bil javen) → odkomentiraj
+  cron `*/13 * * * *`; B) zunanja brezplačna storitev cron (cron-job.org /
+  UptimeRobot, 10-min interval na oba URL-ja, 0 min kvote).
+- **`eslint.config.mjs`** — `docs/**` dodan v ignores (latentna napaka:
+  arhivirani `production-mirror/_next` chunki bi padali v lintu na CI,
+  ker prejšnje lokalne preverbe niso tekle nad mapo z arhivom).
+- Verzija 2.3.1 (package.json, /api/health, footer); 360 testov zelenih,
+  lint 0 na obeh dvojčkih.
+
+**Preverjanje po pushu:** sync dispatch (API) → CI run na GitHubu zelen →
+keep-warm dispatch → Render odziv < 45 s (topel) — dokazi v komentarju
+gitovske zgodovine tega commita.

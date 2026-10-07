@@ -1,0 +1,77 @@
+# =============================================================================
+# KEEP-WARM — Discover-Slovenia-AI produkcija (Render primarna + Vercel
+# sekundarna)
+#
+# ZAKAJ: Render brezplačna instanca ZASPI po ~15 min brez dohodnih
+# zahtevkov → mrzli zagon ~60–90 s za prvega obiskovalca (izmerjeno
+# 87 s dne 2026-10-07). Izvirnik je imel keep-warm vsakih 5 min na
+# GitHub Actions — umrl je z računom markec12345678 (2. vdor).
+#
+# OGREVA SAMO javne URL-je (brez skrivnosti, brez checkouta repota):
+#   https://i-feel-slovenia.onrender.com  (primarna, SPI po 15 min)
+#   https://i-feel-slovenia.vercel.app    (sekundarna, vedno topla)
+#
+# ⚠️ KVOTA — zakaj urnik (schedule) NI vklopljen:
+#   Zasebni repo ima 2000 min/mes brezplačnih Actions. Ogrevalni job
+#   zaračuna min. 1 min/run. Vsakih 13 min = ~111 runov/dan =
+#   ~3.330 min/mes → PRESEŽE kvoto in sredi meseca USTAVI tudi sync + CI!
+#
+#   VKLOP (lastnikova izbira, ena od poti):
+#   A) Repo postane JAVEN (izvirnik JE bil javen — private: false,
+#      dokazano v docs/recovery/) → Actions neomejeni → odkomentiraj
+#      schedule spodaj (13 min < 15 min praga spanja Render).
+#   B) Zunanja brezplačna storitev cron (cron-job.org / UptimeRobot,
+#      interval 10 min, GET na oba URL-ja zgoraj) → 0 min Actions kvote.
+#
+#   Do takaj je workflow na voljo ročno (workflow_dispatch) — en klik.
+# =============================================================================
+
+name: Keep-warm produkcije
+
+on:
+  workflow_dispatch:
+    inputs:
+      timeout_sec:
+        description: "Časovna omejitev posameznega URL-ja (s)"
+        required: false
+        default: "120"
+  # schedule:
+  #   - cron: '*/13 * * * *'   # ← odkomentiraj ob javnosti repa (pot A)
+
+permissions: {}
+
+concurrency:
+  group: keep-warm
+  cancel-in-progress: false
+
+jobs:
+  keep-warm:
+    name: Ogrev Render + Vercel
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Ogrev obeh produkcij (iskreni izpisi)
+        run: |
+          set -u
+          TMO="${{ github.event.inputs.timeout_sec || '120' }}"
+          fail=0
+          for URL in "https://i-feel-slovenia.onrender.com/api/health" \
+                     "https://i-feel-slovenia.vercel.app/api/health"; do
+            echo "── $URL"
+            START=$(date +%s)
+            if BODY=$(curl -sf --max-time "$TMO" "$URL"); then
+              DUR=$(( $(date +%s) - START ))
+              VER=$(printf '%s' "$BODY" | grep -o '"version":"[^"]*"' | head -1 || true)
+              echo "   HTTP 200 v ${DUR} s · $VER"
+              if [ "$DUR" -ge 45 ]; then
+                echo "   ⚠️  MRZLI ZAGON ($DUR s) — instanca je spala"
+              else
+                echo "   ✓ topla"
+              fi
+            else
+              DUR=$(( $(date +%s) - START ))
+              echo "   ✗ NEDOSEGLJIVA po ${DUR} s"
+              fail=1
+            fi
+          done
+          exit $fail

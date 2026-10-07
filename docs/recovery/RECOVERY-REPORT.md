@@ -176,3 +176,23 @@ Preostalo glede na izvirnik (1.190.0): ostali produkti tržnice (izkušnje/rezer
 po dnevih), 125.446 krajev Foursquare množica (zunanja licenca/podatki), produkcijski
 Stripe račun + ključi (zunanje dejanje lastnika), prevezava Render/Vercel na GitLab,
 keep-warm nadomestek (cron umrl z GitHub Actions).
+
+### 10.1 Push na GitLab čaka na nov žeton (7. 10. 2026 ~07:25 UTC)
+
+GitLab žeton `glpat-…170n9i6t8` (iz Task 42) je ZAVRNJEN (401 — pretekel ali preklican).
+Če je lastnik žeton preklical po objavi v klepetu: PRAVILNO VARNOSTNO DEJANJE.
+
+Stanje rekonstrukcije 2.1.0:
+- LOKALNI commit `605ff79` v delovnem klonu je DOKONČAN in pripravljen na push
+  (vsebina: 99 datotek — aplikacija faze 1+2, testi, CI, dokumentacija)
+- Varnnostna kopija CELEGA repozitorija: `discover-slovenia-ai-2.1.0.bundle` (22 MB,
+  verificiran, celotna zgodovina vključno z arhivom incidenta)
+
+Kako dokončati push (lastnikova izbira):
+1. **Nov žeton** (GitLab → Preferences → Access Tokens, scope `write_repository`,
+   skupina markec-group) → pošlji v pogovor → push izvedem (kot doslej).
+2. **Samostojno**: prejmi bundle `discover-slovenia-ai-2.1.0.bundle`, potem:
+   `git clone discover-slovenia-ai-2.1.0.bundle dsa && cd dsa && git remote set-url origin https://gitlab.com/markec-group/discover-slovenia-ai.git && git push origin main`
+3. **SSH**: dodaj svoj javni ključ na GitLab in potisni prek SSH.
+
+Po pushu: GitLab CI (.gitlab-ci.yml) se samodejno zagona (lint + 86 testov).

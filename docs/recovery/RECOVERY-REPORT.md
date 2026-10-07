@@ -234,3 +234,20 @@ runnerji na voljo). Do takrat testna vrata delujejo lokalno: `bun test`.
   dvojezičnost)
 - go-data (10 partnerjev s pričakovanimi slug-i, iskrenost: zunanja povezava
   "coming" dokler ni konfigurirana, statusi ponudnikov, dostopni opombe)
+
+### 10.4 Push DOKONČAN z novim žetonom (7. 10. 2026 ~08:00 UTC)
+
+Lastnik je posredoval nov žeton → REKONSTRUKCIJA FAZE 2 IN TESTNA RAZŠIRITEV
+STA NA GITLABU (potrditveno stanje):
+
+- main: `037b185` (faza 1) → `53a2075` (faza 2: skupnost/jeziki/checkout/CI)
+  → `54068dc` (poenostavljen CI za diagnostiko) → **`11bc55b`** (145 testov
+  + RECOVERY-REPORT dopolnila) — parity potrjen z ls-remote
+- CI pipeline: še vedno čaka na runnerje (glej §10.2 — lastnikovo dejanje)
+- Žeton uporabljen IZKLJUČNO v pomnilniku ukazov (nikoli v datotekah);
+  lastniku priporočena rotacija po koncu vzdrževanja (kot prejšnji)
+- Backup bundle posodobljen na 11bc55b (discover-slovenia-ai-2.1.0.bundle)
+
+Repozitorij je zdaj popolnoma samozadosten: aplikacija + arhiv incidenta +
+testna vrata + CI — obnovitev iz vseh virov je DOKONČANA v obsegu, ki je
+dosegljiv iz peskovnika.

@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  workflows: write   # potrebno za push commitov, ki spreminjajo .github/workflows/* (sicer GitHub zavrne: "refusing to allow a GitHub App to create or update workflow")
 
 concurrency:
   group: gitlab-sync

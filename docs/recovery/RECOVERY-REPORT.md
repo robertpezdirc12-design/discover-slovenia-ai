@@ -196,3 +196,41 @@ Kako dokončati push (lastnikova izbira):
 3. **SSH**: dodaj svoj javni ključ na GitLab in potisni prek SSH.
 
 Po pushu: GitLab CI (.gitlab-ci.yml) se samodejno zagona (lint + 86 testov).
+
+### 10.2 CI pipeline failed z 0 jobi — vzrok: ni runnerjev (7. 10. 2026 ~07:45 UTC)
+
+Po pushu (54068dc) je GitLab CI pipeline TAKOJ padel z 0 ustvarjenimi jobi
+(pipeline 2921106073 in 2921151780, created_at == updated_at, jobs API vrne []).
+
+Diagnostika:
+- `ci/lint` API potrjuje: .gitlab-ci.yml je VELJAVEN (valid: true)
+- poenostavitev na najmanjšo obliko (brez extends/cache/rules) — ENAKO vedenje
+- instant fail + 0 jobov = GitLab.com račun nima omogočenih runnerjev
+  (znano obnašanje brezplačnih računov brez billing verifikacije — shared/
+  instance runners so onemogočeni, dokler lastnik ne omogoči)
+
+REŠITEV (lastnikovo dejanje v GitLab UI):
+1. Projekt → Settings → CI/CD → Runners → omogoči "Instance runners"
+   (GitLab.com lahko zahteva billing verifikacijo na brezplačnem načrtu)
+2. Pipeline se nato zažene samodejno ob naslednjem pushu (ali "Run pipeline"
+   v UI na obstoječem commitu)
+
+CI je pripravljen in pravilen (lint + 145 testov bo zagnal takoj, ko bodo
+runnerji na voljo). Do takrat testna vrata delujejo lokalno: `bun test`.
+
+### 10.3 Razširitev testne pokritosti (faza 2 dopolnitev)
+
+86 → 145 testov (+59, 2.222 expect klicev) na 12 datotekah — novi:
+- trip-chat-engine (deterministični @AI: omembe, nameni, iskrenost vremena,
+  determinizem, prazna pot, fallback)
+- password (scrypt roundtrip, sol, fail-closed, brez čistega gesla v hashu)
+- shared-plan + normalizePlanInput (shareId oblike, strežniška normalizacija
+  s capi, sanitizacija, izpust praznih, zaporedne številke dni)
+- content-data (dogodki: unikatni id, kategorije, cene, ISO datumi sezone
+  2026/27, slike na disku, meseci; vodniki: skupine, unikatni slug-i, realni
+  dnevi/km, destSlugs iz nabora 38 s praznino kot izkreno vrednostjo; teme,
+  blog)
+- lokali-data (kategorije, regije, države, destinacijske povezave, vreme,
+  dvojezičnost)
+- go-data (10 partnerjev s pričakovanimi slug-i, iskrenost: zunanja povezava
+  "coming" dokler ni konfigurirana, statusi ponudnikov, dostopni opombe)

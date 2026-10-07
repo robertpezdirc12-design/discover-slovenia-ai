@@ -1411,3 +1411,29 @@ Stage Summary:
 - GitLab: main še @ 037b185 (faza 1); faza 2 LOKALNO pripravljena v merge-dsa @ 937dcdf (2 commita, čisto, 0 skrivnosti) — push čaka na NOV žeton od lastnika (navodila v RECOVERY-REPORT §10.1)
 - Backup celotnega repozitorija: /home/z/dsa-recovery/discover-slovenia-ai-2.1.0.bundle (živi v peskovniku; ob resetu ga lastnik prejme po navodilih iz poročila)
 - Verzija: 2.1.0 (README + package.json posodobljena)
+
+---
+Task ID: 50
+Agent: Z.ai Code (glavni/orkestrator)
+Task: Push faze 2 na GitLab z novim žetonom + CI diagnostika + razširitev testne pokritosti (86 → 145).
+
+Work Log:
+- Nov glpat žeton (lastnik v klepetu 07:29) validiran (API /user 200, robert.pezdirc12)
+- PUSH USPEŠEN: 037b185..53a2075 (faza 2: 605ff79 + 937dcdf + 53a2075) — parity potrjen z ls-remote
+- CI PIPELINE FAILED z 0 jobi (2921106073): instant fail, jobs API []; ci/lint API: YAML VELJAVEN; poenostavitev na najmanjšo obliko (54068dc pushan, tudi failed 2921151780 z 0 jobi) → DIAGNOZA: račun nima omogočenih runnerjev (GitLab.com free brez billing verifikacije); rešitev = lastnik: Settings → CI/CD → Runners → omogoči instance runners (dokumentirano v RECOVERY-REPORT §10.2)
+- WAF obdobja med delom obvladana s premori 60–75 s (blokade API klicev, push uspel kljub 403 na ls-remote)
+- RAZŠIRITEV TESTOV 86 → 145 (12 datotek, +59 testov, 2.222 expect):
+  * trip-chat-engine.test.ts (14): isAiMention (vključno lažna omemba v e-pošti), answerAiQuestion determinizem, vreme = iskrena zavrnitev, razdalje km, predlogi, prazna pot, fallback, AI_ADVISOR_NAME kanon
+  * password.test.ts (5): scrypt roundtrip, sol (2× isto geslo → različna hasha), fail-closed pokvarjen zapis, brez čistega gesla v hashu
+  * shared-plan.test.ts (11): SHARE_ID_RE oblike (veljavne/neveljavne), normalizePlanInput (validna/invalidna, okleščenje s capi, izpust praznih imen, zaporedne številke dni, lokalni kraji brez destSlug)
+  * content-data.test.ts (17): dogodki (unikatni id, kategorije/cene nabori, ISO datumi sezone 2026/27, slike na disku, monthIndex usklajen), vodniki (3 skupine, unikatni slug-i, destSlugs iz nabora 38 — praznina izkreno dovoljena za praktične vodnike, realni dnevi/km, getGuide, pubDate), teme + blog (unikatni id, kategorije)
+  * lokali-data.test.ts (10): unikatni id, 7 kategorij, regije v REGIONS, države, destinationSlug obstoj, vremenska primernost, dvojezični opisi, ≥5 uporabljenih kategorij
+  * go-data.test.ts (10): 10 partnerjev s pričakovanimi slug-i, unikatnost, dvojezičnost, badge nabor, ISKRENOST: link = "coming" dokler ni affiliate žetonov, statusi ponudnikov, getGoRoute
+- Popravek 2 invariant po ugotovitvah podatkov (dogodki sezone 2026/27 ≥ 2026-10-01; vodniki brez destinacij so izkreni)
+- Regresija: 145/145 zelenih, lint 0
+- RECOVERY-REPORT §10.2 (CI/runnerji diagnoza + rešitev) + §10.3 (testna razširitev)
+
+Stage Summary:
+- GITLAB POSODOBLJEN: main @ 54068dc (faza 2 + poenostavljen CI) — pipeline pripravljen, zagon čaka na runnerje (lastnikovo dejanje, dokumentirano)
+- TESTNA VRATA: 145 testov / 2.222 expect na 12 datotekah — najgloblja pokritost rekonstrukcije do zdaj (determinizem AI, iskrenost go-data, integriteta vsebin)
+- Naslednje možne stopnje obnove: booking lifecycle v Go Mode (JourneyBooking lupina), še več testov, build/deploy CI stopnji po omogočitvi runnerjev

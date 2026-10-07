@@ -21,15 +21,3 @@ agent-ctx/
 
 # sistem
 .DS_Store
-
-# peskovnik orodja (NI del aplikacije)
-skills/
-*.tsbuildinfo
-.zscripts/
-download/
-examples/
-mini-services/
-Caddyfile
-/preview-*.png
-/test-fresh.png
-/prod-*.png

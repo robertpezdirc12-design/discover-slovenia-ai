@@ -9,8 +9,9 @@
  * (uredniška kuracija — iskrena opomba o obsegu je na strani obvezna).
  */
 
-import { Check, Heart, MapPin, Search, Store, Sun, Umbrella, X } from "lucide-react";
+import { Check, Heart, MapPin, Search, SearchX, Sun, Umbrella, X } from "lucide-react";
 import { useLocale } from "next-intl";
+import { motion, useReducedMotion } from "framer-motion";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
@@ -48,6 +49,7 @@ export function LokaliExplorer() {
   const l = useLocale();
   const { toast } = useToast();
   const tripItems = useMyTripList();
+  const reduceMotion = useReducedMotion();
 
   const [q, setQ] = React.useState("");
   const [category, setCategory] = React.useState<string>("all");
@@ -225,11 +227,33 @@ export function LokaliExplorer() {
 
       {/* ── Kartice lokalov ──────────────────────────────────────────── */}
       {results.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-dashed p-10 text-center">
-          <Store className="mx-auto size-7 text-muted-foreground" aria-hidden="true" />
-          <p className="mt-2 font-semibold">{t("emptyTitle")}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{t("emptyLead")}</p>
-        </div>
+        /* Prijazno prazno stanje (issue #1 §4): SearchX + besedilo + gumb
+           „Počisti filtre" (pariteta z raziskovalco destinacij) — subtilen
+           fade (~180 ms, ugasnjen ob reduced-motion). */
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+          className="mt-6 rounded-xl border border-dashed p-6 text-center sm:p-10"
+        >
+          <SearchX
+            className="mx-auto size-8 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <p className="mt-3 text-base font-semibold">{t("emptyTitle")}</p>
+          <p className="mx-auto mt-1.5 max-w-md text-sm text-muted-foreground">
+            {t("emptyLead")}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={reset}
+            className="mt-5 min-h-11"
+          >
+            <X className="size-4" aria-hidden="true" />
+            {t("reset")}
+          </Button>
+        </motion.div>
       ) : (
         <ul className="mt-6 grid list-none gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {results.map((x) => {

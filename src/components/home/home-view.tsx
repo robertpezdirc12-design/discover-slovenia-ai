@@ -23,6 +23,7 @@ import { useLocale } from "next-intl";
 import * as React from "react";
 
 import { DestinationCard } from "@/components/destination-card";
+import { NextStepCard, useNextStepContext } from "@/components/next-step-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -463,6 +464,7 @@ export function HomeView() {
 
   const t = <K extends keyof typeof L>(k: K) => pick(l, L[k]);
   const featured = React.useMemo(() => getFeaturedDestinations().slice(0, 6), []);
+  const { ctx: nextStepCtx, ready: nextStepReady } = useNextStepContext();
 
   const onSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -580,6 +582,13 @@ export function HomeView() {
           </dl>
         </div>
       </section>
+
+      {/* ======== PROAKTIVNI POMOČNIK — naslednji smiseln korak (issue #1) ======== */}
+      {nextStepReady && (
+        <div className="mx-auto w-full max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
+          <NextStepCard ctx={nextStepCtx} surface="home" />
+        </div>
+      )}
 
       {/* ======== RAZIŠČI PO TEMAH ======== */}
       <section aria-labelledby="teme" className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8">

@@ -1,7 +1,8 @@
 "use client";
 
-import { Search, X } from "lucide-react";
+import { Search, SearchX, X } from "lucide-react";
 import { useLocale } from "next-intl";
+import { motion, useReducedMotion } from "framer-motion";
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -46,6 +47,7 @@ function destWord(l: string, n: number): string {
 export function DestinationsExplorer() {
   const l = useLocale();
   const searchParams = useSearchParams();
+  const reduceMotion = useReducedMotion();
 
   const L = {
     kicker: { sl: "Odkrij", en: "Discover", it: "Scopri", de: "Entdecken", fr: "Découvrir", es: "Descubre" },
@@ -242,15 +244,30 @@ export function DestinationsExplorer() {
           ))}
         </div>
       ) : (
-        <div className="mt-6 rounded-xl border border-dashed p-10 text-center">
-          <p className="text-base font-semibold">{pick(l, L.emptyTitle)}</p>
-          <p className="mt-1.5 text-sm text-muted-foreground">
+        /* Prijazno prazno stanje (issue #1 §4): ikona SearchX + besedilo +
+           gumb „Počisti filtre" — subtilen fade vstop (~180 ms, ugasnjen
+           ob reduced-motion). Iskrenost: napaka tu ni mogoča — filtriranje
+           teče sinhrono nad lokalnim naborom (0 omrežja), zato retry
+           stanje bi bilo izmišljeno. */
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+          className="mt-6 rounded-xl border border-dashed p-6 text-center sm:p-10"
+        >
+          <SearchX
+            className="mx-auto size-8 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <p className="mt-3 text-base font-semibold">{pick(l, L.emptyTitle)}</p>
+          <p className="mx-auto mt-1.5 max-w-md text-sm text-muted-foreground">
             {pick(l, L.emptyLead)}
           </p>
-          <Button onClick={reset} variant="outline" className="mt-5">
+          <Button onClick={reset} variant="outline" className="mt-5 min-h-11">
+            <X className="size-4" aria-hidden="true" />
             {pick(l, L.reset)}
           </Button>
-        </div>
+        </motion.div>
       )}
     </div>
   );

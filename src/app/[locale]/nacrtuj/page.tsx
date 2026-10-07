@@ -22,6 +22,7 @@ import { useSearchParams } from "next/navigation";
 import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { NextStepCard, useNextStepContext } from "@/components/next-step-card";
 import { StopKindIcon } from "@/components/plan/plan-bits";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -308,10 +309,16 @@ const PRESETS: PresetDef[] = [
 
 export default function PlanPage() {
   const l = useLocale();
+  const { ctx: nextStepCtx, ready: nextStepReady } = useNextStepContext();
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
       <PageHeader kicker={pick(l, L.kicker)} title={pick(l, L.title)} lead={pick(l, L.lead)} />
+      {nextStepReady && (
+        <div className="mt-8">
+          <NextStepCard ctx={nextStepCtx} surface="plan" />
+        </div>
+      )}
       <Suspense fallback={<PlannerSkeleton />}>
         <PlannerApp />
       </Suspense>

@@ -29,6 +29,7 @@ import * as React from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { OwnMarketplaceSection } from "@/components/marketplace/own-marketplace-section";
+import { NextStepCard, useNextStepContext } from "@/components/next-step-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -80,6 +81,7 @@ export function TrznicaExplorer() {
   const l = useLocale();
   const { toast } = useToast();
   const tripItems = useMyTripList();
+  const { ctx: nextStepCtx, ready: nextStepReady } = useNextStepContext();
 
   const L = {
     kicker: { sl: "Tržnica", en: "Marketplace" },
@@ -143,6 +145,13 @@ export function TrznicaExplorer() {
           </Badge>
         </div>
       </PageHeader>
+
+      {/* ── NEXT-STEP: naslednji smiseln korak glede na stanje (issue #1) ── */}
+      {nextStepReady && (
+        <div className="mt-8">
+          <NextStepCard ctx={nextStepCtx} surface="market" />
+        </div>
+      )}
 
       {/* ── LASTNA TRŽNICA — živi izdelki z lastnim checkoutom (48-c) ── */}
       <OwnMarketplaceSection />
@@ -221,7 +230,7 @@ export function TrznicaExplorer() {
                         </p>
                       )}
                       <h3 className="text-base leading-tight font-bold">{name}</h3>
-                      <p className="text-sm leading-relaxed text-muted-foreground">
+                      <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">
                         {l === "en" ? p.description.en : p.description.sl}
                       </p>
                       <div className="mt-auto pt-1">
@@ -229,7 +238,7 @@ export function TrznicaExplorer() {
                           type="button"
                           size="sm"
                           variant={added ? "secondary" : "default"}
-                          className="w-full"
+                          className="min-h-11 w-full"
                           onClick={() => onAdd(p)}
                           aria-disabled={added}
                         >
@@ -329,10 +338,12 @@ function ShelfCard({
         <h4 className="text-base leading-tight font-bold">
           {locale === "en" ? shelf.label.en : shelf.label.sl}
         </h4>
-        <p className="text-xs font-medium text-muted-foreground">
+        {/* Mobilni UX (issue #1 §4): dolgi seznami ponudnikov prelomimo z
+            besedami, opis okvirimo z line-clamp za enotno višino kartice. */}
+        <p className="text-xs font-medium text-muted-foreground break-words">
           {shelf.providers.join(" · ")}
         </p>
-        <p className="text-sm leading-relaxed text-muted-foreground">
+        <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">
           {locale === "en" ? shelf.description.en : shelf.description.sl}
         </p>
         <p className="text-xs text-muted-foreground">
@@ -341,7 +352,7 @@ function ShelfCard({
 
         {shelf.goRoute && (
           <div className="mt-auto pt-1">
-            <Button asChild size="sm" variant="outline" className="w-full">
+            <Button asChild size="sm" variant="outline" className="min-h-11 w-full">
               <Link href={`/go/${shelf.goRoute}`}>
                 {openLabel}
                 <ArrowRight className="size-3.5" aria-hidden="true" />

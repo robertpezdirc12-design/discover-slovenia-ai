@@ -5,18 +5,20 @@ import {
   Ban,
   CircleCheck,
   CloudUpload,
+  FlaskConical,
   Footprints,
   HardDrive,
   Info,
   MapPin,
   Route as RouteIcon,
+  TicketCheck,
   Trash2,
   Wand2,
   X,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useLocale } from "next-intl";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { StopKindIcon } from "@/components/plan/plan-bits";
@@ -104,6 +106,202 @@ const L = {
   },
   unknown: { sl: "podatek neznan", en: "data unknown" },
 } as const;
+
+// ── REZERVACIJE NA POTEH (issue #1 področje 2 — My Trips statusi) ────────────
+// Števec rezervacij po poteh v oblaku + kanalno razkritje (demo/user).
+// ISKRENOST: demo rezervacije so IZRECNO označene (simulator, nikoli
+// ponudnik); realni kanal ni aktiven (fail-closed) in je razkrit v nogi.
+const BK_L = {
+  title: { sl: "Rezervacije na tvojih poteh", en: "Bookings on your trips" },
+  lead: {
+    sl: "Števci rezervacij po poteh v oblaku — z razkritjem kanala (demo simulator ali uporabniška atestacija).",
+    en: "Booking counters per cloud trip — with channel disclosure (demo simulator or user attestation).",
+  },
+  loading: { sl: "Nalagam rezervacije …", en: "Loading bookings …" },
+  empty: {
+    sl: "Nimaš še rezervacij na poteh v oblaku.",
+    en: "You have no bookings on cloud trips yet.",
+  },
+  emptyHint: {
+    sl: "Rezerviraš jih v zavihku „Rezervacije“ na posamezni poti (gumb „Rezerviraj (demo)“).",
+    en: "Book them in the “Reservations” tab of a trip (the “Book (demo)” button).",
+  },
+  bookingsWord: {
+    sl: (n: number) =>
+      `${n} ${n === 1 ? "rezervacija" : n === 2 ? "rezervaciji" : n === 3 || n === 4 ? "rezervacije" : "rezervacij"}`,
+    en: (n: number) => `${n} ${n === 1 ? "booking" : "bookings"}`,
+  },
+  confirmedWord: {
+    sl: (n: number) =>
+      `${n} ${n === 1 ? "potrjena" : n === 2 ? "potrjeni" : n === 3 || n === 4 ? "potrjene" : "potrjenih"}`,
+    en: (n: number) => `${n} confirmed`,
+  },
+  cancelledWord: { sl: "preklicanih", en: "cancelled" },
+  demoChip: { sl: "demo", en: "demo" },
+  userChip: { sl: "uporabniška", en: "user" },
+  realChip: { sl: "realna", en: "real" },
+  unknownChip: { sl: "brez razkritja", en: "undisclosed" },
+  demoFootnote: {
+    sl: "Demo rezervacije so SIMULIRANE (izrecno označene) — realni ponudniški kanal ni aktiven, nikoli ne lažemo.",
+    en: "Demo bookings are SIMULATED (explicitly labelled) — the real provider channel is not active; we never lie.",
+  },
+  openTrip: { sl: "Odpri pot", en: "Open trip" },
+} as const;
+
+interface TripBookingsSummaryRow {
+  shareId: string;
+  title: string;
+  total: number;
+  confirmed: number;
+  modified: number;
+  cancelled: number;
+  idea: number;
+  demo: number;
+  user: number;
+  real: number;
+  unknownChannel: number;
+  latestAt: string;
+}
+
+/**
+ * Zbirnik rezervacij prijavljenega uporabnika po poteh (GET
+ * /api/journey/bookings — moje rezervacije, zbrane po poteh, z razkritjem
+ * kanalov). Gostu se sekcecija sploh ne izriše (iskreno — rezervacije so
+ * vezane na račun).
+ */
+function TripBookingsSummary() {
+  const l = useLocale();
+  const lang: "sl" | "en" = l === "en" ? "en" : "sl";
+  const { status: sessionStatus } = useSession();
+  const [trips, setTrips] = useState<TripBookingsSummaryRow[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (sessionStatus !== "authenticated") return;
+    let cancelled = false;
+    // Stanje se posodablja SAMO asinhrono po odzivu (brez sinhronega
+    // setState v telesu efekta — hišni lint kanon).
+    fetch("/api/journey/bookings", { cache: "no-store" }).then(
+      async (r) => {
+        if (cancelled) return;
+        if (!r.ok) {
+          setError(`Napaka ${r.status}`);
+          return;
+        }
+        const data = (await r.json()) as { trips?: TripBookingsSummaryRow[] };
+        if (!cancelled) setTrips(data.trips ?? []);
+      },
+      (e: unknown) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+      }
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionStatus]);
+
+  if (sessionStatus !== "authenticated") return null;
+
+  return (
+    <section className="mt-10" aria-labelledby="rezervacije-na-poteh">
+      <h2
+        id="rezervacije-na-poteh"
+        className="flex items-center gap-2 text-xl font-bold tracking-tight"
+      >
+        <TicketCheck className="size-5 text-primary" aria-hidden="true" />
+        {pick(l, BK_L.title)}
+      </h2>
+      <p className="mt-1.5 text-sm text-muted-foreground">{pick(l, BK_L.lead)}</p>
+
+      {error ? (
+        <p className="mt-4 text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      ) : trips === null ? (
+        <p role="status" className="mt-4 text-sm text-muted-foreground">
+          {pick(l, BK_L.loading)}
+        </p>
+      ) : trips.length === 0 ? (
+        <Card className="mt-4 border-dashed">
+          <CardContent className="flex flex-col items-center gap-2 p-6 text-center">
+            <TicketCheck className="size-7 text-muted-foreground" aria-hidden="true" />
+            <p className="text-sm text-muted-foreground">{pick(l, BK_L.empty)}</p>
+            <p className="text-xs text-muted-foreground">{pick(l, BK_L.emptyHint)}</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+          {trips.map((t) => (
+            <li key={t.shareId}>
+              <Card className="h-full">
+                <CardContent className="flex flex-col gap-2 p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="min-w-0 font-semibold">{t.title}</p>
+                    <Button asChild variant="ghost" size="sm" className="min-h-9 shrink-0 gap-1.5">
+                      <Link href={`/pot/${t.shareId}`}>
+                        <ArrowRight className="size-4" aria-hidden="true" />
+                        <span className="sr-only">{pick(l, BK_L.openTrip)}: {t.title}</span>
+                        {pick(l, BK_L.openTrip)}
+                      </Link>
+                    </Button>
+                  </div>
+                  {/* Števec: „2 rezervaciji · 1 potrjena“ */}
+                  <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                    <span className="font-medium">{BK_L.bookingsWord[lang](t.total)}</span>
+                    {t.confirmed > 0 ? (
+                      <span className="text-muted-foreground">
+                        · {BK_L.confirmedWord[lang](t.confirmed)}
+                      </span>
+                    ) : null}
+                    {t.cancelled > 0 ? (
+                      <span className="text-muted-foreground">
+                        · {t.cancelled} × {pick(l, BK_L.cancelledWord)}
+                      </span>
+                    ) : null}
+                  </p>
+                  {/* Kanalno razkritje — demo IZRECNO oranžno, nikoli zelena */}
+                  <p className="flex flex-wrap items-center gap-1.5">
+                    {t.demo > 0 ? (
+                      <Badge
+                        variant="outline"
+                        className="gap-1 border-orange-500/50 bg-orange-50 text-orange-700 dark:border-orange-700 dark:bg-orange-950/40 dark:text-orange-300"
+                      >
+                        <FlaskConical className="size-3" aria-hidden="true" />
+                        {t.demo} × {pick(l, BK_L.demoChip)}
+                      </Badge>
+                    ) : null}
+                    {t.user > 0 ? (
+                      <Badge
+                        variant="outline"
+                        className="border-violet-500/50 bg-violet-50 text-violet-700 dark:border-violet-700 dark:bg-violet-950/30 dark:text-violet-300"
+                      >
+                        {t.user} × {pick(l, BK_L.userChip)}
+                      </Badge>
+                    ) : null}
+                    {t.real > 0 ? (
+                      <Badge variant="outline" className="border-primary/50 bg-primary/5 text-primary">
+                        {t.real} × {pick(l, BK_L.realChip)}
+                      </Badge>
+                    ) : null}
+                    {t.unknownChannel > 0 ? (
+                      <Badge variant="outline" className="border-border text-muted-foreground">
+                        {t.unknownChannel} × {pick(l, BK_L.unknownChip)}
+                      </Badge>
+                    ) : null}
+                  </p>
+                </CardContent>
+              </Card>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <p className="mt-3 text-[11px] leading-snug text-muted-foreground">
+        {pick(l, BK_L.demoFootnote)}
+      </p>
+    </section>
+  );
+}
 
 export default function MyTripsPage() {
   const l = useLocale();
@@ -212,6 +410,11 @@ export default function MyTripsPage() {
       {/* POTI V OBLAKU (48-a) — sekcecija se izriše SAMO prijavljenemu;
           gostu ostane iskrena kartica o lokalni shrambi spodaj. */}
       <CloudTripsSection />
+
+      {/* REZERVACIJE NA POTEH (issue #1 področje 2) — števci + kanalno
+          razkritje; samo za prijavljene (demo rezervacije so izrecno
+          označene). */}
+      <TripBookingsSummary />
 
       {/* ZBIRKA MOJA POT */}
       <section className="mt-10" aria-labelledby="moja-pot-zbirka">

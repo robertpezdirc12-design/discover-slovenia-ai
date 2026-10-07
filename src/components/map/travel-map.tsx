@@ -30,6 +30,7 @@ import {
   Heart,
   Loader2,
   MapPin,
+  RotateCw,
   Route,
   Search,
   Star,
@@ -38,6 +39,7 @@ import {
 } from "lucide-react";
 import { useLocale } from "next-intl";
 import Image from "next/image";
+import { motion, useReducedMotion } from "framer-motion";
 import * as React from "react";
 import {
   MapContainer,
@@ -232,10 +234,14 @@ function LokaliLayer({
   enabled,
   onResult,
   onError,
+  onLoading,
+  retryKey,
 }: {
   enabled: boolean;
   onResult: (pins: MapPinDTO[], mode: "grid" | "pins") => void;
   onError: () => void;
+  onLoading: () => void;
+  retryKey: number;
 }) {
   const map = useMap();
 
@@ -253,6 +259,7 @@ function LokaliLayer({
         onResult([], "grid");
         return;
       }
+      onLoading();
       try {
         const res = await fetch(
           `/api/map/pins?bbox=${bounds.getSouth().toFixed(6)},${bounds
@@ -295,7 +302,7 @@ function LokaliLayer({
       map.off("moveend", schedule);
       map.off("zoomend", schedule);
     };
-  }, [enabled, map, onResult, onError]);
+  }, [enabled, map, onResult, onError, onLoading, retryKey]);
 
   return null;
 }
@@ -416,9 +423,15 @@ export default function TravelMap() {
     null
   );
   const [lokaliError, setLokaliError] = React.useState(false);
+  // Issue #1 §4 — loading/empty/error stanja plasti: shimmer chip med
+  // nalaganjem pinov, subtilno prazno stanje (0 pinov v bbox) in retry
+  // ob napaki (iskren odgoviv, ne tiha napaka).
+  const [lokaliLoading, setLokaliLoading] = React.useState(false);
+  const [lokaliRetryKey, setLokaliRetryKey] = React.useState(0);
   const [routeState, setRouteState] = React.useState<RouteState>({
     status: "idle",
   });
+  const reduceMotion = useReducedMotion();
 
   const mapRef = React.useRef<L.Map | null>(null);
   const markerRefs = React.useRef<Record<string, L.Marker | null>>({});
@@ -527,6 +540,10 @@ export default function TravelMap() {
     approximate: { sl: "okvirna lokacija (središče destinacije)", en: "approximate location (destination center)", it: "posizione approssimativa (centro della destinazione)", de: "ungefähre Lage (Zentrum des Reiseziels)", fr: "position approximative (centre de la destination)", es: "ubicación aproximada (centro del destino)" },
     venuesLink: { sl: "Vsi lokalni ponudniki", en: "All local venues", it: "Tutti i locali", de: "Alle lokalen Anbieter", fr: "Tous les établissements", es: "Todos los lugares" },
     pinsUnavailable: { sl: "Lokali trenutno niso dosegljivi", en: "Venues currently unavailable", it: "Locali attualmente non disponibili", de: "Lokale derzeit nicht verfügbar", fr: "Établissements actuellement indisponibles", es: "Lugares no disponibles actualmente" },
+    // Issue #1 §4 — stanja plasti (nalaganje/prazno/retry).
+    pinsLoading: { sl: "Nalagam pin …", en: "Loading pins …", it: "Caricamento pin …", de: "Pins werden geladen …", fr: "Chargement des épingles …", es: "Cargando pines …" },
+    pinsEmpty: { sl: "V tem območju ni pinov", en: "No pins in this area", it: "Nessun pin in quest'area", de: "Keine Pins in diesem Bereich", fr: "Aucune épingle dans cette zone", es: "No hay pines en esta zona" },
+    retry: { sl: "Poskusi znova", en: "Try again", it: "Riprova", de: "Erneut versuchen", fr: "Réessayer", es: "Reintentar" },
     showRoute: { sl: "Prikaži pot", en: "Show route", it: "Mostra il percorso", de: "Route anzeigen", fr: "Afficher l'itinéraire", es: "Mostrar la ruta" },
     hideRoute: { sl: "Skrij pot", en: "Hide route", it: "Nascondi il percorso", de: "Route ausblenden", fr: "Masquer l'itinéraire", es: "Ocultar la ruta" },
     routeLoading: { sl: "Pot se izračunava …", en: "Calculating route …", it: "Calcolo del percorso …", de: "Route wird berechnet …", fr: "Calcul de l'itinéraire …", es: "Calculando la ruta …" },
@@ -568,11 +585,23 @@ export default function TravelMap() {
       setLokaliPins(pins);
       setLokaliMode(mode);
       setLokaliError(false);
+      setLokaliLoading(false);
     },
     []
   );
 
-  const handlePinsError = React.useCallback(() => setLokaliError(true), []);
+  const handlePinsError = React.useCallback(() => {
+    setLokaliError(true);
+    setLokaliLoading(false);
+  }, []);
+
+  const handlePinsLoading = React.useCallback(() => setLokaliLoading(true), []);
+
+  /** Retry plasti Lokali — bump ključa ponovno zažene efekt pridobivanja. */
+  const retryLokali = React.useCallback(
+    () => setLokaliRetryKey((k) => k + 1),
+    []
+  );
 
   /** Preklop plasti Lokali — ob izklopu takoj počisti (brez ostankov). */
   const toggleLokali = () => {
@@ -582,6 +611,7 @@ export default function TravelMap() {
       setLokaliPins([]);
       setLokaliMode(null);
       setLokaliError(false);
+      setLokaliLoading(false);
     }
   };
 
@@ -804,26 +834,79 @@ export default function TravelMap() {
           </Button>
         )}
 
-        {lokaliOn && lokaliMode === "grid" && !lokaliError && (
+        {lokaliOn && lokaliMode === "grid" && !lokaliError && !lokaliLoading && (
           <span className="inline-flex h-11 items-center rounded-full border border-dashed bg-card px-4 text-xs font-medium text-muted-foreground">
             {t("zoomHint")}
           </span>
         )}
-        {lokaliOn && lokaliError && (
-          <span
+        {/* Nalaganje pinov — skeleton chip (spinner + besedilo, ~180 ms fade);
+            iskrena povratna informacija med vsakim osvežitvom bbox-a. */}
+        {lokaliOn && lokaliLoading && !lokaliError && (
+          <motion.span
             role="status"
-            className="inline-flex h-11 items-center rounded-full border border-destructive/40 bg-destructive/10 px-4 text-xs font-medium text-destructive"
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="inline-flex h-11 items-center gap-2 rounded-full border bg-card px-4 text-xs font-medium text-muted-foreground"
+          >
+            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+            {t("pinsLoading")}
+          </motion.span>
+        )}
+        {/* Prazno (0 pinov v trenutnem bbox) — subtilno, iskreno stanje. */}
+        {lokaliOn &&
+          lokaliMode === "pins" &&
+          !lokaliError &&
+          !lokaliLoading &&
+          lokaliPins.length === 0 && (
+            <motion.span
+              initial={reduceMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className="inline-flex h-11 items-center rounded-full border border-dashed bg-card px-4 text-xs font-medium text-muted-foreground"
+            >
+              {t("pinsEmpty")}
+            </motion.span>
+          )}
+        {lokaliOn && lokaliError && (
+          <motion.span
+            role="status"
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="inline-flex h-11 items-center gap-1.5 rounded-full border border-destructive/40 bg-destructive/10 py-1.5 pl-4 pr-2 text-xs font-medium text-destructive"
           >
             {t("pinsUnavailable")}
-          </span>
+            <button
+              type="button"
+              onClick={retryLokali}
+              className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-full px-3 text-xs font-semibold transition-colors hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              <RotateCw className="size-3" aria-hidden="true" />
+              {t("retry")}
+            </button>
+          </motion.span>
         )}
         {routeState.status === "error" && (
-          <span
+          <motion.span
             role="status"
-            className="inline-flex h-11 items-center rounded-full border border-destructive/40 bg-destructive/10 px-4 text-xs font-medium text-destructive"
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="inline-flex h-11 items-center gap-1.5 rounded-full border border-destructive/40 bg-destructive/10 py-1.5 pl-4 pr-2 text-xs font-medium text-destructive"
           >
             {t("routeUnavailable")}
-          </span>
+            {/* Retry = ponovni izračun poti (isto dejanje kot gumb „Prikaži
+                pot" — izrecen, ne skrit). */}
+            <button
+              type="button"
+              onClick={() => void onToggleRoute()}
+              className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-full px-3 text-xs font-semibold transition-colors hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              <RotateCw className="size-3" aria-hidden="true" />
+              {t("retry")}
+            </button>
+          </motion.span>
         )}
         {routeState.status === "done" && (
           <span className="inline-flex h-11 items-center rounded-full border bg-card px-4 text-xs font-medium text-muted-foreground">
@@ -865,6 +948,8 @@ export default function TravelMap() {
               enabled={lokaliOn}
               onResult={handlePinsResult}
               onError={handlePinsError}
+              onLoading={handlePinsLoading}
+              retryKey={lokaliRetryKey}
             />
             {results.map((d) => (
               <Marker

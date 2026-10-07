@@ -81,6 +81,10 @@ export interface TripAggregate {
   ownerName?: string;
   name: string | null;
   version: { renameVersion: number; updatedAt: string };
+  /** ISO datum nastanka poti (GET /api/trips/[shareId] ga pošlje). */
+  createdAt: string;
+  /** Razčlenjen načrt poti (oblika SharedPlan). */
+  plan: import("@/lib/shared-plan").SharedPlan;
   collaborators?: CollaboratorRow[];
 }
 

@@ -42,7 +42,7 @@ export async function GET() {
       const plan = JSON.parse(j.data) as { days?: unknown[] };
       if (Array.isArray(plan.days)) {
         dayCount = plan.days.length;
-        stopCount = plan.days.reduce(
+        stopCount = plan.days.reduce<number>(
           (n, d) =>
             n +
             (typeof d === "object" && d !== null && Array.isArray((d as { locations?: unknown[] }).locations)

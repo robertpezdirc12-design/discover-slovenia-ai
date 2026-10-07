@@ -16,8 +16,11 @@ import { cn } from "@/lib/utils";
 
 /**
  * KARTICA DESTINACIJE — skupna za domačo stran (priljubljene) in
- * raziskovalco /destinacije. Zmeraj izpisuje: slika, ime, tagline,
- * regija, ocena; badge za izpostavljene.
+ * raziskovalco /destinacije. Vizualna hierarhija (issue #1 §4): slika →
+ * regija (kicker, zeleni akcent) → naslov → tagline → meta vrstica
+ * (tip · ocena) ob dnu kartice. Celotna kartica je povezava z vidnim
+ * zelenim focus-obročem; hover dvigne kartico (-translate-y-1) in
+ * poveča sliko (scale-105, ~300 ms) — vse ugasnjeno ob reduced-motion.
  */
 export function DestinationCard({
   d,
@@ -43,7 +46,10 @@ export function DestinationCard({
       href={`/destinacija/${d.slug}`}
       aria-label={pick(l, L.toDetail)(d.name)}
       className={cn(
-        "group flex flex-col overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+        "group flex flex-col overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm transition-all duration-300",
+        "hover:-translate-y-1 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
+        // Reduced-motion: brez dviga in senčnih prehodov (slika miruje).
+        "motion-reduce:transition-none motion-reduce:hover:translate-y-0",
         className
       )}
     >
@@ -54,29 +60,35 @@ export function DestinationCard({
           fill
           priority={priority}
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover transition-transform duration-300 group-hover:scale-105"
+          className="object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
         />
         {d.featured && (
           <Badge className="absolute top-2.5 left-2.5 bg-primary text-primary-foreground shadow-sm">
             {pick(l, L.featured)}
           </Badge>
         )}
-        <span className="absolute right-2.5 bottom-2.5 inline-flex items-center gap-1 rounded-full bg-background/90 px-2 py-0.5 text-xs font-semibold text-foreground shadow-sm backdrop-blur">
-          <Star className="size-3 fill-primary text-primary" aria-hidden="true" />
-          {d.rating.toFixed(1)}
-          <span className="sr-only">{pick(l, L.rating)(d.rating)}</span>
-        </span>
       </div>
       <div className="flex flex-1 flex-col gap-1.5 p-4">
-        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-          <span>{regionLabel(d.region, l)}</span>
-          <span aria-hidden="true">·</span>
-          <span>{typeLabel(d.type, l)}</span>
-        </div>
-        <h3 className="text-base font-bold leading-tight group-hover:text-primary">
+        {/* Regija čisto zgoraj — zeleni kicker (akcent teme #2d6a3e). */}
+        <p className="text-[11px] font-bold tracking-[0.1em] text-primary uppercase">
+          {regionLabel(d.region, l)}
+        </p>
+        <h3 className="text-lg leading-tight font-bold tracking-tight transition-colors group-hover:text-primary">
           {d.name}
         </h3>
         <p className="line-clamp-2 text-sm text-muted-foreground">{d.tagline}</p>
+        {/* Meta vrstica: tip destinacije · ocena — ob dnu, za enotno višino. */}
+        <p className="mt-auto flex items-center justify-between gap-2 border-t pt-2.5 text-xs font-medium">
+          <span className="text-muted-foreground">{typeLabel(d.type, l)}</span>
+          <span className="inline-flex items-center gap-1 font-semibold">
+            <Star
+              className="size-3.5 fill-primary text-primary"
+              aria-hidden="true"
+            />
+            {d.rating.toFixed(1)}
+            <span className="sr-only">{pick(l, L.rating)(d.rating)}</span>
+          </span>
+        </p>
       </div>
     </Link>
   );

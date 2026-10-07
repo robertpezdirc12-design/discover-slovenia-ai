@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  AlertTriangle,
   Ban,
   Check,
   CheckCheck,
@@ -12,10 +13,14 @@ import {
   Footprints,
   Hourglass,
   Info,
+  LocateFixed,
+  Loader2,
   MapPin,
   Navigation as NavigationIcon,
+  Navigation2,
   PartyPopper,
   Play,
+  RefreshCw,
   Route as RouteIcon,
   SkipForward,
   Sunrise,
@@ -24,7 +29,8 @@ import {
 } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import React, { Suspense, useEffect, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { StopKindIcon } from "@/components/plan/plan-bits";
@@ -44,8 +50,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useGeolocation, type UseGeolocation } from "@/hooks/use-geolocation";
 import { Link, useRouter } from "@/i18n/navigation";
 import { pick } from "@/lib/i18n-pick";
+import {
+  bearingDeg,
+  cardinalLabel,
+  cardinalName,
+  etaMinutes,
+  haversineKm,
+  isJourneyRouteResponse,
+  offRouteCheck,
+  osmDirectionsUrlWithOrigin,
+  progressAlongRoute,
+  roundedPrivacy,
+  type GeoPoint,
+} from "@/lib/go-gps";
 import {
   buildPlanFromMyTrip,
   formatDuration,
@@ -78,6 +98,13 @@ import {
  * 1.64.0+). Sopotnik MED potovanjem: trenutni postanek z akcijami, naslednji
  * postanek (ETA iskreno NEZNANO — brez GPS nimamo vira), dnevni napredek,
  * jutranji uvod „ZAČNI DAN“ in zaključno stanje.
+ *
+ * Issue #1 področje 1 — ŽIVI GPS NAVIGACIJA: kartica „Tvoja lokacija“
+ * (razdalja/smer/ETA/napredek do naslednjega postanka), odklon od
+ * načrtovane poti (> 3 km) s preračunom prek /api/journey/route ter
+ * živi ETA v NEXT kartici. ZASEBNOSTNI KANON (izvirnik): GPS živi SAMO v
+ * klientu (0 persistenc); na strežnik gre izključno zaokrožena pozicija
+ * (~11 m) ob eksplicitnem preračunu poti.
  *
  * Persistenca: localStorage 'dai:go-trip' { planRef, dayIndex, stopIndex,
  * startedAt, completed[] } (po vzorcu go-persist izvirnika). Deluje nad
@@ -175,6 +202,82 @@ const L = {
   },
   weatherWind: { sl: "veter", en: "wind" },
   weatherPrecip: { sl: "padavine", en: "precipitation" },
+  // ── ŽIVI GPS (issue #1 področje 1 — Live GPS navigacija) ──
+  gpsTitle: { sl: "Tvoja lokacija", en: "Your location" },
+  gpsHint: {
+    sl: "Živi GPS: razdalja, smer in ocena prihoda do naslednjega postanka.",
+    en: "Live GPS: distance, direction and arrival estimate to the next stop.",
+  },
+  gpsEnable: { sl: "Vklopi sledenje", en: "Turn on tracking" },
+  gpsDisable: { sl: "Izklopi sledenje", en: "Turn off tracking" },
+  gpsPrompt: { sl: "Nastavljam prvo fiksacijo …", en: "Getting a first fix …" },
+  gpsActive: { sl: "GPS aktiven", en: "GPS active" },
+  gpsAccuracy: {
+    sl: (m: number) => `natančnost ±${Math.round(m)} m`,
+    en: (m: number) => `accuracy ±${Math.round(m)} m`,
+  },
+  gpsDenied: {
+    sl: "Dovoljenje za lokacijo je zavrnjeno — omogoči ga v nastavitvah brskalnika (ikona pred naslovno vrstico) in poskusi znova.",
+    en: "Location permission denied — enable it in the browser settings (icon before the address bar) and try again.",
+  },
+  gpsError: {
+    sl: "GPS napaka — pomik na prosto nebo ali ponoven poskus lahko pomaga.",
+    en: "GPS error — moving out into the open or retrying may help.",
+  },
+  gpsUnsupported: {
+    sl: "Ta naprava ali brskalnik ne podpira Geolocation API.",
+    en: "This device or browser does not support the Geolocation API.",
+  },
+  gpsRetry: { sl: "Poskusi znova", en: "Try again" },
+  gpsToward: { sl: "proti", en: "toward" },
+  gpsAsCrowFlies: { sl: "v zraku", en: "as the crow flies" },
+  gpsEtaLabel: { sl: "Ocena vožnje", en: "Drive estimate" },
+  gpsEtaHint: {
+    sl: "ocena pri ~55 km/h — brez podatka o prometu",
+    en: "estimate at ~55 km/h — no traffic data",
+  },
+  gpsDirectionSr: {
+    sl: (label: string, name: string) => `smer: ${label} (${name})`,
+    en: (label: string, name: string) => `direction: ${label} (${name})`,
+  },
+  gpsProgress: { sl: "Pot do naslednjega postanka", en: "Route to the next stop" },
+  gpsPrivacy: {
+    sl: "Zasebnost: položaj živi samo v tem brskalniku; ob preračunu poti strežnik prejme le zaokroženo točko (~11 m).",
+    en: "Privacy: your position lives only in this browser; on a route recalculation the server receives only a rounded point (~11 m).",
+  },
+  etaLive: {
+    sl: (clock: string, min: number, km: string) =>
+      `~${clock} · ~${min} min · ${km} km v zraku · ocena pri ~55 km/h (brez prometa)`,
+    en: (clock: string, min: number, km: string) =>
+      `~${clock} · ~${min} min · ${km} km as the crow flies · estimate at ~55 km/h (no traffic)`,
+  },
+  offRouteTitle: { sl: "Odklon od načrtovane poti", en: "Off the planned route" },
+  offRouteBody: {
+    sl: (km: string) =>
+      `Od načrtovane poti do naslednjega postanka te loči ~${km} km (več kot 3 km).`,
+    en: (km: string) =>
+      `You are ~${km} km (over 3 km) from the planned route to the next stop.`,
+  },
+  offRouteStraight: {
+    sl: "Merjeno proti premici do cilja — brez realne geometrije poti.",
+    en: "Measured against the straight line to the target — no real route geometry.",
+  },
+  recalc: { sl: "Preračunaj pot", en: "Recalculate route" },
+  recalcBusy: { sl: "Preračunavam …", en: "Recalculating …" },
+  recalcFailed: {
+    sl: "Preračun trenutno ni uspel — poskusi znova.",
+    en: "Recalculation failed for now — try again.",
+  },
+  recalcResult: { sl: "Preračunana pot", en: "Recalculated route" },
+  recalcSourceOsrm: { sl: "OSRM — realna cestna pot", en: "OSRM — real road route" },
+  recalcSourceHeuristic: {
+    sl: "ocena (premočna ×1,3 pri ~55 km/h)",
+    en: "estimate (straight line ×1.3 at ~55 km/h)",
+  },
+  recalcNoSlug: {
+    sl: "Preračun ni mogoč — naslednji postanek ni iz kanonskega nabora destinacij.",
+    en: "Recalculation unavailable — the next stop is not from the canonical destination set.",
+  },
 } as const;
 
 export default function GoModePage() {
@@ -296,6 +399,30 @@ function GoModeApp() {
     clearGoTrip();
     setGo(null);
   };
+
+  // ── ŽIVI GPS (issue #1 področje 1) ─────────────────────────────
+  // ZASEBNOSTNI KANON (izvirnik): GPS živi SAMO v klientu — 0 persistenc
+  // (nikoli localStorage, nikoli analytics). Na strežnik gre IZKLJUČNO
+  // zaokrožena pozicija (4 decimale, ~11 m) ob eksplicitnem preračunu
+  // poti (glej GpsNavCard → roundedPrivacy).
+  const geo = useGeolocation();
+
+  // Živi ETA do naslednjega postanka: SAMO ob dejavni fiksaciji + znanem
+  // cilju; brez GPS ostaja izrecno NEZNANO (nikoli izmišljeno).
+  const liveEta = useMemo(() => {
+    if (geo.status !== "watching" || !geo.position || !next?.coords) return null;
+    const km = haversineKm(geo.position, next.coords);
+    const min = etaMinutes(km);
+    const arrival = new Date(Date.now() + min * 60_000);
+    return {
+      km,
+      min,
+      clock: arrival.toLocaleTimeString(lang === "en" ? "en-GB" : "sl-SI", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+  }, [geo.status, geo.position, next, lang]);
 
   return (
     <div className="mt-8">
@@ -501,6 +628,19 @@ function GoModeApp() {
                 </Card>
               )}
 
+              {/* TVOJA LOKACIJA — živi GPS (issue #1 področje 1):
+                  razdalja/smer/ETA/napredek do naslednjega postanka,
+                  odklon s preračunom; pod NOW kot trak nad NEXT. */}
+              {current && (
+                <GpsNavCard
+                  geo={geo}
+                  current={current}
+                  next={next}
+                  l={l}
+                  lang={lang}
+                />
+              )}
+
               {/* NEXT kartica */}
               {current && (
                 <Card className="mt-4">
@@ -533,14 +673,60 @@ function GoModeApp() {
                         ) : (
                           <p className="mt-2 text-xs text-muted-foreground">{pick(l, L.noCoords)}</p>
                         )}
-                        <p className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                          <span className="font-semibold">
-                            {pick(l, L.etaLabel)}:{" "}
-                            <span className="font-normal text-muted-foreground">
-                              {pick(l, L.etaUnknown)}
+                        {/* ETA: živa vrednost SAMO ob dejavni GPS fiksaciji
+                            (issue #1) — sicer ostaja izrecno NEZNANO. */}
+                        {liveEta ? (
+                          <p
+                            className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs"
+                            aria-live="polite"
+                          >
+                            <span className="font-semibold">
+                              {pick(l, L.etaLabel)}:{" "}
                             </span>
-                          </span>
-                        </p>
+                            <span className="tabular-nums text-primary">
+                              {L.etaLive[lang](
+                                liveEta.clock,
+                                liveEta.min,
+                                liveEta.km.toFixed(1)
+                              )}
+                            </span>
+                          </p>
+                        ) : (
+                          <p className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                            <span className="font-semibold">
+                              {pick(l, L.etaLabel)}:{" "}
+                              <span className="font-normal text-muted-foreground">
+                                {pick(l, L.etaUnknown)}
+                              </span>
+                            </span>
+                          </p>
+                        )}
+                        {/* Navigiraj do naslednjega postanka — zunanji handoff
+                            na OSM (kanon osmDirectionsUrl); origin = živi
+                            GPS, ko je na voljo (uporabnikov izrecen klik). */}
+                        {next.coords && (
+                          <Button
+                            asChild
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="mt-3 min-h-11"
+                          >
+                            <a
+                              href={
+                                geo.status === "watching" && geo.position
+                                  ? osmDirectionsUrlWithOrigin(geo.position, next.coords)
+                                  : osmDirectionsUrl(next.coords)
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <NavigationIcon className="size-4" aria-hidden="true" />
+                              {pick(l, L.navigate)}
+                              <ExternalLink className="size-3.5" aria-hidden="true" />
+                            </a>
+                          </Button>
+                        )}
                       </>
                     ) : (
                       <p className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -764,6 +950,358 @@ function StopWeatherCard({
         )}
 
         <p className="mt-3 text-xs text-muted-foreground">{pick(l, L.weatherSource)}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * Tvoja lokacija — živi GPS trak Go Mode (issue #1 področje 1,
+ * rekonstrukcija po kanonu izvirnika: GPS nadzor pod NOW/NEXT tokom,
+ * iskreni statusi, DistanceChip — razkritje „v zraku“, ETA hint
+ * „ocena iz premočne razdalje ×1,3 pri ~55 km/h“).
+ *
+ * ZASEBNOSTNI KANON (izvirnik, izveden tukaj):
+ *  - položaj živi SAMO v klientu (state hooka) — nikoli localStorage,
+ *    nikoli analytics, 0 persistenc;
+ *  - na strežnik gre IZKLJUČNO zaokrožena pozicija (roundedPrivacy,
+ *    4 decimale ≈ 11 m) in samo ob eksplicitnem preračunu poti;
+ *  - gumb „Navigiraj“ (NEXT kartica) je zunanji handoff na OSM —
+ *    uporabnikov izrecen klik, enako kot vsak navigacijski gumb.
+ *
+ * Iskrenost: brez GPS ostaja ETA NEZNANO; razdalja je premočna
+ * („v zraku“); odklon brez geometrije poti se meri le proti premici
+ * do cilja (razkrito v opozorilu); preračun pošteno oznani vir
+ * (OSRM — realna cestna pot / ocena).
+ */
+function GpsNavCard({
+  geo,
+  current,
+  next,
+  l,
+  lang,
+}: {
+  geo: UseGeolocation;
+  current: TripStop | null;
+  next: TripStop | null;
+  l: string;
+  lang: PlannerLang;
+}) {
+  const reduceMotion = useReducedMotion();
+
+  // ── Preračun poti (ob odklonu) ─────────────────────────────────
+  // Rezultat velja za točno tega naslednjega postanka; ob premiku
+  // (Opravi/Preskoči/skok po vrstici dneva) zastara in se NE uporablja.
+  const [reroute, setReroute] = useState<{
+    targetId: string;
+    km: number;
+    min: number;
+    source: "osrm" | "heuristic";
+    geometry: GeoPoint[];
+  } | null>(null);
+  const [recalcBusy, setRecalcBusy] = useState(false);
+  const [recalcFailed, setRecalcFailed] = useState(false);
+
+  const activeReroute =
+    reroute && next && reroute.targetId === next.id ? reroute : null;
+
+  const watching = geo.status === "watching";
+  const position = watching ? geo.position : null;
+
+  // ── Žive vrednosti do naslednjega postanka ─────────────────────
+  const live = useMemo(() => {
+    if (!position || !next?.coords) return null;
+    const kmStraight = haversineKm(position, next.coords);
+    return {
+      kmStraight,
+      bearing: bearingDeg(position, next.coords),
+      etaMin: etaMinutes(kmStraight),
+      progress:
+        current?.coords
+          ? progressAlongRoute(position, current.coords, next.coords)
+          : null,
+    };
+  }, [position, next, current]);
+
+  // ── Odklon od načrtovane poti (iskrena baza, razkrito) ────────
+  const offRoute = useMemo(() => {
+    if (!position || !next?.coords) return null;
+    if (activeReroute && activeReroute.geometry.length >= 2) {
+      // Po preračunu je referenca NOVA geometrija od tu do cilja
+      // (realna OSRM pot ali odkrita hevristična premica).
+      return offRouteCheck(position, next.coords, activeReroute.geometry);
+    }
+    if (current?.coords) {
+      // Pred preračunom je edina referenca premica [trenutni → naslednji]
+      // (razkrito v opozorilu). Varovalka proti lažnemu alarmu ob prihodu
+      // na prvi postanek dneva: opozorilo samo, ko je uporabnik bliže
+      // NASLEDNJEMU postanku kot trenutnemu (prihod NI odklon).
+      if (
+        haversineKm(position, next.coords) <
+        haversineKm(position, current.coords)
+      ) {
+        return offRouteCheck(position, next.coords, [
+          current.coords,
+          next.coords,
+        ]);
+      }
+      return null;
+    }
+    return null; // brez koordinat trenutnega postanka — iskrena odsotnost
+  }, [position, next, current, activeReroute]);
+
+  const recalc = async () => {
+    if (!watching || !geo.position || !next?.coords || !next.slug) return;
+    setRecalcBusy(true);
+    setRecalcFailed(false);
+    try {
+      // ZASEBNOST: strežnik dobi IZKLJUČNO zaokroženo točko (~11 m).
+      const res = await fetch("/api/journey/route", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          from: roundedPrivacy(geo.position),
+          to: next.slug,
+        }),
+      });
+      if (!res.ok) throw new Error("reroute request failed");
+      const data: unknown = await res.json();
+      if (!isJourneyRouteResponse(data) || !data.reroute) {
+        throw new Error("reroute response shape");
+      }
+      const leg = data.legs[0];
+      if (!leg) throw new Error("reroute no leg");
+      setReroute({
+        targetId: next.id,
+        km: data.totalKm,
+        min: data.totalMin,
+        source: leg.source,
+        geometry: leg.geometry.map(([lat, lng]) => ({ lat, lng })),
+      });
+    } catch {
+      setRecalcFailed(true); // iskrena napaka — nikoli izmišljenih rezultatov
+    } finally {
+      setRecalcBusy(false);
+    }
+  };
+
+  return (
+    <Card className="mt-4 border-primary/30">
+      <CardContent className="p-5">
+        {/* Naslov + izklop sledenja (dotik ≥ 44 px) */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="flex items-center gap-2 text-sm font-bold tracking-wide text-muted-foreground uppercase">
+            {geo.status === "prompt" ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <LocateFixed
+                className={`size-4 ${
+                  watching ? "text-emerald-600" : "text-muted-foreground"
+                }`}
+                aria-hidden="true"
+              />
+            )}
+            {pick(l, L.gpsTitle)}
+          </span>
+          {watching && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="min-h-11"
+              onClick={geo.stop}
+            >
+              {pick(l, L.gpsDisable)}
+            </Button>
+          )}
+        </div>
+
+        {/* Stanja GPS (spremembe objavljene — aria-live) */}
+        <div className="mt-3 space-y-3" aria-live="polite">
+          {/* IDLE: predlog vklopa */}
+          {geo.status === "idle" && (
+            <>
+              <p className="text-sm text-muted-foreground">{pick(l, L.gpsHint)}</p>
+              <Button type="button" size="lg" className="min-h-12" onClick={geo.start}>
+                <NavigationIcon className="size-5" aria-hidden="true" />
+                {pick(l, L.gpsEnable)}
+              </Button>
+            </>
+          )}
+
+          {geo.status === "prompt" && (
+            <p className="text-sm text-muted-foreground">{pick(l, L.gpsPrompt)}</p>
+          )}
+
+          {geo.status === "denied" && (
+            <>
+              <p className="text-sm text-muted-foreground">{pick(l, L.gpsDenied)}</p>
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-11"
+                onClick={geo.start}
+              >
+                <NavigationIcon className="size-4" aria-hidden="true" />
+                {pick(l, L.gpsRetry)}
+              </Button>
+            </>
+          )}
+
+          {geo.status === "error" && (
+            <>
+              <p className="text-sm text-muted-foreground">{pick(l, L.gpsError)}</p>
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-11"
+                onClick={geo.start}
+              >
+                <NavigationIcon className="size-4" aria-hidden="true" />
+                {pick(l, L.gpsRetry)}
+              </Button>
+            </>
+          )}
+
+          {geo.status === "unsupported" && (
+            <p className="text-sm text-muted-foreground">{pick(l, L.gpsUnsupported)}</p>
+          )}
+
+          {/* WATCHING: žive vrednosti (velike številke — ozek telefon) */}
+          {watching && (
+            <motion.div
+              initial={reduceMotion ? false : { opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-3"
+            >
+              <p className="text-xs text-muted-foreground">
+                {pick(l, L.gpsActive)}
+                {position?.accuracyM != null &&
+                  ` · ${L.gpsAccuracy[lang](position.accuracyM)}`}
+              </p>
+
+              {live ? (
+                <>
+                  <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                    <span className="text-3xl font-bold tabular-nums text-primary">
+                      {live.kmStraight.toFixed(1)} km
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {pick(l, L.gpsAsCrowFlies)}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 text-sm font-semibold">
+                      <Navigation2
+                        className="size-5 text-primary transition-transform"
+                        style={{ transform: `rotate(${live.bearing}deg)` }}
+                        aria-hidden="true"
+                      />
+                      <span className="sr-only">
+                        {L.gpsDirectionSr[lang](
+                          cardinalLabel(live.bearing, lang),
+                          cardinalName(live.bearing, lang)
+                        )}
+                        :{" "}
+                      </span>
+                      {pick(l, L.gpsToward)} {cardinalLabel(live.bearing, lang)}
+                    </span>
+                  </p>
+
+                  <p className="text-sm">
+                    <span className="font-semibold">{pick(l, L.gpsEtaLabel)}: </span>
+                    <span className="tabular-nums">~{live.etaMin} min</span>{" "}
+                    <span className="text-xs text-muted-foreground">
+                      ({pick(l, L.gpsEtaHint)})
+                    </span>
+                  </p>
+
+                  {live.progress !== null && (
+                    <div>
+                      <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{pick(l, L.gpsProgress)}</span>
+                        <span className="tabular-nums">{live.progress} %</span>
+                      </div>
+                      <Progress
+                        value={live.progress}
+                        aria-label={`${pick(l, L.gpsProgress)}: ${live.progress} %`}
+                      />
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">{pick(l, L.noCoords)}</p>
+              )}
+            </motion.div>
+          )}
+        </div>
+
+        {/* OPOZORILO ODKLONA (> 3 km) + PRERAČUN POTI */}
+        <AnimatePresence>
+          {offRoute?.offRoute && (
+            <motion.div
+              initial={reduceMotion ? false : { opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: reduceMotion ? 0 : -4 }}
+              role="alert"
+              className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-800 dark:bg-amber-950/60"
+            >
+              <p className="flex items-center gap-2 font-semibold text-amber-900 dark:text-amber-200">
+                <AlertTriangle className="size-4 shrink-0" aria-hidden="true" />
+                {pick(l, L.offRouteTitle)} (~{offRoute.deviationKm.toFixed(1)} km)
+              </p>
+              <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">
+                {L.offRouteBody[lang](offRoute.deviationKm.toFixed(1))}
+                {!activeReroute && ` ${pick(l, L.offRouteStraight)}`}
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {next?.slug ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="min-h-11"
+                    onClick={recalc}
+                    disabled={recalcBusy}
+                  >
+                    {recalcBusy ? (
+                      <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                    ) : (
+                      <RefreshCw className="size-4" aria-hidden="true" />
+                    )}
+                    {recalcBusy ? pick(l, L.recalcBusy) : pick(l, L.recalc)}
+                  </Button>
+                ) : (
+                  <p className="text-xs text-amber-800 dark:text-amber-300">
+                    {pick(l, L.recalcNoSlug)}
+                  </p>
+                )}
+              </div>
+              {recalcFailed && (
+                <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                  {pick(l, L.recalcFailed)}
+                </p>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Rezultat preračuna (pošteno oznani vir) */}
+        {activeReroute && (
+          <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+            <RouteIcon className="size-4 text-primary" aria-hidden="true" />
+            <span className="font-semibold">{pick(l, L.recalcResult)}:</span>
+            <span className="tabular-nums">
+              ~{activeReroute.km.toFixed(1)} km · ~{activeReroute.min} min
+            </span>
+            <span className="text-xs text-muted-foreground">
+              (
+              {activeReroute.source === "osrm"
+                ? pick(l, L.recalcSourceOsrm)
+                : pick(l, L.recalcSourceHeuristic)}
+              )
+            </span>
+          </p>
+        )}
+
+        <p className="mt-3 text-xs text-muted-foreground">{pick(l, L.gpsPrivacy)}</p>
       </CardContent>
     </Card>
   );

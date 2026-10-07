@@ -80,3 +80,89 @@
 - **45-d NAČRTOVALNIK** (paralelno): /nacrtuj (deterministični planner + /api/itinerary rekonstrukcija), /potovanje (journey + JourneyMap), /na-poti (Go Mode), /moja-potovanja hub
 - **46 VERIFIKACIJA**: lint + agent-browser (domov, destinacije, zemljevid, načrtuj, jezik, footer) + popravki
 - **47 GITLAB**: push + RECOVERY-REPORT posodobitev + poročilo
+
+---
+
+# FAZA 3 (2.2.0) — živi viri + booking lifecycle (Taski 51-a/b/c/d)
+
+> Kontekst: rekonstrukcija Faz 1+2 (2.1.0, 145 testov) je pushana na GitLab
+> (main @ 1275f64). Faza 3 dopolnjuje funkcionalnost do izvirnika (v1.190.0),
+> kolikor je dosegljivo iz peskovnika, po načelu ISKRENOSTI (vsa nezanesljiva
+> stanja izrecno razkrita). Viri specifikacije: izvirni avditski zapis
+> (recovered-src/read_1791301651555_b12324cc0c9d.md §"booking lifecycle",
+> "Zasebnost", "OSRM/route"), prisma model JourneyBooking
+> (read_1790842578812_8279579212c2.prisma:773-821) + ŽIVI produkciji API
+> (i-feel-slovenia.vercel.app: /api/map/pins oblika, /api/listings).
+
+## Preverjena dosegljivost iz peskovnika (2026-10-07)
+- ✅ api.open-meteo.com (HTTP 200, živi podatki)
+- ✅ router.project-osrm.org (HTTP 200, realna pot Ljubljana→Bled 76,9 km)
+- ✅ i-feel-slovenia.vercel.app (produkcija živi; /api/map/pins oblika spodaj)
+- ❌ FSQ dataset 125.445 krajev (nameščen SAMO na produkciji — NE preskušamo
+  rekreirati; /api/map/pins rekonstrukcija pošteno streže LASTNE podatke)
+
+## 51-a /api/weather + Go Mode vreme
+- `src/app/api/weather/route.ts` GET `?lat&lng`: validacija lat ±90 / lng ±180
+  (regex, 400 pri napaki); rate-limit 60/min (in-memory); proxy Open-Meteo
+  `current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation&timezone=auto&forecast_days=1`,
+  timeout 8 s; NAPAKA = 502 fail-closed (NIKOLI izmišljenih podatkov);
+  in-memory cache ključ zaokrožen na 2 decimalki, TTL 10 min, cap 200;
+  0 persistencije (nikoli DB).
+- `src/lib/weather.ts` (client-safe): fetchWeather(lat,lng) + WMO weather_code
+  → oznaka {sl,en} (clear/mainly clear/cloudy/fog/drizzle/rain/snow/thunder
+  — samo nabor, ki ga znamo pošteno imenovati; NERAZPOZNANA koda → "vreme"
+  brez lažne natančnosti).
+- `na-poti/page.tsx`: kartica "Vreme na naslednjem postanku" — koordinate
+  NASLEDNEGA POSTANKA (nikoli uporabnikove GPS); stanja: skeleton /
+  napaka (iskrena) / skrito, če postanek nima koordinat.
+
+## 51-b /api/map/pins + OSRM poti + zemljevid
+- `src/app/api/map/pins/route.ts` GET `?bbox=south,west,north,east&zoom=N`
+  (oblika 1:1 iz produkcije): bbox CSV validacija (4 števila, south<north,
+  west<east, razpon ≤10°/≤15° sicer 400); zoom int 3–19 (default 10);
+  zoom < 15 → `mode:"grid"` (celice ~0,05°: {lat,lng,count,cats:[{type,count}]});
+  zoom ≥ 15 → `mode:"pins"` (cap 500, `capped` zastavica).
+  Viri: 38 destinacij (precision "exact") + lokali z destinationSlug
+  (26; precision "destination_center" — izpeljano, pošteno označeno;
+  4 brez povezave IZPUŠČENI — nimajo koordinat). Pin: {id,lat,lng,type,name,precision}.
+  Odziv: {mode,cells?,pins?,total,returned,capped,dataset:{installed:true,
+  places:N,lastUpdated,snapshotDate},generatedAt,source:{slug:"own",
+  label:"Lastni kanonski podatki (rekonstrukcija)"}} — dataset pošteno
+  opisuje LASTNE podatke, NE FSQ 125k.
+- `src/lib/road-routing-server.ts` (server-only): OSRM strežniški odjemalec —
+  pomnilniški cache (ključ lat/lng zaokroženo 4 dec., TTL 24 h, cap 600),
+  circuit breaker (4 zaporedne napake → odprt 10 min), NaN/negativna varovalka,
+  fallback hevristika (haversine×1,3 @ ~55 km/h) ZAMENJANO oznako
+  source:"heuristic" (nikoli "osrm" za hevristiko).
+- `src/app/api/journey/route/route.ts` POST {slugs:[2..12]} (samo iz nabora
+  38): {legs:[{from,to,km,min,source,geometry:[lat,lng][]}],totalKm,totalMin,
+  method:"osrm"|"heuristic"|"mixed"}; rate-limit 30/min.
+- `travel-map.tsx`: ① plast "Lokali" (toggle): fetch pins ob moveend
+  (debounce 400 ms), zoom ≥ 15 pokaže markerje lokalov, zoom < 15 iskren
+  hint "Povečaj za lokalne pin"; ② plast "Pot": če ima uporabnik ≥ 2
+  destinacije v Moji poti → gumb "Prikaži pot" → POST /api/journey/route →
+  Polyline po realni geometriji (heuristična = črtkana premica + oznaka).
+
+## 51-c JourneyBooking lifecycle (izvorni model 1:1 kolikor dokumentiran)
+- `src/lib/journey/booking.ts`: 14 statusov (DRAFT|SELECTED|BOOKING_REQUESTED|
+  PENDING|PAYMENT_REQUIRED|PAID|CONFIRMED|MODIFIED|REFUNDED|EXPIRED|FAILED|
+  CANCELLED|UNKNOWN|EXTERNAL); INITIAL_CONFIRMATION_STATUSES=[SELECTED,
+  EXTERNAL, BOOKING_REQUESTED, DRAFT]; ALLOWED_TRANSITIONS (EXTERNAL
+  absorpcijsko; REFUNDED/EXPIRED/CANCELLED terminalni; DRAFT→SELECTED|
+  CONFIRMED|CANCELLED — import pot); BOOKING_SOURCES=[USER,IMPORTED,PROVIDER];
+  validateConfirmationRecord: CONFIRMED zahteva providerBookingId+ceno;
+  source USER/IMPORTED samo DRAFT/CONFIRMED; provider polja nosi SAMO
+  source PROVIDER (sicer reject — iskrenost izvora).
+- Utrditev `api/trips/[shareId]/reservations/route.ts` (S1):
+  POST ne sprejme klientovega "CONFIRMED" brez atestacije (providerBookingId +
+  confirmedPrice + source:"USER" — izvirna import pot); PATCH prehode
+  validira; poskus source:"PROVIDER" brez JOURNEY_PROVIDER_TOKEN → 503
+  fail-closed.
+- `trip-reservations.tsx`: modal "Potrdi rezervacijo" (št. rezervacije +
+  cena — uporabniška atestacija, izrecno "uporabnikov vnos, ne provider");
+  statusne oznake z razkritjem izvora.
+
+## 51-d Testi + regresija
+- Novi testi po modulih (weather, map-pins, road-routing, journey-booking) v
+  house stilu (čisti lib testi, mock fetch kjer treba); regresija: 145 + novi
+  vsi zeleni; `bun run lint` čist.

@@ -1440,3 +1440,73 @@ Stage Summary:
 - Dopopolnilo: push 11bc55b (testi) + 1275f64 (RECOVERY-REPORT 10.4) uspešno, parity potrjen; vsi 4 pipeline-i (53a2075…1275f64) failed z 0 jobi — diagnoza potrjena, čaka na runnerje (lastnik: Settings → CI/CD → Runners)
 - Bundle backup posodobljen na 1275f64 (22 MB, verificiran)
 - Končno stanje GitLab main: 1275f64 = faza 1 + faza 2 + 145 testov + CI + dokumentacija; repozitorij samozadosten (aplikacija + arhiv + testna vrata + CI)
+---
+Task ID: 51
+Agent: Z.ai Code (glavni/orkestrator)
+Task: FAZA 3 (2.2.0) — živi viri + booking lifecycle: raziskava živih produkcjskih virov, načrt, delegacija treh vzporednih agentov, verifikacija, zaključek (čiščenje, verzija, sinhronizacija, bundle).
+
+Work Log:
+- Raziskava žive produkcije (i-feel-slovenia.vercel.app, 1.190.0 zdrava): /api/listings vrne 10 DB zapisov (NE 940 — številka je št. markerjev zemljevida), /api/map/pins streže FSQ Open Places dataset 125.445 krajev (nameščen SAMO na produkciji; zoom-vrata grid<15/pins≥15, bbox=csv) — oblika 1:1 dokumentirana za rekonstrukcijo
+- Dosegljivost iz peskovnika preverjena: api.open-meteo.com ✅ (živi podatki), router.project-osrm.org ✅ (realna pot LJ→Bled 76,9 km), FSQ 125k ❌ (ni v peskovniku — rekonstrukcija pošteno streže LASTNE podatke)
+- RECONSTRUCTION-PLAN.md dopolnjen z odsekom FAZA 3 (specifikacije 51-a/b/c/d)
+- Delegacija 3 vzporednih agentov (brez prekrivanja datotek): 51-a weather, 51-b zemljevid/OSRM, 51-c booking lifecycle
+- 51-b agent prekinjen (deadline orodja) po zaključku vseh datotek — delo preveril in potrdil ORKESTRATOR (vsi testi zeleni, API-ji živi, E2E v brskalniku); njegov worklog zapis spodaj je zato avtorstva orkestratorja
+- Lint popravek po 51-a (react-hooks/set-state-in-effect v StopWeatherCard): reset stanja prek key-remount namesto sinhronega setState v efektu
+- E2E verifikacija (agent-browser, 0 konzolnih napak, screenshots v docs/evidence/reconstruction-faza3/): zemljevid → "Prikaži pot" → OSRM polyline (gumb se preklopi v "Skrij pot"), plast "Lokali" → zoom-vrata (hint pri nizkem zoomu, 11 pinov pri zoom 16, popup z iskreno oznako "okvirna lokacija (središče destinacije)"); /na-poti?start=1 → kartica vremena ŽIVI (24.0 °C Sarandë, oblačno, 6.4 km/h, vir razkrit); /pot/q09ynm5ctj → modal "Potrdi rezervacijo" s pasico o uporabniški atestaciji → shranitev → "Potrjeno (uporabniški vnos) · Potrdilo: E2E-2026-101" (testna vrstica počiščena v zaključku)
+- Zaključek: brisanje testne rezervacije, verzija 2.2.0 (package.json + README), worklog zapisi vseh treh agentov, RECOVERY-REPORT §11, sinhronizacija merge-dsa, commit, bundle 2.2.0
+
+Stage Summary:
+- FAZA 3 DOKONČANA: vreme (Open-Meteo proxy + Go Mode kartica po zasebnostnem kanonu izvirnika), pins API (zoom-gated, lastni podatki 64 mest, iskrena oznaka izpeljanih koordinat), OSRM road routing (node:https family:4 kot izvirnik, cache 24h/600, breaker 4→10min, hevristika vedno razkrita), JourneyBooking lifecycle (14 statusov, S1 atestacije, provider fail-closed 503)
+- TESTNA VRATA: 145 → 255 testov (+110: weather 15, map-pins 24, road-routing 18, journey-booking 53); lint čist; 0 izmišljenih podatkov (iskrenostni kanon)
+- E2E dokazi: 3 screenshota v docs/evidence/reconstruction-faza3/
+- GitLab push FAZE 3 ČAKA na nov žeton (prejšnji iz Taska 50 ni več v kontekstu seje — varnostna higiena: žetoni samo v pomnilniku)
+
+---
+Task ID: 51-a
+Agent: full-stack-developer (API + Go Mode vreme) — zapis vnesel ORKESTRATOR (povzeto po poročilu agenta)
+Task: /api/weather proxy Open-Meteo + kartica "Vreme na naslednjem postanku" v Go Mode (rekonstrukcija go-weather.ts izvirnika v1.190.0).
+
+Work Log:
+- src/lib/weather.ts (NOVO, client-safe): tipa WeatherNow/WeatherResponse; weatherLabel (WMO kode → oznake SL/EN, samo pošteno imenovan nabor; NERAZPOZNANA koda → "vreme" brez lažne natančnosti); cacheKeyFor (zaokrožitev 2 dec., ~1,1 km mreža, normalizacija −0); parseWeatherParams (lat ±90 / lng ±180, čista validacija); isWeatherResponse (tipovska straža — klient ne zaupa slepo žici); fetchStopWeather (ob napaki → null, iskrena napaka v UI)
+- src/app/api/weather/route.ts (NOVO): 400 ob neveljavnih parametrih; rate-limit 60/min (drseče okno, povratno testirano 62 klicev: 60×200 + 429); cache TTL 10 min cap 200 (zasebnostni zaokrožen ključ); proxy Open-Meteo s timeout 8 s; napaka gorovja → 502 fail-closed "Vremenski servis trenutno ni dosegljivo." — NIKOLI izmišljenih podatkov; 0 persistenc
+- na-poti/page.tsx: kartica vremena za NASLEDNJI POSTANEK (zasebnostni kanon izvirnika — NIKOLI uporabnikov GPS, razkrito v napisu "Vir: Open-Meteo · koordinate naslednjega postanka"); stanja skeleton/napaka/skrito (postanek brez koordinat); AbortController; sr-only oznaki veter/padavine
+- tests/weather.test.ts: 15 testov / 60 expect (validacija, WMO oznake, zaokroževanje, straža)
+- Verifikacija: curl uspeh Ljubljana 16.1 °C + Bled 15.7 °C (živi podatki), 400/429 poti, zadetek cache; E2E vseh štirih stanj kartice (SL/EN uspeh, iskrena napaka, skrito)
+- Omejitve (iskrenost): Open-Meteo brez ključa ima deljeno anonimno kvoto na IP peskovnika — ob 429 UI iskreno pokaže nedosegljivost
+
+Stage Summary:
+- ŽIVI VREMENSKI KANON REKONSTRUIRAN: API + lib + Go Mode kartica, vsa stanja E2E dokazana, 15 testov
+
+---
+Task ID: 51-b
+Agent: full-stack-developer (pins + OSRM) — zapis vnesel ORKESTRATOR (agent prekinjen pred oddajo poročila; delo preverjeno po dejanskem stanju kode in živih preverbah)
+Task: /api/map/pins (zoom-gated, lastni podatki) + OSRM road routing (/api/journey/route) + plasti Lokali in Pot na zemljevidu.
+
+Work Log:
+- src/lib/map-pins.ts (NOVO, čista logika): oblika 1:1 s produkcije ({mode, cells|pins, total, returned, capped, dataset, generatedAt, source}); viri LASTNI kanonski podatki — 38 destinacij (precision "exact") + 26 lokalov s destinationSlug (precision "destination_center" — izpeljane koordinate pošteno označene) + 2 lokala brez povezave IZPUŠČENA (nimajo koordinat); dataset.places 64, source.slug "own" (NE FSQ 125k — ta je samo na produkciji); zoom-vrata: <15 grid (celice ~0,05° s cats), ≥15 pins (cap 500 + capped); bbox CSV validacija (razpon ≤10°/≤15°)
+- src/lib/road-routing-server.ts (NOVO, server-only): OSRM prek node:https family:4 — KANON IZVIRNIKA (globalni fetch Node poizkusi IPv6, ki je v peskovniku NEDELJIV — ETIMEDOUT; tudi UA glava obvezna, brez nje 403); pomnilniški cache 24 h / cap 600 (SAMO uspešni OSRM odseki — ko okreva, takoj realne poti); circuit breaker 4 zaporedne napake → odprt 10 min; NaN/negativna varovalka; geometrija redčena na ≤400 točk (ista realna pot); hevristika haversine ×1,3 pri ~55 km/h ZAMENJANO oznakom source "heuristic" (nikoli "osrm"); testabilnost z injiciranim fetch/uro
+- src/app/api/map/pins/route.ts + src/app/api/journey/route/route.ts (NOVI): tanki poti nad čistimi moduli; journey validira sluge (2–12 iz nabora 38, brez dvojnikov), rate-limit 30/min, legs {from,to,km,min,source,geometry}, method osrm|heuristic|mixed
+- travel-map.tsx (UREJANO): ① plast "Lokali" — preklop (aria-pressed), moveend debounce 400 ms, zoom ≥ 15 pokaže pin lokalov (kvadratni 10px divIconi po kategoriji), zoom < 15 iskren hint "Povečaj za lokalne pin", popup z oznako "okvirna lokacija (središče destinacije)"; ② plast "Pot" — gumb "Prikaži pot" ob ≥ 2 destinacijah v Moji poti → POST /api/journey/route → Polyline (OSRM = polna zelena #2d6a3e, hevristika = črtkana + oznaka "ocena"); i18n vseh 6 jezikov
+- tests/map-pins.test.ts (24) + tests/road-routing.test.ts (18): bbox/zoom/gating/kap/cats; OSRM uspeh/NaN/breaker/cache/hevristika z mock fetch (0 omrežja v testih)
+- ORKESTRATORJEVA VERIFIKACIJA (agent prekinjen, delo popolno): bun test 42/42 zelenih; curl grid (zoom 9, 12 mest v celicah s cats) + pins (zoom 15, 12 pinov, dataset 64, source own) + POST journey ljubljana→bled = 56,7 km / 43 min / source osrm / REALNA geometrija po cestah; E2E: gumb Prikaži pot → polyline + preklop v "Skrij pot"; plast Lokali → hint pri zoom 12, 11 novih pinov pri zoom 16 (49 markerjev), popup "Grand Hotel Union · okvirna lokacija (središče destinacije)"
+
+Stage Summary:
+- ZEMLJEVID DOPOLNJEN DO IZVIRNIKA (funkcionalno): pins API z zoom-vrati + OSRM realne cestne poti s strežniškim cachejem in varovalkami; hevristika VEDNO razkrita; lastni podatki pošteno označeni (izpeljane koordinate = destination_center)
+- Omejitve (iskrenost): FSQ 125.445 krajev NI v peskovniku (samo na produkciji) — pins strežejo 64 lastnih mest; OSRM javni strežnik (brez ključa, deljena kvota) — breaker + cache ščitita pred izpadi
+
+---
+Task ID: 51-c
+Agent: full-stack-developer (JourneyBooking lifecycle)
+Task: Kanonska knjižnica življenjskega cikla rezervacij (14 statusov) + S1 utrditev rezervacijske rute + modal "Potrdi rezervacijo" z razkritjem izvora.
+
+Work Log:
+- src/lib/journey/booking.ts (NOVO, čista/client-safe): 14 statusov (DRAFT|SELECTED|BOOKING_REQUESTED|PENDING|PAYMENT_REQUIRED|PAID|CONFIRMED|MODIFIED|REFUNDED|EXPIRED|FAILED|CANCELLED|UNKNOWN|EXTERNAL) po izvirnem prisma modelu (773–821) + avditsu; INITIAL_CONFIRMATION_STATUSES [SELECTED, EXTERNAL, BOOKING_REQUESTED, DRAFT]; TERMINAL [REFUNDED, EXPIRED, CANCELLED]; ALLOWED_TRANSITIONS 1:1 (EXTERNAL absorpcijsko; DRAFT→SELECTED|CONFIRMED|CANCELLED import pot; FAILED retry; UNKNOWN razrešitev); BOOKING_SOURCES [USER, IMPORTED, PROVIDER]; validateConfirmationRecord: CONFIRMED zahteva providerBookingId + confirmedPrice (>0), PAID zahteva providerBookingId, EXTERNAL nikoli ne nosi id, source USER/IMPORTED samo DRAFT/CONFIRMED, provider polja samo ob poštenem izvoru, cap-i (cena ≤1M, id ≤200); statusLabel SL/EN; buildAttestationNote/parseAttestationNote (kompakten JSON v stolpcu note, združljiv z legacy besedilom)
+- api/trips/[shareId]/reservations/route.ts (S1 UTRDITEV): POST sprejema SAMO IDEA (privzeto) ali CONFIRMED Z atestacijo (source USER/IMPORTED + providerBookingId + confirmedPrice → validator; brez → 400 z razlago); PATCH prehodi TRIP_TRANSITIONS (IDEA→CONFIRMED|CANCELLED; CONFIRMED→MODIFIED|CANCELLED; CANCELLED terminalen), CONFIRMED/MODIFIED zahtevajo atestacijo, userNote ohranjen; source PROVIDER na POST/PATCH → 503 fail-closed "Provider kanal ni aktiven (brez žetona)." (izvirnik: JOURNEY_PROVIDER_TOKEN fail-closed); GET/DELETE + EDITOR vrata nespremenjeni; prisma shema NE spremenjena (atestacija v note JSON)
+- trip-reservations.tsx (UREJANO): modal "Potrdi rezervacijo" (Dialog — številka rezervacije obvezno, cena EUR obvezno, opomba; IZRECNA pasica "To je tvoj vnos iz potrdila ponudnika — ni naša integracija. Podatki se shranijo kot uporabniška atestacija (source: USER)." + EN); trije načini (create/confirm/update); statusni žetoni z razkritjem izvora — "Potrjeno (uporabniški vnos)" VIJOLIČNO (uporabniško potrjeno nikoli smaragdno "provider"), vrstica pokaže "Potrdilo: št. · cena · source: USER"; legacy opombe prikazane nespremenjeno; a11y (DialogTitle/Description, role=alert)
+- tests/journey-booking.test.ts: 53 testov / 185 expect — nabor statusov, matrika prehodov (dovoljeni + prepovedani), assertTransition, validateConfirmationRecord (vsi spec primeri + invariante iz prisma komentarjev), statusLabel, atestacijski JSON roundtrip/legacy/pokvarjen
+- Verifikacija: živi curl na poti q09ynm5ctj (demo račun): IDEA 201 / CONFIRMED brez atestacije 400 / z atestacijo 201 + note JSON / PROVIDER 503 fail-closed (POST in PATCH) / IDEA→CONFIRMED 200 / →MODIFIED z ohranjenim userNote / →CANCELLED 200 / CANCELLED→CONFIRMED 400 terminal / cena 0 → 400 / CONFIRMED→IDEA 400
+
+Stage Summary:
+- BOOKING LIFECYCLE KANON VZPOSTAVLJEN: 14 statusov + prehodi + validator atestacij kot samostojna čista knjižnica, zaklenjena s 53 testi
+- S1 ISKRENOST ZAPRTA: klient ne more ponarediti "CONFIRMED" brez atestacije iz potrdila ponudnika; provider kanal vedno 503 fail-closed (v peskovniku ne obstaja — nikoli se ne lažemo); CANCELLED dokončen
+- Omejitve (iskrenost): atestacija je uporabnikova trditev (enako izvirniku z 0 provider poverilnicami) — noben zunanji sistem je ne preverja

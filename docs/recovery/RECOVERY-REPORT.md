@@ -251,3 +251,47 @@ STA NA GITLABU (potrditveno stanje):
 Repozitorij je zdaj popolnoma samozadosten: aplikacija + arhiv incidenta +
 testna vrata + CI — obnovitev iz vseh virov je DOKONČANA v obsegu, ki je
 dosegljiv iz peskovnika.
+
+### 11. FAZA 3 (2.2.0) — živi viri + booking lifecycle (7. 10. 2026 ~10:00 UTC)
+
+Nadgradnja rekonstrukcije na **2.2.0** (145 → **255 testov**, +110). Vse novo
+deluje v brskalniku (dokazi: `docs/evidence/reconstruction-faza3/`).
+
+**Kaj je dodano (rekonstrukcija do izvirniške funkcionalnosti):**
+- **`/api/weather`** — proxy Open-Meteo (brez ključa): validacija lat/lng,
+  rate-limit 60/min, cache 10 min (zaokrožen ključ — zasebnost), 0 persistenc,
+  napaka = 502 fail-closed. Go Mode dobi kartico "Vreme na naslednjem
+  postanku" — koordinate NASLEDNJEGA POSTANKA, nikoli uporabnikovega GPS
+  (zasebnostni kanon izvirnika, razkrito v napisu vira).
+- **`/api/map/pins`** — oblika 1:1 z produkcijo (bbox=csv, zoom-vrata:
+  grid < 15 / pins ≥ 15, celice s kategorijami, cap 500). Vir: LASTNI
+  kanonski podatki (38 destinacij exact + 26 lokalov destination_center +
+  2 izpuščena brez koordinat = 64 mest; `source.slug "own"`). Zemljevid
+  dobi plast "Lokali" (iskren hint pri nizkem zoomu; izpeljane koordinate
+  razkrite v popupu).
+- **`/api/journey/route`** — OSRM realne cestne poti (prek node:https
+  family:4 kot izvirnik): strežniški cache 24 h / 600, circuit breaker
+  4 → 10 min, NaN varovalka, geometrija ≤ 400 točk. Zemljevid dobi plast
+  "Prikaži pot" za destinacije iz Moje poti (OSRM = polna črta,
+  hevristika = črtkana z oznako "ocena"; method osrm|heuristic|mixed).
+- **JourneyBooking lifecycle** — kanonska knjižnica 14 statusov +
+  ALLOWED_TRANSITIONS (EXTERNAL absorpcijsko, terminalni statusi) +
+  validator atestacij (CONFIRMED zahteva št. rezervacije + ceno; source
+  USER/IMPORTED samo DRAFT/CONFIRMED; provider polja samo pri PROVIDER).
+  Rezervacije na skupni poti: modal "Potrdi rezervacijo" z izrecno pasico
+  "uporabniška atestacija, ni naša integracija"; provider kanal vedno
+  **503 fail-closed** (v peskovniku ne obstaja). Potrjene vrstice so
+  vijolične z razkritim potrdilom (nikoli zelene "provider potrjeno").
+
+**Iskrenostne meje (dokumentirano, ne skrito):**
+- FSQ Open Places 125.445 krajev je nameščen SAMO na produkciji —
+  rekonstrukcija ga ne poskuša rekreirati; pins strežejo 64 lastnih mest.
+- Open-Meteo in OSRM so javni brezplačni viri z deljeno kvoto — ob izpadu
+  aplikacija iskreno pokaže nedosegljivost (nikoli izmišljenih podatkov).
+- Atestacija rezervacije je uporabnikova trditev (izvirnik: 0 provider
+  poverilnic) — noben zunanji sistem je ne preverja.
+
+**Stanje push-a:** faza 3 je lokalno (my-project + merge-dsa) in v novem
+bundle `discover-slovenia-ai-2.2.0.bundle`. Push na GitLab čaka na žeton
+(novo `glpat-` z omejenim obsegom; prejšnji žetoni so bili rotirani).
+CI še vedno čaka na runnerje (glej §10.2 — lastnikovo dejanje).

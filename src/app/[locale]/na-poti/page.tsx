@@ -6,6 +6,7 @@ import {
   CheckCheck,
   ChevronRight,
   CircleCheck,
+  CloudSun,
   ExternalLink,
   Flag,
   Footprints,
@@ -66,6 +67,11 @@ import {
 } from "@/lib/plan-store";
 import { regionLabel, typeLabel } from "@/lib/slovenia-data";
 import type { ItineraryPlan, TripStop } from "@/lib/types";
+import {
+  fetchStopWeather,
+  weatherLabel,
+  type WeatherResponse,
+} from "@/lib/weather";
 
 /**
  * /na-poti — GO MODE „Na poti“: NOW & NEXT UI (rekonstrukcija po izvirniku
@@ -158,6 +164,17 @@ const L = {
     sl: (n: number) => `${n} ${n === 1 ? "postanek" : n === 2 ? "postanka" : "postankov"}`,
     en: (n: number) => `${n} ${n === 1 ? "stop" : "stops"}`,
   },
+  weatherTitle: { sl: "Vreme na naslednjem postanku", en: "Weather at the next stop" },
+  weatherUnavailable: {
+    sl: "Vreme trenutno ni dosegljivo.",
+    en: "Weather is currently unavailable.",
+  },
+  weatherSource: {
+    sl: "Vir: Open-Meteo · koordinate naslednjega postanka",
+    en: "Source: Open-Meteo · next stop coordinates",
+  },
+  weatherWind: { sl: "veter", en: "wind" },
+  weatherPrecip: { sl: "padavine", en: "precipitation" },
 } as const;
 
 export default function GoModePage() {
@@ -535,6 +552,20 @@ function GoModeApp() {
                 </Card>
               )}
 
+              {/* VREME NA NASLEDNJEM POSTANKU — zasebnostni kanon izvirnika:
+                  koordinate POSTANKA načrta, NIKOLI uporabnikov GPS; brez
+                  koordinat je kartica skrita (iskrena odsotnost). */}
+              {next && next.coords && (
+                <StopWeatherCard
+                  key={`${next.coords.lat},${next.coords.lng}`}
+                  lat={next.coords.lat}
+                  lng={next.coords.lng}
+                  stopName={next.name}
+                  l={l}
+                  lang={lang}
+                />
+              )}
+
               {/* DNEVNI NAPREDEK */}
               <Card className="mt-4">
                 <CardHeader className="pb-3">
@@ -645,5 +676,95 @@ function GoModeApp() {
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * Vreme na naslednjem postanku (Task 51-a) — ZASEBNOSTNI kanon izvirnika
+ * (go-weather.ts): poizvedba gre po koordinatah NASLEDNJEGA POSTANKA načrta,
+ * NIKOLI po uporabnikovi GPS lezi (razkrito v napisu vira). Stanja:
+ * skeleton med nalaganjem, iskrena napaka ob nedosegljivem servisu (brez
+ * izmišljenih podatkov), uspeh → temperatura (1 dec.), WMO oznaka, veter,
+ * padavine (samo če > 0 mm). En sam fetch; prekinitev ob odklopu.
+ */
+function StopWeatherCard({
+  lat,
+  lng,
+  stopName,
+  l,
+  lang,
+}: {
+  lat: number;
+  lng: number;
+  stopName: string;
+  l: string;
+  lang: PlannerLang;
+}) {
+  const [weather, setWeather] = useState<WeatherResponse | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let cancelled = false;
+    // Stanje se ponastavi z remountom (glej key pri uporabi) — tukaj samo
+    // asinhrono posodabljanje po odzivu (brez sinhronega setState v efektu).
+    fetchStopWeather(lat, lng, controller.signal).then(
+      (w) => {
+        if (cancelled) return;
+        if (w) setWeather(w);
+        else setFailed(true);
+      },
+      () => {
+        if (!cancelled) setFailed(true);
+      }
+    );
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [lat, lng]);
+
+  return (
+    <Card className="mt-4">
+      <CardContent className="p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="flex items-center gap-2 text-sm font-bold tracking-wide text-muted-foreground uppercase">
+            <CloudSun className="size-4" aria-hidden="true" />
+            {pick(l, L.weatherTitle)}
+          </span>
+          {weather && (
+            <span className="text-lg font-bold tabular-nums text-primary">
+              {weather.current.temperatureC.toFixed(1)} °C
+            </span>
+          )}
+        </div>
+
+        {weather ? (
+          <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+            <span className="font-semibold">{stopName}</span>
+            <span>{weatherLabel(weather.current.weatherCode, lang)}</span>
+            <span>
+              <span className="sr-only">{pick(l, L.weatherWind)}: </span>
+              {weather.current.windKmh.toFixed(1)} km/h
+            </span>
+            {weather.current.precipitationMm > 0 && (
+              <span>
+                <span className="sr-only">{pick(l, L.weatherPrecip)}: </span>
+                {weather.current.precipitationMm.toFixed(1)} mm
+              </span>
+            )}
+          </p>
+        ) : failed ? (
+          <p className="mt-2 text-sm text-muted-foreground">{pick(l, L.weatherUnavailable)}</p>
+        ) : (
+          <div className="mt-3 space-y-2" aria-hidden="true">
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-4 w-1/3" />
+          </div>
+        )}
+
+        <p className="mt-3 text-xs text-muted-foreground">{pick(l, L.weatherSource)}</p>
+      </CardContent>
+    </Card>
   );
 }

@@ -85,7 +85,7 @@ export default function GoPartnerPage() {
       en: "Subpage content is extracted from the production snapshot (production-mirror/go/" + route.slug + ") — with no data added.",
     },
   } as const;
-  const t = (k: keyof typeof L) => pick(l, L[k]);
+  const t = <K extends keyof typeof L>(k: K) => pick(l, L[k]);
 
   const Icon = ROUTE_ICONS[route.slug];
   const ready = route.content === "available";

@@ -1,12 +1,13 @@
 {
   "name": "discover-slovenia-ai",
-  "version": "2.0.0-rc.1",
+  "version": "2.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000 2>&1 | tee dev.log",
     "build": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
     "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
     "lint": "eslint .",
+    "test": "bun test",
     "db:push": "prisma db push --accept-data-loss",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
@@ -75,6 +76,7 @@
     "recharts": "^2.15.4",
     "sharp": "^0.34.3",
     "sonner": "^2.0.6",
+    "stripe": "^23.0.0",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.1.0",

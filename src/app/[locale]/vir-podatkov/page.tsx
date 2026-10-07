@@ -67,7 +67,7 @@ export default function DataSourcePage() {
     trustLabel: { sl: "Zaupanje in varnost", en: "Trust & safety" },
   } as const;
 
-  const t = (k: keyof typeof L) => pick(l, L[k]);
+  const t = <K extends keyof typeof L>(k: K) => pick(l, L[k]);
 
   const sources = [
     {

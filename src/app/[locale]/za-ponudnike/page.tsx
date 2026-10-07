@@ -76,9 +76,11 @@ export default function ForProvidersPage() {
     },
   } as const;
 
-  const t = (k: keyof typeof L) => pick(l, L[k]);
+  const t = <K extends keyof typeof L>(k: K) => pick(l, L[k]);
   const S = pick(l, L.steps);
   const B = pick(l, L.benefits);
+  // Paketi imajo le { sl, en } vnose — za it/de/fr/es varno nazaj na sl.
+  const lang = l === "en" ? ("en" as const) : ("sl" as const);
 
   const packages = [
     {
@@ -146,12 +148,12 @@ export default function ForProvidersPage() {
       <div className="mt-5 grid gap-4 md:grid-cols-3">
         {packages.map((p) => (
           <Card
-            key={p.name[l]}
+            key={p.name[lang]}
             className={p.featured ? "border-primary shadow-md ring-1 ring-primary/30" : undefined}
           >
             <CardHeader>
               <div className="flex items-center justify-between gap-2">
-                <CardTitle className="text-base">{p.name[l]}</CardTitle>
+                <CardTitle className="text-base">{p.name[lang]}</CardTitle>
                 {p.featured && (
                   <Badge className="bg-primary text-primary-foreground">
                     <Sparkles className="mr-1 size-3" aria-hidden="true" />
@@ -161,12 +163,12 @@ export default function ForProvidersPage() {
               </div>
               <p className="mt-2">
                 <span className="text-3xl font-bold">{p.price}</span>{" "}
-                <span className="text-xs text-muted-foreground">{p.note[l]}</span>
+                <span className="text-xs text-muted-foreground">{p.note[lang]}</span>
               </p>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
-                {p.features[l].map((f) => (
+                {p.features[lang].map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm">
                     <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
                     <span className="text-muted-foreground">{f}</span>

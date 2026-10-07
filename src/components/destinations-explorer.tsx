@@ -27,6 +27,11 @@ import {
 /** Pomočnik za množino (ednina/dvojina/množina — kanon izvirnika). */
 function destWord(l: string, n: number): string {
   if (l === "en") return n === 1 ? "destination" : "destinations";
+  if (l === "it") return n === 1 ? "destinazione" : "destinazioni";
+  if (l === "de") return n === 1 ? "Reiseziel" : "Reiseziele";
+  if (l === "fr") return n === 1 ? "destination" : "destinations";
+  if (l === "es") return n === 1 ? "destino" : "destinos";
+  // slovenščina: ednina/dvojina/množina
   if (n === 1) return "destinacija";
   if (n === 2) return "destinaciji";
   if (n >= 3 && n <= 4) return "destinacije";
@@ -43,28 +48,69 @@ export function DestinationsExplorer() {
   const searchParams = useSearchParams();
 
   const L = {
-    title: { sl: "Destinacije", en: "Destinations" },
+    kicker: { sl: "Odkrij", en: "Discover", it: "Scopri", de: "Entdecken", fr: "Découvrir", es: "Descubre" },
+    title: { sl: "Destinacije", en: "Destinations", it: "Destinazioni", de: "Reiseziele", fr: "Destinations", es: "Destinos" },
     lead: {
       sl: `${DESTINATIONS.length} kuriranih destinacij Slovenije in zahodnega Balkana — z izvorno zabeleženim virom, oceno in praktičnimi podatki.`,
       en: `${DESTINATIONS.length} curated destinations across Slovenia and the Western Balkans — with recorded provenance, ratings and practical details.`,
+      it: `${DESTINATIONS.length} destinazioni selezionate tra Slovenia e Balcani occidentali — con fonte documentata, valutazioni e informazioni pratiche.`,
+      de: `${DESTINATIONS.length} kuratierte Reiseziele in Slowenien und auf dem westlichen Balkan — mit erfasster Quelle, Bewertungen und praktischen Details.`,
+      fr: `${DESTINATIONS.length} destinations sélectionnées en Slovénie et dans les Balkans occidentaux — avec provenance enregistrée, notes et informations pratiques.`,
+      es: `${DESTINATIONS.length} destinos seleccionados de Eslovenia y los Balcanes occidentales — con fuente registrada, valoraciones y datos prácticos.`,
     },
-    searchLabel: { sl: "Iskani po imenu, opisu ali poudarkih", en: "Search by name, description or highlights" },
-    searchPlaceholder: { sl: "Iskanje: Bled, jama, obala …", en: "Search: Bled, cave, coast …" },
-    regionLabel: { sl: "Filtriraj po regiji", en: "Filter by region" },
-    typeLabel: { sl: "Filtriraj po tipu", en: "Filter by type" },
-    allRegions: { sl: "Vse regije", en: "All regions" },
-    allTypes: { sl: "Vsi tipi", en: "All types" },
-    reset: { sl: "Počisti filtre", en: "Clear filters" },
+    searchLabel: {
+      sl: "Išči po imenu, opisu ali poudarkih",
+      en: "Search by name, description or highlights",
+      it: "Cerca per nome, descrizione o punti di forza",
+      de: "Nach Name, Beschreibung oder Highlights suchen",
+      fr: "Rechercher par nom, description ou points forts",
+      es: "Busca por nombre, descripción o destacados",
+    },
+    searchPlaceholder: {
+      sl: "Iskanje: Bled, jama, obala …",
+      en: "Search: Bled, cave, coast …",
+      it: "Cerca: Bled, grotta, costa …",
+      de: "Suche: Bled, Höhle, Küste …",
+      fr: "Rechercher : Bled, grotte, côte …",
+      es: "Buscar: Bled, cueva, costa …",
+    },
+    regionLabel: {
+      sl: "Filtriraj po regiji",
+      en: "Filter by region",
+      it: "Filtra per regione",
+      de: "Nach Region filtern",
+      fr: "Filtrer par région",
+      es: "Filtrar por región",
+    },
+    typeLabel: {
+      sl: "Filtriraj po tipu",
+      en: "Filter by type",
+      it: "Filtra per tipo",
+      de: "Nach Typ filtern",
+      fr: "Filtrer par type",
+      es: "Filtrar por tipo",
+    },
+    allRegions: { sl: "Vse regije", en: "All regions", it: "Tutte le regioni", de: "Alle Regionen", fr: "Toutes les régions", es: "Todas las regiones" },
+    allTypes: { sl: "Vsi tipi", en: "All types", it: "Tutti i tipi", de: "Alle Typen", fr: "Tous les types", es: "Todos los tipos" },
+    reset: { sl: "Počisti filtre", en: "Clear filters", it: "Azzera i filtri", de: "Filter zurücksetzen", fr: "Effacer les filtres", es: "Borrar filtros" },
     count: {
       sl: (n: number) => `${n} ${destWord("sl", n)}`,
       en: (n: number) => `${n} ${destWord("en", n)}`,
+      it: (n: number) => `${n} ${destWord("it", n)}`,
+      de: (n: number) => `${n} ${destWord("de", n)}`,
+      fr: (n: number) => `${n} ${destWord("fr", n)}`,
+      es: (n: number) => `${n} ${destWord("es", n)}`,
     },
-    emptyTitle: { sl: "Ni zadetkov", en: "No matches" },
+    emptyTitle: { sl: "Ni zadetkov", en: "No matches", it: "Nessun risultato", de: "Keine Treffer", fr: "Aucun résultat", es: "Sin resultados" },
     emptyLead: {
       sl: "Za iskani niz ali kombinacijo filtrov ni destinacij. Poskusi drugačen niz ali počisti filtre.",
       en: "No destinations match your search or filter combination. Try a different query or clear the filters.",
+      it: "Nessuna destinazione corrisponde alla ricerca o alla combinazione di filtri. Prova un’altra ricerca o azzera i filtri.",
+      de: "Keine Reiseziele entsprechen deiner Suche oder Filterkombination. Versuche eine andere Suche oder setze die Filter zurück.",
+      fr: "Aucune destination ne correspond à votre recherche ou à vos filtres. Essayez une autre recherche ou effacez les filtres.",
+      es: "Ningún destino coincide con tu búsqueda o combinación de filtros. Prueba otra búsqueda o borra los filtros.",
     },
-    resultsLabel: { sl: "Rezultati", en: "Results" },
+    resultsLabel: { sl: "Rezultati", en: "Results", it: "Risultati", de: "Ergebnisse", fr: "Résultats", es: "Resultados" },
   } as const;
 
   const [q, setQ] = React.useState(searchParams.get("q") ?? "");
@@ -106,7 +152,7 @@ export function DestinationsExplorer() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <PageHeader
-        kicker={pick(l, { sl: "Odkrij", en: "Discover" })}
+        kicker={pick(l, L.kicker)}
         title={pick(l, L.title)}
         lead={pick(l, L.lead)}
       />

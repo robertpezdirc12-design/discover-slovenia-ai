@@ -7,8 +7,13 @@ import { GuidesView } from "@/components/content/guides-view";
  * /vodici — vodiči in nasveti (22 road-trip vodnikov + 16 člankov).
  * Vsebina 1:1 iz produkcije (mirror /vodici + rss.xml).
  */
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations({ namespace: "meta" });
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "meta" });
   return {
     title: "Vodiči",
     description:

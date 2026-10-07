@@ -278,7 +278,7 @@ export default function PrimerjavaPage() {
   } as const;
 
   const rows = pick(l, L.table);
-  const t = (k: keyof typeof L) => pick(l, L[k]);
+  const t = <K extends keyof typeof L>(k: K) => pick(l, L[k]);
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 lg:px-8">

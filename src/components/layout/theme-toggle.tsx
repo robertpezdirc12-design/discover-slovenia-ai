@@ -19,6 +19,10 @@ export function ThemeToggle() {
   const label = pick(l, {
     sl: "Preklopi temo (svetla/temna)",
     en: "Toggle theme (light/dark)",
+    it: "Cambia tema (chiaro/scuro)",
+    de: "Design wechseln (hell/dunkel)",
+    fr: "Changer de thème (clair/sombre)",
+    es: "Cambiar tema (claro/oscuro)",
   });
 
   return (

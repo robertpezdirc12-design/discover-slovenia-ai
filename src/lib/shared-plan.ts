@@ -38,8 +38,9 @@ const STORAGE_KEY = "dai:shared-plans";
 
 export const SHARED_PLAN_CHANGED_EVENT = "dai:shared-plans-changed";
 
-/** Veljavna oblika shareId (kanon izvirnika: kratki mali znaki). */
-export const SHARE_ID_RE = /^[a-z0-9]{1,32}$/;
+/** Veljavna oblika shareId (kanon izvirnika: kratki mali znaki; 48-a
+ *  mostovno dopolnjeno z vezaji — testni URL-ji kot /pot/test-shareid). */
+export const SHARE_ID_RE = /^[a-z0-9][a-z0-9-]{0,31}$/;
 
 function isBrowser(): boolean {
   return typeof window !== "undefined";

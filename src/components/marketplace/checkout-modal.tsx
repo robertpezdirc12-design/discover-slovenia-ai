@@ -1,0 +1,359 @@
+"use client";
+
+/**
+ * CHECKOUT-MODAL — zaključek nakupa izdelka lastne tržnice.
+ *
+ * Dialog: izdelek → količina (1–10, omejena z zalogo) → skupna cena →
+ * gumb "Zaključi nakup" (POST /api/checkout { slug, qty, visitorKey }).
+ *
+ * Odgovor odloči nadaljevanje (iskrenostni kanon):
+ *  - { url }  → PRAVI Stripe Checkout → window.location.href = url;
+ *  - { demo: true, orderId, status: "paid" } → DEMO potrditev z
+ *    IZRECNO oznako DEMO ("demo plačilo — brez prave bremenitve");
+ *  - { error } → napaka (toast + besedilo v dialogu).
+ *
+ * Gostov visitorKey (UUID) se hrani v localStorage "dai:visitor-key"
+ * in strežniku pošlje z zahtevo (dedup nezaključenih naročil).
+ */
+
+import {
+  CheckCircle2,
+  Loader2,
+  Minus,
+  Plus,
+  ShieldCheck,
+} from "lucide-react";
+import { useLocale } from "next-intl";
+import * as React from "react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { pick } from "@/lib/i18n-pick";
+import {
+  formatPriceCents,
+  isCheckoutDemoResponse,
+  isCheckoutUrlResponse,
+  type CheckoutErrorResponse,
+  type MarketplaceProduct,
+} from "@/components/marketplace/types";
+
+const VISITOR_KEY_STORAGE = "dai:visitor-key";
+const MIN_QTY = 1;
+const MAX_QTY = 10;
+
+const L = {
+  title: { sl: "Zaključi nakup", en: "Complete purchase" },
+  description: {
+    sl: "Preglejte naročilo in potrdite nakup.",
+    en: "Review your order and confirm the purchase.",
+  },
+  qty: { sl: "Količina", en: "Quantity" },
+  decreaseQty: { sl: "Zmanjšaj količino", en: "Decrease quantity" },
+  increaseQty: { sl: "Povečaj količino", en: "Increase quantity" },
+  unitPrice: { sl: "Cena na kos", en: "Price per unit" },
+  total: { sl: "Skupaj", en: "Total" },
+  stockNote: { sl: "Na zalogi", en: "In stock" },
+  confirm: { sl: "Zaključi nakup", en: "Complete purchase" },
+  processing: { sl: "Obdelava …", en: "Processing …" },
+  demoTitle: { sl: "Naročilo je bilo ustvarjeno", en: "Order created" },
+  demoBadge: { sl: "DEMO", en: "DEMO" },
+  demoNote: {
+    sl: "Demo plačilo — brez prave bremenitve. V peskovniku so prava plačila izklopljena.",
+    en: "Demo payment — no real charge. Real payments are disabled in the sandbox.",
+  },
+  demoOrderNo: { sl: "Številka naročila", en: "Order number" },
+  close: { sl: "Zapri", en: "Close" },
+  buyAgain: { sl: "Nakupuj naprej", en: "Continue shopping" },
+  secureNote: {
+    sl: "Plačilo poganja Stripe — kartice ne vidimo mi.",
+    en: "Payments are powered by Stripe — your card never reaches us.",
+  },
+} as const;
+
+/** Gostov ključ iz localStorage (ustvari, če še ni). */
+function getOrCreateVisitorKey(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const existing = window.localStorage.getItem(VISITOR_KEY_STORAGE);
+    if (existing && /^[A-Za-z0-9-]{8,64}$/.test(existing)) return existing;
+    const generated =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random()
+            .toString(36)
+            .slice(2)}`;
+    window.localStorage.setItem(VISITOR_KEY_STORAGE, generated);
+    return generated;
+  } catch {
+    // Zasebno okno brez localStorage — nakup brez visitorKey (samo tok).
+    return null;
+  }
+}
+
+export interface CheckoutModalProps {
+  product: MarketplaceProduct | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function CheckoutModal({
+  product,
+  open,
+  onOpenChange,
+}: CheckoutModalProps) {
+  const l = useLocale();
+  const { toast } = useToast();
+  const t = <K extends keyof typeof L>(k: K) => pick(l, L[k]);
+
+  const [qty, setQty] = React.useState(MIN_QTY);
+  const [state, setState] = React.useState<
+    "idle" | "submitting" | "demo-done"
+  >("idle");
+  const [demoOrderId, setDemoOrderId] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const maxQty = product ? Math.min(MAX_QTY, Math.max(MIN_QTY, product.stock)) : MIN_QTY;
+
+  // Ob vsakem odprtju novega izdelka ponastavimo notranje stanje.
+  React.useEffect(() => {
+    if (open) {
+      setQty(MIN_QTY);
+      setState("idle");
+      setDemoOrderId(null);
+      setError(null);
+    }
+  }, [open, product?.slug]);
+
+  if (!product) return null;
+
+  const totalCents = product.priceCents * qty;
+
+  const onSubmit = async () => {
+    setState("submitting");
+    setError(null);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: product.slug,
+          qty,
+          visitorKey: getOrCreateVisitorKey(),
+        }),
+      });
+      const body = (await res.json()) as
+        | CheckoutErrorResponse
+        | { demo: true; orderId: string; visitorKey: string | null; status: string }
+        | { url: string; visitorKey: string | null };
+
+      if (!res.ok || (!isCheckoutDemoResponse(body) && !isCheckoutUrlResponse(body))) {
+        const message =
+          (body as CheckoutErrorResponse)?.error ??
+          (l === "en"
+            ? "The purchase could not be completed."
+            : "Nakupa ni bilo mogoče zaključiti.");
+        setError(message);
+        setState("idle");
+        toast({
+          title: l === "en" ? "Purchase failed" : "Nakup ni uspel",
+          description: message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Strežnik (po potrebi) izda novi visitorKey → shranimo za naslednjič.
+      if (body.visitorKey && typeof window !== "undefined") {
+        try {
+          window.localStorage.setItem(VISITOR_KEY_STORAGE, body.visitorKey);
+        } catch {
+          /* zasebno okno — preskočimo */
+        }
+      }
+
+      if (isCheckoutUrlResponse(body)) {
+        // PRAVA veja: preusmeritev na Stripe Checkout.
+        window.location.href = body.url;
+        return;
+      }
+
+      // DEMO veja: izrecno označena potrditev (brez prave bremenitve).
+      setDemoOrderId(body.orderId);
+      setState("demo-done");
+    } catch {
+      const message =
+        l === "en"
+          ? "Network error — please try again."
+          : "Omrežna napaka — poskusite znova.";
+      setError(message);
+      setState("idle");
+      toast({
+        title: l === "en" ? "Purchase failed" : "Nakup ni uspel",
+        description: message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t("title")}</DialogTitle>
+          <DialogDescription>{t("description")}</DialogDescription>
+        </DialogHeader>
+
+        {state === "demo-done" ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex flex-col gap-3 rounded-xl border border-primary/40 bg-primary/10 p-4"
+          >
+            <div className="flex items-center gap-2">
+              <CheckCircle2
+                className="size-5 shrink-0 text-primary"
+                aria-hidden="true"
+              />
+              <p className="font-bold">{t("demoTitle")}</p>
+              <Badge className="ml-auto gap-1 border-amber-600/50 bg-amber-600/10 text-amber-700 dark:text-amber-400">
+                {t("demoBadge")}
+              </Badge>
+            </div>
+            {demoOrderId && (
+              <p className="text-sm text-muted-foreground">
+                {t("demoOrderNo")}:{" "}
+                <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs break-all">
+                  {demoOrderId}
+                </code>
+              </p>
+            )}
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {t("demoNote")}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-1 h-11"
+              onClick={() => onOpenChange(false)}
+            >
+              {t("buyAgain")}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {/* Izdelek */}
+            <div className="rounded-xl border bg-card p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="leading-tight font-bold">{product.name}</p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    {t("unitPrice")}: {formatPriceCents(product.priceCents, l)}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {t("stockNote")}: {product.stock}
+                  </p>
+                </div>
+                <Badge variant="secondary" className="shrink-0">
+                  {formatPriceCents(product.priceCents, l)}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Količina 1–10 */}
+            <div className="flex items-center justify-between gap-3">
+              <span
+                id="checkout-qty-label"
+                className="text-sm font-medium"
+              >
+                {t("qty")}
+              </span>
+              <div
+                className="flex items-center gap-1"
+                role="group"
+                aria-labelledby="checkout-qty-label"
+              >
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="size-11"
+                  onClick={() => setQty((q) => Math.max(MIN_QTY, q - 1))}
+                  disabled={qty <= MIN_QTY || state === "submitting"}
+                  aria-label={t("decreaseQty")}
+                >
+                  <Minus className="size-4" aria-hidden="true" />
+                </Button>
+                <span
+                  className="w-12 text-center text-lg font-bold tabular-nums"
+                  aria-live="polite"
+                >
+                  {qty}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="size-11"
+                  onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
+                  disabled={qty >= maxQty || state === "submitting"}
+                  aria-label={t("increaseQty")}
+                >
+                  <Plus className="size-4" aria-hidden="true" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Skupna cena */}
+            <div className="flex items-center justify-between rounded-xl bg-muted/60 px-4 py-3">
+              <span className="text-sm font-medium">{t("total")}</span>
+              <span className="text-lg font-bold tabular-nums text-primary">
+                {formatPriceCents(totalCents, l)}
+              </span>
+            </div>
+
+            {error && (
+              <p
+                role="alert"
+                className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+              >
+                {error}
+              </p>
+            )}
+
+            <DialogFooter className="flex-col gap-2 sm:flex-col">
+              <Button
+                type="button"
+                size="lg"
+                className="h-12 w-full text-base"
+                onClick={onSubmit}
+                disabled={state === "submitting" || product.stock < MIN_QTY}
+              >
+                {state === "submitting" ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                    {t("processing")}
+                  </>
+                ) : (
+                  t("confirm")
+                )}
+              </Button>
+              <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+                <ShieldCheck className="size-3.5" aria-hidden="true" />
+                {t("secureNote")}
+              </p>
+            </DialogFooter>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}

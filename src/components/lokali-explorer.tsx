@@ -98,7 +98,7 @@ export function LokaliExplorer() {
     ctaButton: { sl: "Pridruži se", en: "Join us" },
     honesty: { sl: "Obseg podatkov", en: "Data coverage" },
   } as const;
-  const t = (k: keyof typeof L) => pick(l, L[k]);
+  const t = <K extends keyof typeof L>(k: K) => pick(l, L[k]);
 
   const inTrip = React.useCallback(
     (id: string) => tripItems.some((x) => x.refId === id),

@@ -51,18 +51,39 @@ export function Navigation() {
   const moreGroups = useMoreGroups();
 
   const L = {
-    brand: { sl: "Discover Slovenia AI", en: "Discover Slovenia AI" },
-    tagline: { sl: "I Feel Slovenia", en: "I Feel Slovenia" },
-    home: { sl: "Discover Slovenia AI — domov", en: "Discover Slovenia AI — home" },
-    mainNav: { sl: "Glavna navigacija", en: "Main navigation" },
-    more: { sl: "Več", en: "More" },
-    search: { sl: "Iskanje destinacij", en: "Search destinations" },
-    openMenu: { sl: "Odpri meni", en: "Open menu" },
-    mobileNav: { sl: "Mobilni meni", en: "Mobile menu" },
-    closeMenu: { sl: "Zapri meni", en: "Close menu" },
+    brand: { sl: "Discover Slovenia AI", en: "Discover Slovenia AI", it: "Discover Slovenia AI", de: "Discover Slovenia AI", fr: "Discover Slovenia AI", es: "Discover Slovenia AI" },
+    tagline: { sl: "I Feel Slovenia", en: "I Feel Slovenia", it: "I Feel Slovenia", de: "I Feel Slovenia", fr: "I Feel Slovenia", es: "I Feel Slovenia" },
+    home: {
+      sl: "Discover Slovenia AI — domov",
+      en: "Discover Slovenia AI — home",
+      it: "Discover Slovenia AI — home",
+      de: "Discover Slovenia AI — Startseite",
+      fr: "Discover Slovenia AI — accueil",
+      es: "Discover Slovenia AI — inicio",
+    },
+    mainNav: {
+      sl: "Glavna navigacija",
+      en: "Main navigation",
+      it: "Navigazione principale",
+      de: "Hauptnavigation",
+      fr: "Navigation principale",
+      es: "Navegación principal",
+    },
+    more: { sl: "Več", en: "More", it: "Altro", de: "Mehr", fr: "Plus", es: "Más" },
+    search: {
+      sl: "Iskanje destinacij",
+      en: "Search destinations",
+      it: "Cerca destinazioni",
+      de: "Reiseziele suchen",
+      fr: "Rechercher des destinations",
+      es: "Buscar destinos",
+    },
+    openMenu: { sl: "Odpri meni", en: "Open menu", it: "Apri il menu", de: "Menü öffnen", fr: "Ouvrir le menu", es: "Abrir el menú" },
+    mobileNav: { sl: "Mobilni meni", en: "Mobile menu", it: "Menu mobile", de: "Mobiles Menü", fr: "Menu mobile", es: "Menú móvil" },
+    closeMenu: { sl: "Zapri meni", en: "Close menu", it: "Chiudi il menu", de: "Menü schließen", fr: "Fermer le menu", es: "Cerrar el menú" },
   } as const;
 
-  const t = (k: keyof typeof L) => pick(l, L[k]);
+  const t = <K extends keyof typeof L>(k: K) => pick(l, L[k]);
 
   const isHome = pathname === "/";
   // Nad herojem je glava prozorna SAMO na domači strani (podstrani nimajo
@@ -104,7 +125,14 @@ export function Navigation() {
         href="#vsebina"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-primary focus:px-3 focus:py-2 focus:text-sm focus:text-primary-foreground"
       >
-        {pick(l, { sl: "Preskoči na vsebino", en: "Skip to content" })}
+        {pick(l, {
+          sl: "Preskoči na vsebino",
+          en: "Skip to content",
+          it: "Salta al contenuto",
+          de: "Zum Inhalt springen",
+          fr: "Aller au contenu",
+          es: "Ir al contenido",
+        })}
       </a>
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-2 px-4 sm:px-6 lg:px-8">
         {/* Logotip */}

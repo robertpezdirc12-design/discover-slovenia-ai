@@ -17,7 +17,6 @@
 import {
   ArrowRight,
   BadgeCheck,
-  Clock,
   Check,
   Heart,
   MapPin,
@@ -29,6 +28,7 @@ import Image from "next/image";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { OwnMarketplaceSection } from "@/components/marketplace/own-marketplace-section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -102,11 +102,11 @@ export function TrznicaExplorer() {
     },
     experiencesTitle: { sl: "Izkušnje po destinacijah", en: "Experiences by destination" },
     experiencesLead: {
-      sl: "Izkušnje so izpeljane iz kanonskega nabora destinacij — ime je dejanska aktivnost destinacije, ocena stroška pa polje costPerPerson. Nakup (checkout) v peskovniku še ni priklopljen.",
-      en: "Experiences are derived from the canonical destination dataset — the name is an actual destination activity, the cost estimate its costPerPerson field. Checkout is not yet connected in the sandbox.",
+      sl: "Izkušnje so izpeljane iz kanonskega nabora destinacij — ime je dejanska aktivnost destinacije, ocena stroška pa polje costPerPerson. Nakup z lastnim checkoutom je na voljo zgoraj (Lastna tržnica); te kartice dodajajo izkušnjo v načrt poti.",
+      en: "Experiences are derived from the canonical destination dataset — the name is an actual destination activity, the cost estimate its costPerPerson field. Purchase with our own checkout is available above (Our own marketplace); these cards add the experience to your trip plan.",
     },
     estimate: { sl: (n: number) => `≈ ${n} € · ocena`, en: (n: number) => `≈ €${n} · estimate` },
-    inPrep: { sl: "V pripravi", en: "In preparation" },
+    available: { sl: "Na voljo", en: "Available" },
     add: { sl: "Dodaj v mojo pot", en: "Add to my trip" },
     added: { sl: "V moji poti", en: "In my trip" },
     toastAdded: { sl: "Dodano v mojo pot", en: "Added to my trip" },
@@ -119,7 +119,7 @@ export function TrznicaExplorer() {
     forProviders: { sl: "Prodajaš izdelke ali izkušnje?", en: "Selling products or experiences?" },
     forProvidersCta: { sl: "Pridruži se tržnici", en: "Join the marketplace" },
   } as const;
-  const t = (k: keyof typeof L) => pick(l, L[k]);
+  const t = <K extends keyof typeof L>(k: K) => pick(l, L[k]);
 
   const inTrip = React.useCallback(
     (id: string) => tripItems.some((x) => x.refId === id),
@@ -143,6 +143,9 @@ export function TrznicaExplorer() {
           </Badge>
         </div>
       </PageHeader>
+
+      {/* ── LASTNA TRŽNICA — živi izdelki z lastnim checkoutom (48-c) ── */}
+      <OwnMarketplaceSection />
 
       <Tabs defaultValue="experiences" className="mt-8">
         <TabsList className="h-11 w-full max-w-md">
@@ -195,8 +198,8 @@ export function TrznicaExplorer() {
                       />
                       <span className="absolute top-2.5 left-2.5">
                         <Badge className="gap-1 bg-background/90 text-foreground shadow-sm backdrop-blur">
-                          <Clock className="size-3" aria-hidden="true" />
-                          {t("inPrep")}
+                          <Check className="size-3" aria-hidden="true" />
+                          {t("available")}
                         </Badge>
                       </span>
                       <span className="absolute right-2.5 bottom-2.5">

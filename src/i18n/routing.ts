@@ -3,14 +3,11 @@ import { defineRouting } from "next-intl/routing";
 /**
  * I18N USMERJANJE (kanon izvirnika Discover-Slovenia-AI):
  * - sl = privzeti jezik BREZ predpone (localePrefix: "as-needed")
- * - en = polna pot s predpono (/en/destinacije, /en/…)
- * - ostali jeziki izvirnika (it/de/fr/es) se dodajo KASNEJE —
- *   odkomentiraj spodaj, ko bodo prevodi pripravljeni.
+ * - en/it/de/fr/es = polna pot s predpono (/en/destinacije, /it/destinacije …)
+ *   — vseh 6 jezikov izvirnika (naloga 48-b).
  */
 export const routing = defineRouting({
-  locales: ["sl", "en"],
-  // KASNEJE (po fazi 45): "it", "de", "fr", "es"
-  // locales: ["sl", "en", "it", "de", "fr", "es"],
+  locales: ["sl", "en", "it", "de", "fr", "es"],
   defaultLocale: "sl",
   localePrefix: "as-needed",
   // Produkcija streže SL na "/" VSEM obiskovalcem (mirror potrjen) —

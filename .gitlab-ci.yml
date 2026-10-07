@@ -1,0 +1,55 @@
+# =============================================================================
+# GitLab CI — Discover-Slovenia-AI (rekonstrukcija 2.x)
+#
+# Naslednik GitHub Actions ci.yml izvirnika (626 commitov, izgubljen ob
+# varnostnem incidentu 2026-10-06 — račun markec12345678 je mrtev).
+# Izvirnik je na vsak push poganjal: lint → test → build.
+#
+# Ta pipeline pokriva enaka vrata na GitLabu:
+#   1. lint   — eslint . (0 napak je pogoj za zlivo)
+#   2. test   — bun test (determinizem, integriteta podatkov, pure logika)
+#
+# build/deploy sta NAMENOMA izpuščena: deploja (Render/Vercel) še vedno
+# služita produkciji 1.190.0 iz izvirnika — prevezava na novi repozitorij
+# je lastnikovo zunanje dejanje (glej docs/recovery/RECOVERY-REPORT.md §8).
+# =============================================================================
+
+image: oven/bun:1
+
+stages:
+  - lint
+  - test
+
+variables:
+  # Prisma potrebuje le generacijo klienta (brez baze — testi so PURE + data).
+  DATABASE_URL: "file:/tmp/ci-skip.db"
+
+# Namestitev odvisnosti enkrat na vejo, deljeno med stopnjami.
+.install:
+  cache:
+    key:
+      files:
+        - bun.lock
+    paths:
+      - node_modules/
+  before_script:
+    - bun install --frozen-lockfile
+    - bunx prisma generate
+
+lint:
+  extends: .install
+  stage: lint
+  script:
+    - bun run lint
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+
+test:
+  extends: .install
+  stage: test
+  script:
+    - bun test
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH

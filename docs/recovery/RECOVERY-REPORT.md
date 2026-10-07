@@ -144,3 +144,35 @@ Primerjava z izvirnikom (1.190.0): jedrni tok ODKRIJ->DODAJ->NA CRTUJ->POJDI del
 Stripe checkout, NextAuth, skupnostne plosece, testi (5332), CI — dokumentirano v README.
 
 Dokazi: docs/evidence/reconstruction/ (desktop-home, mobile-home390, desktop-zemljevid).
+
+## 10. Posodobitev — REKONSTRUKCIJA FAZA 2 (2.1.0)
+
+Mandat „obnavljaj temeljito" se nadaljuje — faza 2 zapre vrzeli, dokumentirane v §9:
+
+- **Skupnostne funkcije potovanja 1:1 IZ DEJANSKE IZVORNE KODE** (docs/recovery/source-sessions/):
+  prijava/registracija (NextAuth v4, credentials + JWT, scrypt hash), poti v oblaku
+  (TravelJourney + shareId), sodelovanje (vloga OWNER/EDITOR/VIEWER, vabila ?invite=,
+  revokacija, preimenovanje s compare-and-swap — 409 ob sočasnem urejanju),
+  rezervacije (IDEA/CONFIRMED/CANCELLED), ankete (glasovanje 1 glas/uporabnik),
+  skupinski klepet z @AI svetovalcem (DETERMINISTIČEN, 0 žetonov, 0 zunanjih klicev;
+  značka AI strežniška — klient je ne more ponarediti, kanon izvirnika 1.131.0)
+- **6 jezikov**: sl (privzet, brez predpone) + en/it/de/fr/es — delni slovarji s
+  slovensko rezervo omogočajo postopno prevajanje brez preloma starih komponent
+- **Lastna tržnica z B2C checkoutom** (rekonstrukcija specifikacije issue #20 FAZA 2,
+  izvirnik 1.158.x): PURE lib + atomarna pending rezervacija (zaloga/saleCount),
+  Stripe Checkout Session (TTL 60 min) + webhook (podpis + P2002 dedup + sprostitve),
+  FAIL-CLOSED 503 brez ključev, izrecni DEMO način (DSA_DEMO_PAYMENTS) — 8 izdelkov
+  izključno iz realnih polj destinacij (cena = costPerPerson, nič izmišljenih)
+- **Testna vrata**: 86 testov / 1.237 expect (determinizem načrtovalnika, integriteta
+  38 destinacij vključno z obstojem slik, fail-closed logika checkouta, jezikovni
+  kanoni, slovenske množine) + **.gitlab-ci.yml** (naslednik GitHub Actions ci.yml —
+  lint + test na vsak push/MR; build/deploy izpuščena namenoma do prevezave deplojev)
+- E2E verifikacija (agent-browser): demo checkout z visitorKey + banner, prijava z
+  demo gumbom, pot v oblaku z zavihki Pot/Sodelovanje/Rezervacije/Ankete/Klepet,
+  @AI odgovor v klepetu, 6 jezikov hero, zemljevid 38 markerjev, mobilni 390 px
+  brez preliva — 0 konzolnih napak, lint 0 (dokazi: docs/evidence/reconstruction-faza2/)
+
+Preostalo glede na izvirnik (1.190.0): ostali produkti tržnice (izkušnje/rezervacije
+po dnevih), 125.446 krajev Foursquare množica (zunanja licenca/podatki), produkcijski
+Stripe račun + ključi (zunanje dejanje lastnika), prevezava Render/Vercel na GitLab,
+keep-warm nadomestek (cron umrl z GitHub Actions).

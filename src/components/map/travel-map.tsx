@@ -119,7 +119,7 @@ function DestinationPopup({
   d: Destination;
   inTrip: boolean;
   onAdd: (d: Destination) => void;
-  labels: { add: string; added: string; more: string };
+  labels: { add: string; added: string; more: string; ratingOf: (v: string) => string };
   locale: string;
 }) {
   return (
@@ -141,7 +141,7 @@ function DestinationPopup({
       <p className="mt-1 flex items-center gap-1 text-xs font-semibold">
         <Star className="size-3.5 fill-primary text-primary" aria-hidden="true" />
         {d.rating.toFixed(1)}
-        <span className="sr-only">{`Ocena ${d.rating.toFixed(1)} od 5`}</span>
+        <span className="sr-only">{labels.ratingOf(d.rating.toFixed(1))}</span>
       </p>
       <div className="mt-2 flex gap-1.5">
         <Button
@@ -183,37 +183,103 @@ export default function TravelMap() {
   const itemRefs = React.useRef<Record<string, HTMLButtonElement | null>>({});
 
   const L10n = {
-    searchLabel: { sl: "Išči destinacijo po imenu", en: "Search destinations by name" },
-    searchPlaceholder: { sl: "Iskanje: Bled, jama, Piran …", en: "Search: Bled, cave, Piran …" },
-    allTypes: { sl: "Vsi tipi", en: "All types" },
-    allRegions: { sl: "Vse regije", en: "All regions" },
-    regionFilter: { sl: "Filtriraj po regiji", en: "Filter by region" },
-    reset: { sl: "Počisti filtre", en: "Clear filters" },
+    searchLabel: {
+      sl: "Išči destinacijo po imenu",
+      en: "Search destinations by name",
+      it: "Cerca destinazioni per nome",
+      de: "Reiseziele nach Name suchen",
+      fr: "Rechercher des destinations par nom",
+      es: "Buscar destinos por nombre",
+    },
+    searchPlaceholder: {
+      sl: "Iskanje: Bled, jama, Piran …",
+      en: "Search: Bled, cave, Piran …",
+      it: "Cerca: Bled, grotta, Pirano …",
+      de: "Suche: Bled, Höhle, Piran …",
+      fr: "Rechercher : Bled, grotte, Piran …",
+      es: "Buscar: Bled, cueva, Pirán …",
+    },
+    allTypes: { sl: "Vsi tipi", en: "All types", it: "Tutti i tipi", de: "Alle Typen", fr: "Tous les types", es: "Todos los tipos" },
+    allRegions: { sl: "Vse regije", en: "All regions", it: "Tutte le regioni", de: "Alle Regionen", fr: "Toutes les régions", es: "Todas las regiones" },
+    regionFilter: {
+      sl: "Filtriraj po regiji",
+      en: "Filter by region",
+      it: "Filtra per regione",
+      de: "Nach Region filtern",
+      fr: "Filtrer par région",
+      es: "Filtrar por región",
+    },
+    reset: { sl: "Počisti filtre", en: "Clear filters", it: "Azzera i filtri", de: "Filter zurücksetzen", fr: "Effacer les filtres", es: "Borrar filtros" },
     count: {
       sl: (n: number) => `${n} od ${DESTINATIONS.length} destinacij`,
       en: (n: number) => `${n} of ${DESTINATIONS.length} destinations`,
+      it: (n: number) => `${n} di ${DESTINATIONS.length} destinazioni`,
+      de: (n: number) => `${n} von ${DESTINATIONS.length} Reisezielen`,
+      fr: (n: number) => `${n} sur ${DESTINATIONS.length} destinations`,
+      es: (n: number) => `${n} de ${DESTINATIONS.length} destinos`,
     },
-    listTitle: { sl: "Seznam destinacij", en: "Destination list" },
-    emptyTitle: { sl: "Ni zadetkov na zemljevidu", en: "No matches on the map" },
+    listTitle: {
+      sl: "Seznam destinacij",
+      en: "Destination list",
+      it: "Elenco delle destinazioni",
+      de: "Liste der Reiseziele",
+      fr: "Liste des destinations",
+      es: "Lista de destinos",
+    },
+    emptyTitle: {
+      sl: "Ni zadetkov na zemljevidu",
+      en: "No matches on the map",
+      it: "Nessun risultato sulla mappa",
+      de: "Keine Treffer auf der Karte",
+      fr: "Aucun résultat sur la carte",
+      es: "Sin resultados en el mapa",
+    },
     emptyLead: {
       sl: "Za iskani niz ali kombinacijo filtrov ni destinacij — počisti filtre in poskusi znova.",
       en: "No destinations match your search or filters — clear them and try again.",
+      it: "Nessuna destinazione corrisponde alla ricerca o ai filtri — azzerali e riprova.",
+      de: "Keine Reiseziele entsprechen deiner Suche oder den Filtern — setze sie zurück und versuche es erneut.",
+      fr: "Aucune destination ne correspond à votre recherche ou à vos filtres — effacez-les et réessayez.",
+      es: "Ningún destino coincide con tu búsqueda o filtros — bórralos e inténtalo de nuevo.",
     },
-    legend: { sl: "Legenda tipov", en: "Type legend" },
+    legend: { sl: "Legenda tipov", en: "Type legend", it: "Legenda dei tipi", de: "Typen-Legende", fr: "Légende des types", es: "Leyenda de tipos" },
     hint: {
       sl: "Klikni marker za podrobnosti · Podatki: OpenStreetMap (ODbL)",
       en: "Click a marker for details · Data: OpenStreetMap (ODbL)",
+      it: "Clicca un marker per i dettagli · Dati: OpenStreetMap (ODbL)",
+      de: "Klicke auf einen Marker für Details · Daten: OpenStreetMap (ODbL)",
+      fr: "Cliquez sur un marqueur pour les détails · Données : OpenStreetMap (ODbL)",
+      es: "Pulsa un marcador para ver detalles · Datos: OpenStreetMap (ODbL)",
     },
     mapLabel: {
       sl: "Zemljevid destinacij Discover Slovenia",
       en: "Discover Slovenia destination map",
+      it: "Mappa delle destinazioni di Discover Slovenia",
+      de: "Discover-Slovenia-Reisezielkarte",
+      fr: "Carte des destinations Discover Slovenia",
+      es: "Mapa de destinos de Discover Slovenia",
     },
-    add: { sl: "Dodaj v mojo pot", en: "Add to my trip" },
-    added: { sl: "V moji poti", en: "In my trip" },
-    more: { sl: "Več", en: "More" },
-    toastAdded: { sl: "Dodano v mojo pot", en: "Added to my trip" },
+    add: { sl: "Dodaj v mojo pot", en: "Add to my trip", it: "Aggiungi al mio viaggio", de: "Zu meiner Reise hinzufügen", fr: "Ajouter à mon voyage", es: "Añadir a mi viaje" },
+    added: { sl: "V moji poti", en: "In my trip", it: "Nel mio viaggio", de: "In meiner Reise", fr: "Dans mon voyage", es: "En mi viaje" },
+    more: { sl: "Več", en: "More", it: "Dettagli", de: "Mehr", fr: "Plus", es: "Más" },
+    toastAdded: {
+      sl: "Dodano v mojo pot",
+      en: "Added to my trip",
+      it: "Aggiunto al mio viaggio",
+      de: "Zu meiner Reise hinzugefügt",
+      fr: "Ajouté à mon voyage",
+      es: "Añadido a mi viaje",
+    },
+    ratingOf: {
+      sl: (v: string) => `Ocena ${v} od 5`,
+      en: (v: string) => `Rating ${v} out of 5`,
+      it: (v: string) => `Valutazione ${v} su 5`,
+      de: (v: string) => `Bewertung ${v} von 5`,
+      fr: (v: string) => `Note ${v} sur 5`,
+      es: (v: string) => `Valoración ${v} sobre 5`,
+    },
   } as const;
-  const t = (k: keyof typeof L10n) => pick(l, L10n[k]);
+  const t = <K extends keyof typeof L10n>(k: K) => pick(l, L10n[k]);
 
   const inTrip = React.useCallback(
     (slug: string) => tripItems.some((x) => x.refId === slug),
@@ -356,7 +422,13 @@ export default function TravelMap() {
 
       {/* ── Zemljevid + stranski seznam ──────────────────────────────── */}
       <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_340px]">
-        <div className="overflow-hidden rounded-xl border shadow-sm">
+        {/* Zemljevid — a11y oznaka na ovojnem elementu (MapContainer ne
+            sprejema ARIA atributov v tipih react-leaflet). */}
+        <div
+          className="overflow-hidden rounded-xl border shadow-sm"
+          role="region"
+          aria-label={t("mapLabel")}
+        >
           <MapContainer
             center={MAP_CENTER}
             zoom={MAP_ZOOM}
@@ -366,8 +438,6 @@ export default function TravelMap() {
             ref={(m: L.Map | null) => {
               mapRef.current = m;
             }}
-            role="region"
-            aria-label={t("mapLabel")}
             className="h-[62vh] min-h-80 w-full sm:h-[70vh] lg:h-[calc(100dvh-15rem)] lg:min-h-[540px]"
           >
             <TileLayer
@@ -398,7 +468,12 @@ export default function TravelMap() {
                     d={d}
                     inTrip={inTrip(d.slug)}
                     onAdd={onAdd}
-                    labels={{ add: t("add"), added: t("added"), more: t("more") }}
+                    labels={{
+                      add: t("add"),
+                      added: t("added"),
+                      more: t("more"),
+                      ratingOf: t("ratingOf"),
+                    }}
                     locale={l}
                   />
                 </Popup>

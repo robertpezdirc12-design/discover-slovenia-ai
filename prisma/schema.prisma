@@ -86,3 +86,224 @@ model Lead {
   note      String?
   createdAt DateTime @default(now())
 }
+
+// ── SKUPNOSTNE FUNKCIJE POTOVANJ (Task 48-a — mostovna rekonstrukcija) ──
+// Po vzoru izvirnika (docs/recovery/schema-1.163.4.prisma: User /
+// TravelJourney / TripCollaborator / TripInvite / TripReservation /
+// TripPoll / TripPollOption / TripPollVote / TripMessage), v SQLite
+// minimalni obliki. NextAuth v4 JWT strategija → BREZ Account/Session tabel.
+
+/// Uporabniški račun popotnika (credentials, JWT — brez Account/Session).
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  journeys     TravelJourney[]     @relation("JourneyOwner")
+  collaborations TripCollaborator[]
+  pollVotes    TripPollVote[]
+  messages     TripMessage[]
+}
+
+/// Deljena pot v oblaku (data = JSON serializacija oblike SharedPlan).
+model TravelJourney {
+  id            String   @id @default(cuid())
+  shareId       String   @unique
+  ownerId       String
+  owner         User     @relation("JourneyOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  title         String
+  isPublic      Boolean  @default(false)
+  data          String
+  renameVersion Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  collaborators TripCollaborator[]
+  invites       TripInvite[]
+  reservations  TripReservation[]
+  polls         TripPoll[]
+  pollVotes     TripPollVote[]
+  messages      TripMessage[]
+
+  @@index([ownerId])
+}
+
+/// Sodelujoči na poti (vloga se izračuna STREŽNIŠKO — fail-closed).
+model TripCollaborator {
+  id        String   @id @default(cuid())
+  journeyId String
+  journey   TravelJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String // "EDITOR" | "VIEWER"
+  invitedBy String?
+  createdAt DateTime @default(now())
+
+  @@unique([journeyId, userId])
+  @@index([userId])
+}
+
+/// Vabilo (?invite={token} — sprejem prek /api/invites/[token]).
+model TripInvite {
+  id        String   @id @default(cuid())
+  journeyId String
+  journey   TravelJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  role      String // "EDITOR" | "VIEWER"
+  status    String   @default("PENDING") // "PENDING" | "ACCEPTED" | "REVOKED"
+  createdAt DateTime @default(now())
+
+  @@index([journeyId])
+}
+
+/// Rezervacijska vrstica na poti (postanek-dan osnova, izvor vedno razkrit).
+model TripReservation {
+  id        String   @id @default(cuid())
+  journeyId String
+  journey   TravelJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  createdBy String
+  dayIndex  Int
+  stopSlug  String?
+  stopName  String
+  status    String   @default("IDEA") // "IDEA" | "CONFIRMED" | "CANCELLED"
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([journeyId])
+}
+
+/// Skupinska anketa na poti.
+model TripPoll {
+  id        String   @id @default(cuid())
+  journeyId String
+  journey   TravelJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  createdBy String
+  question  String
+  status    String   @default("OPEN") // "OPEN" | "CLOSED"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  options   TripPollOption[]
+
+  @@index([journeyId])
+}
+
+/// Možnost ankete (sortiranje po sortOrder).
+model TripPollOption {
+  id        String   @id @default(cuid())
+  pollId    String
+  poll      TripPoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  label     String
+  sortOrder Int      @default(0)
+  votes     TripPollVote[]
+
+  @@index([pollId])
+}
+
+/// Glas v anketi (en glas na uporabika na anketo — "zadnji velja").
+model TripPollVote {
+  id        String   @id @default(cuid())
+  optionId  String
+  option    TripPollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journeyId String
+  journey   TravelJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([optionId, userId])
+  @@index([journeyId, userId])
+}
+
+/// Vrstica skupinskega klepeta (isAiBot=true IZKLJUČNO strežniško — 1.131.0).
+model TripMessage {
+  id         String   @id @default(cuid())
+  journeyId  String
+  journey    TravelJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  authorId   String?
+  author     User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorName String
+  isAiBot    Boolean  @default(false)
+  body       String
+  createdAt  DateTime @default(now())
+
+  @@index([journeyId, createdAt])
+}
+
+// ── LASTNA TRŽNICA — B2C CHECKOUT (Task 48-c, rekonstrukcija issue #20 FAZA 2) ──
+// Stripe Checkout (mode payment) z atomarno pending rezervacijo zaloga,
+// demo plačili (DSA_DEMO_PAYMENTS=1) in fail-closed ob manjkajoči konfiguraciji.
+// userId je NAMENOMA brez relacije na User — gost checkout je dovoljen in
+// obstoječi model User ostaja nedotaknjen (kanon "samo dodajaj").
+
+/// Izdelek/izkušnja lastne tržnice (cena v centih; zaloga = dejanski inventar).
+model Product {
+  id          String      @id @default(cuid())
+  slug        String      @unique
+  name        String
+  description String
+  /// Cena v centih (costPerPerson destinacije × 100 — izključno realni vir).
+  priceCents  Int
+  /// "experience" | "ticket" | "product"
+  kind        String      @default("experience")
+  stock       Int
+  saleCount   Int         @default(0)
+  active      Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  items       OrderItem[]
+
+  @@index([active])
+}
+
+/// Naročilo lastne tržnice (gost checkout dovoljen — userId/visitorKey).
+model Order {
+  id              String      @id @default(cuid())
+  /// Lastnik naročila (prijavljen uporabnik) ali null za gostega.
+  userId          String?
+  /// UUID gosta (localStorage "dai:visitor-key") — dedup nezaključenih naročil.
+  visitorKey      String?
+  /// "pending" | "paid" | "cancelled" | "expired"
+  status          String      @default("pending")
+  /// true IZKLJUČNO za demo plačila (DSA_DEMO_PAYMENTS — brez prave bremenitve).
+  demo            Boolean     @default(false)
+  stripeSessionId String?     @unique
+  totalCents      Int
+  expiresAt       DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  items           OrderItem[]
+
+  @@index([status])
+  @@index([userId])
+}
+
+/// Vrstica naročila — zaloga se ob sprostitvi obnavlja SAMO iz teh vrstic.
+model OrderItem {
+  id                 String  @id @default(cuid())
+  orderId            String
+  order              Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId          String
+  /// Restrict — izdelek z naročili se NE sme izbrisati (zgodovina cen/zaloge).
+  product            Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  /// Ime ob nakupu (izdelek se lahko preimenuje — vrstica ostane resnica).
+  nameSnapshot       String
+  priceCentsSnapshot Int
+  qty                Int
+
+  @@index([orderId])
+}
+
+/// Dedup Stripe webhook dogodkov (eventId @unique → P2002 → dogodek prezrt).
+model ProcessedStripeEvent {
+  id          String   @id @default(cuid())
+  eventId     String   @unique
+  type        String
+  processedAt DateTime @default(now())
+}

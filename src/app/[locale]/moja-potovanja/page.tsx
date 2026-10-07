@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Ban,
   CircleCheck,
+  CloudUpload,
   Footprints,
   HardDrive,
   Info,
@@ -13,11 +14,13 @@ import {
   Wand2,
   X,
 } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { useLocale } from "next-intl";
 import React, { useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { StopKindIcon } from "@/components/plan/plan-bits";
+import { CloudTripsSection } from "@/components/trips/cloud-trips-section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -105,6 +108,7 @@ const L = {
 export default function MyTripsPage() {
   const l = useLocale();
   const lang: PlannerLang = l === "en" ? "en" : "sl";
+  const { status: sessionStatus } = useSession();
   const items = useMyTripList();
   const { saved: lastPlan, ready: planReady } = useLastPlan();
   const { go: goTrip, ready: goReady } = useGoTrip();
@@ -204,6 +208,10 @@ export default function MyTripsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* POTI V OBLAKU (48-a) — sekcecija se izriše SAMO prijavljenemu;
+          gostu ostane iskrena kartica o lokalni shrambi spodaj. */}
+      <CloudTripsSection />
 
       {/* ZBIRKA MOJA POT */}
       <section className="mt-10" aria-labelledby="moja-pot-zbirka">
@@ -379,21 +387,30 @@ export default function MyTripsPage() {
         )}
       </section>
 
-      {/* ISKRENO GOSTOVANJE */}
-      <Card className="mt-10 border-dashed">
-        <CardContent className="flex items-start gap-3 p-4">
-          <HardDrive className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
-          <div>
-            <p className="flex items-center gap-2 text-sm font-semibold">
-              {pick(l, L.guestTitle)}
-              <Info className="size-3.5 text-muted-foreground" aria-hidden="true" />
-            </p>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              {pick(l, L.guestBody)}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* ISKRENO GOSTOVANJE — samo za neprijavljene (prijavljeni imajo
+          poti v oblaku zgoraj; zbirka Moja pot je lokalna za vse) */}
+      {sessionStatus !== "authenticated" ? (
+        <Card className="mt-10 border-dashed">
+          <CardContent className="flex items-start gap-3 p-4">
+            <HardDrive className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <div>
+              <p className="flex items-center gap-2 text-sm font-semibold">
+                {pick(l, L.guestTitle)}
+                <Info className="size-3.5 text-muted-foreground" aria-hidden="true" />
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                {pick(l, L.guestBody)}
+              </p>
+              <Button asChild variant="outline" size="sm" className="mt-3 min-h-11 gap-1.5 font-semibold">
+                <Link href="/prijava">
+                  <CloudUpload className="size-4" aria-hidden="true" />
+                  {pick(l, { sl: "Prijavi se za pote v oblaku", en: "Sign in for cloud trips" })}
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }

@@ -56,18 +56,36 @@ export function MobileTabBar() {
   const moreGroups = useMoreGroups();
 
   const L = {
-    navLabel: { sl: "Mobilna navigacija po vrsti zavihkov", en: "Mobile tab navigation" },
-    discover: { sl: "Odkrij", en: "Discover" },
-    map: { sl: "Zemljevid", en: "Map" },
-    myTrip: { sl: "Moja pot", en: "My trip" },
+    navLabel: {
+      sl: "Mobilna navigacija po vrsti zavihkov",
+      en: "Mobile tab navigation",
+      it: "Navigazione mobile a schede",
+      de: "Mobile Tab-Navigation",
+      fr: "Navigation mobile par onglets",
+      es: "Navegación móvil por pestañas",
+    },
+    discover: { sl: "Odkrij", en: "Discover", it: "Scopri", de: "Entdecken", fr: "Découvrir", es: "Descubre" },
+    map: { sl: "Zemljevid", en: "Map", it: "Mappa", de: "Karte", fr: "Carte", es: "Mapa" },
+    myTrip: { sl: "Moja pot", en: "My trip", it: "Il mio viaggio", de: "Meine Reise", fr: "Mon voyage", es: "Mi viaje" },
     myTripWith: {
       sl: (n: number) => `Moja pot (${n} postankov)`,
       en: (n: number) => `My trip (${n} stops)`,
+      it: (n: number) => `Il mio viaggio (${n} tappe)`,
+      de: (n: number) => `Meine Reise (${n} Stopps)`,
+      fr: (n: number) => `Mon voyage (${n} étapes)`,
+      es: (n: number) => `Mi viaje (${n} paradas)`,
     },
-    go: { sl: "Pojdi", en: "Go" },
-    more: { sl: "Več", en: "More" },
-    moreMenu: { sl: "Vse sekcije platforme", en: "All platform sections" },
-    badge99: { sl: "99+", en: "99+" },
+    go: { sl: "Pojdi", en: "Go", it: "Vai", de: "Los", fr: "Partir", es: "Ir" },
+    more: { sl: "Več", en: "More", it: "Altro", de: "Mehr", fr: "Plus", es: "Más" },
+    moreMenu: {
+      sl: "Vse sekcije platforme",
+      en: "All platform sections",
+      it: "Tutte le sezioni della piattaforma",
+      de: "Alle Bereiche der Plattform",
+      fr: "Toutes les sections de la plateforme",
+      es: "Todas las secciones de la plataforma",
+    },
+    badge99: { sl: "99+", en: "99+", it: "99+", de: "99+", fr: "99+", es: "99+" },
   } as const;
 
   const isActive = React.useCallback(

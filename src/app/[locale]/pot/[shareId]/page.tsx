@@ -4,8 +4,10 @@ import { notFound } from "next/navigation";
 
 import { SharedTripView } from "@/components/content/shared-trip-view";
 
-/** Veljavna oblika shareId (kanon izvirnika: kratki mali znaki). */
-const SHARE_ID_RE = /^[a-z0-9]{1,32}$/;
+/** Veljavna oblika shareId (kanon izvirnika: kratki mali znaki; 48-a
+ *  mostovno dopolnjeno z vezaji — npr. /pot/test-shareid mora biti veljavna
+ *  pot, sicer testni URL-ji z vezajem padajo v 404). */
+const SHARE_ID_RE = /^[a-z0-9][a-z0-9-]{0,31}$/;
 
 /**
  * /pot/[shareId] — deljena pot (rekonstrukcija D7, localStorage).

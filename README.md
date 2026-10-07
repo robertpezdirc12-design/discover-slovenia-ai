@@ -5,10 +5,17 @@
 > realnimi koordinatami in deterministični načrtovalnik poti (isti vhod → isti načrt,
 > 0 AI žetonov v jedru).
 
-**Verzija: 2.0.0-rc.1 — REKONSTRUKCIJA (2026-10-06).**
+**Verzija: 2.1.0 — REKONSTRUKCIJA FAZA 2 (2026-10-07).**
 Izvorni repozitorij (626 commitov, v1.190.0) je bil dvakrat izgubljen v posledici
 vdorov v GitHub račun (2026-10-06). Ta aplikacija je temeljita rekonstrukcija iz
-obnovitvenih virov — glej `docs/recovery/RECOVERY-REPORT.md` za celotno zgodbo.
+obnovitvenih virov (delovni dnevnik + izpisi izvorne kode + produkcijski posnetek +
+živi API) — glej `docs/recovery/RECOVERY-REPORT.md` za celotno zgodbo.
+
+**Faza 2 (2.1.0):** skupnostne funkcije potovanja 1:1 iz izvorne kode (prijava,
+sodelovanje z vlogami/vabili/CAS, rezervacije, ankete, skupinski klepet z
+determinističnim @AI svetovalcem — 0 žetonov), **6 jezikov** (sl + en/it/de/fr/es),
+lastna tržnica z B2C checkoutom (demo fail-closed; prava plačila ob Stripe ključih)
+ter testna vrata (86 testov) + GitLab CI.
 
 ## Kaj je rekonstruirano ✅
 
@@ -21,8 +28,8 @@ obnovitvenih virov — glej `docs/recovery/RECOVERY-REPORT.md` za celotno zgodbo
   budget → urnik 09:00–19:00, cene, geo-validacija sosednjih postankov)
 - **Leaflet zemljevid** — 38 markerjev, filtri, dodajanje v Mojo pot
 - **Go Mode „Na poti"** — NOW/NEXT kartice, napredek, persistenca (dai:go-trip)
-- **i18n** — SL (privzet, brez predpone) + EN (`/en/*`); ostali jeziki izvirnika
-  (it/de/fr/es) sledijo
+- **i18n** — 6 jezikov: SL (privzet, brez predpone) + EN/IT/DE/FR/ES (`/{jez}/*`)
+  z delnimi slovarji in slovensko rezervo
 - **PWA** — manifest, ikone, 84 realnih fotografij destinacij (`public/content/`)
 - **API** — `/api/health`, `/api/destinations`, `/api/itinerary`, `/api/contact`,
   `/api/newsletter/subscribe`, `/rss.xml`

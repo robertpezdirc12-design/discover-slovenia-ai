@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import { Footer } from "@/components/layout/footer";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { Navigation } from "@/components/layout/navigation";
+import { Providers } from "@/components/layout/providers";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { routing } from "@/i18n/routing";
@@ -30,6 +31,16 @@ export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
+/** OG locale koda (html lang → Open Graph). */
+const OG_LOCALES: Record<string, string> = {
+  sl: "sl_SI",
+  en: "en_US",
+  it: "it_IT",
+  de: "de_DE",
+  fr: "fr_FR",
+  es: "es_ES",
+};
+
 export async function generateMetadata({
   params,
 }: {
@@ -40,6 +51,7 @@ export async function generateMetadata({
   const t = await getTranslations({ locale: safe, namespace: "meta" });
 
   return {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
     title: {
       default: t("title"),
       template: `%s · Discover Slovenia AI`,
@@ -67,7 +79,7 @@ export async function generateMetadata({
       description: t("description"),
       siteName: "Discover Slovenia AI",
       type: "website",
-      locale: safe === "en" ? "en_US" : "sl_SI",
+      locale: OG_LOCALES[safe] ?? "sl_SI",
     },
   };
 }
@@ -106,24 +118,26 @@ export default async function LocaleLayout({
         className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground antialiased`}
       >
         <NextIntlClientProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <div className="flex min-h-screen flex-col">
-              <Navigation />
-              <main id="vsebina" className="flex-1">
-                {children}
-              </main>
-              {/* mt-auto v flex-col korenu = lepljiva noga */}
-              <Footer />
-            </div>
-            {/* Fiksni mobilni tab bar (fiksno dno, safe-area, ≥44px) */}
-            <MobileTabBar />
-            <Toaster />
-          </ThemeProvider>
+          <Providers>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <div className="flex min-h-screen flex-col">
+                <Navigation />
+                <main id="vsebina" className="flex-1">
+                  {children}
+                </main>
+                {/* mt-auto v flex-col korenu = lepljiva noga */}
+                <Footer />
+              </div>
+              {/* Fiksni mobilni tab bar (fiksno dno, safe-area, ≥44px) */}
+              <MobileTabBar />
+              <Toaster />
+            </ThemeProvider>
+          </Providers>
         </NextIntlClientProvider>
       </body>
     </html>

@@ -11,8 +11,9 @@
  * Lastni produkti so IZPELJANI iz kanonskega nabora destinacij
  * (src/lib/slovenia-data.ts): ime izkušnje = dejavna aktivnost destinacije,
  * ocena stroška = costPerPerson destinacije (realni polji nabora — ni
- * izmišljenih cen). Nakup/checkout v peskovniku NI priklopljen → status
- * "v pripravi" (iskreno).
+ * izmišljenih cen). Živi izdelki (zaloga, checkout) živijo v bazi
+ * (GET /api/products, seed 48-c) — ta datoteka je referenčni sloj
+ * imen/opisov/prevodov (SL kanon + EN prekrivni slovar).
  */
 
 import type { SupplyStatus } from "./go-data";
@@ -95,15 +96,15 @@ export const SUPPLY_SHELVES: SupplyShelf[] = [
     group: "own",
     label: { sl: "Lokalni ponudniki (naša tržnica)", en: "Local providers (our marketplace)" },
     description: {
-      sl: "Lastna tržnica: Listingi in izkušnje slovenskih ponudnikov z lastno rezervacijo. Listingi iz produkcije niso bili zajeti — sloj je iskreno prazen, izkušnje spodaj so izpeljane iz kanonskega nabora destinacij.",
-      en: "Our own marketplace: listings and experiences by Slovenian providers with our own booking. Production listings were not captured — the layer is honestly empty; the experiences below are derived from the canonical destination dataset.",
+      sl: "Lastna tržnica z lastnim checkoutom: izkušnje slovenskih ponudnikov z živo zalogo in nakupom na mestu (Stripe; v peskovniku demo plačila — izrecno označena). Listingi fizičnih ponudnikov iz produkcije niso bili zajeti — ta sloj ostaja iskreno prazen.",
+      en: "Our own marketplace with our own checkout: experiences by Slovenian providers with live stock and on-site purchase (Stripe; demo payments in the sandbox — explicitly labelled). Physical provider listings from production were not captured — that layer stays honestly empty.",
     },
     coverage: {
-      sl: "Izkušnje po destinacijah nabora (Bled, Soča, Piran …).",
-      en: "Experiences across the dataset destinations (Bled, Soča, Piran …).",
+      sl: "Izkušnje po destinacijah nabora (Bled, Soča, Piran …) z živim checkoutom.",
+      en: "Experiences across the dataset destinations (Bled, Soča, Piran …) with a live checkout.",
     },
     status: "search",
-    availability: "empty",
+    availability: "available",
     providers: ["Discover Slovenia (lastna tržnica)"],
   },
 
@@ -282,8 +283,9 @@ export const SUPPLY_SHELVES: SupplyShelf[] = [
 
 /**
  * LASTNI PRODUKTI — izkušnje izpeljane iz kanonskega nabora destinacij
- * (ime = aktivnost destinacije v naboru; ocena = costPerPerson destinacije).
- * Checkout NI priklopljen → status vseh produktov je "v pripravi".
+ * (ime = aktivnost destinacije v naboru; ocena = costPerPerson).
+ * Živi izdelki (zaloga, nakup) živijo v bazi — glej sekcijs
+ * "Lastna tržnica" na /trznica (48-c) in GET /api/products.
  */
 export interface OwnProduct {
   id: string;

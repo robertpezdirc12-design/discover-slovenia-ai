@@ -62,6 +62,7 @@ import {
   loadLastPlan,
   saveGoTrip,
   type GoPlanRef,
+  type GoTripRecord,
 } from "@/lib/plan-store";
 import { regionLabel, typeLabel } from "@/lib/slovenia-data";
 import type { ItineraryPlan, TripStop } from "@/lib/types";

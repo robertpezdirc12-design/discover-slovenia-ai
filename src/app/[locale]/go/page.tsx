@@ -69,7 +69,7 @@ export default function GoHubPage() {
     providersWord: { sl: "Ponudnik", en: "Provider" },
     open: { sl: "Odpri podstran", en: "Open subpage" },
   } as const;
-  const t = (k: keyof typeof L) => pick(l, L[k]);
+  const t = <K extends keyof typeof L>(k: K) => pick(l, L[k]);
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">

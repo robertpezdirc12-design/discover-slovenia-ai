@@ -7,10 +7,10 @@ import { routing } from "./routing";
  * Strežniška konfiguracija next-intl.
  *
  * OPOMBA O VZORCU PREVODOV: komponente aplikacije sledijo kanonu izvirnika —
- * lokalni dvojezični slovar `const L = { sl: {…}, en: {…} }` + `useLocale()`
- * (glej src/lib/i18n-pick.ts). Sporočila next-intl (messages) se zato ne
- * uporabljajo za UI besedila; datoteki messages/{sl,en}.json obstajata kot
- * prazni ogrodji za morečne prihodnje potrebe (npr. ob vključitvi it/de/fr/es).
+ * lokalni večjezični slovar `const L = { sl: {…}, en: {…}, it: {…} … }` +
+ * `useLocale()` (glej src/lib/i18n-pick.ts). Sporočila next-intl (messages)
+ * se zato ne uporabljajo za UI besedila; datoteke messages/{sl,en,it,de,fr,es}
+ * .json nosijo le skupne ključe (meta naslovi/opisi za generateMetadata).
  */
 export default getRequestConfig(async ({ requestLocale }) => {
   const requested = await requestLocale;

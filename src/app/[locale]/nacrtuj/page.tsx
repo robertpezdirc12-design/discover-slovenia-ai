@@ -71,101 +71,157 @@ const POPULAR_CHIPS = 24;
 // ---------------------------------------------------------------------------
 
 const L = {
-  kicker: { sl: "Načrtuj", en: "Plan" },
-  title: { sl: "Načrtuj svojo pot po Sloveniji", en: "Plan your journey across Slovenia" },
+  kicker: { sl: "Načrtuj", en: "Plan", it: "Pianifica", de: "Planen", fr: "Planifier", es: "Planifica" },
+  title: { sl: "Načrtuj svojo pot po Sloveniji", en: "Plan your journey across Slovenia", it: "Pianifica il tuo viaggio in Slovenia", de: "Plane deine Reise durch Slowenien", fr: "Planifiez votre voyage en Slovénie", es: "Planifica tu viaje por Eslovenia" },
   lead: {
     sl: "Izberi želje — deterministični motor sestavi dnevni načrt iz kanonskih podatkov 38 destinacij. Isti vhod vedno da isti načrt (0 AI žetonov, 0 presenečenj).",
     en: "Pick your wishes — the deterministic engine builds a day plan from the canonical data of 38 destinations. The same input always yields the same plan (0 AI tokens, 0 surprises).",
+    it: "Scegli i tuoi desideri — il motore deterministico costruisce un piano giornaliero dai dati canonici di 38 destinazioni. Lo stesso input dà sempre lo stesso piano (0 token AI, 0 sorprese).",
+    de: "Wähle deine Wünsche — die deterministische Engine erstellt aus den kanonischen Daten von 38 Reisezielen einen Tagesplan. Gleiche Eingabe ergibt immer denselben Plan (0 KI-Tokens, 0 Überraschungen).",
+    fr: "Choisissez vos envies — le moteur déterministe construit un plan quotidien à partir des données canoniques de 38 destinations. La même entrée donne toujours le même plan (0 jeton d’IA, 0 surprise).",
+    es: "Elige tus deseos — el motor determinista construye un plan diario con los datos canónicos de 38 destinos. La misma entrada da siempre el mismo plan (0 fichas de IA, 0 sorpresas).",
   },
-  formTitle: { sl: "Kaj želiš doživeti?", en: "What do you want to experience?" },
+  formTitle: { sl: "Kaj želiš doživeti?", en: "What do you want to experience?", it: "Cosa vuoi vivere?", de: "Was möchtest du erleben?", fr: "Que souhaitez-vous vivre ?", es: "¿Qué quieres vivir?" },
   formLead: {
     sl: "Izberi interese (čipi iz dejanskih podatkov destinacij) ali napiši svoje — nato sestavi načrt.",
     en: "Pick interests (chips from actual destination data) or write your own — then build the plan.",
+    it: "Scegli gli interessi (chip dai dati reali delle destinazioni) o scrivi i tuoi — poi crea il piano.",
+    de: "Wähle Interessen (Chips aus echten Reisezieldaten) oder schreibe eigene — dann erstelle den Plan.",
+    fr: "Choisissez des centres d’intérêt (puces issues des données réelles des destinations) ou écrivez les vôtres — puis composez le plan.",
+    es: "Elige intereses (fichas con datos reales de los destinos) o escribe los tuyos — y luego crea el plan.",
   },
-  interestsLabel: { sl: "Interesi", en: "Interests" },
+  interestsLabel: { sl: "Interesi", en: "Interests", it: "Interessi", de: "Interessen", fr: "Centres d’intérêt", es: "Intereses" },
   customLabel: {
     sl: "Ali napiši svoje želje (loči z vejico)",
     en: "Or write your own wishes (comma-separated)",
+    it: "Oppure scrivi i tuoi desideri (separati da virgola)",
+    de: "Oder schreibe eigene Wünsche (durch Komma getrennt)",
+    fr: "Ou écrivez vos propres envies (séparées par des virgules)",
+    es: "O escribe tus propios deseos (separados por comas)",
   },
-  customAdd: { sl: "Dodaj", en: "Add" },
-  customPlaceholder: { sl: "npr. jezero, družina, kremšnita", en: "e.g. lake, family, cream cake" },
-  searchChips: { sl: "Išči med čipi …", en: "Search chips …" },
-  showAll: { sl: "Pokaži vse", en: "Show all" },
-  showLess: { sl: "Pokaži manj", en: "Show less" },
-  remove: { sl: "Odstrani", en: "Remove" },
-  daysLabel: { sl: "Število dni", en: "Number of days" },
-  fewerDays: { sl: "Manj dni", en: "Fewer days" },
-  moreDays: { sl: "Več dni", en: "More days" },
-  daysUnit: { sl: "dni", en: "days" },
-  regionLabel: { sl: "Regija", en: "Region" },
-  regionAny: { sl: "Vse regije", en: "All regions" },
-  seasonLabel: { sl: "Sezona (prednost)", en: "Season (preference)" },
-  seasonAny: { sl: "Katera koli", en: "Any" },
-  budgetLabel: { sl: "Proračun na postanek", en: "Budget per stop" },
-  budgetAny: { sl: "Brez omejitve", en: "No limit" },
-  generate: { sl: "Sestavi načrt", en: "Build the plan" },
-  generating: { sl: "Sestavljam …", en: "Building …" },
+  customAdd: { sl: "Dodaj", en: "Add", it: "Aggiungi", de: "Hinzufügen", fr: "Ajouter", es: "Añadir" },
+  customPlaceholder: { sl: "npr. jezero, družina, kremšnita", en: "e.g. lake, family, cream cake", it: "es. lago, famiglia, kremšnita", de: "z. B. See, Familie, Kremšnita", fr: "ex. lac, famille, kremšnita", es: "p. ej. lago, familia, kremšnita" },
+  searchChips: { sl: "Išči med čipi …", en: "Search chips …", it: "Cerca tra le chip …", de: "Chips durchsuchen …", fr: "Rechercher dans les puces …", es: "Buscar fichas …" },
+  showAll: { sl: "Pokaži vse", en: "Show all", it: "Mostra tutti", de: "Alle anzeigen", fr: "Tout afficher", es: "Mostrar todos" },
+  showLess: { sl: "Pokaži manj", en: "Show less", it: "Mostra meno", de: "Weniger anzeigen", fr: "Afficher moins", es: "Mostrar menos" },
+  remove: { sl: "Odstrani", en: "Remove", it: "Rimuovi", de: "Entfernen", fr: "Retirer", es: "Quitar" },
+  daysLabel: { sl: "Število dni", en: "Number of days", it: "Numero di giorni", de: "Anzahl Tage", fr: "Nombre de jours", es: "Número de días" },
+  fewerDays: { sl: "Manj dni", en: "Fewer days", it: "Meno giorni", de: "Weniger Tage", fr: "Moins de jours", es: "Menos días" },
+  moreDays: { sl: "Več dni", en: "More days", it: "Più giorni", de: "Mehr Tage", fr: "Plus de jours", es: "Más días" },
+  daysUnit: { sl: "dni", en: "days", it: "giorni", de: "Tage", fr: "jours", es: "días" },
+  regionLabel: { sl: "Regija", en: "Region", it: "Regione", de: "Region", fr: "Région", es: "Región" },
+  regionAny: { sl: "Vse regije", en: "All regions", it: "Tutte le regioni", de: "Alle Regionen", fr: "Toutes les régions", es: "Todas las regiones" },
+  seasonLabel: { sl: "Sezona (prednost)", en: "Season (preference)", it: "Stagione (preferenza)", de: "Jahreszeit (Bevorzugung)", fr: "Saison (préférence)", es: "Temporada (preferencia)" },
+  seasonAny: { sl: "Katera koli", en: "Any", it: "Qualsiasi", de: "Beliebig", fr: "N’importe laquelle", es: "Cualquiera" },
+  budgetLabel: { sl: "Proračun na postanek", en: "Budget per stop", it: "Budget per tappa", de: "Budget pro Stopp", fr: "Budget par étape", es: "Presupuesto por parada" },
+  budgetAny: { sl: "Brez omejitve", en: "No limit", it: "Senza limiti", de: "Kein Limit", fr: "Sans limite", es: "Sin límite" },
+  generate: { sl: "Sestavi načrt", en: "Build the plan", it: "Crea il piano", de: "Plan erstellen", fr: "Créer le plan", es: "Crear el plan" },
+  generating: { sl: "Sestavljam …", en: "Building …", it: "Creazione …", de: "Erstelle …", fr: "Création …", es: "Creando …" },
   pickInterest: {
     sl: "Izberi ali napiši vsaj en interes.",
     en: "Pick or write at least one interest.",
+    it: "Scegli o scrivi almeno un interesse.",
+    de: "Wähle oder schreibe mindestens ein Interesse.",
+    fr: "Choisissez ou écrivez au moins un centre d’intérêt.",
+    es: "Elige o escribe al menos un interés.",
   },
-  networkError: { sl: "Omrežna napaka — poskusi znova.", en: "Network error — please try again." },
-  presetsTitle: { sl: "Hitre prednastavitve", en: "Quick presets" },
+  networkError: { sl: "Omrežna napaka — poskusi znova.", en: "Network error — please try again.", it: "Errore di rete — riprova.", de: "Netzwerkfehler — bitte erneut versuchen.", fr: "Erreur réseau — veuillez réessayer.", es: "Error de red — inténtalo de nuevo." },
+  presetsTitle: { sl: "Hitre prednastavitve", en: "Quick presets", it: "Preset rapidi", de: "Schnelle Voreinstellungen", fr: "Préréglages rapides", es: "Ajustes rápidos" },
   presetsLead: {
     sl: "Trije preizkušeni izhodi — en klik in načrt je tu.",
     en: "Three proven starting points — one click and the plan is here.",
+    it: "Tre punti di partenza collaudati — un clic e il piano è pronto.",
+    de: "Drei erprobte Ausgangspunkte — ein Klick und der Plan steht.",
+    fr: "Trois points de départ éprouvés — un clic et le plan est là.",
+    es: "Tres puntos de partida probados — un clic y el plan está listo.",
   },
-  usePreset: { sl: "Uporabi", en: "Use" },
-  planTitle: { sl: "Tvoj načrt", en: "Your plan" },
-  totalCost: { sl: "skupaj na osebo", en: "total per person" },
-  coverage: { sl: "Pokritje", en: "Coverage" },
-  driveEstimate: { sl: "ocena vožnje", en: "drive estimate" },
-  duration: { sl: "trajanje", en: "duration" },
-  cost: { sl: "cena", en: "cost" },
-  free: { sl: "brezplačno", en: "free" },
-  save: { sl: "Shrani v Moja pot", en: "Save to My trip" },
-  saved: { sl: "Shranjeno v Moja pot", en: "Saved to My trip" },
-  go: { sl: "Zaženi na poti", en: "Start on the road" },
-  print: { sl: "Izpiši / natisni", en: "Print" },
-  openJourney: { sl: "Odpri potovanje", en: "Open the journey" },
-  emptyTitle: { sl: "Načrt še ni sestavljen", en: "No plan yet" },
+  usePreset: { sl: "Uporabi", en: "Use", it: "Usa", de: "Verwenden", fr: "Utiliser", es: "Usar" },
+  planTitle: { sl: "Tvoj načrt", en: "Your plan", it: "Il tuo piano", de: "Dein Plan", fr: "Votre plan", es: "Tu plan" },
+  totalCost: { sl: "skupaj na osebo", en: "total per person", it: "totale per persona", de: "gesamt pro Person", fr: "total par personne", es: "total por persona" },
+  coverage: { sl: "Pokritje", en: "Coverage", it: "Copertura", de: "Abdeckung", fr: "Couverture", es: "Cobertura" },
+  driveEstimate: { sl: "ocena vožnje", en: "drive estimate", it: "stima del tragitto", de: "Fahrt (Schätzung)", fr: "estimation du trajet", es: "estimación del trayecto" },
+  duration: { sl: "trajanje", en: "duration", it: "durata", de: "Dauer", fr: "durée", es: "duración" },
+  cost: { sl: "cena", en: "cost", it: "costo", de: "Preis", fr: "prix", es: "precio" },
+  free: { sl: "brezplačno", en: "free", it: "gratis", de: "kostenlos", fr: "gratuit", es: "gratis" },
+  save: { sl: "Shrani v Moja pot", en: "Save to My trip", it: "Salva in I miei viaggi", de: "In Meine Reisen speichern", fr: "Enregistrer dans Mes voyages", es: "Guardar en Mis viajes" },
+  saved: { sl: "Shranjeno v Moja pot", en: "Saved to My trip", it: "Salvato in I miei viaggi", de: "In Meine Reisen gespeichert", fr: "Enregistré dans Mes voyages", es: "Guardado en Mis viajes" },
+  go: { sl: "Zaženi na poti", en: "Start on the road", it: "Inizia il viaggio", de: "Unterwegs starten", fr: "Démarrer sur la route", es: "Empezar en camino" },
+  print: { sl: "Izpiši / natisni", en: "Print", it: "Stampa", de: "Drucken", fr: "Imprimer", es: "Imprimir" },
+  openJourney: { sl: "Odpri potovanje", en: "Open the journey", it: "Apri il viaggio", de: "Reise öffnen", fr: "Ouvrir le voyage", es: "Abrir el viaje" },
+  emptyTitle: { sl: "Načrt še ni sestavljen", en: "No plan yet", it: "Nessun piano per ora", de: "Noch kein Plan", fr: "Pas encore de plan", es: "Aún no hay plan" },
   emptyBody: {
     sl: "Izberi vsaj en interes in pritisni „Sestavi načrt“ — ali pa uporabi prednastavitev.",
     en: "Pick at least one interest and press “Build the plan” — or use a preset.",
+    it: "Scegli almeno un interesse e premi «Crea il piano» — oppure usa un preset.",
+    de: "Wähle mindestens ein Interesse und klicke auf „Plan erstellen“ — oder nutze eine Voreinstellung.",
+    fr: "Choisissez au moins un centre d’intérêt et appuyez sur « Créer le plan » — ou utilisez un préréglage.",
+    es: "Elige al menos un interés y pulsa «Crear el plan» — o usa un ajuste rápido.",
   },
-  errorTitle: { sl: "Načrta ni bilo mogoče sestaviti", en: "The plan could not be built" },
-  retry: { sl: "Poskusi znova", en: "Try again" },
+  errorTitle: { sl: "Načrta ni bilo mogoče sestaviti", en: "The plan could not be built", it: "Impossibile creare il piano", de: "Der Plan konnte nicht erstellt werden", fr: "Le plan n’a pas pu être créé", es: "No se pudo crear el plan" },
+  retry: { sl: "Poskusi znova", en: "Try again", it: "Riprova", de: "Erneut versuchen", fr: "Réessayer", es: "Reintentar" },
   deterministic: {
     sl: "Deterministični motor: isti vhod → isti izhod; vsi časi in cene izhajajo iz realnih podatkov destinacij (vožnje so ocene ~60 km/h).",
     en: "Deterministic engine: same input → same output; all times and prices come from real destination data (drives are ~60 km/h estimates).",
+    it: "Motore deterministico: stesso input → stesso output; tutti i tempi e i prezzi provengono dai dati reali delle destinazioni (i tragitti sono stime a ~60 km/h).",
+    de: "Deterministische Engine: gleiche Eingabe → gleiche Ausgabe; alle Zeiten und Preise stammen aus echten Reisezieldaten (Fahrten sind Schätzungen mit ~60 km/h).",
+    fr: "Moteur déterministe : même entrée → même sortie ; tous les horaires et prix proviennent des données réelles des destinations (les trajets sont estimés à ~60 km/h).",
+    es: "Motor determinista: misma entrada → misma salida; todos los tiempos y precios provienen de datos reales de los destinos (los trayectos son estimaciones a ~60 km/h).",
   },
-  selectedInterests: { sl: "Izbrani interesi", en: "Selected interests" },
-  noChipsFound: { sl: "Noben čip ne ustreza iskanju.", en: "No chips match your search." },
+  selectedInterests: { sl: "Izbrani interesi", en: "Selected interests", it: "Interessi selezionati", de: "Ausgewählte Interessen", fr: "Intérêts sélectionnés", es: "Intereses seleccionados" },
+  noChipsFound: { sl: "Noben čip ne ustreza iskanju.", en: "No chips match your search.", it: "Nessuna chip corrisponde alla ricerca.", de: "Keine Chips entsprechen deiner Suche.", fr: "Aucune puce ne correspond à votre recherche.", es: "Ninguna ficha coincide con tu búsqueda." },
   stopsWord: {
     sl: (n: number) => `${n} ${n === 1 ? "postanek" : n === 2 ? "postanka" : "postankov"}`,
     en: (n: number) => `${n} ${n === 1 ? "stop" : "stops"}`,
+    it: (n: number) => `${n} ${n === 1 ? "tappa" : "tappe"}`,
+    de: (n: number) => `${n} ${n === 1 ? "Stopp" : "Stopps"}`,
+    fr: (n: number) => `${n} ${n === 1 ? "étape" : "étapes"}`,
+    es: (n: number) => `${n} ${n === 1 ? "parada" : "paradas"}`,
   },
   daysWord: {
     sl: (n: number) => `${n} ${n === 1 ? "dan" : n === 2 ? "dneva" : "dni"}`,
     en: (n: number) => `${n} ${n === 1 ? "day" : n === 2 ? "days" : "days"}`,
+    it: (n: number) => `${n} ${n === 1 ? "giorno" : "giorni"}`,
+    de: (n: number) => `${n} ${n === 1 ? "Tag" : "Tage"}`,
+    fr: (n: number) => `${n} ${n === 1 ? "jour" : "jours"}`,
+    es: (n: number) => `${n} ${n === 1 ? "día" : "días"}`,
   },
   regionsWord: {
     sl: (n: number) => `${n} ${n === 1 ? "regija" : n === 2 ? "regiji" : n <= 4 ? "regije" : "regij"}`,
     en: (n: number) => `${n} ${n === 1 ? "region" : "regions"}`,
+    it: (n: number) => `${n} ${n === 1 ? "regione" : "regioni"}`,
+    de: (n: number) => `${n} ${n === 1 ? "Region" : "Regionen"}`,
+    fr: (n: number) => `${n} ${n === 1 ? "région" : "régions"}`,
+    es: (n: number) => `${n} ${n === 1 ? "región" : "regiones"}`,
   },
 } as const;
 
-const SEASONS: { value: Season; sl: string; en: string }[] = [
-  { value: "spring", sl: "Pomlad", en: "Spring" },
-  { value: "summer", sl: "Poletje", en: "Summer" },
-  { value: "autumn", sl: "Jesen", en: "Autumn" },
-  { value: "winter", sl: "Zima", en: "Winter" },
+const SEASONS: {
+  value: Season;
+  sl: string;
+  en: string;
+  it: string;
+  de: string;
+  fr: string;
+  es: string;
+}[] = [
+  { value: "spring", sl: "Pomlad", en: "Spring", it: "Primavera", de: "Frühling", fr: "Printemps", es: "Primavera" },
+  { value: "summer", sl: "Poletje", en: "Summer", it: "Estate", de: "Sommer", fr: "Été", es: "Verano" },
+  { value: "autumn", sl: "Jesen", en: "Autumn", it: "Autunno", de: "Herbst", fr: "Automne", es: "Otoño" },
+  { value: "winter", sl: "Zima", en: "Winter", it: "Inverno", de: "Winter", fr: "Hiver", es: "Invierno" },
 ];
 
-const BUDGETS: { value: Budget; sl: string; en: string }[] = [
-  { value: "€", sl: "Najceneje (€)", en: "Cheapest (€)" },
-  { value: "€€", sl: "Zmerno (€€)", en: "Moderate (€€)" },
-  { value: "€€€", sl: "Brez omejitve (€€€)", en: "No limit (€€€)" },
+const BUDGETS: {
+  value: Budget;
+  sl: string;
+  en: string;
+  it: string;
+  de: string;
+  fr: string;
+  es: string;
+}[] = [
+  { value: "€", sl: "Najceneje (€)", en: "Cheapest (€)", it: "Economico (€)", de: "Günstigste (€)", fr: "Le moins cher (€)", es: "Más barato (€)" },
+  { value: "€€", sl: "Zmerno (€€)", en: "Moderate (€€)", it: "Medio (€€)", de: "Mittel (€€)", fr: "Modéré (€€)", es: "Moderado (€€)" },
+  { value: "€€€", sl: "Brez omejitve (€€€)", en: "No limit (€€€)", it: "Senza limiti (€€€)", de: "Kein Limit (€€€)", fr: "Sans limite (€€€)", es: "Sin límite (€€€)" },
 ];
 
 interface PresetDef {
@@ -175,8 +231,8 @@ interface PresetDef {
   season?: Season;
   region?: string;
   budget?: Budget;
-  title: { sl: string; en: string };
-  body: { sl: string; en: string };
+  title: { sl: string; en: string; it: string; de: string; fr: string; es: string };
+  body: { sl: string; en: string; it: string; de: string; fr: string; es: string };
 }
 
 const PRESETS: PresetDef[] = [
@@ -184,20 +240,42 @@ const PRESETS: PresetDef[] = [
     id: "mirni-vikend-reka",
     days: 2,
     interests: ["reka", "mir", "sprehod", "narava"],
-    title: { sl: "Miren vikend ob reki", en: "A calm weekend by the river" },
+    title: {
+      sl: "Miren vikend ob reki",
+      en: "A calm weekend by the river",
+      it: "Un fine settimana tranquillo al fiume",
+      de: "Ein ruhiges Wochenende am Fluss",
+      fr: "Un week-end paisible au bord de la rivière",
+      es: "Un fin de semana tranquilo junto al río",
+    },
     body: {
       sl: "Počasen tempo: reka, sprehodi in lokalna hrana.",
       en: "Slow pace: the river, walks and local food.",
+      it: "Ritmo lento: il fiume, passeggiate e cibo locale.",
+      de: "Gemächliches Tempo: der Fluss, Spaziergänge und lokale Küche.",
+      fr: "Rythme lent : la rivière, les promenades et la cuisine locale.",
+      es: "Ritmo tranquilo: el río, paseos y comida local.",
     },
   },
   {
     id: "druzinski-izlet",
     days: 1,
     interests: ["družina", "jezero", "sprehod"],
-    title: { sl: "Družinski izlet danes", en: "Family day trip today" },
+    title: {
+      sl: "Družinski izlet danes",
+      en: "Family day trip today",
+      it: "Gita in famiglia oggi",
+      de: "Familienausflug heute",
+      fr: "Excursion en famille aujourd’hui",
+      es: "Excursión familiar hoy",
+    },
     body: {
       sl: "Krajše razdalje, varne atrakcije, sladki zastanki.",
       en: "Shorter distances, safe sights, sweet stops.",
+      it: "Distanze brevi, attrazioni sicure, soste dolci.",
+      de: "Kürzere Strecken, sichere Sehenswürdigkeiten, süße Stopps.",
+      fr: "Distances courtes, sites sûrs, pauses gourmandes.",
+      es: "Distancias cortas, atracciones seguras, paradas dulces.",
     },
   },
   {
@@ -205,10 +283,21 @@ const PRESETS: PresetDef[] = [
     days: 2,
     interests: ["romantika", "vino", "hrana", "sončni zahod"],
     season: "autumn",
-    title: { sl: "Romantičen vikend z vinom", en: "Romantic wine weekend" },
+    title: {
+      sl: "Romantičen vikend z vinom",
+      en: "Romantic wine weekend",
+      it: "Weekend romantico col vino",
+      de: "Romantisches Wein-Wochenende",
+      fr: "Week-end romantique et vin",
+      es: "Fin de semana romántico con vino",
+    },
     body: {
       sl: "Vinske gorice, razgledi in večerja za dva.",
       en: "Wine hills, viewpoints and dinner for two.",
+      it: "Colli del vino, panorami e cena per due.",
+      de: "Weinhügel, Aussichtspunkte und Dinner zu zweit.",
+      fr: "Coteaux viticoles, points de vue et dîner en tête-à-tête.",
+      es: "Colinas vinícolas, miradores y cena para dos.",
     },
   },
 ];

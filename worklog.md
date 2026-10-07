@@ -1437,3 +1437,6 @@ Stage Summary:
 - GITLAB POSODOBLJEN: main @ 54068dc (faza 2 + poenostavljen CI) — pipeline pripravljen, zagon čaka na runnerje (lastnikovo dejanje, dokumentirano)
 - TESTNA VRATA: 145 testov / 2.222 expect na 12 datotekah — najgloblja pokritost rekonstrukcije do zdaj (determinizem AI, iskrenost go-data, integriteta vsebin)
 - Naslednje možne stopnje obnove: booking lifecycle v Go Mode (JourneyBooking lupina), še več testov, build/deploy CI stopnji po omogočitvi runnerjev
+- Dopopolnilo: push 11bc55b (testi) + 1275f64 (RECOVERY-REPORT 10.4) uspešno, parity potrjen; vsi 4 pipeline-i (53a2075…1275f64) failed z 0 jobi — diagnoza potrjena, čaka na runnerje (lastnik: Settings → CI/CD → Runners)
+- Bundle backup posodobljen na 1275f64 (22 MB, verificiran)
+- Končno stanje GitLab main: 1275f64 = faza 1 + faza 2 + 145 testov + CI + dokumentacija; repozitorij samozadosten (aplikacija + arhiv + testna vrata + CI)

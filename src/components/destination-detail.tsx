@@ -2,11 +2,17 @@
 
 import {
   ArrowRight,
+  BedDouble,
+  Car,
   Check,
   ExternalLink,
+  Fuel,
   MapPin,
+  Plane,
   Plus,
   Star,
+  Ticket,
+  TrainFront,
   Wallet,
 } from "lucide-react";
 import { useLocale } from "next-intl";
@@ -15,9 +21,23 @@ import * as React from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Link } from "@/i18n/navigation";
+// Rezervacijski sloj (v2.5.0) — ČISTI moduli brez env (varni za klienta):
+// letališče po regiji (iskrena hevristika, vidna v UI) + črpalke (odprti
+// podatki OSM, gorivo NI provizijska kategorija).
+import {
+  getProvider,
+  nearestAirportForRegion,
+} from "@/lib/affiliate-providers";
+import { nearestFuelStation } from "@/lib/fuel-stations";
 import { pick } from "@/lib/i18n-pick";
 import { myTrip } from "@/lib/my-trip";
 import {
@@ -93,6 +113,43 @@ export function DestinationDetail({ d }: { d: Destination }) {
       sl: "",
       en: "Content note: the destination dataset is canonically Slovenian; an English content overlay is not yet available.",
     },
+    // Rezervacijska kartica (v2.5.0) — DELNI slovar {sl, en} (kanon 48-b):
+    // provizijsko razkritje je obvezno in vidno, partnerji pa iz čistega
+    // registra (affiliate-providers) — nič hardkodiranih imen.
+    bookTitle: { sl: "Načrtuj bivanje", en: "Book nearby" },
+    bookLead: {
+      sl: "Rezerviraj v okolici — povezave odprejo pri partnerjih.",
+      en: "Book in the area — links open with our partners.",
+    },
+    bookStays: { sl: "Nastanitve", en: "Stays" },
+    bookExperiences: { sl: "Doživetja", en: "Experiences" },
+    bookFlights: { sl: "Letalske karte", en: "Flights" },
+    bookCar: { sl: "Rent-a-car", en: "Car rental" },
+    bookTransfers: {
+      sl: "Prevozi (vlaki/avtobusi)",
+      en: "Transfers (trains/buses)",
+    },
+    bookOpenAt: {
+      sl: (name: string) => `Odpri pri ${name}`,
+      en: (name: string) => `Open at ${name}`,
+    },
+    bookFlyTo: {
+      sl: (name: string) => `Leti do ${name}`,
+      en: (name: string) => `Fly to ${name}`,
+    },
+    fuelNearby: {
+      sl: "Najbližja bencinska črpalka",
+      en: "Nearest fuel station",
+    },
+    fuelStraight: { sl: "naravnost", en: "as the crow flies" },
+    fuelNote: {
+      sl: "Približna lega (odprti podatki); razdalja naravnost, ne po cesti.",
+      en: "Approximate location (open data); straight-line distance, not by road.",
+    },
+    bookDisclosure: {
+      sl: "Ko rezerviraš prek povezav naših partnerjev, partner nama izplača provizijo — cena zate ostaja enaka.",
+      en: "When you book through our partner links, the partner pays us a commission — your price stays the same.",
+    },
   } as const;
 
   const meta = [
@@ -112,6 +169,22 @@ export function DestinationDetail({ d }: { d: Destination }) {
       items: d.bestSeason.map((s) => pick(l, SEASONS[s])),
     },
   ];
+
+  // Rezervacijske vrstice: dest je VEDNO ta destinacija (slug), letališče pa
+  // hevristika po regiji (natančna geolokacija ni na voljo — je vidna v UI).
+  // Gorivo SAMO za slovenske destinacije (nabor črpalk pokriva SI).
+  const airport = nearestAirportForRegion(d.region);
+  const fuel =
+    d.country === "SI"
+      ? nearestFuelStation(d.coords.lat, d.coords.lng)
+      : null;
+  const bookingRows = [
+    { id: "booking", icon: BedDouble, label: pick(l, L.bookStays) },
+    { id: "getyourguide", icon: Ticket, label: pick(l, L.bookExperiences) },
+    { id: "kiwi", icon: Plane, label: pick(l, L.bookFlights) },
+    { id: "rentalcars", icon: Car, label: pick(l, L.bookCar) },
+    { id: "omio", icon: TrainFront, label: pick(l, L.bookTransfers) },
+  ] as const;
 
   const onAdd = () => {
     const res = myTrip.add(d.slug, d.name, "destination", "destinacija");
@@ -229,6 +302,92 @@ export function DestinationDetail({ d }: { d: Destination }) {
                 </p>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Načrtuj bivanje — kontekstualne rezervacije pri partnerjih.
+            Iskrenost: dest je ta destinacija; letalska vrstica pokaže
+            letališče po regiji; gorivo (samo SI) je odprt podatek brez
+            partnerja in brez provizije. */}
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+              {pick(l, L.bookTitle)}
+            </CardTitle>
+            <CardDescription>{pick(l, L.bookLead)}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
+              {bookingRows.map((row) => {
+                // Register je edina resnica — neznan id se ne izriše.
+                const p = getProvider(row.id);
+                if (!p) return null;
+                const cta =
+                  row.id === "kiwi"
+                    ? pick(l, L.bookFlyTo)(airport.nameSl)
+                    : pick(l, L.bookOpenAt)(p.name);
+                const Icon = row.icon;
+                return (
+                  <div
+                    key={row.id}
+                    className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2"
+                  >
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <Icon
+                        className="size-5 shrink-0 text-muted-foreground"
+                        aria-hidden="true"
+                      />
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {row.label}
+                        </p>
+                        <p className="truncate text-sm font-bold">{p.name}</p>
+                      </div>
+                    </div>
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      className="shrink-0 font-semibold"
+                    >
+                      {/* Vodeni klik skozi lastni API (zapis klika + 302);
+                          rel="sponsored" je obvezen za provizijske povezave. */}
+                      <a
+                        href={`/api/affiliate/go?provider=${row.id}&dest=${d.slug}`}
+                        target="_blank"
+                        rel="nofollow sponsored noopener"
+                      >
+                        {cta}
+                        <ExternalLink className="size-3.5" aria-hidden="true" />
+                      </a>
+                    </Button>
+                  </div>
+                );
+              })}
+              {fuel && (
+                <div className="flex items-center gap-2.5">
+                  <Fuel
+                    className="size-5 shrink-0 text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      {pick(l, L.fuelNearby)}
+                    </p>
+                    <p className="text-sm font-bold">
+                      {fuel.station.name} — ~{fuel.km.toFixed(1)} km (
+                      {pick(l, L.fuelStraight)})
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {pick(l, L.fuelNote)}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+            <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+              {pick(l, L.bookDisclosure)}
+            </p>
           </CardContent>
         </Card>
 

@@ -307,3 +307,56 @@ model ProcessedStripeEvent {
   type        String
   processedAt DateTime @default(now())
 }
+
+/// Klik na rezervacijsko povezavo partnerja (v2.5.0 — izhodišče provizijske
+/// sledi po vzorcu MindTrip: vodeni klikanjí → partnerjevo poročilo → dnevnik).
+/// ISKRENOST: hranimo SAMO affiliateActive (ali je bil žeton aktiven) —
+/// povezava se shrani brez žetona; brez IP in brez PIQ.
+model AffiliateClick {
+  id              String   @id @default(cuid())
+  providerId      String
+  category        String
+  destinationSlug String?
+  destinationName String?
+  /// Ali je partnerjev ID žeton bil nastavljen ob kliku (moniziran klik).
+  affiliateActive Boolean  @default(false)
+  /// Končna javna povezava BREZ žetona (partner.iskanje?ss=Bled).
+  url             String
+  userId          String?
+  /// Anonimni ključ seje (kolendič dsa_aff) — vezava klikov v seji.
+  sessionKey      String
+  referrer        String?
+  createdAt       DateTime @default(now())
+
+  @@index([providerId, createdAt])
+  @@index([createdAt])
+  @@index([sessionKey])
+}
+
+/// Provizijski dnevnik — vnosi IZKLJUČNO iz partnerjevih poročil (ročni
+/// vnos ali CSV uvoz); nikoli samodejno „potrjeno" (kanon trip-reservations:
+/// potrjevanje je atestacija iz vira poročila, source vidno zapisan).
+model CommissionEntry {
+  id               String    @id @default(cuid())
+  providerId       String
+  /// Številka rezervacije iz partnerjevega poročila (edinstvena na partnerja).
+  bookingRef       String
+  bookedFor        String?
+  /// Vrednost rezervacije v EUR (osnova iz poročila).
+  amountEur        Float
+  /// Provizija v EUR IZ poročila (ne naša ocena — ocena je samo predlog).
+  commissionEur    Float
+  status           String    @default("PENDING") // PENDING | CONFIRMED | PAID
+  /// Datum zaključka bivanja/aktivnosti (osnova T+3 izplačila).
+  stayCompletedAt  DateTime?
+  /// Predviden izplatni datum (28. v mesecu, +3 meseca — vzorec MindTrip).
+  payoutDueAt      DateTime?
+  source           String    @default("MANUAL") // MANUAL | CSV_IMPORT
+  note             String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@unique([providerId, bookingRef])
+  @@index([status])
+  @@index([payoutDueAt])
+}

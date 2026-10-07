@@ -2,19 +2,26 @@
 
 import {
   ArrowRight,
+  BedDouble,
   Building2,
+  Car,
   Castle,
   Check,
   Droplets,
+  ExternalLink,
   Flower2,
+  Fuel,
   Landmark,
   Milestone,
   Mountain,
   MountainSnow,
+  Plane,
   Sailboat,
   Search,
   Send,
   Sparkles,
+  Ticket,
+  TrainFront,
   Trees,
   UtensilsCrossed,
   Waves,
@@ -29,6 +36,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useRouter } from "@/i18n/navigation";
+// Rezervacijski register (ČIST modul, brez env — varen za klienta; gorivo ni
+// provizijsko: črpalke so odprti podatki, zato ne vodijo na partnerja).
+import {
+  AFFILIATE_CATEGORIES,
+  providersPublicDTO,
+  type AffiliateCategory,
+} from "@/lib/affiliate-providers";
 import { pick } from "@/lib/i18n-pick";
 import {
   DATA_STATS,
@@ -308,6 +322,28 @@ const L = {
     fr: "Tous les parcours puisent dans le même ensemble canonique de destinations — 38 lieux, 20 régions, 4 pays.",
     es: "Todos los caminos surgen del mismo conjunto canónico de destinos — 38 lugares, 20 regiones, 4 países.",
   },
+  // Booking hub (v2.5.0) — DELNI slovar {sl, en}: ostali jeziki padajo na
+  // slovenščino (kanon 48-b); provizijska razkritja so poštena in vidna.
+  bookingTitle: {
+    sl: "Rezerviraj potovanje",
+    en: "Book your trip",
+  },
+  bookingLead: {
+    sl: "Nastanitve, doživetja, leti, avto in prevozi — povezave odprejo pri preverjenih partnerjih, bencinske črpalke pa najdeš na našem zemljevidu.",
+    en: "Stays, experiences, flights, cars and transfers — links open with verified partners; fuel stations live on our map.",
+  },
+  bookingOpenAt: {
+    sl: (name: string) => `Odpri pri ${name}`,
+    en: (name: string) => `Open at ${name}`,
+  },
+  bookingMapCta: {
+    sl: "Poglej na zemljevidu",
+    en: "View on the map",
+  },
+  bookingDisclosure: {
+    sl: "Ko rezerviraš prek povezav naših partnerjev, partner nama izplača provizijo — cena zate ostaja enaka.",
+    en: "When you book through our partner links, the partner pays us a commission — your price stays the same.",
+  },
 } as const;
 
 /** DOMAČA STRAN (klientni del — metadata nosi server ovoj v [locale]/page.tsx). */
@@ -450,9 +486,28 @@ const ENDLESS = [
   {
     icon: Sparkles,
     q: "/destinacije?type=cave",
-    label: { sl: "Skrite dragulje", en: "Hidden gems", it: "Gioielli nascosti", de: "Verborgene Schätze", fr: "Trésors cachés", es: "Joyas ocultas" },
+    label: { sl: "Skrite dragulje", en: "Hidden gems", it: "Gioioli nascosti", de: "Verborgene Schätze", fr: "Trésors cachés", es: "Joyas ocultas" },
   },
 ] as const;
+
+/** Ikone rezervacijskih kategorij (Booking hub) — lucide, brez emodžijev. */
+const CATEGORY_ICONS: Record<
+  AffiliateCategory,
+  React.ComponentType<{ className?: string }>
+> = {
+  stays: BedDouble,
+  experiences: Ticket,
+  flights: Plane,
+  car: Car,
+  transfers: TrainFront,
+  fuel: Fuel,
+};
+
+/**
+ * Javni seznam rezervacijskih partnerjev (čisti register brez žetonov —
+ * partnerska imena in opisi prihajajo iz enega vira, nič hardkodirano).
+ */
+const BOOKING_PARTNERS = providersPublicDTO();
 
 export function HomeView() {
   const l = useLocale();
@@ -709,6 +764,79 @@ export function HomeView() {
             </Button>
           </div>
         </div>
+      </section>
+
+      {/* ======== REZERVIRAJ POTOVANJE (provizijski partnerji + odprti podatki) ========
+          Iskrenost: partnerje brez aktiviranega programa še vedno odpremo
+          (javno iskanje), gorivo pa NI provizijsko — vodi na lastni zemljevid. */}
+      <section
+        aria-labelledby="rezerviraj"
+        className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8"
+      >
+        <h2 id="rezerviraj" className="text-2xl font-bold tracking-tight sm:text-3xl">
+          {t("bookingTitle")}
+        </h2>
+        <p className="mt-2 max-w-2xl text-muted-foreground">{t("bookingLead")}</p>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {BOOKING_PARTNERS.map((p) => {
+            const Icon = CATEGORY_ICONS[p.category];
+            return (
+              <Card key={p.id} className="flex flex-col">
+                <CardContent className="flex flex-1 flex-col p-5">
+                  <div className="flex items-center gap-3">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      <Icon className="size-5" aria-hidden="true" />
+                    </span>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-bold leading-tight">
+                        {pick(l, AFFILIATE_CATEGORIES[p.category])}
+                      </h3>
+                      <p className="text-xs font-medium text-muted-foreground">{p.name}</p>
+                    </div>
+                  </div>
+                  <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
+                    {pick(l, { sl: p.descSl, en: p.descEn })}
+                  </p>
+                  {p.commissionable ? (
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      className="mt-4 w-full font-semibold tap-target"
+                    >
+                      {/* Vodeni klik skozi lastni API (izpis klika + 302);
+                          rel="sponsored" je obvezen za provizijske povezave. */}
+                      <a
+                        href={`/api/affiliate/go?provider=${p.id}`}
+                        target="_blank"
+                        rel="nofollow sponsored noopener"
+                      >
+                        {t("bookingOpenAt")(p.name)}
+                        <ExternalLink className="size-3.5" aria-hidden="true" />
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      className="mt-4 w-full font-semibold tap-target"
+                    >
+                      {/* Gorivo = odprti podatki (OSM), ne partner — zemljevid. */}
+                      <Link href="/zemljevid">
+                        {t("bookingMapCta")}
+                        <ArrowRight className="size-3.5" aria-hidden="true" />
+                      </Link>
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+        <p className="mt-4 text-xs leading-relaxed text-muted-foreground sm:text-sm">
+          {t("bookingDisclosure")}
+        </p>
       </section>
 
       {/* ======== NEWSLETTER ======== */}

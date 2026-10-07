@@ -18,6 +18,13 @@
  *  ② "Pot" — če ima uporabnik ≥ 2 destinaciji v Moji poti, gumb nariše
  *     vozno pot prek /api/journey/route (OSRM = polna črta; hevristična
  *     ocena = črtkana premica z oznako — nikoli prikrito kot OSRM).
+ *  ③ "Bencinske" (v2.5.0, analiza MindTrip) — preklop, ki pridobi črpalke
+ *     iz /api/map/fuel za trenutni pogled (kurirani odprti podatki OSM,
+ *     pošteno označena PRIbližna lega; brez cen goriv — uravnavane in
+ *     spremenljive). Prikaz na vseh ravneh povečave (država → koridorji).
+ *  ④ Rezervacijske povezave v popupu destinacije (v2.5.0): nastanitev /
+ *     doživetje / leti / rent-a-car prek /api/affiliate/go (vodeni klik,
+ *     rel="sponsored" — provizijski model po vzorcu MindTrip).
  *
  * Hidracija: komponento nalagamo IZKLJUČNO klientno prek next/dynamic
  * ssr:false (glej app/[locale]/zemljevid/page.tsx) — Leaflet potrebuje
@@ -27,6 +34,7 @@
 import L from "leaflet";
 import {
   Check,
+  Fuel,
   Heart,
   Loader2,
   MapPin,
@@ -144,6 +152,25 @@ function lokalIcon(type: string): L.DivIcon {
   });
 }
 
+/**
+ * divIcon marker bencinske črpalke (v2.5.0) — ZA OBRNJEN KVADRAT
+ * (romb) v topli sivi, ločeno od krogov destinacij in kvadratov lokalov
+ * po obliki IN barvi; brez slikovnih ikon (isti kanon kot ostali pini).
+ */
+function fuelIcon(): L.DivIcon {
+  const size = 12;
+  return L.divIcon({
+    className: "dsa-map-pin",
+    html:
+      `<span style="box-sizing:border-box;display:block;width:${size}px;height:${size}px;` +
+      `transform:rotate(45deg);border-radius:2.5px;background:#57534E;border:2px solid #fff;` +
+      `box-shadow:0 1px 3px rgba(0,0,0,.45)"></span>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -(size / 2 + 4)],
+  });
+}
+
 /** Pin iz /api/map/pins (pins način, zoom ≥ 15). */
 interface MapPinDTO {
   id: string;
@@ -162,6 +189,25 @@ interface PinsApiResponseDTO {
   total: number;
   returned: number;
   capped: boolean;
+}
+
+/** Črpalka iz /api/map/fuel (v2.5.0 — kurirani odprti podatki OSM). */
+interface FuelStationDTO {
+  id: string;
+  name: string;
+  brand: string;
+  lat: number;
+  lng: number;
+  fuels: string[];
+  highway: boolean;
+}
+
+/** Odgovor /api/map/fuel. */
+interface FuelApiResponseDTO {
+  stations: FuelStationDTO[];
+  total: number;
+  returned: number;
+  precision: string;
 }
 
 /** Odsek poti iz /api/journey/route. */
@@ -307,6 +353,111 @@ function LokaliLayer({
   return null;
 }
 
+/**
+ * PLAST "BENCINSKE" (v2.5.0) — krmilnik pridobivanja črpalk iz
+ * /api/map/fuel za trenutni pogled (moveend/zoomend, debounce 400 ms).
+ * Brez praga povečave: črpalke so redke (66 po državi), zato so smiselne
+ * že na ravni cele države. Preklic ob izklopu/odmontiranju (AbortController)
+ * — isti kanon kot plast Lokali. Napaka se izpiše iskreno (retry chip).
+ */
+function FuelLayer({
+  enabled,
+  onResult,
+  onError,
+  onLoading,
+  retryKey,
+}: {
+  enabled: boolean;
+  onResult: (stations: FuelStationDTO[]) => void;
+  onError: () => void;
+  onLoading: () => void;
+  retryKey: number;
+}) {
+  const map = useMap();
+
+  React.useEffect(() => {
+    if (!enabled) return;
+    const controller = new AbortController();
+    let timer: number | undefined;
+
+    const fetchStations = async () => {
+      const bounds = map.getBounds();
+      onLoading();
+      try {
+        const res = await fetch(
+          `/api/map/fuel?bbox=${bounds.getSouth().toFixed(6)},${bounds
+            .getWest()
+            .toFixed(6)},${bounds.getNorth().toFixed(6)},${bounds
+            .getEast()
+            .toFixed(6)}`,
+          { signal: controller.signal }
+        );
+        if (!res.ok) throw new Error("fuel");
+        const data = (await res.json()) as FuelApiResponseDTO;
+        onResult(Array.isArray(data.stations) ? data.stations : []);
+      } catch {
+        if (controller.signal.aborted) return; // izklop — tiho
+        onError();
+      }
+    };
+
+    const schedule = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(fetchStations, 400);
+    };
+
+    void fetchStations();
+    map.on("moveend", schedule);
+    map.on("zoomend", schedule);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+      map.off("moveend", schedule);
+      map.off("zoomend", schedule);
+    };
+  }, [enabled, map, onResult, onError, onLoading, retryKey]);
+
+  return null;
+}
+
+/** Popup ene črpalke (veriga, ime, goriva, iskrena opomba o legi). */
+function FuelPinPopup({
+  s,
+  labels,
+}: {
+  s: FuelStationDTO;
+  labels: {
+    fuelApproximate: string;
+    fuelHighway: string;
+    fuelFuels: string;
+    fuelSource: string;
+  };
+}) {
+  return (
+    <div className="w-[190px]">
+      <p className="text-[11px] font-medium text-muted-foreground">{s.brand}</p>
+      <h3 className="text-sm leading-tight font-bold">{s.name}</h3>
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        {labels.fuelFuels}: {s.fuels.join(" · ")}
+      </p>
+      {s.highway && (
+        <p className="mt-1 inline-flex rounded-full border bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+          {labels.fuelHighway}
+        </p>
+      )}
+      {/* Iskrenost: koordinate črpalk so PRIbližne (kurirani odprti podatki
+          OSM — občina/priključek) in tako tudi označene; brez cen goriv. */}
+      <p className="mt-1 text-[11px] text-muted-foreground italic">
+        {labels.fuelApproximate}
+      </p>
+      <p className="mt-0.5 text-[10px] text-muted-foreground">
+        {labels.fuelSource}
+      </p>
+    </div>
+  );
+}
+
 /** Popup enega lokalnega pina (kategorija, ime, iskrena opomba o lokaciji). */
 function LokalPinPopup({
   pin,
@@ -357,7 +508,18 @@ function DestinationPopup({
   d: Destination;
   inTrip: boolean;
   onAdd: (d: Destination) => void;
-  labels: { add: string; added: string; more: string; ratingOf: (v: string) => string };
+  labels: {
+    add: string;
+    added: string;
+    more: string;
+    ratingOf: (v: string) => string;
+    bookTitle: string;
+    bookStays: string;
+    bookExperiences: string;
+    bookFlights: string;
+    bookCar: string;
+    bookingLinksNote: string;
+  };
   locale: string;
 }) {
   return (
@@ -401,6 +563,78 @@ function DestinationPopup({
           <Link href={`/destinacija/${d.slug}`}>{labels.more}</Link>
         </Button>
       </div>
+
+      {/* ── Rezervacijske povezave (v2.5.0, provizijski sloj) ──────────
+          Vodeni klik prek /api/affiliate/go (strežnik zapiše klik in
+          preusmeri k partnerju); rel="sponsored" je obvezen razkrivni
+          atribut affiliate povezav, mikrovrstica pa uporabniku iskreno
+          pove, da partner izplača provizijo brez višje cene. */}
+      <div className="mt-2 border-t pt-2">
+        <p className="text-[11px] font-medium text-muted-foreground">
+          {labels.bookTitle}
+        </p>
+        <div className="mt-1 grid grid-cols-2 gap-1.5">
+          <Button
+            asChild
+            size="sm"
+            variant="outline"
+            className="h-7 px-2 text-[11px]"
+          >
+            <a
+              href={`/api/affiliate/go?provider=booking&dest=${d.slug}`}
+              target="_blank"
+              rel="nofollow sponsored noopener"
+            >
+              {labels.bookStays}
+            </a>
+          </Button>
+          <Button
+            asChild
+            size="sm"
+            variant="outline"
+            className="h-7 px-2 text-[11px]"
+          >
+            <a
+              href={`/api/affiliate/go?provider=getyourguide&dest=${d.slug}`}
+              target="_blank"
+              rel="nofollow sponsored noopener"
+            >
+              {labels.bookExperiences}
+            </a>
+          </Button>
+          <Button
+            asChild
+            size="sm"
+            variant="outline"
+            className="h-7 px-2 text-[11px]"
+          >
+            <a
+              href={`/api/affiliate/go?provider=kiwi&dest=${d.slug}`}
+              target="_blank"
+              rel="nofollow sponsored noopener"
+            >
+              {labels.bookFlights}
+            </a>
+          </Button>
+          <Button
+            asChild
+            size="sm"
+            variant="outline"
+            className="h-7 px-2 text-[11px]"
+          >
+            <a
+              href={`/api/affiliate/go?provider=rentalcars&dest=${d.slug}`}
+              target="_blank"
+              rel="nofollow sponsored noopener"
+            >
+              {labels.bookCar}
+            </a>
+          </Button>
+        </div>
+        <p className="mt-1 text-[10px] leading-tight text-muted-foreground">
+          {labels.bookingLinksNote}
+        </p>
+      </div>
     </div>
   );
 }
@@ -428,6 +662,15 @@ export default function TravelMap() {
   // ob napaki (iskren odgoviv, ne tiha napaka).
   const [lokaliLoading, setLokaliLoading] = React.useState(false);
   const [lokaliRetryKey, setLokaliRetryKey] = React.useState(0);
+  // ── Plast Bencinske (v2.5.0, provizijska analiza MindTrip) — črpalke
+  // iz /api/map/fuel za trenutni pogled; enak vzorec stanj kot Lokali
+  // (loading/empty/error + retry, ob izklopu takoj počiščeno). ─────────
+  const [fuelOn, setFuelOn] = React.useState(false);
+  const [fuelStations, setFuelStations] = React.useState<FuelStationDTO[]>([]);
+  const [fuelLoading, setFuelLoading] = React.useState(false);
+  const [fuelError, setFuelError] = React.useState(false);
+  const [fuelEmpty, setFuelEmpty] = React.useState(false);
+  const [fuelRetryKey, setFuelRetryKey] = React.useState(0);
   const [routeState, setRouteState] = React.useState<RouteState>({
     status: "idle",
   });
@@ -565,6 +808,21 @@ export default function TravelMap() {
       fr: (m: string) => (m === "osrm" ? "OSRM (routes réelles)" : m === "heuristic" ? "estimation d'itinéraire (heuristique)" : "mixte"),
       es: (m: string) => (m === "osrm" ? "OSRM (calles reales)" : m === "heuristic" ? "estimación de ruta (heurística)" : "mixta"),
     },
+    // ── Plast Bencinske + rezervacije (v2.5.0) ──────────────────────
+    fuelLabel: { sl: "Bencinske", en: "Fuel", it: "Benzinaio", de: "Tankstellen", fr: "Stations-service", es: "Gasolineras" },
+    fuelLoading: { sl: "Nalagam črpalke …", en: "Loading stations …", it: "Caricamento stazioni …", de: "Tankstellen werden geladen …", fr: "Chargement des stations …", es: "Cargando gasolineras …" },
+    fuelEmpty: { sl: "V tem območju ni črpalk", en: "No stations in this area", it: "Nessuna stazione in quest'area", de: "Keine Tankstellen in diesem Bereich", fr: "Aucune station dans cette zone", es: "No hay gasolineras en esta zona" },
+    fuelUnavailable: { sl: "Bencinske trenutno niso dosegljive", en: "Stations currently unavailable", it: "Stazioni attualmente non disponibili", de: "Tankstellen derzeit nicht verfügbar", fr: "Stations actuellement indisponibles", es: "Gasolineras no disponibles actualmente" },
+    fuelApproximate: { sl: "približna lokacija (odprti podatki OSM)", en: "approximate location (OSM open data)", it: "posizione approssimativa (dati OSM)", de: "ungefähre Lage (OSM offene Daten)", fr: "position approximative (données OSM)", es: "ubicación aproximada (datos ODM abiertos)" },
+    fuelHighway: { sl: "ob avtocesti", en: "near motorway", it: "vicino all'autostrada", de: "an der Autobahn", fr: "près de l'autoroute", es: "junto a la autopista" },
+    fuelFuels: { sl: "Goriva", en: "Fuels", it: "Carburanti", de: "Kraftstoffe", fr: "Carburants", es: "Combustibles" },
+    fuelSource: { sl: "Vir: kurirani odprti podatki (ODbL)", en: "Source: curated open data (ODbL)", it: "Fonte: dati aperti curati (ODbL)", de: "Quelle: kuratierte offene Daten (ODbL)", fr: "Source : données ouvertes curatorisées (ODbL)", es: "Fuente: datos abiertos curados (ODbL)" },
+    bookTitle: { sl: "Rezerviraj", en: "Book", it: "Prenota", de: "Buchen", fr: "Réserver", es: "Reservar" },
+    bookStays: { sl: "Nastanitev", en: "Stay", it: "Pernottamento", de: "Unterkunft", fr: "Hébergement", es: "Alojamiento" },
+    bookExperiences: { sl: "Doživetje", en: "Experience", it: "Esperienza", de: "Erlebnis", fr: "Expérience", es: "Experiencia" },
+    bookFlights: { sl: "Leti", en: "Flights", it: "Voli", de: "Flüge", fr: "Vols", es: "Vuelos" },
+    bookCar: { sl: "Rent-a-car", en: "Car rental", it: "Autonoleggio", de: "Mietwagen", fr: "Location de voiture", es: "Alquiler de coches" },
+    bookingLinksNote: { sl: "Povezave partnerjev — provizija, cena zate nespremenjena", en: "Partner links — commission, your price unchanged", it: "Link partner — commissione, prezzo invariato", de: "Partnerlinks — Provision, Preis unverändert", fr: "Liens partenaires — commission, prix inchangé", es: "Enlaces de socios — comisión, precio sin cambios" },
   } as const;
   const t = <K extends keyof typeof L10n>(k: K) => pick(l, L10n[k]);
 
@@ -612,6 +870,43 @@ export default function TravelMap() {
       setLokaliMode(null);
       setLokaliError(false);
       setLokaliLoading(false);
+    }
+  };
+
+  // ── Plast Bencinske: stabilne callbacka + preklop (isti kanon Lokali) ──
+  const handleFuelResult = React.useCallback((stations: FuelStationDTO[]) => {
+    setFuelStations(stations);
+    setFuelEmpty(stations.length === 0);
+    setFuelError(false);
+    setFuelLoading(false);
+  }, []);
+
+  const handleFuelError = React.useCallback(() => {
+    setFuelError(true);
+    setFuelLoading(false);
+  }, []);
+
+  const handleFuelLoading = React.useCallback(() => {
+    setFuelLoading(true);
+    // Ob novem nalaganju pošteno umaknemo prejšnje „prazno" stanje (chip
+    // ne sme ostati obešen, medtem ko se nov pogled že nalaga).
+    setFuelEmpty(false);
+  }, []);
+
+  const retryFuel = React.useCallback(
+    () => setFuelRetryKey((k) => k + 1),
+    []
+  );
+
+  /** Preklop plasti Bencinske — ob izklopu takoj počisti pine. */
+  const toggleFuel = () => {
+    const next = !fuelOn;
+    setFuelOn(next);
+    if (!next) {
+      setFuelStations([]);
+      setFuelEmpty(false);
+      setFuelError(false);
+      setFuelLoading(false);
     }
   };
 
@@ -813,6 +1108,22 @@ export default function TravelMap() {
           {t("lokaliLabel")}
         </button>
 
+        {/* Plast Bencinske (v2.5.0) — preklop + stanja po vzorcu Lokali. */}
+        <button
+          type="button"
+          onClick={toggleFuel}
+          aria-pressed={fuelOn}
+          className={cn(
+            "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+            fuelOn
+              ? "border-primary bg-primary text-primary-foreground"
+              : "bg-background hover:border-primary/40 hover:text-primary"
+          )}
+        >
+          <Fuel className="size-4" aria-hidden="true" />
+          {t("fuelLabel")}
+        </button>
+
         {tripDestinations.length >= 2 && (
           <Button
             type="button"
@@ -887,6 +1198,48 @@ export default function TravelMap() {
             </button>
           </motion.span>
         )}
+        {/* Stanja plasti Bencinske — nalaganje / prazno / napaka + retry. */}
+        {fuelOn && fuelLoading && !fuelError && !fuelEmpty && (
+          <motion.span
+            role="status"
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="inline-flex h-11 items-center gap-2 rounded-full border bg-card px-4 text-xs font-medium text-muted-foreground"
+          >
+            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+            {t("fuelLoading")}
+          </motion.span>
+        )}
+        {fuelOn && fuelEmpty && !fuelLoading && !fuelError && (
+          <motion.span
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="inline-flex h-11 items-center rounded-full border border-dashed bg-card px-4 text-xs font-medium text-muted-foreground"
+          >
+            {t("fuelEmpty")}
+          </motion.span>
+        )}
+        {fuelOn && fuelError && (
+          <motion.span
+            role="status"
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="inline-flex h-11 items-center gap-1.5 rounded-full border border-destructive/40 bg-destructive/10 py-1.5 pl-4 pr-2 text-xs font-medium text-destructive"
+          >
+            {t("fuelUnavailable")}
+            <button
+              type="button"
+              onClick={retryFuel}
+              className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-full px-3 text-xs font-semibold transition-colors hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              <RotateCw className="size-3" aria-hidden="true" />
+              {t("retry")}
+            </button>
+          </motion.span>
+        )}
         {routeState.status === "error" && (
           <motion.span
             role="status"
@@ -951,6 +1304,14 @@ export default function TravelMap() {
               onLoading={handlePinsLoading}
               retryKey={lokaliRetryKey}
             />
+            {/* Plast Bencinske (v2.5.0) — krmilnik pridobivanja za pogled. */}
+            <FuelLayer
+              enabled={fuelOn}
+              onResult={handleFuelResult}
+              onError={handleFuelError}
+              onLoading={handleFuelLoading}
+              retryKey={fuelRetryKey}
+            />
             {results.map((d) => (
               <Marker
                 key={d.id}
@@ -979,12 +1340,41 @@ export default function TravelMap() {
                       added: t("added"),
                       more: t("more"),
                       ratingOf: t("ratingOf"),
+                      bookTitle: t("bookTitle"),
+                      bookStays: t("bookStays"),
+                      bookExperiences: t("bookExperiences"),
+                      bookFlights: t("bookFlights"),
+                      bookCar: t("bookCar"),
+                      bookingLinksNote: t("bookingLinksNote"),
                     }}
                     locale={l}
                   />
                 </Popup>
               </Marker>
             ))}
+
+            {/* Plast Bencinske: rombasti markerji črpalk (pošteno označena
+                PRIbližna lega v popupu; brez cen — vir ODbL v opombi). */}
+            {fuelOn &&
+              fuelStations.map((s) => (
+                <Marker
+                  key={`fuel-${s.id}`}
+                  position={[s.lat, s.lng]}
+                  icon={fuelIcon()}
+                >
+                  <Popup className="dsa-popup">
+                    <FuelPinPopup
+                      s={s}
+                      labels={{
+                        fuelApproximate: t("fuelApproximate"),
+                        fuelHighway: t("fuelHighway"),
+                        fuelFuels: t("fuelFuels"),
+                        fuelSource: t("fuelSource"),
+                      }}
+                    />
+                  </Popup>
+                </Marker>
+              ))}
 
             {/* Plast Lokali: majhni markerji lokalov (samo pins način,
                 zoom ≥ 15 — manjši in drugačni od destinacijskih krogov). */}

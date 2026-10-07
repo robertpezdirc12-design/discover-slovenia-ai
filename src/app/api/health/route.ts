@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readFile } from "node:fs/promises";
 
 import { db } from "@/lib/db";
 import { DATA_STATS, DESTINATIONS } from "@/lib/slovenia-data";
@@ -60,9 +61,57 @@ export async function GET() {
     at: now(),
   });
 
+  // 4) PWA offline: prisotnost sw.js + offline.html + manifest v public/
+  //    (registracija: produkcija ali ?sw=1 — glej src/components/pwa/).
+  try {
+    const [sw, offlinePage, manifest] = await Promise.all([
+      readFile("public/sw.js", "utf8"),
+      readFile("public/offline.html", "utf8"),
+      readFile("public/manifest.json", "utf8"),
+    ]);
+    const versionMatch = /SW_VERSION = "([^"]+)"/.exec(sw);
+    startup.push({
+      name: "pwa:offline",
+      status: "ok",
+      detail: `sw.js ${versionMatch?.[1] ?? "?"} + offline.html + manifest prisotni (registracija: produkcija ali ?sw=1)`,
+      at: now(),
+    });
+  } catch {
+    startup.push({
+      name: "pwa:offline",
+      status: "skipped",
+      detail: "PWA offline datoteke niso prisotne (sw.js/offline.html/manifest)",
+      at: now(),
+    });
+  }
+
+  // 5) Provizijski sloj (v2.5.0): register partnerjev + nabor črpalk
+  //    ( AFFILIATE_*_ID žetoni se NAMENOMA ne preverjajo — fail-closed
+  //    pomeni: brez žetona povezave delujejo javno, klikanja se štejejo).
+  try {
+    const { AFFILIATE_PROVIDERS } = await import("@/lib/affiliate-providers");
+    const { FUEL_STATIONS } = await import("@/lib/fuel-stations");
+    const commissionable = AFFILIATE_PROVIDERS.filter(
+      (p) => p.category !== "fuel",
+    ).length;
+    startup.push({
+      name: "booking:affiliate",
+      status: "ok",
+      detail: `${commissionable} provizijskih partnerjev + ${FUEL_STATIONS.length} črpalk (gorivo brez provizije — odprti podatki)`,
+      at: now(),
+    });
+  } catch {
+    startup.push({
+      name: "booking:affiliate",
+      status: "skipped",
+      detail: "Moduli provizijskega sloja niso dosegljivi",
+      at: now(),
+    });
+  }
+
   return NextResponse.json({
     status: "ok",
-    version: "2.3.1",
+    version: "2.5.0",
     startup,
     checkedAt: now(),
   });

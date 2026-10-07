@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Building2, HardDrive, LineChart, Users } from "lucide-react";
+import { ArrowRight, Building2, HardDrive, LineChart, Percent, Users } from "lucide-react";
 import { useLocale } from "next-intl";
 
 import { PageHeader } from "@/components/layout/page-header";
@@ -44,6 +44,12 @@ export default function OwnerPage() {
       en: "The portal is part of the platform's provider layer — everything about partnership, packages and the application form is on the providers page.",
     },
     partnersCta: { sl: "Stran za ponudnike", en: "Providers page" },
+    provTitle: { sl: "Provizije in klikanja", en: "Commissions and clicks" },
+    provBody: {
+      sl: "Nadzorna plošča za skrbnike: statistika klikanja na partnerske povezave in provizijski dnevnik iz poročil partnerjev (dostop omejen na DSA_ADMIN_EMAILS).",
+      en: "Admin dashboard: click statistics for partner links and the commission journal from partner reports (access limited to DSA_ADMIN_EMAILS).",
+    },
+    provCta: { sl: "Odpri ploščo", en: "Open the dashboard" },
     statusTitle: { sl: "Stanje v tej rekonstrukciji", en: "Status in this reconstruction" },
     statusBody: {
       sl: "Prijava v portal (e-pošta + geslo) je v produkciji ločena stran; njeno podlogo smo rekonstruirali 1:1, a brez pravega avtentikacijskega strežnika v sandboxu — obrazec je prikaz, povezave in vsebine pa so resnične.",
@@ -100,6 +106,27 @@ export default function OwnerPage() {
           <Button asChild variant="outline" size="sm" className="mt-4 font-semibold">
             <Link href="/za-ponudnike">
               {pick(l, L.partnersCta)}
+              <ArrowRight className="size-3.5" aria-hidden="true" />
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Skrbniška nadzorna plošča: provizije in klikanja (2.5.0) */}
+      <Card className="mt-6">
+        <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <Percent className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
+            <div>
+              <p className="text-sm font-semibold">{pick(l, L.provTitle)}</p>
+              <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                {pick(l, L.provBody)}
+              </p>
+            </div>
+          </div>
+          <Button asChild variant="outline" size="sm" className="shrink-0 font-semibold">
+            <Link href="/owner/provizije">
+              {pick(l, L.provCta)}
               <ArrowRight className="size-3.5" aria-hidden="true" />
             </Link>
           </Button>

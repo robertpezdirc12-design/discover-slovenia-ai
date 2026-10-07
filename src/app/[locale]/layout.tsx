@@ -10,6 +10,7 @@ import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { Navigation } from "@/components/layout/navigation";
 import { Providers } from "@/components/layout/providers";
 import { ThemeProvider } from "@/components/layout/theme-provider";
+import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { Toaster } from "@/components/ui/toaster";
 import { routing } from "@/i18n/routing";
 
@@ -135,6 +136,8 @@ export default async function LocaleLayout({
               </div>
               {/* Fiksni mobilni tab bar (fiksno dno, safe-area, ≥44px) */}
               <MobileTabBar />
+              {/* PWA offline — registracija SW + offline banner + osvežitev (2.4.0) */}
+              <ServiceWorkerRegister />
               <Toaster />
             </ThemeProvider>
           </Providers>

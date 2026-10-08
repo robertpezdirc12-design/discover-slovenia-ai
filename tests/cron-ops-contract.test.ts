@@ -20,6 +20,7 @@ const CRON_ROUTES = [
   "kiwitaxi-reingest",
   "recalculate-status",
   "draft-reminders",
+  "watch-check", // P1-C (issue #3 §4): preverjanje spremljanj vsaki 2 uri
 ] as const;
 
 // ── Cron: fail-closed avtorizacija ─────────────────────────────────────────
@@ -54,7 +55,7 @@ describe("p0i [source-contract]: cron poti so fail-closed", () => {
 // ── Urniki (vercel.json) ──────────────────────────────────────────────────
 
 describe("p0i [source-contract]: urniki cron jobov so registrirani", () => {
-  test("④ vercel.json vsebuje vse 4 cron vnose z urniki", async () => {
+  test("④ vercel.json vsebuje vseh 5 cron vnosov z urniki", async () => {
     const raw = JSON.parse(await src("vercel.json"));
     const crons = raw.crons as { path: string; schedule: string }[];
     const paths = crons.map((c) => c.path);
@@ -65,7 +66,9 @@ describe("p0i [source-contract]: urniki cron jobov so registrirani", () => {
     expect(recalc?.schedule).toBe("30 6 * * *"); // dnevno 6:30 UTC
     const nudge = crons.find((c) => c.path === "/api/cron/draft-reminders");
     expect(nudge?.schedule).toBe("0 8 * * *"); // dnevno 8:00 UTC
-    expect(crons.length).toBe(4);
+    const watch = crons.find((c) => c.path === "/api/cron/watch-check");
+    expect(watch?.schedule).toBe("15 */2 * * *"); // vsaki 2 uri (P1-C)
+    expect(crons.length).toBe(5);
   });
 });
 

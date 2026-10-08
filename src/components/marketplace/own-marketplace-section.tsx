@@ -24,6 +24,7 @@ import {
   formatPriceCents,
   type MarketplaceProduct,
 } from "@/components/marketplace/types";
+import { WatchPriceButton } from "@/components/watch/watch-add-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -270,16 +271,19 @@ export function OwnMarketplaceSection() {
                       <span>{t("stock")(p.stock)}</span>
                       {p.saleCount > 0 && <span>{t("sold")(p.saleCount)}</span>}
                     </div>
-                    <div className="mt-auto pt-1">
+                    <div className="mt-auto flex items-end gap-2 pt-1">
                       <Button
                         type="button"
-                        className="h-11 w-full"
+                        className="h-11 flex-1"
                         onClick={() => onBuy(p)}
                         disabled={p.stock < 1}
                       >
                         <ShoppingCart className="size-4" aria-hidden="true" />
                         {p.stock < 1 ? t("soldOut") : t("buy")}
                       </Button>
+                      {/* P1-C (issue #3 §4): spremljanje cene — opozorilo ob
+                          padcu ≥ prag (obe ceni preverjeni iz tržnice). */}
+                      <WatchPriceButton slug={p.slug} className="h-11 w-11" />
                     </div>
                   </CardContent>
                 </Card>

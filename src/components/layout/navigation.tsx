@@ -9,6 +9,7 @@ import { useLocale } from "next-intl";
 import * as React from "react";
 
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import {
   useMoreGroups,
   usePrimaryLinks,
@@ -229,7 +230,7 @@ export function Navigation() {
           </DropdownMenu>
         </nav>
 
-        {/* Desna skupina: iskanje, jezik, tema + mobilni meni */}
+        {/* Desna skupina: iskanje, obvestila, jezik, tema + mobilni meni */}
         <div className="flex items-center gap-1 sm:gap-1.5">
           <Button
             variant="ghost"
@@ -241,6 +242,8 @@ export function Navigation() {
               <Search className="size-5" aria-hidden="true" />
             </Link>
           </Button>
+          {/* P1-C (issue #3 §10): zvonček obvestil — samo prijavljenim. */}
+          <NotificationBell />
           <div className="hidden sm:block">
             <LanguageSwitcher />
           </div>

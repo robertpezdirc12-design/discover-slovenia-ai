@@ -5,7 +5,7 @@
 > realnimi koordinatami in deterministični načrtovalnik poti (isti vhod → isti načrt,
 > 0 AI žetonov v jedru).
 
-**Verzija: 2.16.0 — P1-B: POGOVORNO UREJANJE NAČRTA + RAZLOGI + BOOKING INTELIGENCA (issue #3 §3/§5/§6/§7).**
+**Verzija: 2.17.0 — P1-C: SPREMLJANJE (WATCH) + NOTIFIKACIJSKI CENTER (issue #3 §4/§10).**
 Izdaje rekonstrukcije: 2.1.0 skupnostne funkcije → 2.2.0 aplikacijska lupina →
 2.3.0 issue #1 (živi GPS, booking, pomočnik) → 2.3.1 infra CI → 2.4.0 PWA
 offline → 2.5.0 rezervacijski sloj → 2.6.0 partner kanal booking verige →
@@ -277,4 +277,28 @@ NOV booking-summary (samo-bralna inteligenca rezervacij §7 — povzetek
 stanj/kanalov iz atestacijskih zapisov, agent NIKOLI ne mutira; @AI nov
 namen „rezervacije"); messages ruta podaja kanonske rezervacije poti;
 ZASEBNOST: skupinski klepet NAMENOMA brez osebnega spomina (sodelavci
-ne vidijo zasebnih podatkov); 34 novih testov = 1076/1076, tsc 0, lint 0.
+ne vidijo zasebnih podatkov); 34 novih testov = 1076/1076, tsc 0, lint 0
+→ 2.17.0 P1-C watch/monitoring + notifikacije (issue #3 §4/§10):
+NOVA modela WatchItem (userId, kind, targetKind, targetId, condition,
+state active/paused, lastObservation/lastCheckedAt/lastTriggeredAt;
+@@unique([userId,kind,targetKind,targetId])) + Notification (source,
+severity, data, readAt, dedupeKey; @@unique([userId,dedupeKey]) →
+idempotenten cron); NOV watch-engine (0-AI čista plast: 4 vrste —
+price×product, weather×journey, trip_day×journey, booking×journey;
+ZAVRŽENE vrste availability/flight → iskrena zavrnitev, vir ne
+potrjuje; cena pade SAMO iz dveh preverljivih cen — prvi zagon zapiše
+izhodišče (baseline) BREZ opozorila; vreme z izhodom postanka +
+horizontom 16 dni — pred tem PENDING, nikoli lažni mir; dedupeKey na
+dogodku → eno obvestilo na dan/mejnik/prehod); NOV watch-server
+(runWatchCheck: bounded ≤ 12 lokacij/zagon deterministično, Open-Meteo
+fail-closed, zasebnost §11 — pote brez dostopa se NE vrednotijo;
+revizijska sled watch.*/notification.*); API /api/watch (GET/POST —
+ime cilja določi strežnik, meja 50/uporabnik, 409 podvojeni) +
+/api/watch/[id] (PATCH pavza/nadaljuj/pragi, DELETE — IDOR {id,userId}
+→ 404) + /api/notifications (GET bounded 100 + ?summary=1 za zvonček,
+PATCH eno/vse prebrano, DELETE prebrana/vse) + /api/cron/watch-check
+(Bearer CRON_SECRET fail-closed, urnik */2h v vercel.json); UI: zvonček
+z neprebranimi v glavi (poll 60 s, samo prijavljeni) + /notifikacije
+(center: inbox + spremljanja + iskrenost) + gumb »Spremljaj ceno« na
+tržnici + meni »Spremljaj« na pote (vreme/dnevi/rezervacije, ≥VIEWER);
+PWA push ISKRENO NI implementiran (in-app plast).

@@ -242,6 +242,18 @@ export function useMoreGroups(): NavGroup[] {
           }),
         },
         {
+          // P1-C (issue #3 §10): notifikacijski center + spremljanja (§4).
+          href: "/notifikacije",
+          label: pick(l, {
+            sl: "Obvestila",
+            en: "Notifications",
+            it: "Notifiche",
+            de: "Benachrichtigungen",
+            fr: "Notifications",
+            es: "Notificaciones",
+          }),
+        },
+        {
           href: "/za-ponudnike",
           label: pick(l, {
             sl: "Za ponudnike",

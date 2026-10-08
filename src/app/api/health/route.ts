@@ -299,7 +299,7 @@ export async function GET() {
 
   return NextResponse.json({
     status: "ok",
-    version: "2.16.0",
+    version: "2.17.0",
     startup,
     checkedAt: now(),
   });

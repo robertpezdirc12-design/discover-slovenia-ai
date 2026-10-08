@@ -32,6 +32,7 @@ import {
   type TripRoleName,
 } from "@/components/trips/trip-collab";
 import { TripChat } from "@/components/trips/trip-chat";
+import { TripWatchMenu } from "@/components/watch/trip-watch-menu";
 import { TripPolls } from "@/components/trips/trip-polls";
 import { TripReservations } from "@/components/trips/trip-reservations";
 import { TripDatesPanel } from "@/components/trips/trip-dates-panel";
@@ -381,6 +382,14 @@ export function SharedTripView({ shareId }: { shareId: string }) {
                 <Share2 className="size-4" aria-hidden="true" />
                 {pick(l, L.copy)}
               </Button>
+              {/* P1-C (issue #3 §4): spremljanje pote — samo za udeležence
+                  (lastnik/urednik/gledalec; javni obiskovalci brez). */}
+              {canParticipate && (
+                <TripWatchMenu
+                  shareId={shareId}
+                  hasDates={Boolean(db.tripDates)}
+                />
+              )}
             </div>
 
             <TripDatesPanel

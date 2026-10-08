@@ -119,6 +119,8 @@ model User {
   messages     TripMessage[]
   preferences  UserPreference[]
   memories     MemoryItem[]
+  watches      WatchItem[]
+  notifications Notification[]
 }
 
 /// P1-A §1 (issue #3) — uporabniške potovalne preference.
@@ -163,6 +165,65 @@ model MemoryItem {
   updatedAt  DateTime @updatedAt
 
   @@index([userId, active, updatedAt])
+}
+
+/// P1-C §4 (issue #3) — UPORABNIKOVO SPREMLJANJE (watch). Lastnik, cilj,
+/// pogoj/prag, stanje in zadnje opažanje. ISKRENOSTNI KANON:
+///  - opozorilo nastane SAMO iz dveh preverljivih vrednosti (npr. prejšnja
+///    cena v lastObservation proti trenutni ceni izdelka) — nikoli »cena
+///    je padla« brez osnove;
+///  - nepodprte vrste (razpoložljivost restavracij, spremembe letov) se
+///    ZAVRNEJO ob dodajanju z iskrenim sporočilom (vir ne potrjuje);
+///  - cron (/api/cron/watch-check) je skrivnostno zaščiten, idempotenten
+///    (dedupe po Notification.dedupeKey) in retry-varen.
+/// kind: "price" | "weather" | "trip_day" | "booking";
+/// targetKind: "product" (slug tržnice) | "journey" (shareId pote);
+/// state: "active" | "paused" (izbris je fizičen — ni arhiva).
+model WatchItem {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind        String
+  targetKind  String
+  targetId    String
+  /// Ime cilja ob dodajanju (strežniško določeno — snapshot za prikaz).
+  targetName  String
+  /// Pogoji/pragi kot kompakten JSON (validirano po vrsti — watch-engine).
+  condition   String    @default("{}")
+  state       String    @default("active")
+  /// Zadnje opažanje (JSON: cena v centih, povzetek vremena, …) — osnova
+  /// za primerjavo dveh preverljivih vrednosti. null = še ni preverjeno.
+  lastObservation String?
+  lastCheckedAt   DateTime?
+  lastTriggeredAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([userId, kind, targetKind, targetId])
+  @@index([state, kind])
+}
+
+/// P1-C §10 (issue #3) — NOTIFIKACIJSKI CENTER (in-app inbox).
+/// source: "watch" | "trip" | "booking" | "system"; severity:
+/// "info" | "warning" | "success". data je kompakten JSON brez skrivnosti
+/// (npr. {action:"/trznica", priceCents:…}). dedupeKey je enoten na
+/// uporabnika → cron vzporedni zagon NE podvoji obvestil (idempotenca).
+/// PWA push NI implementiran (iskrena odločitev) — plast je in-app inbox.
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source    String    @default("watch")
+  severity  String    @default("info")
+  title     String
+  body      String
+  data      String    @default("{}")
+  readAt    DateTime?
+  dedupeKey String
+  createdAt DateTime  @default(now())
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, readAt, createdAt])
 }
 
 /// Deljena pot v oblaku (data = JSON serializacija oblike SharedPlan).

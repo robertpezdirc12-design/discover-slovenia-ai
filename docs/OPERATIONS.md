@@ -1,6 +1,6 @@
 # OPERACIJSKI PRIPROČNIK (RUNBOOK) — Discover Slovenia AI
 
-> **Velja za:** 2.13.0 (P0-I — cron + ops + produkcijski dim).
+> **Velja za:** 2.17.0 (P0-I cron + ops; P1-C watch-check job).
 > **Kanon iskrenosti:** vsako stanje se izpiše, kakršno je — noben job se ne
 > „pobarva" zeleno, če ni storil ničesar; nobena skrivnost se ne zapiše v
 > dnevnik; vse, česar ni (pošta, push, računi), odkrito manjka.
@@ -20,19 +20,21 @@ Urnik je registriran v `vercel.json` (Vercel Cron pošilja GET z glavo):
 | `/api/cron/kiwitaxi-reingest` | sreda 7:30 | osvežitev KT feeda | feed še čaka vir → iskren **204 no-op** | — |
 | `/api/cron/recalculate-status` | **vsak dan 6:30** | materializacija izplačil `not_due → due` (zadrževalna doba 7 dni) | ponovni zagon = 0 sprememb; premika SAMO not_due → due (ročni `processing`/`paid` sta lepljiva) | `payout.due_materialized` (actorType `system`, meta from/to) |
 | `/api/cron/draft-reminders` | **vsak dan 8:00** | opomnik za partnerjeve osnutke ≥ 7 dni | **dedup 7 dni** po AuditLog zgodovini (en osnutek = en nudge na teden) | `partner.draft_nudge` (meta ageDays, ownerId) |
+| `/api/cron/watch-check` | **vsaki 2 uri (:15)** | preverjanje uporabniških spremljanj (P1-C issue #3 §4): cena/vreme/dnevi/rezervacije | **dedupe po `(userId, dedupeKey)`** unique — vzporedni/ponovljeni zagon ne podvoji obvestil (P2002 = že zapisano); bounded ≤ 12 vremenskih lokacij na zagon; vir nedosegljiv → iskreno `unavailable` (brez izmišljenih napovedi) | `watch.check_run` (meta števci: scanned/evaluated/triggered/written/dupes/weatherFetches) |
 
 **Roke zagona ročno** (npr. po obnovitvi baze):
 
 ```bash
 curl -s -H "Authorization: Bearer $CRON_SECRET" https://<domena>/api/cron/recalculate-status
 curl -s -H "Authorization: Bearer $CRON_SECRET" https://<domena>/api/cron/draft-reminders
+curl -s -H "Authorization: Bearer $CRON_SECRET" https://<domena>/api/cron/watch-check
 ```
 
 ### Pošteno NE-obnovljeni jobi izvirnika (issue §21 „samo relevantni")
 
 | Izvirnikov job | Zakaj ni v 2.13.0 |
 |---|---|
-| `daily-trip-push` | aplikacija nima push infrastrukture (0 web-push žetonov) — job bi pretvarjal pošiljanje, kar ni |
+| `daily-trip-push` | aplikacija nima push infrastrukture (0 web-push žetonov) — job bi pretvarjal pošiljanje, kar ni; P1-C uvaja IN-APP notifikacije (watch-check piše v bazo, zvonček bere) — PWA push ostaja NE-obnovljen |
 | `weekly-alerts`, `renewal-reminders` | naročninski paketi lastnika (billing) še niso zgrajeni — opomniki za naročnine bi bili izmišljeni |
 | `commission-invoices` | tržnica je eno-prodajalna (izplačila lastniku); izstavljaje računov po partnerju čaka B2B rast |
 
@@ -61,7 +63,7 @@ pri izdajatelju in zavrti vrednost v okolju.
 - API: `/api/health` (status `ok`, verzija ≡ `package.json`, ≥ 8 preverb),
   `/api/destinations` (register ≥ 38);
 - affiliate gedelji: znan partner → 302 z Location; neznan → 400 (fail-closed);
-- **varnostni negativni dim: vse 4 cron poti BREZ žetona → 401** (če bi se
+- **varnostni negativni dim: vse 5 cron poti BREZ žetona → 401** (če bi se
   kdaj katera odprla, dim pade).
 
 Izhodna koda `0` = zdravo, `1` = padec (primerno za CI — P0-J ga poveže v vrata).

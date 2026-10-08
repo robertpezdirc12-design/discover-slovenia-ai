@@ -5,21 +5,37 @@
 # varnostnem incidentu 2026-10-06 — račun markec12345678 je mrtev).
 # Izvirnik je na vsak push poganjal: lint → test → typecheck → build.
 #
-# P0-J VRATA (issue #1 RECOVER + RECONCILE, izvedeno 2026-10-07):
+# P0-J VRATA (issue #1 §24 + sprejemni kriterij „CI has lint + typecheck +
+# test + build + smoke"; prva 5 vrat izvedena 2026-10-07, smoke + artefakti
+# + migration safety dodani 2026-10-08):
 #   1. lint        — eslint . (0 napak je pogoj za zlivo)
 #   2. typecheck   — tsc --noEmit (bun-types vključen v tsconfig "types";
-#                    vrata so ČISTA od P0-J — 0 napak, tudi testi tipizirani)
-#   3. test        — bun test (determinizem, integriteta podatkov, čista logika)
+#                    vrata so ČISTA — 0 napak, tudi testi tipizirani)
+#   3. test        — bun test + JUNIT poročilo (vidno v zavihku Testi;
+#                    artefakt reports/junit.xml se naloži OB VSAKEM izidu)
 #   4. prisma      — prisma validate (shema veljavna brez žive baze)
 #   5. build       — next build (standalone izhod; strani so statika iz
 #                    lastnih registrov — brez DB dostopa ob buildu)
+#   6. smoke       — MIGRATION SAFETY: bun run db:materialize (= prisma
+#                    db push --skip-generate) materializira SVEŽO SQLite
+#                    iz praznega stanja BREZ --accept-data-loss — kar bi
+#                    zahtevalo destruktivno spremembo, pošteno pade;
+#                    nato zagon produkcijskega standalone strežnika
+#                    (PORT 3100) + samo-bralni dim 19 preverb (9 strani,
+#                    health status/verzija/preverbe, register destinacij,
+#                    /go preusmeritve, VARNOSTNI negativni dim: 4 cron
+#                    poti 401 brez žetona).
+#
+# ARTEFAKTI/REPORTI (§24): junit.xml + smoke-report.json + smoke.txt +
+# server.log se naložijo z when: always — tudi padec je dokaz, ne smeti.
+#
+# SQLite opomba (iskrena): repozitorij namerno uporablja SQLite + db push
+# (brez map migracij); produkcijska prevezava na Postgres/Neon plast je
+# ločeno lastnikovo dejanje — issue #2 (PRODUCTION CUTOVER + POSTGRES).
 #
 # build/deploy v PRODUKCIJO sta NAMENOMA ločena: produkciji (Render/Vercel)
 # še vedno služita izvirniku 1.190.0 — prevezava na novi repozitorij je
 # lastnikovo zunanje dejanje (glej docs/recovery/RECOVERY-REPORT.md §8).
-#
-# NAMERNO preprosta oblika (brez extends/cache/rules): prvi zeleni pipeline
-# je predpogoj; optimizacije (cache po bun.lock) po prvem zagonu.
 # =============================================================================
 
 image: oven/bun:1
@@ -30,6 +46,7 @@ stages:
   - test
   - prisma
   - build
+  - smoke
 
 variables:
   DATABASE_URL: "file:/tmp/ci-skip.db"
@@ -53,7 +70,15 @@ test:
   script:
     - bun install --frozen-lockfile
     - bunx prisma generate
-    - bun test
+    - mkdir -p reports
+    - bun test --reporter=junit --reporter-outfile=reports/junit.xml
+  artifacts:
+    when: always
+    paths:
+      - reports/
+    reports:
+      junit: reports/junit.xml
+    expire_in: 1 week
 
 prisma-validate:
   stage: prisma
@@ -67,3 +92,38 @@ build:
     - bun install --frozen-lockfile
     - bunx prisma generate
     - bun run build
+
+smoke:
+  stage: smoke
+  variables:
+    DATABASE_URL: "file:/tmp/ci-smoke.db"
+    PORT: "3100"
+    # CI-only LUTILO (nikoli produkcijska vrednost): brez skrivnosti bi
+    # SessionProvider na straneh dobil 500 na /api/auth/session in pisal
+    # CLIENT_FETCH_ERROR v konzolo — z lutilom endpoint pošteno odgovori
+    # „ni seje", tako kot v produkciji z OBVEZNO pravo skrivnostjo.
+    NEXTAUTH_SECRET: "ci-dummy-secret-samo-za-dim"
+    NEXTAUTH_URL: "http://localhost:3100"
+  script:
+    - bun install --frozen-lockfile
+    - bunx prisma generate
+    # MIGRATION SAFETY (§24): sveža SQLite iz praznega stanja. db:materialize
+    # NE sprejema --accept-data-loss — destruktivna sprememba pade vrata.
+    - rm -f /tmp/ci-smoke.db /tmp/ci-smoke.db-journal
+    - bun run db:materialize
+    - bun run build
+    # Produkcijski standalone strežnik (isti vstop kot `bun run start`,
+    # brez tee — dnevnik gre v artefakt reports/server.log).
+    - mkdir -p reports
+    - (bun .next/standalone/server.js > reports/server.log 2>&1 & echo $! > server.pid)
+    - SMOKE_BASE_URL="http://localhost:${PORT}" bun scripts/ci-wait-ready.ts || (echo '--- reports/server.log ---'; cat reports/server.log; exit 1)
+    - |
+      set -o pipefail
+      SMOKE_BASE_URL="http://localhost:${PORT}" SMOKE_REPORT=reports/smoke-report.json bun run smoke | tee reports/smoke.txt
+  after_script:
+    - kill $(cat server.pid) 2>/dev/null || true
+  artifacts:
+    when: always
+    paths:
+      - reports/
+    expire_in: 1 week

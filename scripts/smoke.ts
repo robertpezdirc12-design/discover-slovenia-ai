@@ -1,6 +1,6 @@
 /**
  * PRODUCTION SMOKE — varen dim (P0-I, issue #1 §24 „safe production smoke";
- * P0-J bo dim povezal v CI vrata).
+ * P0-J ga povezuje v CI vrata).
  * ============================================================================
  * Kanoni:
  *  - SAMO BRANJE: izključno GET zahtevki — nobenega POST/PUT/DELETE, nič
@@ -14,6 +14,11 @@
  *
  * Izhod: vrstično PASS/FAIL + povzetek; izhodna koda 0 = vse zeleno,
  * 1 = vsaj en padec (CI-ljivo).
+ *
+ * P0-J ARTEFAKT: če je nastavljen env SMOKE_REPORT (pot datoteke), dim
+ * ob zaključku zapiše strojno berljivo JSON poročilo {baseUrl, version,
+ * generatedAt, passed, total, results[]} na to pot — CI ga shrani kot
+ * artefakt (GitLab .gitlab-ci.yml / GitHub Actions upload-artifact).
  */
 
 const BASE_URL = (process.env.SMOKE_BASE_URL ?? "http://localhost:3000").replace(
@@ -241,6 +246,27 @@ console.log(
       ? "produkcija je zdrava (samo-bralni dim)."
       : "PROIZVODNJA NI ZDRAVA — glej FAIL vrstice zgoraj.")
 );
+
+// ── P0-J: strojno berljivo poročilo (CI artefakt) ──────────────────────────
+// SMOKE_REPORT=pot/datoteke.json — poročilo se zapiše NEODVISNO od izida
+// (iskrenost: tudi padec je artefakt; izhodna koda ostaja 0/1).
+const reportPath = process.env.SMOKE_REPORT;
+if (reportPath) {
+  const report = {
+    baseUrl: BASE_URL,
+    expectedVersion: version,
+    generatedAt: new Date().toISOString(),
+    passed,
+    total: results.length,
+    ok: passed === results.length,
+    results: results.map((r) => ({ ...r, ok: r.ok })),
+  };
+  const { dirname } = await import("node:path");
+  const { mkdir, writeFile } = await import("node:fs/promises");
+  await mkdir(dirname(reportPath), { recursive: true });
+  await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
+  console.log(`Poročilo (artefakt): ${reportPath}`);
+}
 
 if (passed !== results.length) {
   process.exit(1);

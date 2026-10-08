@@ -1,6 +1,6 @@
 {
   "name": "discover-slovenia-ai",
-  "version": "2.13.0",
+  "version": "2.14.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000 2>&1 | tee dev.log",
@@ -11,6 +11,7 @@
     "test": "bun test",
     "activation:check": "bun scripts/activation-check.ts",
     "db:push": "prisma db push --accept-data-loss",
+    "db:materialize": "prisma db push --skip-generate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",

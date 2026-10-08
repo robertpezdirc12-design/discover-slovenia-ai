@@ -1,25 +1,36 @@
 # =============================================================================
 # CI — Discover-Slovenia-AI (rekonstrukcija 2.x) na GitHub Actions
 #
-# P0-J VRATA (issue #1 RECOVER + RECONCILE, izvedeno 2026-10-07):
-# naslednik izvirnikovega ci.yml (lint → test → build → typecheck, 626
-# commitov, izgubljen ob varnostnem incidentu 2026-10-06).
-#
-# Vrata ob vsakem pushu na main in vsakem PR-u:
+# P0-J VRATA (issue #1 §24 + sprejemni kriterij „CI has lint + typecheck +
+# test + build + smoke"):
 #   1. lint        — eslint . (0 napak je pogoj za zlivo)
-#   2. typecheck   — tsc --noEmit (bun-types vključen v tsconfig "types";
-#                    vrata so ČISTA od P0-J — 0 napak, tudi testi so tipizirani)
-#   3. test        — bun test (determinizem, integriteta podatkov, čista logika)
+#   2. typecheck   — tsc --noEmit (bun-types vključen v tsconfig "types"; 0 napak)
+#   3. test        — bun test + JUNIT poročilo (artefakt ci-reports)
 #   4. prisma      — prisma validate (shema veljavna brez žive baze)
 #   5. build       — next build (standalone; brez DB dostopa ob buildu —
 #                    strani so statika iz lastnih registrov)
+#   6. smoke       — MIGRATION SAFETY (db:materialize = prisma db push
+#                    --skip-generate na SVEŽO SQLite, brez --accept-data-loss)
+#                    + produkcijski standalone strežnik (PORT 3100)
+#                    + samo-bralni dim 19 preverb (strani, health, register,
+#                    /go preusmeritve, cron 401 brez žetona — fail-closed)
 #
-# Kvota: zasebni repo = 2000 min/mes brezplačno; ta job (~4 min/push) +
+# ARTEFAKTI/REPORTI (§24): actions/upload-artifact@v4 z if: always()
+# naloži reports/ (junit.xml, smoke-report.json, smoke.txt, server.log) —
+# tudi ob padcu so dokazi vidni.
+#
+# POPRAVEK 2026-10-08 (iskreno razkrit): sprožilca sta imela pokvarjen
+# vzorec „branches: ain]" — workflow se NI sprožil na push/PR od 2.7.0;
+# popravljeno na [main]. Zrcalni repozitorij je sinhronizacijo delal vse
+# čas (sync.yml), CI pa je tiho miroval — ta vrata zdaj to mehansko
+# preprečujejo (source-contract test ci-smoke-contract).
+#
+# Kvota: zasebni repo = 2000 min/mes brezplačno; ta job (~5 min/push) +
 # sync (~1 min/push) + keep-warm (dispatch) — varno znotraj kvote pri
 # običajnem tempu pushanja. Če repo postane javen: neomejeno.
 # =============================================================================
 
-name: CI (lint + typecheck + test + prisma + build)
+name: CI (lint + typecheck + test + prisma + build + smoke)
 
 on:
   push:
@@ -37,7 +48,7 @@ concurrency:
 
 jobs:
   vrata:
-    name: lint + typecheck + test + prisma + build (bun)
+    name: lint + typecheck + test + prisma + build + smoke (bun)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -58,14 +69,58 @@ jobs:
       - name: Lint (0 napak je pogoj za zlivo)
         run: bun run lint
 
-      - name: Typecheck (tsc --noEmit, 0 napak od P0-J)
+      - name: Typecheck (tsc --noEmit, 0 napak)
         run: bun run typecheck
 
-      - name: Test (deterministični testi, 0 omrežja)
-        run: bun test
+      - name: Test (deterministični testi, 0 omrežja; junit poročilo)
+        run: |
+          mkdir -p reports
+          bun test --reporter=junit --reporter-outfile=reports/junit.xml
 
       - name: Prisma validate (shema veljavna)
         run: bunx prisma validate
 
       - name: Build (next build, standalone izhod)
         run: bun run build
+
+      # ── P0-J: MIGRATION SAFETY + PRODUKCIJSKI DIM (§24) ────────────────────
+
+      - name: Migration safety (sveža SQLite iz praznega stanja, brez --accept-data-loss)
+        run: |
+          rm -f /tmp/ci-smoke.db /tmp/ci-smoke.db-journal
+          bun run db:materialize
+        env:
+          DATABASE_URL: "file:/tmp/ci-smoke.db"
+
+      - name: Zagon produkcijskega strežnika (standalone, port 3100)
+        run: |
+          mkdir -p reports
+          # NEXTAUTH_* sta CI-only LUTILI (nikoli produkcijski vrednosti) —
+          # brez skrivnosti SessionProvider piše CLIENT_FETCH_ERROR v konzolo.
+          DATABASE_URL="file:/tmp/ci-smoke.db" PORT=3100 \
+            NEXTAUTH_SECRET="ci-dummy-secret-samo-za-dim" \
+            NEXTAUTH_URL="http://localhost:3100" \
+            bun .next/standalone/server.js > reports/server.log 2>&1 &
+          echo $! > server.pid
+
+      - name: Pripravljenost (do 30 s na /api/health)
+        run: bun scripts/ci-wait-ready.ts
+        env:
+          SMOKE_BASE_URL: http://localhost:3100
+
+      - name: Samo-bralni produkcijski dim (19 preverb)
+        run: |
+          set -o pipefail
+          SMOKE_BASE_URL=http://localhost:3100 SMOKE_REPORT=reports/smoke-report.json bun run smoke | tee reports/smoke.txt
+
+      - name: Ustavitev strežnika
+        if: always()
+        run: kill $(cat server.pid) 2>/dev/null || true
+
+      - name: Artefakti (junit + dim poročila — tudi ob padcu)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-reports
+          path: reports/
+          if-no-files-found: warn

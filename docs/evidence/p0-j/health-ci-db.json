@@ -1,0 +1,61 @@
+{
+    "status": "ok",
+    "version": "2.14.0",
+    "startup": [
+        {
+            "name": "config:secrets",
+            "status": "ok",
+            "detail": "sandbox rekonstrukcija brez skrivnosti v kodi (avtentikacija \u0161e ni priklju\u010dena \u2014 pri\u010dakovano)",
+            "at": "2026-10-08T15:14:38.842Z"
+        },
+        {
+            "name": "schema:stamp",
+            "status": "ok",
+            "detail": "baza dosegljiva \u2014 0 semenskih destinacij v tabeli Destination",
+            "at": "2026-10-08T15:14:38.843Z"
+        },
+        {
+            "name": "data:destinations",
+            "status": "ok",
+            "detail": "38 destinacij \u00b7 20 regij \u00b7 9 tipov \u00b7 4 dr\u017eave (seed usklajen: NE (0))",
+            "at": "2026-10-08T15:14:38.843Z"
+        },
+        {
+            "name": "pwa:offline",
+            "status": "ok",
+            "detail": "sw.js 2.14.0 + offline.html + manifest prisotni (registracija: produkcija ali ?sw=1)",
+            "at": "2026-10-08T15:14:38.843Z"
+        },
+        {
+            "name": "booking:affiliate",
+            "status": "ok",
+            "detail": "9/12 provizijskih partnerjev v booking verigi (PENDING \u2192 potrditev; ostali na /go straneh) + 66 \u010drpalk (gorivo brez provizije \u2014 odprti podatki)",
+            "at": "2026-10-08T15:14:38.843Z"
+        },
+        {
+            "name": "supply:matrix",
+            "status": "ok",
+            "detail": "19 ponudnikov (register \u2261 matrika) \u2014 \ud83d\udfe2 3 \u017eivih \u00b7 \ud83d\udd35 1 konfiguriranih \u00b7 \u26aa 15 nekonfiguriranih \u00b7 \ud83d\udd34 0 zunanjih ovir (iskrena matrika; /api/health ne izpisuje env vrednosti)",
+            "at": "2026-10-08T15:14:38.843Z"
+        },
+        {
+            "name": "data:feeds",
+            "status": "ok",
+            "detail": "STO 752 vnosov / 7 jezikov (ingest danes) \u00b7 FSQ: mno\u017eica \u010daka vir (dump na mrtvem GitHubu \u2014 gate data) \u00b7 KiwiTaxi: feed \u010daka vir (partner CSV \u2014 gate data) \u2014 FSQ/KT \u010dakanje vira je iskreno stanje (matrika), ne napaka",
+            "at": "2026-10-08T15:14:38.844Z"
+        },
+        {
+            "name": "marketplace:moderation",
+            "status": "ok",
+            "detail": "0 objavljenih (javno) \u00b7 0 v predaji \u00b7 0 osnutkov \u00b7 0 zavrnjenih \u00b7 0 partnerjev \u2014 javna tr\u017enica vidi samo objavljene (\u00a722)",
+            "at": "2026-10-08T15:14:38.847Z"
+        },
+        {
+            "name": "ops:cron",
+            "status": "skipped",
+            "detail": "Drevo virov (src/app/api/cron) v tem okolju ni dosegljivo \u2014 registracijo poti mehansko zaklepa test cron-ops-contract; CRON_SECRET gate ostaja fail-closed",
+            "at": "2026-10-08T15:14:38.847Z"
+        }
+    ],
+    "checkedAt": "2026-10-08T15:14:38.847Z"
+}

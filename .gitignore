@@ -15,6 +15,9 @@ db/*.db-journal
 # dnevniki
 *.log
 
+# CI poročila/artefakti (lokalna zagona)
+reports/
+
 # peskovnik orodja
 tool-results/
 agent-ctx/

@@ -1,0 +1,105 @@
+{
+  "baseUrl": "http://localhost:3100",
+  "expectedVersion": "2.14.0",
+  "generatedAt": "2026-10-08T15:17:53.624Z",
+  "passed": 19,
+  "total": 19,
+  "ok": true,
+  "results": [
+    {
+      "name": "page:domaca-stran",
+      "ok": true,
+      "detail": "200 + marker"
+    },
+    {
+      "name": "page:destinacije",
+      "ok": true,
+      "detail": "200 + marker"
+    },
+    {
+      "name": "page:destinacija-bled",
+      "ok": true,
+      "detail": "200 + marker"
+    },
+    {
+      "name": "page:trznica",
+      "ok": true,
+      "detail": "200 + marker"
+    },
+    {
+      "name": "page:zemljevid",
+      "ok": true,
+      "detail": "200 + marker"
+    },
+    {
+      "name": "page:na-poti",
+      "ok": true,
+      "detail": "200 + marker"
+    },
+    {
+      "name": "page:konzultacija",
+      "ok": true,
+      "detail": "200 + marker"
+    },
+    {
+      "name": "page:za-ponudnike",
+      "ok": true,
+      "detail": "200 + marker"
+    },
+    {
+      "name": "page:sw-js",
+      "ok": true,
+      "detail": "200 + marker"
+    },
+    {
+      "name": "api:health-status",
+      "ok": true,
+      "detail": "status 200, reported \"ok\""
+    },
+    {
+      "name": "api:health-version",
+      "ok": true,
+      "detail": "prijavljena 2.14.0 ≡ package.json 2.14.0"
+    },
+    {
+      "name": "api:health-checks",
+      "ok": true,
+      "detail": "9 startup preverb (pričakovano ≥ 8)"
+    },
+    {
+      "name": "api:destinations",
+      "ok": true,
+      "detail": "status 200, total 38 (register 38)"
+    },
+    {
+      "name": "go:znan-partner-302",
+      "ok": true,
+      "detail": "status 302 → Location prisoten"
+    },
+    {
+      "name": "go:neznan-partner-400",
+      "ok": true,
+      "detail": "status 400 (pričakovano 400 — fail-closed)"
+    },
+    {
+      "name": "cron-fail-closed:sto-reingest",
+      "ok": true,
+      "detail": "brez žetona → 401 (pričakovano 401 fail-closed)"
+    },
+    {
+      "name": "cron-fail-closed:kiwitaxi-reingest",
+      "ok": true,
+      "detail": "brez žetona → 401 (pričakovano 401 fail-closed)"
+    },
+    {
+      "name": "cron-fail-closed:recalculate-status",
+      "ok": true,
+      "detail": "brez žetona → 401 (pričakovano 401 fail-closed)"
+    },
+    {
+      "name": "cron-fail-closed:draft-reminders",
+      "ok": true,
+      "detail": "brez žetona → 401 (pričakovano 401 fail-closed)"
+    }
+  ]
+}

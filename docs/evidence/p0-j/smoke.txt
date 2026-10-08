@@ -1,0 +1,25 @@
+$ bun scripts/smoke.ts
+dsa-smoke → http://localhost:3100 (prikakovana verzija 2.14.0)
+
+[PASS] page:domaca-stran — 200 + marker
+[PASS] page:destinacije — 200 + marker
+[PASS] page:destinacija-bled — 200 + marker
+[PASS] page:trznica — 200 + marker
+[PASS] page:zemljevid — 200 + marker
+[PASS] page:na-poti — 200 + marker
+[PASS] page:konzultacija — 200 + marker
+[PASS] page:za-ponudnike — 200 + marker
+[PASS] page:sw-js — 200 + marker
+[PASS] api:health-status — status 200, reported "ok"
+[PASS] api:health-version — prijavljena 2.14.0 ≡ package.json 2.14.0
+[PASS] api:health-checks — 9 startup preverb (pričakovano ≥ 8)
+[PASS] api:destinations — status 200, total 38 (register 38)
+[PASS] go:znan-partner-302 — status 302 → Location prisoten
+[PASS] go:neznan-partner-400 — status 400 (pričakovano 400 — fail-closed)
+[PASS] cron-fail-closed:sto-reingest — brez žetona → 401 (pričakovano 401 fail-closed)
+[PASS] cron-fail-closed:kiwitaxi-reingest — brez žetona → 401 (pričakovano 401 fail-closed)
+[PASS] cron-fail-closed:recalculate-status — brez žetona → 401 (pričakovano 401 fail-closed)
+[PASS] cron-fail-closed:draft-reminders — brez žetona → 401 (pričakovano 401 fail-closed)
+
+Povzetek: 19/19 preverb je zelenih — produkcija je zdrava (samo-bralni dim).
+Poročilo (artefakt): reports/smoke-report.json

@@ -22,6 +22,7 @@ import { useSearchParams } from "next/navigation";
 import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { PlanEditPanel } from "@/components/plan/plan-edit-panel";
 import { DaySegmentHeader } from "@/components/day-segment-header";
 import { NextStepCard, useNextStepContext } from "@/components/next-step-card";
 import { StopKindIcon } from "@/components/plan/plan-bits";
@@ -324,6 +325,9 @@ export default function PlanPage() {
       <Suspense fallback={<PlannerSkeleton />}>
         <PlannerApp />
       </Suspense>
+      {/* P1-B (issue #3 §3/§6): ukazno urejanje zadnjega načrta + načrt
+          iz osebnih preferenc (deterministično, 0 AI). */}
+      <PlanEditPanel />
     </div>
   );
 }

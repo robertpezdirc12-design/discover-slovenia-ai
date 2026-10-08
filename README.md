@@ -5,7 +5,7 @@
 > realnimi koordinatami in deterministični načrtovalnik poti (isti vhod → isti načrt,
 > 0 AI žetonov v jedru).
 
-**Verzija: 2.15.0 — P1-A: OSEBNI POTOVALNI PROFIL + DOLGOROČNI SPOMIN (issue #3 §1/§2/§11).**
+**Verzija: 2.16.0 — P1-B: POGOVORNO UREJANJE NAČRTA + RAZLOGI + BOOKING INTELIGENCA (issue #3 §3/§5/§6/§7).**
 Izdaje rekonstrukcije: 2.1.0 skupnostne funkcije → 2.2.0 aplikacijska lupina →
 2.3.0 issue #1 (živi GPS, booking, pomočnik) → 2.3.1 infra CI → 2.4.0 PWA
 offline → 2.5.0 rezervacijski sloj → 2.6.0 partner kanal booking verige →
@@ -260,3 +260,21 @@ docs/evidence/        # dokazni posnetki rekonstrukcije
 Žetoni, objavljeni v klepetih med incidentom 2026-10-06, naj bodo vsi preklicani
 (GitHub ✅ že, GitLab `glpat-…` po koncu dela, Vercel `vcp_…`, Neon geslo — glej
 `docs/recovery/RECOVERY-REPORT.md` §4).
+→ 2.16.0 P1-B agent nad kanoničnim kontekstom (issue #3 §3/§5/§6/§7):
+NOV plan-edit-engine (deterministični SL razčlenjevalnik ukazov dodaj/
+odstrani/premakni/zamenjaj/skrajšaj/podaljšaj/optimiziraj s toleranco
+slovenskih sklonov + nespremenljive mutacije nad KANONSKIM SharedPlan +
+strukturiran diff; brezstanjska ruta /api/plan-edit — nič se ne shrani,
+shranjevanje ostane na obstoječih poteh; undo sklad na klientu);
+NOVA plošča v načrtovalniku „Uredi načrt z ukazi" (diff predogled +
+Shrani/Razveljavi) + „Iz mojih preferenc" (prijavljeni: čipi preferenc →
+en klik sestavi načrt prek obstoječega /api/itinerary); NOV
+recommendation-reasons (strukturirani dokazov podprti razlogi — razdalja/
+cena/proračun/sezona/interesi(s sinonimi kanonskega motorja)/ocena/
+primernost; delovni čas destinacij v registru NE obstaja → iskreno
+izpuščen) integriran v @AI predloge („zakaj:" vrstica) + namen „zakaj";
+NOV booking-summary (samo-bralna inteligenca rezervacij §7 — povzetek
+stanj/kanalov iz atestacijskih zapisov, agent NIKOLI ne mutira; @AI nov
+namen „rezervacije"); messages ruta podaja kanonske rezervacije poti;
+ZASEBNOST: skupinski klepet NAMENOMA brez osebnega spomina (sodelavci
+ne vidijo zasebnih podatkov); 34 novih testov = 1076/1076, tsc 0, lint 0.

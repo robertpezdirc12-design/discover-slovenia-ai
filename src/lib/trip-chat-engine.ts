@@ -8,6 +8,15 @@ import {
   detectPromptInjection,
   sanitizeUntrustedText,
 } from "@/lib/system-data-guard";
+import {
+  buildCandidateReasons,
+  formatReasonsInline,
+} from "@/lib/recommendation-reasons";
+import {
+  formatBookingSummary,
+  summarizeReservations,
+  type ReservationRowLike,
+} from "@/lib/booking-summary";
 
 /**
  * TRIP-CHAT-ENGINE — DETERMINISTIČNI odgovarjalč @AI za skupinski klepet
@@ -119,6 +128,10 @@ const KW = {
   food: ["večerja", "vecerja", "kosilo", "zajtrk", "hrana", "jesti", "restavracija", "gostilna", "lokal", "lokalov", "picerija", "kava", "vino", "večerjamo", "vecerjamo", "jesva"],
   suggest: ["kaj naslednje", "kam", "predlagaj", "priporoča", "priporca", "nasvet", "manjka", "dodaj", "zmanjka", "kaj še", "kaj se", "naslednji postanek", "naslednja postaja", "kje biti", "kaj videti", "kaj doživetja"],
   budget: ["cena", "strošek", "strosek", "proračun", "proracun", "drago", "poceni", "koliko stane", "evrov", "eur", "€"],
+  // P1-B (issue #3 §7): samo-bralna inteligenca rezervacij.
+  bookings: ["rezervacij", "rezervacije", "rezervacijo", "potrjeno", "potrjena", "potrjene", "rezerviral", "rezervirano", "imamo rezervirano", "imate rezervirano", "naročeno", "naroceno", "booked"],
+  // P1-B (issue #3 §5): razlaga predlogov („Zakaj to predlagaš?").
+  why: ["zakaj", "razlog", "utemelji", "od kod predlog", "explain"],
 };
 
 function hasAny(nb: string, words: string[]): boolean {
@@ -175,7 +188,7 @@ function answerFood(body: string, stops: PlanStopRef[]): string {
   return `Restavracij in jedilnikov v klepetu nimam — to je iskrena meja tega svetovalca (odgovarjam izključno iz podatkov poti in baze destinacij, 0 zunanjih klicev). Za hrano v okolici ${where} odpri zbirko Lokali (/lokali) — tam so realni lokalni ponudniki z regijo in lokacijo. Splošen nasvet: v Sloveniji kosilo ponudijo gostilne med 11. in 14. uro, sobote nedelje pa so polnejše — rezerviraj prej.`;
 }
 
-function answerSuggest(body: string, plan: SharedPlan, stops: PlanStopRef[]): string {
+function answerSuggest(body: string, plan: SharedPlan, stops: PlanStopRef[], withReasons: boolean): string {
   const mentioned = findMentionedDestinations(body);
   const inPlan = new Set(stops.map((s) => s.destSlug ?? stripDiacritics(s.name)));
   // naslednji postanek po omenjeni destinaciji (ali prvi naslednji)
@@ -203,12 +216,29 @@ function answerSuggest(body: string, plan: SharedPlan, stops: PlanStopRef[]): st
     )
     .slice(0, 3);
   if (candidates.length > 0) {
+    // P1-B §5 (issue #3): vsak predlog nosi DOKAZI PODPERTE razloge
+    // (razdalja od sidra, cena, ocena, primernost — samo iz kanonskega
+    // registra; delovni čas destinacij v registru NE obstaja → iskreno
+    // izpuščen, nikoli izmišljen).
+    const anchorName =
+      mentioned[0]?.name ?? stops.find((s) => s.dest)?.name ?? null;
     parts.push(
-      `Iz baze (še niso na poti${anchor ? ", najbližje sidru" : ""}): ` +
+      `Iz baze (še niso na poti${anchor ? ", najbližje sidru" : ""}):\n` +
         candidates
-          .map((d) => `${d.name} (ocena ${d.rating}/10, ~${d.costPerPerson} €)`)
-          .join(", ") +
-        "."
+          .map((d) => {
+            const base = `${d.name} — ocena ${d.rating}/10, ~${d.costPerPerson} €`;
+            if (!anchor) return base;
+            const reasons = buildCandidateReasons(d, {
+              anchor: anchorName
+                ? { name: anchorName, lat: anchor.lat, lng: anchor.lng }
+                : null,
+              budget: null,
+              season: null,
+              interests: [],
+            });
+            return `${base} (zakaj: ${formatReasonsInline(reasons)})`;
+          })
+          .join("\n")
     );
   }
   parts.push("Predloge doda v pot tisti, ki pot ureja — jaz svetujem, vi odločate.");
@@ -280,7 +310,18 @@ export const AI_GUARD_ANSWER =
  * Deterministični odgovor @AI na sporočilo (tele brez omembe @AI).
  * Vedno SL (površina /pot je SL-only — kanon izvirnika).
  */
-export function answerAiQuestion(body: string, plan: SharedPlan): string {
+/**
+ * P1-B (issue #3): izbirni kontekst agenta. reservations = kanonske
+ * vrstice TripReservation te poti (samo-bralni povzetek §7 — agent
+ * NIKOLI ne mutira rezervacij). OSEBNI SPOMIN/PROFIL NAMENOMA MANJKA:
+ * skupinski klepet vidijo sodelavci — zasebni podatki se NE mešajo
+ * (kanon P1-A §11, dve-poti arhitektura).
+ */
+export interface AdvisorContext {
+  reservations?: readonly ReservationRowLike[];
+}
+
+export function answerAiQuestion(body: string, plan: SharedPlan, ctx?: AdvisorContext): string {
   // SYSTEM_DATA_GUARD (P0-I §23): poskus navodil se izvede kot VARNOSTNI
   // odgovor — nikoli kot ukaz in nikoli z odmevom vsebine napadalca.
   const injection = detectPromptInjection(body);
@@ -289,10 +330,19 @@ export function answerAiQuestion(body: string, plan: SharedPlan): string {
   const nb = stripDiacritics(body);
   const stops = planStops(plan);
 
+  // P1-B §7: namen rezervacij (samo-bralno, iz kanonskega modela).
+  if (hasAny(nb, KW.bookings)) {
+    return formatBookingSummary(summarizeReservations(ctx?.reservations ?? []));
+  }
+
   if (hasAny(nb, KW.weather)) return answerWeather(body, stops);
   if (hasAny(nb, KW.distance)) return answerDistance(body, stops);
   if (hasAny(nb, KW.food)) return answerFood(body, stops);
-  if (hasAny(nb, KW.suggest)) return answerSuggest(body, plan, stops);
+  // P1-B §5: „zakaj" vodi v predloge Z razlogi (isti jedrni klic).
+  const wantsReasons = hasAny(nb, KW.why);
+  if (hasAny(nb, KW.suggest) || wantsReasons) {
+    return answerSuggest(body, plan, stops, wantsReasons);
+  }
 
   const destInfo = answerDestinationInfo(body);
   if (destInfo) return destInfo;

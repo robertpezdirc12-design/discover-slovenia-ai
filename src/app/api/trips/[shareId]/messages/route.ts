@@ -120,7 +120,21 @@ export async function POST(request: Request, { params }: RouteParams) {
 
   try {
     const plan = parseJourneyPlan(journey.data);
-    const answer = answerAiQuestion(text, plan);
+    // P1-B §7 (issue #3): agentu podamo KANONSKE rezervacije te poti
+    // (samo za branje — povzetek gradi booking-summary; brez mutacij).
+    // Osebni spomin/profil NAMENOMA ni del konteksta (zasebnost — kanon
+    // P1-A §11: sodelavci v skupinskem klepetu ne vidijo zasebnih podatkov).
+    const reservations = await db.tripReservation.findMany({
+      where: { journeyId: journey.id },
+      orderBy: { dayIndex: "asc" },
+      select: {
+        dayIndex: true,
+        stopName: true,
+        status: true,
+        note: true,
+      },
+    });
+    const answer = answerAiQuestion(text, plan, { reservations });
     const aiMessage = await db.tripMessage.create({
       data: {
         journeyId: journey.id,

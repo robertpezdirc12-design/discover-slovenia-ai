@@ -207,7 +207,11 @@ function destinationBlob(d: Destination): string {
 }
 
 /** Ali se interes ujema z destinacijo (interes se normalizira tu). */
-function interestMatches(blobTokens: string[], blob: string, interestRaw: string): boolean {
+/**
+ * Ali interesna beseda ujame destinacijo (sinonimi vključeni) — izvoženo
+ * za P1-B recommendation-reasons (isti kanon ujemanja kot načrtovalnik).
+ */
+export function interestMatches(blobTokens: string[], blob: string, interestRaw: string): boolean {
   const interest = normText(interestRaw);
   if (!interest) return false;
   if (blob.includes(interest)) return true;

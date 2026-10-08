@@ -2484,3 +2484,43 @@ Stage Summary:
 - DVE-POTI arhitektura (agentska fail-closed / upravaljalna lastniška) je ključna odločitev — zadovolji tako „off = no read/write" (agent) kot „uporabnik vidi/ureja/briše" (pravice)
 - Sledi: rsync → merge-dsa → commit → push GitLab → CI 6 vrat → mirror → komentar na issue #3; nato P1-B (§3 agent nad kanoničnim kontekstom + §5 razlogi + §6 pogovorno urejanje načrta z diff/undo)
 - Testna uporabnika živita samo v peskovniški bazi (db/ izključen iz rsync)
+
+---
+Task ID: p1-izdaja
+Agent: Z.ai Code (glavni)
+Task: Izdaja 2.15.0 (P1-A) — rsync → merge-dsa → commit → push GitLab → CI/mirror verifikacija → komentar na issue #3.
+
+Work Log:
+- VRATA v merge-dsa pred pushom: prisma generate + tsc 0 + bun test 1042/1042 (836 ms) + lint 0
+- COMMIT 73cebf0 (konvencionalno sporočilo z DoD vsebinsko)
+- PUSH USPEŠEN na 1. poskus: bfb1113..73cebf0 HEAD → main; žeton SAMO v pomnilniku (enkratni push URL), .git/config preverjen po pushu — 0 pojavitev glpat
+- CI: pipeline 2927531308 na 73cebf0 → SUCCESS (6/6 vrat: lint/typecheck/test+junit/prisma-validate/build/smoke — vključno s produkcijskim dimom 19 preverb)
+- GITHUB MIRROR: robertpezdirc12-design finished, last_error None (samodejna sinhronizacija po pushu)
+- KOMENTAR na issue #3: note_id 3979619202 — P1-A v celoti (§1/§2/§11 + matrika §12 iz inventure + 1042 testov + E2E dokazi + iskreno odsotno + naslednji koraki P1-B/P1-C/P1-D)
+- WAF izkušnja: tokrat 6 zaporednih 403 na pipelines endpoint — premori 25-30 s so zadostovali (vsak 5. poskus čist); komentar POST uspel na 1. poskus
+
+Stage Summary:
+- 2.15.0 ŽIVA na GitLab main (CI 6/6 zelenih) + GitHub mirror sinhroniziran — P1-A POPOLNOMA ZAKLJUČEN in objavljen (issue #3 §1 preference + §2 spomin + §11 zasebnost)
+- Žeton: samo v pomnilniku; lastniku ob zaključku seje priporočiti PREKLIC (glpat-…uyx7x)
+- Sledi: P1-B (§3 enotni agent nad kanoničnim kontekstom + §5 strukturirani razlogi + §6 pogovorno urejanje načrta z diff/undo + §7 booking intelligence samo-bralno)
+
+---
+Task ID: p1-b
+Agent: Z.ai Code (glavni)
+Task: P1-B (issue #3 §3/§5/§6/§7) — pogovorno urejanje načrta + strukturirani razlogi + samo-bralna booking inteligenca; izdaja 2.16.0.
+
+Work Log:
+- NOV plan-edit-engine.ts (čist): SL razčlenjevalnik (dodaj/odstrani/premakni/zamenjaj/skrajšaj/podaljšaj/optimiziraj; toleranca sklonov — „Mariborom"→„Maribor" deterministično z okrajšanimi sondami) + nespremenljive mutacije nad KANONSKIM SharedPlan + buildPlanDiff/formatPlanDiff; POPRAVKI: normDays filtrirano dodeliti nazaj next.days (push/pop dneva ni deloval na kopiji) + tipiziran filter optimize
+- NOVA ruta /api/plan-edit (brezstanjska: plan+ukaz IN → rezultat VEN, brez db., brez prijave — gostujoča površina načrtovalnika; shranjevanje ostane na saveLastPlan//api/trips)
+- NOV recommendation-reasons.ts: razlogi izključno iz kanonskih podatkov (razdalja/cena/proračun/sezona/interesi/ocena/primernost); interesi prek IZVOŽENEGA interestMatches iz itinerary-engine (sinonimi, brez podvojenega slovarja); delovni čas iskreno izpuščen (v registru ne obstaja)
+- NOV booking-summary.ts (§7 samo-bralno): povzetek statusov + kanal iz atestacijskega note (JSON→kanal, besedilo→neznan); UNKNOWN za neznane statuse; nikoli mutacije
+- @AI trip-chat-engine nadgradnja: novi nameni bookings (13 ključnih besed) + why (razlogi „zakaj:" v predlogih); AdvisorContext { reservations } — OSEBNI SPOMIN NAMENOMA IZPUŠČEN (sodelavci v skupinskem klepetu ne vidijo zasebnih podatkov, kanon P1-A §11)
+- messages ruta: pridobi TripReservation (journeyId) in poda kontekstu
+- NOVA plošča plan-edit-panel.tsx v /nacrtuj: ukazni vnos + zgledi + diff predogled + Shrani (saveLastPlan, ohrani metapodatke obstoječih postankov) + undo sklad (10) + „Iz mojih preferenc" (prijavljeni: čipi → /api/itinerary en klik)
+- TESTI +34 = 1076/1076: razčlenjevalnik (skloni/dnevi/napake/injekcija), mutacije (imutabilnost, diff, skrajšaj brez izgube, podaljšaj determinizem, optimiziraj sidro+ponovljivost), razlogi (iskrenost — NI openingHours, kontekst pogojenost, EN, determinizem), booking (štetja, kanali, prazna meja, samo-bralnost source-contract), @AI (zakaj/rezervacije/regresija starih namenov/zasebnost), integracija (ruta brez db, plošča, 0-AI)
+- VRATA: tsc 0, lint 0, bun test 1076/1076; izdaja 2.16.0 (4 mesta + kanarček + README)
+- E2E: /api/plan-edit dodaj ok + diff; Narnija 400 iskreno; plošča na /nacrtuj izrisana (0 napak konzole); dokazi docs/evidence/p1-b/
+
+Stage Summary:
+- 2.16.0 P1-B: §6 pogovorno urejanje (diff+undo, brez vzporednega stanja), §5 dokazov podprti razlogi, §7 samo-bralna booking inteligenca, §3 kanonični kontekst (preferences→načrt en klik; skupinski klepet brez zasebnih podatkov) — vse 0-AI
+- Sledi: rsync → push → CI → komentar #3; nato P1-C (§4 watch + §10 notifikacije) in P1-D (§9 domov + §14 scorecard)

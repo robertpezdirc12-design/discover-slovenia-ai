@@ -2416,3 +2416,21 @@ Stage Summary:
 - CI vrata so NAREDILA SVOJE DELO: prvi zagon je ujel okoljsko razliko (Docker HOSTNAME), ki je v peskovniku nereproducibilna — in padel iskreno z artefakti; to je točno namen 6. vrat
 - Popravek: HOSTNAME=0.0.0.0 (standardna praksa Next standalone v vsebnikih) — lokalno verifikiran, mehansko zaklenjen s testoma ③/⑦
 - Sledi: strnjen popravek → push → nov pipeline (pričakovano 6/6 zelenih) → mirror → komentar #1 z iskrenim poročilom o prvem padcu in popravku
+
+---
+Task ID: 68-zakljucek
+Agent: Z.ai Code (glavni)
+Task: Zaključek P0-J — potisnjena 2.14.0, CI 6/6 zelenih, mirror, komentar #1.
+
+Work Log:
+- PUSH 1 (6923ede): uspešen na 1. poskus (f0f53ef..6923ede main → main, 15:23 UTC); pipeline 2927141601: lint/typecheck/test/prisma/build zeleni, SMOKE pošteno povedil (Docker HOSTNAME vezava — glej Task 68-fix); artefakti when: always so se naložili TUDI ob padcu (found 3, 201 Created) — mehanizem dokazan
+- POPRAVEK (c96a627, HOSTNAME=0.0.0.0): push uspešen (6923ede..c96a627, 15:39 UTC); pipeline 2927221960 = SUCCESS — VSEH 6 VRAT ZELENIH (prvič v zgodovini repozitorija s produkcijskim dimom v CI)
+- GitHub mirror robertpezdirc12-design: finished 15:46 UTC, last_error None (s popravljenim sprožilcem [main] se CI zdaj sproži tudi na GitHub strani — prvič od 2.7.0)
+- KOMENTAR na issue #1: note_id 3979069791 (16:07 UTC) — §24 P0-J v celoti: migration safety, dim v CI, artefakti/reporti, hrošč GitHub sprožilca iskreno razkrit, zgodba prvega padca + popravka (ravno dokaz delujočih vrat), vrata 979/979, E2E dokazi, iskreno odsotno (Postgres migrate diff → issue #2, deploy ločen), sprejemni kriterij #199 ZAPRT, naslednji korak = lastnikova odločitev (issue #3 P1 ali issue #2 produkcija)
+- Varnost: žeton izključno v pomnilniku (4 enkratni push/fetch URL-i), .git/config preverjen po vsakem pushu — 0 pojavitev glpat; API blokade (Cloudflare WAF) premagane s premiki (403 na POST komentarja → 2. poskus čist)
+
+Stage Summary:
+- 2.14.0 ŽIVA na GitLab main (pipeline 2927221960, 6/6 vrat zelenih) + GitHub mirror sinhroniziran — P0-J POPOLNOMA ZAKLJUČEN in objavljen; s tem je CELOTEN P0 (P0-A … P0-J) izveden, sprejemni kriterij #199 zaprt
+- Ključna izkušnja za prihodnje seje: Next standalone v CI vsebnikih ZAHTeva eksplicitni HOSTNAME=0.0.0.0 (Docker nastavi HOSTNAME na ime vsebnika; peskovnik ga nima — razliko razkrije samo pravi CI zagon; zaklenjeno s testoma ③/⑦)
+- Žeton: samo v pomnilniku; lastniku ob zaključku priporočiti PREKLIC (glpat-…uyx7x) — enako za starejši markec ghp žeton, če še ni preklican
+- Sledi: lastnikova odločitev — issue #2 (PRODUCTION CUTOVER + POSTGRES) ali issue #3 (P1 MindTrip parity); restaurantos #11/#12 ostajata ločeno naročeni nalogi

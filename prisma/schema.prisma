@@ -117,6 +117,52 @@ model User {
   collaborations TripCollaborator[]
   pollVotes    TripPollVote[]
   messages     TripMessage[]
+  preferences  UserPreference[]
+  memories     MemoryItem[]
+}
+
+/// P1-A §1 (issue #3) — uporabniške potovalne preference.
+/// VEDNO izbrano stanje (ni izpeljav brez zapisa): uporabnik vidi/ureja/briše
+/// vsak zapis na /moj-profil. key je iz nabora PREFERENCE_KEYS
+/// (src/lib/user-preferences.ts — "personalization" | "budget" | "interests" |
+/// "pace" | "season" | "party" | "transport" | "food" | "avoid"), value je JSON
+/// niz, validiran STREŽNIŠKO proti fiksni množici vrednosti (SQLite brez
+/// seznamov). source: "USER_STATED" (uporabnik) | "DERIVED" | "IMPORTED" |
+/// "TRIP_HISTORY" — izpeljani zapisi nastanejo samo z izrecnim potrditvijo.
+model UserPreference {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key       String
+  value     String
+  source    String   @default("USER_STATED")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, key])
+  @@index([userId])
+}
+
+/// P1-A §2 (issue #3) — dolgoročni spomin osebnega agenta ("Kaj si zapomnim
+/// o tebi"). Izključno eksplicitni izvidi o uporabniku — NIČ se ne zbere brez
+/// uporabnikovega dejanja. kind: "fact" | "preference" | "constraint" |
+/// "visit" | "feedback"; source: "USER" | "AGENT_DERIVED" | "TRIP_HISTORY" |
+/// "IMPORTED"; confidence 0–1 iz pravil (uporabniško zapisano = 1).
+/// active=false = mehko brisanje (vidno pozabljeno); fizično čiščenje po
+/// MEMORY_RETENTION_DAYS (lenko brisanje ob branju — planMemoryPurge).
+model MemoryItem {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind       String
+  value      String
+  source     String   @default("USER")
+  confidence Float    @default(1)
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId, active, updatedAt])
 }
 
 /// Deljena pot v oblaku (data = JSON serializacija oblike SharedPlan).
@@ -435,6 +481,8 @@ model CommissionEntry {
 /// REVIZIJSKI DNEVNIK (P0-E §11) — en sam dnevnik za tržnico (naročila,
 /// izplačila, zahtevki po preklicu). Vnosi NISO brišljivi (append-only);
 /// meta je kompakten JSON (nikoli skrivnosti).
+/// P1-A: osebna plast (preferences/memory) zapiše dejanja "preference.*" /
+/// "memory.*" z actorType "customer" in actorId = userId (uporabnik sam).
 model AuditLog {
   id         String   @id @default(cuid())
   /// "system" | "owner" | "customer" | "partner" (P0-H) — kdo je sprožil dejanje.

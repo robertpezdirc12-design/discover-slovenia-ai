@@ -230,6 +230,18 @@ export function useMoreGroups(): NavGroup[] {
           }),
         },
         {
+          // P1-A (issue #3 §1/§2): osebni profil — preference + spomin.
+          href: "/moj-profil",
+          label: pick(l, {
+            sl: "Moj profil",
+            en: "My profile",
+            it: "Il mio profilo",
+            de: "Mein Profil",
+            fr: "Mon profil",
+            es: "Mi perfil",
+          }),
+        },
+        {
           href: "/za-ponudnike",
           label: pick(l, {
             sl: "Za ponudnike",

@@ -5,7 +5,7 @@
 > realnimi koordinatami in deterministični načrtovalnik poti (isti vhod → isti načrt,
 > 0 AI žetonov v jedru).
 
-**Verzija: 2.14.0 — P0-J: CI VRATA + PRODUKCIJSKI DIM + MIGRATION SAFETY + ARTEFAKTI (2026-10-08).**
+**Verzija: 2.15.0 — P1-A: OSEBNI POTOVALNI PROFIL + DOLGOROČNI SPOMIN (issue #3 §1/§2/§11).**
 Izdaje rekonstrukcije: 2.1.0 skupnostne funkcije → 2.2.0 aplikacijska lupina →
 2.3.0 issue #1 (živi GPS, booking, pomočnik) → 2.3.1 infra CI → 2.4.0 PWA
 offline → 2.5.0 rezervacijski sloj → 2.6.0 partner kanal booking verige →
@@ -68,6 +68,24 @@ smoke-report.json + smoke.txt + server.log when: always — tudi padec je
 dokaz; iskreno popravljen pokvarjen sprožilec GitHub CI („branches: ain]"
 osi miroval od 2.7.0, sinhronizacija je delala); readiness skript brez
 curl odvisnosti).
+→ 2.15.0 P1-A osebni potovalni profil (issue #3 §1/§2/§11 MindTrip
+parity): NOVI Prisma modeli UserPreference (fiksni nabor 9 ključev,
+izvor USER_STATED, kanonske vrednosti iz slovenia-data — brez vzporednih
+modelov) in MemoryItem (5 vrst, 4 izvori, confidence iz pravil, mehko
+brisanje + 90-dnevna zadrževalna doba z lenkim čiščenjem); NOVE rute
+/api/preferences (GET/PUT/DELETE — strežniška validacija proti fiksni
+množici) + /api/memory (GET bounded 100 + POST blokiran pri izklopu +
+DELETE ?confirm=forget-all) + /api/memory/[id] (PATCH/DELETE z IDOR-varno
+sestavljeno poizvedbo {id, userId} — 404 za tuje); fail-closed
+personalizacijska zapora (izklop = spomin se sploh ne bere, novi zapisi
+se ne zbirajo; agentska pot getPersonalContext vrača PRAZEN kontekst);
+SYSTEM_DATA_GUARD na vseh vhodih (sanitizacija + odkrita zavrnitev
+injekcijskih vzorcev); revizijska sled AuditLog (7 dejanj preference.*/
+memory.*); NOVA stran /moj-profil (preference z izvorom, „Kaj si zapomnim
+o tebi" z urejanjem/brisanjem/pozabi vseh, preklop personalizacije,
+zasebnostna izjava) + navigacijski vnos Račun → Moj profil; 63 novih
+testov (41 čistih + 22 source-contract IDOR/zapora/guard/revizija) =
+1042 testov; 0-AI kanon ohranjen (0 žetonov, 0 LLM).
 Izvorni repozitorij (626 commitov, v1.190.0) je bil dvakrat izgubljen v posledici
 vdorov v GitHub račun (2026-10-06). Ta aplikacija je temeljita rekonstrukcija iz
 obnovitvenih virov (delovni dnevnik + izpisi izvorne kode + produkcijski posnetek +

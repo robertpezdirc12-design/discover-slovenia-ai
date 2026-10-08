@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { db } from "@/lib/db";
 import { getSessionUserId, normalizePlanInput } from "@/lib/trip-auth";
+import { getDestination } from "@/lib/slovenia-data";
 
 /**
  * /api/trips — poti prijavljenega uporabnika v oblaku (48-a).
@@ -38,26 +39,47 @@ export async function GET() {
   const trips = journeys.map((j) => {
     let dayCount = 0;
     let stopCount = 0;
+    // P1-D (issue #3 §9): prvi RAZPOZNAVEN postanek (destSlug → register) —
+    // deterministična podlaga za ploščico „vreme naslednje pote" na domov.
+    // Brez razpoznavnega postanka → null (iskrena odsotnost, nikoli ugib).
+    let firstStop: { name: string; lat: number; lng: number } | null = null;
     try {
       const plan = JSON.parse(j.data) as { days?: unknown[] };
       if (Array.isArray(plan.days)) {
         dayCount = plan.days.length;
-        stopCount = plan.days.reduce<number>(
-          (n, d) =>
-            n +
-            (typeof d === "object" && d !== null && Array.isArray((d as { locations?: unknown[] }).locations)
-              ? ((d as { locations: unknown[] }).locations.length)
-              : 0),
-          0
-        );
+        for (const d of plan.days) {
+          if (typeof d !== "object" || d === null) continue;
+          const locations = (d as { locations?: unknown[] }).locations;
+          stopCount += Array.isArray(locations) ? locations.length : 0;
+          if (!firstStop && Array.isArray(locations)) {
+            for (const loc of locations) {
+              if (typeof loc !== "object" || loc === null) continue;
+              const slug = (loc as { destSlug?: unknown }).destSlug;
+              if (typeof slug !== "string") continue;
+              const dest = getDestination(slug);
+              if (dest?.coords) {
+                firstStop = {
+                  name: dest.name,
+                  lat: dest.coords.lat,
+                  lng: dest.coords.lng,
+                };
+                break;
+              }
+            }
+          }
+        }
       }
     } catch {
-      // Pokvarjen zapis → 0/0 (iskrenost: števca niso znana).
+      // Pokvarjen zapis → 0/0/null (iskrenost: števca niso znana).
     }
     return {
       shareId: j.shareId,
       title: j.title,
       isPublic: j.isPublic,
+      // P1-D §9: realni datumi poti (lokalni YYYY-MM-DD, null = nedoločeno).
+      dateStart: j.dateStart,
+      dateEnd: j.dateEnd,
+      firstStop,
       createdAt: j.createdAt.toISOString(),
       updatedAt: j.updatedAt.toISOString(),
       dayCount,

@@ -2562,3 +2562,39 @@ Stage Summary:
 - 2.17.0 P1-C: §4 watch (4 vrste, zavrnjene 2 z razlogom, baseline iskrenost, bounded cron, idempotenca) + §10 notifikacijski center (in-app inbox, zvonček, dedupe unique) + §11 zasebnost (IDOR 404, pote brez dostopa se ne vrednotijo, strežniška imena ciljev) — vse 0-AI
 - KLJUČNE odločitve: (1) dedupe po dogodku (dan/mejnik/prehod cen) namesto po času — eno obvestilo na dogodek ne glede na pogostost cron; (2) vreme se posmakuje ISTEMU viru kot javna ruta (konzistentna fail-closed obnašanja); (3) brisanje obvestila NE ustavi spremljanja (watch je vir resnice — pavza/izbris sta uporabnikovi dejanji)
 - Sledi: rsync → merge-dsa → vrata → commit → push → CI → komentar #3; nato P1-D (§9 personalizirana domov + §14 parity scorecard)
+
+---
+Task ID: p1-c-izdaja
+Agent: Z.ai Code (glavni)
+Task: Izdaja 2.17.0 (P1-C) — rsync → merge-dsa → push → CI → komentar #3.
+
+Work Log:
+- VRATA v merge-dsa: prisma generate + tsc 0 + bun test 1146/1146 (900 ms) + lint 0
+- COMMIT 4f9536e (konvencionalno sporočilo s §4/§10 vsebinsko razčlenitvijo + vrata + E2E); rsync z enakimi izključitvami kot prej (db/ ne gre v repozitorij — testni uporabniki ostajajo lokalni)
+- PUSH USPEŠEN na 1. poskus: b7f9d68..4f9536e HEAD → main; žeton SAMO v pomnilniku (sestavavljen push URL), .git/config preverjen po pushu — 0 pojavitev glpat
+- CI: pipeline 2927791886 na 4f9536e → SUCCESS (6/6 vrat: lint/typecheck/test+junit/prisma-validate/build/smoke)
+- KOMENTAR na issue #3: note_id 3980145787 — P1-C v celoti (§4 iskrenostni kanon z E2E citati, §10 center, §11 IDOR/zasebnost, 1146 testov, matrika stanja §12, iskreno odsotno, P1-D načrt)
+- Zrcalo GitHub robertpezdirc12-design: mirror API tokrat WAF-blokiran (pull_through vrne Cloudflare Blocked) + api.github.com ni dosegljiv iz peskovnika — sinhronizacija je samodejna (push mirror, potrjena ob 2.15.0/2.16.0), dokončne potrditve tokrat NI bilo mogoče pridobiti (iskreno zabeleženo)
+
+Stage Summary:
+- 2.17.0 ŽIVA na GitLab main (pipeline 2927791886, 6/6 zelenih) — P1-C POPOLNOMA ZAKLJUČEN in objavljen (issue #3 §4 watch + §10 notifikacije + §11 izolacija)
+- Žeton: samo v pomnilniku; lastniku ob zaključku seje priporočiti PREKLIC (glpat-…uyx7x)
+- Sledi: P1-D (§9 personalizirana domov + §14 parity scorecard; §8 creator/guide ostaja odprta točka matrice)
+
+---
+Task ID: p1-d
+Agent: Z.ai Code (glavni)
+Task: P1-D (issue #3 §9/§14) — personalizirana domača stran + MindTrip parity scorecard; izdaja 2.18.0. ČISTO DETERMINISTIČNO (0 AI).
+
+Work Log:
+- /api/trips GET ADITIVNA razširitev: dateStart/dateEnd + firstStop {name,lat,lng} (prvi razpoznavni postanek prek destSlug registra — strežniško, deterministično; brez razpoznavnega → null iskrena odsotnost; pokvarjen JSON → 0/0/null)
+- NOV personal-home-section.tsx (P1-D §9) v HomeView pod NextStepCard — SAMO prijavljenim (gost → null, javni Discover nedotaknjen): 7 ploščic — (1) Nadaljuj pot (najnovejša oblak pota z dnevi/postanki/datumi → /pot/{shareId}; brez → povabilo načrtovalniku); (2) Obvestila (neprebrana, zadnji 3 naslovi → /notifikacije); (3) Spremljanja (čipi vrst s stanji); (4) Vreme naslednje pote (prihajajoča pota + prvi postanek + datum v 16-dnevnem horizontu → fetchDailyWeather ISTI vir kot /api/weather; faza IZPELJANA v renderju (idle/far/fetch) — setState SAMO asinhrono (react-hooks/set-state-in-effect pravilo ujeto z lintom); vir nedosegljiv → ISKRENO sporočilo, nikoli izmišljeno); (5) Ideje zate (iz P1-A preferenc: budget €/€€/€€€ + interesi — ISTI reason slovar buildCandidateReasons/formatReasonsInline kot @AI priporočila, deterministično rangiranje interesi>proračun>ocena>ime, top 3 z »Zakaj:« vrstico; personalizacija OFF → iskrena ploščica + link profil; pokvarjen zapis preferenc → fail-closed brez); (6) V bližini (enkratna getCurrentPosition — LAŽJA od watchPosition Go Mode; haversine klientno nad registrom 38 destinacij, 0 strežniških klicev z lego; denied/unsupported/error → iskrena stanja; zasebnostna opomba na ploščici); (7) Odprte naloge (deterministične iz že naloženih podatkov: poti brez datumov max 2, profil brez preferenc, brez spremljanj)
+- NOV docs/PARITY-SCORECARD.md (§14): 20 zmožnosti × (Mindtrip javno | Discovery trenutno | cilj | Evidence) — PARITY z dokazi na 18 (personalization, memory, conv. planning, reasoning, proactive, watch/alerts, price monitoring, booking-po-resnici, itinerary, maps, collaboration, affiliate, offline/PWA, GPS/on-trip, provenance, notification center, personalized home, zasebnost/IDOR); SUPERIOR na 5 (deterministično jedro 0-AI, provenance, offline/Go Mode, transparentnost, SI-lokalni podatki); ISKRENO odprto: creator/guide (§8 čaka lastnika), PWA push (ni infrastrukture), real booking kanal (fail-closed 503); sklep: parity na generičnem travel-agent UX + superior na SI/lokalno/provenance/offline
+- TESTI +13 = 1159/1159: tests/p1d-home.test.ts (source-contract: trips razširitev s server-side firstStop + iskrene ničle; sekcija samo prijavljenim + vgrajena v HomeView; SAMO obstoječi API-ji (0 novih poti); GPS 100 % klienten + prepovedan fetch z lego; vreme iskrena stanja; ideje deterministične z razlogi + OFF ploščica; naloge; scorecard obstaja/pokritost 20 vrstic/iskrene vrzeli) — POPRAVKI testa: 2× velike črke v besedilu (NE izmišljujemo → izmišljujemo; Napoved še NE pokriva → pokriva datumov)
+- VERZIJA 2.18.0 (4 mesta + kanarček); vrata: tsc 0, lint 0, 1159/1159 (9830 expect)
+- E2E (curl + agent-browser, 4 PNG + summary v docs/evidence/p1-d/): preference A nastavljene (€€ + gore/jame/morje); GET /api/trips pokaže dateStart 2026-10-15 + firstStop Bled {46.3683, 14.0944}; UI: gost → sekcija SKRITA (DOM preverba); prijava → vseh 7 ploščic (Nadaljuj P1C pot · neprebrano obvestilo · 2 spremljanji · VREME ISKRENO nedosegljivo (peskovnik blokira omrežje — pravilno fail-closed) · ideje Triglav/Bohinj z »Zakaj: ~15 € na osebo, ustreza proračunu (€€)« · V bližini klik → ISKRENO zavrnjeno (headless) · odprte naloge); mobilni 390 px; EN jezik (/en Welcome back + Ideas for you); 0 napak konzole
+
+Stage Summary:
+- 2.18.0 P1-D: §9 personalizirana domov (7 ploščic nad P1-A preferencami + P1-C obvestili/spremljanji + obstoječimi API-ji — 0 novih poti) + §14 parity scorecard (20 vrstic z dokazi, iskrene vrzeli)
+- Celoten issue #3 po matriki §12: §1–§7, §9–§11, §14 ZAKLJUČENI; §3 delno ( obstoječi @AI + NextStep + P1-B razširitve — enotna orkestracija po potrebi); §8 creator/guide ostaja odprta točka (zavestno, lastnikova odločitev); §13 AI plast NE (lastnikova odločitev 0-AI)
+- Sledi: rsync → merge-dsa → vrata → commit → push → CI → komentar #3 (zadnji P1 komentar)

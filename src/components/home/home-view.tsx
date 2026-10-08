@@ -33,6 +33,7 @@ import * as React from "react";
 
 import { DestinationCard } from "@/components/destination-card";
 import { NextStepCard, useNextStepContext } from "@/components/next-step-card";
+import { PersonalHomeSection } from "@/components/home/personal-home-section";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -649,6 +650,10 @@ export function HomeView() {
           <NextStepCard ctx={nextStepCtx} surface="home" />
         </div>
       )}
+
+      {/* ======== P1-D (issue #3 §9): PERSONALIZIRANA DOMOV — samo prijavljeni
+           (gostjev javni Discover se nadaljuje nespremenjen spodaj) ======== */}
+      <PersonalHomeSection />
 
       {/* ======== RAZIŠČI PO TEMAH ======== */}
       <section aria-labelledby="teme" className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8">

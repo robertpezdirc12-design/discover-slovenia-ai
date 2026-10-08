@@ -97,9 +97,13 @@ jobs:
           mkdir -p reports
           # NEXTAUTH_* sta CI-only LUTILI (nikoli produkcijski vrednosti) —
           # brez skrivnosti SessionProvider piše CLIENT_FETCH_ERROR v konzolo.
+          # HOSTNAME=0.0.0.0 prepreči vezavo na ime vsebnika/runnerja
+          # (naučeno iz GitLab pipeline 2927141601: strežnik zdrav, a bi se
+          # sicer vezal napačno in localhost ne bi bil dosegljiv).
           DATABASE_URL="file:/tmp/ci-smoke.db" PORT=3100 \
             NEXTAUTH_SECRET="ci-dummy-secret-samo-za-dim" \
             NEXTAUTH_URL="http://localhost:3100" \
+            HOSTNAME="0.0.0.0" \
             bun .next/standalone/server.js > reports/server.log 2>&1 &
           echo $! > server.pid
 

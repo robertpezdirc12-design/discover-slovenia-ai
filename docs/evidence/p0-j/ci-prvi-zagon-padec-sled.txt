@@ -1,0 +1,19 @@
+14Z 01O Running on runner-nezyxejex-project-87315476-concurrent-0 via runner-nezyxejex-s-l-s-amd64-1791473690-95059b51...
+36Z 01O [32;1m$ (bun .next/standalone/server.js > reports/server.log 2>&1 & echo $! > server.pid)[0;m
+81Z 01O [32;1m$ SMOKE_BASE_URL="http://localhost:${PORT}" bun scripts/ci-wait-ready.ts || (echo '--- reports/server.log ---'; cat reports/se
+[30 poskusov povezave — vsi 'Unable to connect. Is the computer able to access the url?']
+
+--- reports/server.log (izpis ob padcu — strežnik se je zagnal, a VEZAN NAPAČNO): ---
+16Z 01O Attention: Next.js now collects completely anonymous telemetry regarding usage.
+21Z 01O This information is used to shape Next.js' roadmap and prioritize features.
+09Z 01O ▲ Next.js 16.1.3 (Turbopack)
+49Z 01O ▲ Next.js 16.1.3
+53Z 01O - Local:         http://runner-nezyxejex-project-87315476-concurrent-0:3100
+54Z 01O - Network:       http://runner-nezyxejex-project-87315476-concurrent-0:3100
+56Z 01O ✓ Starting...
+57Z 01O ✓ Ready in 85ms
+
+91Z 01E Strežnik na http://localhost:3100 se v 30 s ni odzval — preveri reports/server.log
+21Z 01E reports/: found 3 matching artifact files and directories[0;m 
+69Z 01E Uploading artifacts as "archive" to coordinator... 201 Created[0;m  correlation_id[0;m=d00b70bafe004d179f1d7c2ca44127b4 id[0;m=170
+27Z 00O [31;1mERROR: Job failed: exit code 1[0;m

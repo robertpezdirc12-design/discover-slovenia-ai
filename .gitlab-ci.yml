@@ -98,6 +98,12 @@ smoke:
   variables:
     DATABASE_URL: "file:/tmp/ci-smoke.db"
     PORT: "3100"
+    # HOSTNAME mora biti EKSPlicitno 0.0.0.0: Docker runnerji nastavijo
+    # HOSTNAME na ime vsebnika (npr. runner-xyz-project-87315476-…), Next
+    # standalone strežnik pa se veže nanj — localhost potem NI dosegljiv
+    # (naučeno iz prvega zagona pipeline 2927141601: strežnik je bil zdrav,
+    # a vezan napačno; 0.0.0.0 = vsi vmesniki).
+    HOSTNAME: "0.0.0.0"
     # CI-only LUTILO (nikoli produkcijska vrednost): brez skrivnosti bi
     # SessionProvider na straneh dobil 500 na /api/auth/session in pisal
     # CLIENT_FETCH_ERROR v konzolo — z lutilom endpoint pošteno odgovori

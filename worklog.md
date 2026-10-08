@@ -2397,3 +2397,22 @@ Stage Summary:
 - IZDANA 2.14.0 — P0-J: 6. CI vrata smoke (produkciki standalone dim 19 preverb znotraj CI), MIGRATION SAFETY (db:materialize brez --accept-data-loss na svežo SQLite), ARTEFAKTI/REPORTI (junit.xml v zavihku Testi + smoke-report.json + smoke.txt + server.log, when: always na obeh platformah), popravljen tiho mrtvi GitHub CI sprožilec — 979 testov (+14), tsc 0, lint 0
 - POVRATNA INFORMACIJA IZ E2E: produkcijski standalone build deluje brez .env (baza izven, register kot vir resnice, auth fail-closed s 500 brez skrivnosti → CI lutilo)
 - Sledi: rsync → commit → push GitLab (žeton samo v pomnilniku) → CI 6 vrat prvič zelenih na pravem pipeline-u → mirror → komentar #1; nato P1 faza (issue #3) ali produkcija (issue #2) po lastnikovi odločitvi
+
+---
+Task ID: 68-fix (nadaljevanje Task 68)
+Agent: Z.ai Code (glavni)
+Task: Popravek prvega CI zagona smoke vrat — pipeline 2927141601 je povedil NA ŠTEVILU (strnjen commit 6923ede) in ravno to je dokaz, da vrata delujejo.
+
+Work Log:
+- PRVI ZAGON PIPELINE 2927141601: lint ✓ 59s, typecheck ✓ 57s, test ✓ 42s (z junit reporterjem), prisma-validate ✓ 44s, build ✓ 72s, SMOKE ✗ 110s — ISKREN PADEC, ne tiha zmija
+- Diagnoza iz trace (job 17035621560): strežnik se je zagnal čisto (✓ Ready in 85ms), a se je vezal na http://runner-nezyxejex-project-87315476-concurrent-0:3100 — Docker runner nastavi env HOSTNAME na ime vsebnika, Next standalone server.js pa bere process.env.HOSTNAME za vezavo; vezava na eth0 vsebnika POMANJŠA 127.0.0.1 → wait-ready 30× „Unable to connect" → iskren izhod 1 → cat server.log (diagnostika v dnevniku posla!) → artefakti when: always so se PRAV naložili kljub padcu (found 3, 201 Created) — mehanizem artefaktov dokazan v boju
+- V peskovniku je ista pot delovala, ker HOSTNAME env ni bil nastavljen (server.log dokazoval „Local: http://localhost:3100") — razlika okolij, ki jo samo pravi CI zagon razkrije
+- POPRAVEK: eksplicitni HOSTNAME="0.0.0.0" v .gitlab-ci.yml smoke variables + .github/workflows/ci.yml strežniškem koraku (komentar v obeh razlaga vzrok z referenco na pipeline 2927141601); zaklenjeno v ci-smoke-contract ③ (HOSTNAME: "0.0.0.0") in ⑦ (HOSTNAME="0.0.0.0") — 14 testov, 54 trditve
+- LOKALNA PONOVNA VERIFIKACIJA (merge-dsa, isti .next): zagon s popolnim CI env (HOSTNAME=0.0.0.0 + NEXTAUTH lutili) → wait-ready 1. poskus → dim 19/19 PASS
+- DOKAZI dopolnjeni: ci-prvi-zagon-padec-sled.txt (ključne vrstice trace — napačna vezava + artefakti ob padcu + exit 1), server.log posodobljen z zagonom 0.0.0.0
+- Vrata po popravku: tsc 0, lint 0, 14/14 ci-smoke-contract
+
+Stage Summary:
+- CI vrata so NAREDILA SVOJE DELO: prvi zagon je ujel okoljsko razliko (Docker HOSTNAME), ki je v peskovniku nereproducibilna — in padel iskreno z artefakti; to je točno namen 6. vrat
+- Popravek: HOSTNAME=0.0.0.0 (standardna praksa Next standalone v vsebnikih) — lokalno verifikiran, mehansko zaklenjen s testoma ③/⑦
+- Sledi: strnjen popravek → push → nov pipeline (pričakovano 6/6 zelenih) → mirror → komentar #1 z iskrenim poročilom o prvem padcu in popravku

@@ -66,6 +66,10 @@ describe("p0j [source-contract]: GitLab CI ima 6. vrata smoke + artefakte", () =
     expect(yml).toContain("SMOKE_REPORT=reports/smoke-report.json");
     // CI-only NEXTAUTH lutilo (pošteno poimenovano, nikoli produkcijsko):
     expect(yml).toContain('NEXTAUTH_SECRET: "ci-dummy-secret-samo-za-dim"');
+    // HOSTNAME mora biti eksplicitno 0.0.0.0 — Docker runnerji nastavijo
+    // HOSTNAME na ime vsebnika in se strežnik sicer veže napačno
+    // (naučeno iz prvega zagona pipeline 2927141601):
+    expect(yml).toContain('HOSTNAME: "0.0.0.0"');
   });
 
   test("④ artefakti se naložijo OB VSAKEM izidu (when: always — padec je dokaz)", async () => {
@@ -109,6 +113,8 @@ describe("p0j [source-contract]: GitHub Actions CI pariteta + sprožilec [main]"
     // CI-only NEXTAUTH lutilo (pošteno poimenovano, nikoli produkcijsko) —
     // brez njega SessionProvider piše CLIENT_FETCH_ERROR v konzolo:
     expect(yml).toContain('NEXTAUTH_SECRET="ci-dummy-secret-samo-za-dim"');
+    // Eksplicitna vezava na vse vmesnike (ne na ime runnerja):
+    expect(yml).toContain('HOSTNAME="0.0.0.0"');
     // Ukazne vrstice (brez komentarjev in imen korakov) ne smejo nositi
     // destruktivne zastavice:
     const commandOnly = yml

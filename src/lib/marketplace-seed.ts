@@ -77,6 +77,9 @@ export async function seedMarketplaceProducts(): Promise<number> {
         kind: def.kind,
         stock: def.stock,
         active: true,
+        // Platforminski (seed) izdelki so uredniško pregledani po definiciji —
+        // partnerjevi vnosi gredo NAMENOMA skozi moderacijo (P0-H §22).
+        status: "published",
       },
       update: {
         name: def.name,
@@ -100,4 +103,19 @@ export async function seedMarketplaceProductsIfEmpty(): Promise<number> {
   const existing = await db.product.count();
   if (existing > 0) return 0;
   return seedMarketplaceProducts();
+}
+
+/**
+ * ENKRATNA SELITEV P0-H (idempotentna): obstoječi platforminski izdelki
+ * (ownerId = null, še na privzetem "draft" iz pred-P0-H obdobja) prestavimo
+ * na "published" — njihova vsebina je uredniška, nikoli partnerjeva.
+ * Partnerjevih vnosov (ownerId != null) NIKOLI ne dotaknemo. Uporabno tudi
+ * ob prihodnjem produkcijskem cutoverju (issue #2) z obstoječo bazo.
+ */
+export async function migratePreP0hPlatformProductsToPublished(): Promise<number> {
+  const res = await db.product.updateMany({
+    where: { ownerId: null, status: "draft" },
+    data: { status: "published" },
+  });
+  return res.count;
 }

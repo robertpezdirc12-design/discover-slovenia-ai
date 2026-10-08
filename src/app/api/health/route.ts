@@ -217,9 +217,34 @@ export async function GET() {
     });
   }
 
+  // 8) B2B tržnica (P0-H): statusni stroj moderacije — javno vidi SAMO
+  //    objavljene (draft → pending → published; partner nikoli ne objavi sam).
+  try {
+    const [drafts, pending, published, rejected, partners] = await Promise.all([
+      db.product.count({ where: { status: "draft" } }),
+      db.product.count({ where: { status: "pending" } }),
+      db.product.count({ where: { status: "published" } }),
+      db.product.count({ where: { status: "rejected" } }),
+      db.user.count({ where: { role: "partner" } }),
+    ]);
+    startup.push({
+      name: "marketplace:moderation",
+      status: "ok",
+      detail: `${published} objavljenih (javno) · ${pending} v predaji · ${drafts} osnutkov · ${rejected} zavrnjenih · ${partners} partnerjev — javna tržnica vidi samo objavljene (§22)`,
+      at: now(),
+    });
+  } catch {
+    startup.push({
+      name: "marketplace:moderation",
+      status: "skipped",
+      detail: "Tabela Product/User ni dosegljiva (migracija P0-H?) — preveri prisma/schema.prisma",
+      at: now(),
+    });
+  }
+
   return NextResponse.json({
     status: "ok",
-    version: "2.11.0",
+    version: "2.12.0",
     startup,
     checkedAt: now(),
   });

@@ -1,18 +1,26 @@
 "use client";
 
-import { Check, Sparkles } from "lucide-react";
+import { Check, Loader2, LogIn, Send, ShieldCheck, Sparkles, UserPlus } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { useLocale } from "next-intl";
+import * as React from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 import { Link } from "@/i18n/navigation";
 import { pick } from "@/lib/i18n-pick";
 
 /**
- * /za-ponudnike — 1:1 po produkciji (kako deluje, paketi, beta ugodnosti).
- * Prijavnica (Lead) pride v vsebinski fazi; CTA vodi na /kontakt.
+ * /za-ponudnike — 1:1 po produkciji (kako deluje, paketi, beta ugodnosti)
+ * + DEJANSKA prijavnica partnerja (P0-H §22): prijavljeni uporabnik pošlje
+ * prijavo → Lead (status "new") → skrbniška odločitev na /admin (approve →
+ * vloga "partner"). Partner NIKOLI ne objavi sam — vsak vnos gre skozi
+ * moderacijo (draft → pending → published).
  */
 export default function ForProvidersPage() {
   const l = useLocale();
@@ -109,7 +117,7 @@ export default function ForProvidersPage() {
       note: { sl: "/mesec — brezplačno med beto", en: "/mo — free during beta" },
       features: {
         sl: ["Vse iz Premium", "0 % provizija", "Več lokalov na enem računu", "Namenska podpora", "API dostop"],
-        en: ["Everything in Premium", "0% commission", "Multiple venues on one account", "Dedicated support", "API access"],
+        en: ["Everything from Premium", "0% commission", "Multiple venues on one account", "Dedicated support", "API access"],
       },
       featured: false,
     },
@@ -125,7 +133,7 @@ export default function ForProvidersPage() {
 
       <div className="mt-8">
         <Button asChild size="lg" className="tap-target font-semibold">
-          <Link href="/kontakt">{t("contactCta")}</Link>
+          <a href="#prijavnica">{t("contactCta")}</a>
         </Button>
       </div>
 
@@ -191,6 +199,11 @@ export default function ForProvidersPage() {
         ))}
       </ul>
 
+      {/* Prijavnica partnerja (P0-H §22) */}
+      <div id="prijavnica" className="scroll-mt-24">
+        <PartnerApplyForm />
+      </div>
+
       {/* Beta + obljuba */}
       <div className="mt-12 grid gap-4 md:grid-cols-2">
         <Card className="border-primary/25 bg-primary/5">
@@ -211,5 +224,160 @@ export default function ForProvidersPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+// ── PRIJAVNICA PARTNERJA ────────────────────────────────────────────────────
+
+function PartnerApplyForm() {
+  const l = useLocale();
+  const { toast } = useToast();
+  const { status: sessionStatus } = useSession();
+
+  const [note, setNote] = React.useState("");
+  const [sending, setSending] = React.useState(false);
+  const [applied, setApplied] = React.useState(false);
+
+  const L = {
+    title: { sl: "Prijavnica partnerja", en: "Partner application" },
+    lead: {
+      sl: "Pošlji prijavo — skrbnik jo pregleda na skrbniškem portalu. Po odobritvi dobi tvoj račun vlogo partnerja in dostop do partnerjevega portala (vnosi v tržnico, statistika, naročila).",
+      en: "Send an application — an admin reviews it in the admin portal. Upon approval your account receives the partner role and access to the partner portal (marketplace listings, statistics, orders).",
+    },
+    howTitle: { sl: "Kaj se zgodi po prijavi", en: "What happens after you apply" },
+    howBody: {
+      sl: "Prijava je iskreno ROČNA odločitev skrbnika (kanon DSA_ADMIN_EMAILS) — brez samodejnih obljub in brez takojšnje objave. Vsak vnos v tržnico gre skozi moderacijo: ti ustvariš osnutek, mi ga pregledamo in objavimo.",
+      en: "The application is an honest MANUAL admin decision (the DSA_ADMIN_EMAILS canon) — no automated promises, no instant publishing. Every marketplace listing goes through moderation: you create a draft, we review and publish it.",
+    },
+    note: { sl: "Sporočilo (neobvezno)", en: "Message (optional)" },
+    notePh: {
+      sl: "Napiši nekaj o svoji ponudbi: kaj nudite, kje ste, zakaj bi bili dober partner … (do 500 znakov)",
+      en: "Write about your offer: what you provide, where you are, why you would be a good partner … (up to 500 characters)",
+    },
+    submit: { sl: "Pošlji prijavo", en: "Send application" },
+    sending: { sl: "Pošiljanje …", en: "Sending …" },
+    unauthTitle: { sl: "Najprej se prijavi", en: "Sign in first" },
+    unauthBody: {
+      sl: "Prijavnica je za registrirane račune (varnost in sledljivost). Prijavi se ali ustvari račun — vrnil se boš sem.",
+      en: "The application is for registered accounts (security and traceability). Sign in or create an account — you will return here.",
+    },
+    login: { sl: "Prijava / registracija", en: "Sign in / register" },
+    doneTitle: { sl: "Prijava poslana!", en: "Application sent!" },
+    doneBody: {
+      sl: "Tvoja prijava čaka na skrbniški pregled. Po odobritvi dobiš vlogo partnerja — portal partnerja se ti odpre na /partner.",
+      en: "Your application awaits admin review. Upon approval you receive the partner role — the partner portal opens for you at /partner.",
+    },
+    openPortal: { sl: "Portal partnerja", en: "Partner portal" },
+    alreadyPartner: {
+      sl: "Že partner? Portal najdeš tukaj.",
+      en: "Already a partner? The portal is here.",
+    },
+    err: { sl: "Prijava trenutno ni mogoča.", en: "The application is currently unavailable." },
+    errNetwork: { sl: "Omrežna napaka — poskusi znova.", en: "Network error — try again." },
+  } as const;
+
+  const t = <K extends keyof typeof L>(k: K) => pick(l, L[k]);
+
+  async function onSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    if (sending) return;
+    setSending(true);
+    try {
+      const res = await fetch("/api/partner/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note: note.trim() || undefined }),
+      });
+      const body = (await res.json().catch(() => null)) as
+        | { ok?: boolean; message?: string; error?: string }
+        | null;
+      if (res.ok && body?.ok) {
+        setApplied(true);
+        window.scrollTo({ top: document.getElementById("prijavnica")?.offsetTop, behavior: "smooth" });
+        return;
+      }
+      toast({ title: body?.error ?? t("err"), variant: "destructive" });
+    } catch {
+      toast({ title: t("errNetwork"), variant: "destructive" });
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <Card className="mt-12 border-primary/25">
+      <CardHeader>
+        <CardTitle className="text-xl">{t("title")}</CardTitle>
+        <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">{t("lead")}</p>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <div className="rounded-lg border bg-muted/40 p-4">
+          <p className="flex items-center gap-1.5 text-sm font-semibold">
+            <ShieldCheck className="size-4 text-primary" aria-hidden="true" />
+            {t("howTitle")}
+          </p>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{t("howBody")}</p>
+        </div>
+
+        {/* Uspeh: prijava poslana */}
+        {applied ? (
+          <div className="rounded-lg border border-emerald-600/50 bg-emerald-600/10 p-4">
+            <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+              {t("doneTitle")}
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{t("doneBody")}</p>
+          </div>
+        ) : sessionStatus === "unauthenticated" ? (
+          /* Brez seje: iskren poziv k prijavi */
+          <div className="rounded-lg border border-amber-600/50 bg-amber-600/10 p-4">
+            <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+              {t("unauthTitle")}
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{t("unauthBody")}</p>
+            <Button asChild className="mt-3 tap-target font-semibold">
+              <Link href="/prijava?next=/za-ponudnike">
+                <LogIn className="size-4" aria-hidden="true" />
+                {t("login")}
+              </Link>
+            </Button>
+          </div>
+        ) : (
+          /* Obrazec (prijavljen) */
+          <form onSubmit={onSubmit} className="space-y-4" noValidate>
+            <div className="space-y-2">
+              <Label htmlFor="partner-note">{t("note")}</Label>
+              <Textarea
+                id="partner-note"
+                value={note}
+                onChange={(e) => setNote(e.target.value.slice(0, 500))}
+                placeholder={t("notePh")}
+                rows={4}
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                type="submit"
+                disabled={sending || sessionStatus !== "authenticated"}
+                className="tap-target font-semibold"
+              >
+                {sending ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <UserPlus className="size-4" aria-hidden="true" />
+                )}
+                {sending ? t("sending") : t("submit")}
+              </Button>
+              <Button asChild variant="ghost" className="tap-target">
+                <Link href="/partner">
+                  <ShieldCheck className="size-4" aria-hidden="true" />
+                  {t("openPortal")}
+                </Link>
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">{t("alreadyPartner")}</p>
+          </form>
+        )}
+      </CardContent>
+    </Card>
   );
 }

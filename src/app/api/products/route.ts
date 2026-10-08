@@ -6,7 +6,11 @@ import { seedMarketplaceProductsIfEmpty } from "@/lib/marketplace-seed";
 export const dynamic = "force-dynamic";
 
 /**
- * /api/products — JAVNI seznam aktivnih izdelkov lastne tržnice.
+ * /api/products — JAVNI seznam izdelkov lastne tržnice.
+ *
+ * Od P0-H (§22 moderacija): javno so VIDNI SAMO objavljeni izdelki
+ * (status "published" AND active) — partnerjevi osnutki, predaje in
+ * zavrnjeni vnosi javnosti niso vidni.
  *
  * Ob PRVEM klicu (prazna tabela) sproži idempotenten seed: izdelki
  * izpeljani IZKLJUČNO iz realnih polj kanonskega nabora (ime
@@ -27,7 +31,7 @@ export async function GET() {
 
   try {
     const products = await db.product.findMany({
-      where: { active: true },
+      where: { active: true, status: "published" },
       orderBy: { createdAt: "asc" },
       select: {
         slug: true,

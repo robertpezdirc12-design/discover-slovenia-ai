@@ -79,12 +79,19 @@ model NewsletterSubscriber {
 }
 
 /// Lead iz "Pridruži se" obrazca (za-ponudnike).
+/// status (P0-H): "new" | "contacted" | "approved" | "rejected" —
+/// odločitev skrbnika v /admin (approve hkrati dvigne User.role na "partner").
 model Lead {
   id        String   @id @default(cuid())
   email     String
   interest  String?
   note      String?
+  status    String   @default("new")
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([email])
 }
 
 // ── SKUPNOSTNE FUNKCIJE POTOVANJ (Task 48-a — mostovna rekonstrukcija) ──
@@ -94,11 +101,15 @@ model Lead {
 // minimalni obliki. NextAuth v4 JWT strategija → BREZ Account/Session tabel.
 
 /// Uporabniški račun popotnika (credentials, JWT — brez Account/Session).
+/// role (P0-H): "user" (privzeto) | "partner" (odobri skrbnik prek /admin —
+/// prijava na /za-ponudnike + Lead approve). Skrbnik NI vloga — kanon
+/// DSA_ADMIN_EMAILS (isAdminSession) ostaja edini vir skrbništva.
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
   name         String
   passwordHash String
+  role         String   @default("user")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -244,6 +255,12 @@ model TripMessage {
 // obstoječi model User ostaja nedotaknjen (kanon "samo dodajaj").
 
 /// Izdelek/izkušnja lastne tržnice (cena v centih; zaloga = dejanski inventar).
+/// B2B moderacija (P0-H §22): status draft → pending → published (+rejected);
+/// partner ustvari osnutek, SAMO skrbnik objavi; sprememba vsebine objavljenega
+/// vnosa sproži ponovno moderacijo (nazaj v pending). ownerId NAMENOMA brez
+/// relacije (kanon Order.userId) — partner pripadnost je stolpec z indeksom.
+/// Lat/lng je geo pin partnerja (validiran na SI·HR·ME·AL bbox) — null je
+/// iskrena odsotnost, nikoli izmišljena lokacija.
 model Product {
   id          String      @id @default(cuid())
   slug        String      @unique
@@ -256,12 +273,26 @@ model Product {
   stock       Int
   saleCount   Int         @default(0)
   active      Boolean     @default(true)
+  /// "draft" | "pending" | "published" | "rejected" (listing-moderation.ts)
+  status      String      @default("draft")
+  /// Partner-lastnik (null = platforma/seed — ti so uredniško pregledani).
+  ownerId     String?
+  /// Geo pin (validiran ob vnosu; prikaz na zemljevidu pri objavi).
+  lat         Float?
+  lng         Float?
+  submittedAt DateTime?
+  reviewedAt  DateTime?
+  reviewedBy  String?
+  /// Razlog zavrnitve (viden partnerju — iskreno, brez tihe zavrnitve).
+  rejectionReason String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
   items       OrderItem[]
 
   @@index([active])
+  @@index([status])
+  @@index([ownerId])
 }
 
 /// Naročilo lastne tržnice (gost checkout dovoljen — userId/visitorKey).
@@ -312,6 +343,32 @@ model OrderItem {
   qty                Int
 
   @@index([orderId])
+}
+
+/// VPRAŠAJ LOKALCA (P0-H §20) — brezplačna globja konzultacija z zasebno
+/// povezavo /konzultacija/{accessToken} (lastnik = poznalec žetona).
+/// answerSource: "fallback" (deterministični odgovor iz registra — glej
+/// src/lib/consultation-fallback.ts) | "manual" (ročna dopolnitev skrbnika).
+/// interests je JSON seznam (SQLite brez list primitivov).
+model Consultation {
+  id               String    @id @default(cuid())
+  accessToken      String    @unique
+  email            String
+  question         String
+  destinationName  String?
+  travelDates      String?
+  partyDescription String?
+  budget           String?
+  interests        String?
+  answer           String?
+  answerSource     String    @default("fallback")
+  status           String    @default("pending") // "pending" | "delivered"
+  deliveredAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([email, createdAt])
+  @@index([status])
 }
 
 /// Dedup Stripe webhook dogodkov (eventId @unique → P2002 → dogodek prezrt).
@@ -380,7 +437,7 @@ model CommissionEntry {
 /// meta je kompakten JSON (nikoli skrivnosti).
 model AuditLog {
   id         String   @id @default(cuid())
-  /// "system" | "owner" | "customer" — kdo je sprožil dejanje.
+  /// "system" | "owner" | "customer" | "partner" (P0-H) — kdo je sprožil dejanje.
   actorType  String
   /// Identiteta akterja (userId / email skrbnika / null za sistem).
   actorId    String?

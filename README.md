@@ -5,7 +5,7 @@
 > realnimi koordinatami in deterministični načrtovalnik poti (isti vhod → isti načrt,
 > 0 AI žetonov v jedru).
 
-**Verzija: 2.11.0 — P0-G: GO MODE GEO URI + GEOFENCE PRIHODA + PWA LUPINA Z /NA-POTI + QR DEJLJENJA + ICS IZVOZ + VARNOSTNI TESTI (2026-10-08).**
+**Verzija: 2.12.0 — P0-H: B2B TRŽNICA — MODERACIJA VNOSOV + PORTAL PARTNERJA + SKRBNIŠKI PORTAL + KONZULTACIJE »VPRAŠAJ LOKALCA« (2026-10-08).**
 Izdaje rekonstrukcije: 2.1.0 skupnostne funkcije → 2.2.0 aplikacijska lupina →
 2.3.0 issue #1 (živi GPS, booking, pomočnik) → 2.3.1 infra CI → 2.4.0 PWA
 offline → 2.5.0 rezervacijski sloj → 2.6.0 partner kanal booking verige →
@@ -33,7 +33,19 @@ prvem obisku) + bližnica PWA; PRAVI QR izris deljene pote (qrcode, prej
 placeholder); ICS izvoz v koledar (RFC 5545, celodnevni DST-varni dogodki,
 DTEND ekskluziven, beg besedila, prelom 75 oktetov — živ samo ob realnih
 datumih); 41 novih testov (+16 varnostnih source-contract IDOR/BOLA/vloge/
-vabila/CAS)).
+vabila/CAS)) → 2.12.0 P0-H B2B tržnica (statusni stroj moderacije
+listing-moderation.ts: draft → pending → published (+rejected), partner
+NIKOLI ne objavi sam, sprememba vsebine sproži ponovno moderacijo;
+portal partnerja /partner z lastnimi vnosi, statistiko prodaje/preklicev
+in urejevalnikom z geo pinom (bbox validacija SI·HR·ME·AL); skrbniški
+portal /admin — prijave partnerjev (Lead approve → vloga partner,
+iskrena 409 brez računa), moderacijska vrsta (objava/zavrnitev z obveznim
+razlogom, viden partnerju), konzultacije z ročnimi dopolnitvami
+(answerSource manual — iskreno razkrit); javni obrazec /konzultacija
+»Vprašaj lokalca« (deterministični odgovor iz registra destinacij +
+vodene povezave partnerjev, 0 AI §29; zasebna stran /konzultacija/{token},
+3/dan na e-pošto, e-pošte ne pošiljamo; 55 novih testov: 16 varnostnih
+source-contract + listing-moderation + consultation-fallback)).
 Izvorni repozitorij (626 commitov, v1.190.0) je bil dvakrat izgubljen v posledici
 vdorov v GitHub račun (2026-10-06). Ta aplikacija je temeljita rekonstrukcija iz
 obnovitvenih virov (delovni dnevnik + izpisi izvorne kode + produkcijski posnetek +

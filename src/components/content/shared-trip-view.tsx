@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useLocale } from "next-intl";
+import QRCode from "qrcode";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
@@ -41,7 +42,8 @@ import { pick } from "@/lib/i18n-pick";
 import { myTrip } from "@/lib/my-trip";
 import { getDestination } from "@/lib/slovenia-data";
 import { type SharedPlan, sharedPlans } from "@/lib/shared-plan";
-import type { TripDates } from "@/lib/trip-dates";
+import { addDaysIso, eachTripDay, type TripDates } from "@/lib/trip-dates";
+import { buildTripIcs, downloadTripIcs } from "@/lib/trip-ics";
 
 /**
  * /pot/[shareId] — deljena pot (rekonstrukcija D7 + 48-a skupnostne funkcije).
@@ -126,12 +128,18 @@ export function SharedTripView({ shareId }: { shareId: string }) {
     print: { sl: "Natisni / shrani PDF", en: "Print / save PDF" },
     printFooter: { sl: "Izvoženo z Discover Slovenia AI", en: "Exported with Discover Slovenia AI" },
     qrTitle: { sl: "QR koda te povezave", en: "QR code of this link" },
-    qrPlaceholder: {
-      sl: "Tu se bo izrisala QR koda za to povezavo (v pripravi) — do takrat skopiraj URL spodaj.",
-      en: "A QR code for this link will render here (in preparation) — until then, copy the URL below.",
+    qrNote: {
+      sl: "Skeniraj s telefonom in odpri to pot — koda vsebuje samo javno povezavo.",
+      en: "Scan with your phone to open this trip — the code contains only the public link.",
     },
     copy: { sl: "Kopiraj povezavo", en: "Copy link" },
     copied: { sl: "Povezava skopirana!", en: "Link copied!" },
+    // P0-G (issue §17): ICS izvoz v koledar
+    icsBtn: { sl: "Dodaj v koledar (.ics)", en: "Add to calendar (.ics)" },
+    icsNoDates: {
+      sl: "Najprej določi realne datume poti — izvoz v koledar potrebuje dneve.",
+      en: "Set the real trip dates first — the calendar export needs the days.",
+    },
     loading: { sl: "Nalagam deljeno pot …", en: "Loading the shared trip …" },
     notFoundTitle: { sl: "Ta pot ni (več) na tej napravi", en: "This trip is not (anymore) on this device" },
     notFoundBody: {
@@ -186,6 +194,37 @@ export function SharedTripView({ shareId }: { shareId: string }) {
     if (!pageUrl) return;
     void navigator.clipboard?.writeText(pageUrl).catch(() => undefined);
   }, [pageUrl]);
+
+  // P0-G (issue §17): izvoz .ics — dnevi poti (eachTripDay, DST-varno) +
+  // postanki načrta po dnevih; brez realnih datumov gumba sploh ni
+  // (iskrena odsotnost, ne izmišljeni "približni" datumi).
+  const onIcsExport = React.useCallback(() => {
+    if (!db?.tripDates || !db.plan) return;
+    const days = eachTripDay(db.tripDates);
+    if (!days) return;
+    const planDays = db.plan.days;
+    const ics = buildTripIcs({
+      title: db.name ?? db.plan.name ?? "Pot",
+      dateStart: db.tripDates.start,
+      dateEnd: db.tripDates.end,
+      uidKey: shareId,
+      url: pageUrl || undefined,
+      now: new Date(),
+      days: days.map((d) => {
+        const planDay = planDays[d.dayIndex - 1];
+        const stops = (planDay?.locations ?? [])
+          .map((loc) => loc.name)
+          .join(" → ");
+        return {
+          date: d.iso,
+          summary: stops
+            ? `Dan ${d.dayIndex} — ${stops}`
+            : `Dan ${d.dayIndex}`,
+        };
+      }),
+    });
+    if (ics) downloadTripIcs(ics, shareId);
+  }, [db, shareId, pageUrl]);
 
   const saveToCloud = React.useCallback(async () => {
     if (!localPlan || savingCloud) return;
@@ -330,6 +369,14 @@ export function SharedTripView({ shareId }: { shareId: string }) {
                 <Printer className="size-4" aria-hidden="true" />
                 {pick(l, L.print)}
               </Button>
+              {/* P0-G (issue §17): ICS izvoz — ŽIV samo ob realnih datumih
+                  (sicer iskrena odsotnost; datume določa plošča spodaj). */}
+              {db.tripDates && (
+                <Button onClick={onIcsExport} variant="outline" className="tap-target font-semibold">
+                  <CalendarDays className="size-4" aria-hidden="true" />
+                  {pick(l, L.icsBtn)}
+                </Button>
+              )}
               <Button onClick={onCopy} variant="ghost" className="tap-target font-semibold">
                 <Share2 className="size-4" aria-hidden="true" />
                 {pick(l, L.copy)}
@@ -353,14 +400,11 @@ export function SharedTripView({ shareId }: { shareId: string }) {
                     <QrCode className="size-4 text-primary" aria-hidden="true" />
                     {pick(l, L.qrTitle)}
                   </h3>
-                  <div
-                    aria-hidden="true"
-                    className="mt-3 flex aspect-square max-w-40 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30"
-                  >
-                    <QrCode className="size-10 text-muted-foreground/40" />
-                  </div>
+                  {/* P0-G (issue §17): PRAVI izris QR (qrcode, client-only);
+                      ob napaki izrisa ostane URL spodaj za ročno kopijo. */}
+                  <QrCanvas url={pageUrl} label={pick(l, L.qrTitle)} />
                   <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                    {pick(l, L.qrPlaceholder)}
+                    {pick(l, L.qrNote)}
                   </p>
                   <p className="mt-2 truncate rounded-md bg-muted px-2 py-1 font-mono text-xs">
                     {pageUrl}
@@ -575,7 +619,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
 
           <PlanDays plan={localPlan} shareId={shareId} l={l} addLabel={pick(l, L.addTrip)} addedLabel={pick(l, L.added)} exploreLabel={pick(l, L.exploreDest)} />
 
-          {/* QR placeholder + opomba (ne tiska) */}
+          {/* QR izris + opomba (ne tiska) — P0-G: pravi izris */}
           <div className="mt-10 grid gap-4 sm:grid-cols-2 print:hidden">
             <Card>
               <CardContent className="p-5">
@@ -583,14 +627,9 @@ export function SharedTripView({ shareId }: { shareId: string }) {
                   <QrCode className="size-4 text-primary" aria-hidden="true" />
                   {pick(l, L.qrTitle)}
                 </h3>
-                <div
-                  aria-hidden="true"
-                  className="mt-3 flex aspect-square max-w-40 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30"
-                >
-                  <QrCode className="size-10 text-muted-foreground/40" />
-                </div>
+                <QrCanvas url={pageUrl} label={pick(l, L.qrTitle)} />
                 <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                  {pick(l, L.qrPlaceholder)}
+                  {pick(l, L.qrNote)}
                 </p>
                 <p className="mt-2 truncate rounded-md bg-muted px-2 py-1 font-mono text-xs">
                   {pageUrl}
@@ -617,6 +656,44 @@ export function SharedTripView({ shareId }: { shareId: string }) {
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * P0-G (issue #1 §17 „QR sharing“): PRAVI izris QR kode povezave poti
+ * (knjižnica qrcode, client-only canvas). Ob napaki izrisa koda čisto
+ * izgine — URL pod njo ostane pot za ročno kopiranje (iskrena
+ * degradacija, nikoli pokvarjena slika).
+ */
+function QrCanvas({ url, label }: { url: string; label: string }) {
+  const ref = React.useRef<HTMLCanvasElement | null>(null);
+
+  React.useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas || !url) return;
+    let cancelled = false;
+    QRCode.toCanvas(
+      canvas,
+      url,
+      { width: 160, margin: 2, errorCorrectionLevel: "M" },
+      (err: Error | null | undefined) => {
+        if (err && !cancelled) canvas.hidden = true;
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
+
+  return (
+    <canvas
+      ref={ref}
+      width={160}
+      height={160}
+      role="img"
+      aria-label={label}
+      className="mt-3 rounded-lg border bg-white dark:bg-white"
+    />
   );
 }
 

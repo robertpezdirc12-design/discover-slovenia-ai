@@ -45,6 +45,18 @@
   ],
   "shortcuts": [
     {
+      "name": "Na poti",
+      "short_name": "Na poti",
+      "description": "Go Mode sopotnik med potovanjem — deluje tudi brez signala",
+      "url": "/na-poti",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
       "name": "AI načrtovalec",
       "short_name": "Načrtuj",
       "description": "Sestavi popotni itinerer z AI",

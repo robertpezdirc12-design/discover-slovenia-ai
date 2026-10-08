@@ -2225,3 +2225,27 @@ Stage Summary:
 - WAF vzorez dokumentiran: retry zanke 55–90 s obvladajo vse (push/POST/API GET)
 - Žeton: samo v pomnilniku; lastniku ob zaključku seje priporočiti preklic
 - Naslednji: P0-G (issue §16 Go Mode + §17 PWA/offline + §18 collaboration RECONCILE)
+
+---
+Task ID: 63
+Agent: Z.ai Code (glavni) + Explore podagent (inventura §16/§17/§18)
+Task: P0-G (issue #1 §16 Go Mode + §17 PWA/offline + §18 collaboration) po inventuri 26 postavk — izdaja 2.11.0, push na GitLab + komentar na #1.
+
+Work Log:
+- INVENTURA (podagent, 26 postavk z dokazi): 15 ✅ / 5 ◐ / 6 ❌ — §16 in §18 bistveno bolj celoviti kot naslov slutí; prave vrzeli: geo URI, geofence, packing (≡velika naloga), ICS, QR, APP_SHELL /na-poti, per-person budget, testna vrzel §18; shared playing state (websocket) odločeno POŠTENO odložiti (klepet že ima iskreno opombo; infra štruce P0-I)
+- §16 GEO URI: go-gps.ts geoUri() (6 decimalk ~0,1 m, normalizacija −0) + gumb „Sistemski zemljevidi" (Smartphone ikona) v NOW (geo:lat,lng) in NEXT kartici zraven OSM — mobile system chooser
+- §16 GEOFENCE: go-gps.ts ARRIVAL_RADIUS_KM 0,25 + arrivalCheck() (čista); na-poti page arrivedNow memo → badge PRISPEL (emerald) + iskrena opomba „Znotraj ~250 m … potrdi, ko si res na kraju" + gumb Opravljeno poudarjen (variant default ob prihodu) — NAMIG, ne dokaz
+- §17 APP_SHELL + MANIFEST: /na-poti v precache lupini (obljuba „deluje brez signala" izpolnjena ŽE OB PRVEM obisku) + bližnica PWA „Na poti" (prva od 5) + pwa-sw test posodobljen
+- §17 QR: bun add qrcode (+ @types); QrCanvas (canvas 160 px, errorCorrection M, ob napaki čist izgine — URL ostane); OBA placeholderja (oblak + lokalna veja) zamenjana s pravim izrisom; opomba „Skeniraj s telefonom …"
+- §17 ICS: NOVO src/lib/trip-ics.ts — RFC 5545 (CRLF, escapeIcsText \ ; , + prelomi, foldIcsLine 75 OKTETOV po UTF-8 bajtih, DTEND ekskluziven, UID determinističen, DTSTAMP testabilen); celodnevni dogodki (DST-varni po zasnovi — preklop 25. 10. 2026 testiran); gumb „Dodaj v koledar (.ics)" ŽIV SAMO ob realnih datumih (db.tripDates) — sicer iskrena odsotnost; downloadTripIcs (Blob + sanitizirano ime)
+- §18 TESTI: tests/trip-security-contract.test.ts — VEDENJSKO roleAtLeast hierarhija + SOURCE-CONTRACT (pošteno označeno): IDOR 404 zasebna+NONE, getTripForWrite 401/403/404, minRole wantsPublic OWNER, CAS 409, DELETE 405, collaborators ≥ 4 OWNER-varovalke, inviteUrl enkratni žeton, /api/invites/[token] $transaction 401/403/409, polls vezanost journeyId, vote VIEWER+; + P0-G UI doslednost (geoUri/arrivedNow/QRCode.toCanvas/ics pogoj)
+- POPRAVKI med razvojem: validateTripDates vrača {ok} objekt (ne Boolean) → buildTripIcs .ok; geoUri −0.000000 normalizacija; QRCode callback tip Error|null|undefined
+- VRATA: tsc 0, lint 0, bun test 826/826 (+41: 16 trip-ics, 9 go-gps P0-G, 16 security-contract); dev strežnik umrl ob bun add (node_modules v teku) → ponovni zagon, health 2.11.0 7/7
+- E2E (agent-browser, 5 posnetkov docs/evidence/p0-g/): localStorage načrt (Bled+Vintgar) → /na-poti: geo:46.368300,14.094400 (NOW) + geo:46.383600,14.110600 (NEXT) + OSM gumba + „Sistemski zemljevidi"; geolocation stub (headless zavrne dovoljenje — iskreno dokumentirano) → GPS aktiven ±12 m → PRISPEL badge + „Znotraj ~250 m" ✓; QR canvas viden na lokalni pote, placeholder odstranjen; REGISTRACIJA UI (p0g-e2e@example.com) → „Shrani v oblak" → vir baza ✓ → ICS gumba NI brez datumov (iskreno) → PATCH tripDates 200 → gumb sejavi → klik → zajet blob: BEGIN:VCALENDAR, 2 VEVENT, DTSTART 20261024, DTEND 20261025, SUMMARY „Dan 1 — Bled" ✓; manifest bližnice: Na poti prva ✓; mobilni 390 px brez preliva; 0 napak konzole
+- IZDAJA 2.11.0: package.json, health, sw.js + kanarček, footer, README (glava + linija izdaj)
+
+Stage Summary:
+- IZDANA 2.11.0 — P0-G: §16 geo URI + geofence prihoda, §17 APP_SHELL /na-poti + bližnica + PRAVI QR + ICS izvoz, §18 varnostna testna baterija (16 source-contract + roleAtLeast) — 826 testov (+41), tsc 0, lint 0, 5 E2E dokazov
+- ODSOTNO pošteno: shared playing state (websocket — P0-I infra), packing list + per-person budget + datumi na offline strani (večji sklopi, naslednja valova po P0-H/I prioritetah inventure)
+- E2E testni račun p0g-e2e@example.com + pote p0g-e2e-test v lokalni sandbox bazi (db/ se NE sinhronizira — čisto)
+- Sledi: commit + rsync merge-dsa + push GitLab (retry zaradi WAF) + CI + mirror + komentar na issue #1

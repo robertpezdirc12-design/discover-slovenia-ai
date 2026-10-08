@@ -17,6 +17,8 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  ARRIVAL_RADIUS_KM,
+  arrivalCheck,
   bearingDeg,
   cardinalIndex,
   cardinalLabel,
@@ -25,6 +27,7 @@ import {
   ETA_ROAD_FACTOR,
   ETA_SPEED_KMH,
   etaMinutes,
+  geoUri,
   haversineKm,
   isJourneyRouteResponse,
   OFF_ROUTE_KM,
@@ -376,5 +379,64 @@ describe("go-gps: isJourneyRouteResponse (straža — klient ne zaupa žici)", (
     ).toBe(false);
     expect(isJourneyRouteResponse(null)).toBe(false);
     expect(isJourneyRouteResponse("ok")).toBe(false);
+  });
+});
+
+// ── P0-G (issue #1 §16): geofence prihoda + geo: URI ─────────────────────
+
+describe("go-gps: arrivalCheck — geofence prihoda (~250 m, namig ne dokaz)", () => {
+  test("ARRIVAL_RADIUS_KM je kanonskih 0,25 km", () => {
+    expect(ARRIVAL_RADIUS_KM).toBe(0.25);
+  });
+
+  test("točka na cilju → arrived (razdalja 0)", () => {
+    const r = arrivalCheck(BLED, BLED);
+    expect(r.arrived).toBe(true);
+    expect(r.distanceKm).toBe(0);
+  });
+
+  test("~120 m stran (v smeri vzhoda) → arrived", () => {
+    // 0,0011° lng na Bledu ≈ 0,084 km ≈ 84 m
+    const blizu = { lat: BLED.lat, lng: BLED.lng + 0.0011 };
+    const r = arrivalCheck(blizu, BLED);
+    expect(r.arrived).toBe(true);
+    expect(r.distanceKm).toBeGreaterThan(0);
+    expect(r.distanceKm).toBeLessThanOrEqual(0.25);
+  });
+
+  test("~460 m stran → NI prihoda (zunaj radijusa)", () => {
+    // 0,006° lng ≈ 0,46 km
+    const dalec = { lat: BLED.lat, lng: BLED.lng + 0.006 };
+    expect(arrivalCheck(dalec, BLED).arrived).toBe(false);
+  });
+
+  test("Ljubljana → Bled (46,9 km) očitno ni prihod", () => {
+    const r = arrivalCheck(LJ, BLED);
+    expect(r.arrived).toBe(false);
+    expect(r.distanceKm).toBeGreaterThan(40);
+  });
+
+  test("zaokrožitev na 3 decimale (meter natančnost, stabilen zapis)", () => {
+    const r = arrivalCheck({ lat: BLED.lat + 0.0012345, lng: BLED.lng }, BLED);
+    expect(Number.isFinite(r.distanceKm)).toBe(true);
+    // 3 decimalke pomenijo korak 1 m
+    expect(Math.round(r.distanceKm * 1000) % 1).toBe(0);
+  });
+});
+
+describe("go-gps: geoUri — sistemski izbirnik zemljevidov na mobilcu", () => {
+  test("oblika geo:lat,lng s 6 decimalkami (~0,1 m)", () => {
+    expect(geoUri(BLED)).toBe("geo:46.368300,14.094400");
+  });
+
+  test("negativne koordinate (južna/zahodna poloble) ostanejo predznačene", () => {
+    expect(geoUri({ lat: -33.8688, lng: -151.2093 })).toBe(
+      "geo:-33.868800,-151.209300",
+    );
+  });
+
+  test("brez -0 zacinka (normalizirana ničla)", () => {
+    const out = geoUri({ lat: -0.0000001, lng: 0 });
+    expect(out).toBe("geo:0.000000,0.000000");
   });
 });

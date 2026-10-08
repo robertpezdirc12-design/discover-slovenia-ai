@@ -36,10 +36,10 @@ import pkg from "../package.json";
 const ORIGIN = "https://app.example";
 
 describe("sw: konstante (verzija, lupina aplikacije, meje)", () => {
-  test("SW_VERSION je usklajena s package.json in trenutno izdajo 2.10.0", () => {
+  test("SW_VERSION je usklajena s package.json in trenutno izdajo 2.11.0", () => {
     // Kanarček ob izdaji: glava sw.js obljublja usklajenost s package.json —
     // pozabljen bump ob izdaji takoj pade na tem testu.
-    expect(swApi.SW_VERSION).toBe("2.10.0");
+    expect(swApi.SW_VERSION).toBe("2.11.0");
     expect(swApi.SW_VERSION).toBe(pkg.version);
   });
 
@@ -49,9 +49,11 @@ describe("sw: konstante (verzija, lupina aplikacije, meje)", () => {
 
   test("APP_SHELL je točno kanonski nabor lupine aplikacije", () => {
     // Izvoz je kopija (.slice()) notranjega seznama — vsebuje domov,
-    // zasilno stran, manifest, obe ikoni in logotip.
+    // Go Mode (/na-poti — P0-G: obljuba „deluje brez signala“ izpolnjena
+    // že ob prvem obisku), zasilno stran, manifest, obe ikoni in logotip.
     expect(swApi.APP_SHELL).toEqual([
       "/",
+      "/na-poti",
       "/offline.html",
       "/manifest.json",
       "/icon-192.png",

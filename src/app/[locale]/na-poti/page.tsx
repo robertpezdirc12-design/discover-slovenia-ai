@@ -23,6 +23,7 @@ import {
   RefreshCw,
   Route as RouteIcon,
   SkipForward,
+  Smartphone,
   Sunrise,
   Trash2,
   Undo2,
@@ -54,10 +55,12 @@ import { useGeolocation, type UseGeolocation } from "@/hooks/use-geolocation";
 import { Link, useRouter } from "@/i18n/navigation";
 import { pick } from "@/lib/i18n-pick";
 import {
+  arrivalCheck,
   bearingDeg,
   cardinalLabel,
   cardinalName,
   etaMinutes,
+  geoUri,
   haversineKm,
   isJourneyRouteResponse,
   offRouteCheck,
@@ -124,6 +127,13 @@ const L = {
   nextAfter: { sl: "Nato", en: "Then" },
   lastStop: { sl: "To je zadnji postanek dneva.", en: "This is the last stop of the day." },
   navigate: { sl: "Navigiraj", en: "Navigate" },
+  // ── P0-G (issue §16): geo: URI + stanje prihoda ──
+  geoApp: { sl: "Sistemski zemljevidi", en: "System maps" },
+  arrivedBadge: { sl: "PRISPEL", en: "ARRIVED" },
+  arrivedHint: {
+    sl: "Znotraj ~250 m od cilja po zraku — potrdi, ko si res na kraju.",
+    en: "Within ~250 m of the target as the crow flies — confirm once you are actually there.",
+  },
   complete: { sl: "Opravljeno", en: "Done" },
   skip: { sl: "Preskoči", en: "Skip" },
   skipped: { sl: "Preskočeno", en: "Skipped" },
@@ -424,6 +434,14 @@ function GoModeApp() {
     };
   }, [geo.status, geo.position, next, lang]);
 
+  // ── PRIHOD (P0-G, issue §16 arrival state) ──────────────────────
+  // Geofence ~250 m okoli TRENUTNEGA postanka — namig, ne dokaz
+  // (iskreno razkrito v UI; potrditev ostane uporabnikova).
+  const arrivedNow = useMemo(() => {
+    if (geo.status !== "watching" || !geo.position || !current?.coords) return null;
+    return arrivalCheck(geo.position, current.coords);
+  }, [geo.status, geo.position, current]);
+
   return (
     <div className="mt-8">
       {!ready && <GoSkeleton />}
@@ -503,6 +521,13 @@ function GoModeApp() {
                         </span>
                         <span className="sr-only">: </span>
                         <span className="text-base font-bold">{current.name}</span>
+                        {/* P0-G: geofence prihoda — namig, ne dokaz */}
+                        {arrivedNow?.arrived && (
+                          <Badge className="gap-1 border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                            <CircleCheck className="size-3.5" aria-hidden="true" />
+                            {pick(l, L.arrivedBadge)}
+                          </Badge>
+                        )}
                       </span>
                       <span className="text-2xl font-bold tabular-nums text-primary">
                         {current.time ?? "—"}
@@ -526,7 +551,7 @@ function GoModeApp() {
                       {current.region && <span>{regionLabel(current.region, lang)}</span>}
                     </p>
 
-                    <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                    <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                       {current.coords ? (
                         <Button asChild type="button" size="lg" className="min-h-12">
                           <a
@@ -545,10 +570,21 @@ function GoModeApp() {
                           {pick(l, L.navigate)}
                         </Button>
                       )}
+                      {/* P0-G (issue §16): geo: URI — sistemski izbirnik
+                          zemljevidov na mobilni napravi (OSM ostane glavni
+                          na namizju). */}
+                      {current.coords && (
+                        <Button asChild type="button" size="lg" variant="outline" className="min-h-12">
+                          <a href={geoUri(current.coords)}>
+                            <Smartphone className="size-5" aria-hidden="true" />
+                            {pick(l, L.geoApp)}
+                          </a>
+                        </Button>
+                      )}
                       <Button
                         type="button"
                         size="lg"
-                        variant="secondary"
+                        variant={arrivedNow?.arrived ? "default" : "secondary"}
                         className="min-h-12"
                         onClick={() =>
                           persist({
@@ -571,6 +607,13 @@ function GoModeApp() {
                         {pick(l, L.skip)}
                       </Button>
                     </div>
+                    {/* P0-G: iskrena opomba geofence prihoda (~250 m) */}
+                    {arrivedNow?.arrived && (
+                      <p className="mt-3 flex items-start gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 p-2.5 text-xs text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300" role="status">
+                        <CircleCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                        {pick(l, L.arrivedHint)}
+                      </p>
+                    )}
                     <p className="mt-3 text-xs text-muted-foreground">
                       {pick(l, L.startedAt)}:{" "}
                       {new Date(go.startedAt).toLocaleString(lang === "en" ? "en-GB" : "sl-SI")}
@@ -703,29 +746,45 @@ function GoModeApp() {
                         )}
                         {/* Navigiraj do naslednjega postanka — zunanji handoff
                             na OSM (kanon osmDirectionsUrl); origin = živi
-                            GPS, ko je na voljo (uporabnikov izrecen klik). */}
+                            GPS, ko je na voljo (uporabnikov izrecen klik).
+                            P0-G: geo: URI zraven — sistemski izbirnik
+                            zemljevidov na mobilni napravi. */}
                         {next.coords && (
-                          <Button
-                            asChild
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="mt-3 min-h-11"
-                          >
-                            <a
-                              href={
-                                geo.status === "watching" && geo.position
-                                  ? osmDirectionsUrlWithOrigin(geo.position, next.coords)
-                                  : osmDirectionsUrl(next.coords)
-                              }
-                              target="_blank"
-                              rel="noopener noreferrer"
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <Button
+                              asChild
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="min-h-11"
                             >
-                              <NavigationIcon className="size-4" aria-hidden="true" />
-                              {pick(l, L.navigate)}
-                              <ExternalLink className="size-3.5" aria-hidden="true" />
-                            </a>
-                          </Button>
+                              <a
+                                href={
+                                  geo.status === "watching" && geo.position
+                                    ? osmDirectionsUrlWithOrigin(geo.position, next.coords)
+                                    : osmDirectionsUrl(next.coords)
+                                }
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <NavigationIcon className="size-4" aria-hidden="true" />
+                                {pick(l, L.navigate)}
+                                <ExternalLink className="size-3.5" aria-hidden="true" />
+                              </a>
+                            </Button>
+                            <Button
+                              asChild
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="min-h-11"
+                            >
+                              <a href={geoUri(next.coords)}>
+                                <Smartphone className="size-4" aria-hidden="true" />
+                                {pick(l, L.geoApp)}
+                              </a>
+                            </Button>
+                          </div>
                         )}
                       </>
                     ) : (

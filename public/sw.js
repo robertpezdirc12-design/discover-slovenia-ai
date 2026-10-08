@@ -51,7 +51,7 @@
 "use strict";
 
 /** Verzija service workerja — usklajena s package.json ob izdaji. */
-const SW_VERSION = "2.10.0";
+const SW_VERSION = "2.11.0";
 
 /** Predpona imen predpomnilnikov (čistilni kriterij ob activate). */
 const CACHE_PREFIX = "dsa";
@@ -70,10 +70,14 @@ const NAVIGATION_TIMEOUT_MS = 6000;
 
 /**
  * Lupina aplikacije — ob namestitvi predpomnjena (allSettled: ena napaka
- * ne sesuje celotne namestitve).
+ * ne sesuje celotne namestitve). P0-G: /na-poti (Go Mode) je NAMENOMA
+ * v lupini — stran obljublja „deluje tudi brez signala“, zato mora biti
+ * dosegljiva offline ŽE OB PRVEM obisku (ne šele po prejšnjem obisku
+ * prek runtime predpomnilnika).
  */
 const APP_SHELL = [
   "/",
+  "/na-poti",
   OFFLINE_HTML,
   "/manifest.json",
   "/icon-192.png",

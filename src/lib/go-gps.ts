@@ -260,6 +260,32 @@ export function roundedPrivacy(coords: GeoPoint): GeoPoint {
   return { lat: round4(coords.lat), lng: round4(coords.lng) };
 }
 
+// ── Prihod (geofence okoli trenutnega postanka) ─────────────────────────
+
+/**
+ * Radijus prihoda (km): 250 m okoli cilja postanka (P0-G, issue §16
+ * „arrival state“). Namerno velikodušen — GPS točke so v mestu lahko
+ * slabo vidljive; prihod je NAMIG, ne dokaz (iskreno razkrito v UI).
+ */
+export const ARRIVAL_RADIUS_KM = 0.25;
+
+export interface ArrivalCheck {
+  /** Ali je uporabnik znotraj radijusa prihoda trenutnega postanka. */
+  arrived: boolean;
+  /** Izmerjena premočna razdalja do cilja v km (zaokrožena na 3 m). */
+  distanceKm: number;
+}
+
+/**
+ * Preveri prihod uporabnika na ciljni postanek (geofence ~250 m).
+ * Čista funkcija nad haversine — 0 DOM, 0 omrežja; UI pokaže stanje
+ * „PRISPEL“ z razkritim radijusom in poudari gumb „Opravljeno“.
+ */
+export function arrivalCheck(user: GeoPoint, target: GeoPoint): ArrivalCheck {
+  const distanceKm = Math.round(haversineKm(user, target) * 1000) / 1000;
+  return { arrived: distanceKm <= ARRIVAL_RADIUS_KM, distanceKm };
+}
+
 // ── Zunanji handoff: OSM directions z izhodiščem ────────────────────────
 
 /**
@@ -269,6 +295,24 @@ export function roundedPrivacy(coords: GeoPoint): GeoPoint {
  */
 export function osmDirectionsUrlWithOrigin(from: GeoPoint, to: GeoPoint): string {
   return `https://www.openstreetmap.org/directions?from=${from.lat}%2C${from.lng}&to=${to.lat}%2C${to.lng}`;
+}
+
+// ── Zunanji handoff: geo: URI za mobilni sistemski izbirnik ─────────────
+
+/**
+ * geo: URI cilja (P0-G, issue §16 „mobile geo URI + system chooser“) —
+ * na mobilni napravi odpre SISTEMSKI izbirnik zemljevidov (Google Maps,
+ * Waze, Apple Maps, Organic Maps …); na namizju OSM povezava ostane
+ * glavna. 6 decimalk ≈ 0,1 m — enkratno izročilo točke ob kliku.
+ * Normalizacija −0 (zaokrožena zahodna/južna vrednost ne pusti
+ * „geo:-0.000000, …“).
+ */
+export function geoUri(target: GeoPoint): string {
+  const fixed = (v: number): string => {
+    const s = v.toFixed(6);
+    return s === "-0.000000" ? "0.000000" : s;
+  };
+  return `geo:${fixed(target.lat)},${fixed(target.lng)}`;
 }
 
 // ── Validacija nove oblike /api/journey/route: { from, to } ─────────────

@@ -2311,3 +2311,21 @@ Stage Summary:
 - Celoten cikel dokazan v brskalniku: prijava partnerja → skrbniška odobritev → osnutek → predaja → zavrnitev z razlogom → popravilo → ponovna predaja → objava → javna tržnica
 - ODSOTNO pošteno (po inventuri 65-a): Owner naročninski paketi (billing), ListingEvent analitika, PayoutEntry po partnerju, draft nudge (cron → P0-I), SYSTEM_DATA_GUARD (→ P0-I varnostni pregled)
 - Sledi: rsync merge-dsa → commit → push GitLab (retry zaradi WAF; po 403 preveriti »Everything up-to-date«) → CI + mirror + komentar #1
+
+---
+Task ID: 66
+Agent: Z.ai Code (glavni)
+Task: Push 2.12.0 (P0-H) na GitLab + verifikacija CI/mirror + komentar na issue #1.
+
+Work Log:
+- Žeton validiran (API projekt po ID 200; /user endpoint je zadet Cloudflare WAF 403 — znan vzorec, push ni prizadet)
+- PUSH USPEŠEN na 1. poskus: f2d10aa..75cc770 main → main (12:01 UTC), žeton SAMO v pomnilniku lupine (enkratni push URL), .git/config preverjen — 0 pojavitev glpat
+- CI: pipeline 2926354119 na 75cc770 → SUCCESS (typecheck + test + build + prisma; prejšnji 2925923953 P0-G tudi zelen)
+- GITHUB MIRROR: remote_mirrors → github.com/robertpezdirc12-design/discover-slovenia-ai.git update_status FINISHED, last_error None (samodejna sinhronizacija takoj po pushu)
+- ISSUE #1: objavljen komentar o izdaji P0-H (note_id 3977258518, 12:05 UTC) — §22 statusni stroj + onboarding + portali + §20 konzultacije, vrata 897/897 + 14 E2E dokazov, pošteno odsotno, naslednji korak P0-I
+- Popravek v merge-dsa: Prisma klient regeneriran (bunx prisma generate) — tsc padel na zastarelem klientu pred pushom, CI ima generate v vsaki stopnji (ni tveganja)
+
+Stage Summary:
+- 2.12.0 ŽIVA na GitLab main (CI zelen) + GitHub mirror sinhroniziran — P0-H POPOLNOMA ZAKLJUČEN in objavljen (backend + UI + 71 testov + 14 E2E dokazov + komentar #1)
+- Žeton: samo v pomnilniku; lastniku ob zaključku seje priporočiti PREKLIC (glpat-…uyx7x) — enako za starejši markec ghp žeton, če še ni preklican
+- Sledi: P0-I (cron/operativni skladi + SYSTEM_DATA_GUARD varnostni pregled + draft nudge) po vzorcu inventura → implementacija → izdaja

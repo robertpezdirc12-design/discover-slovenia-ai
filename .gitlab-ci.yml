@@ -92,7 +92,10 @@ prisma-validate:
     # shema — dokazljivo na vsak push, brez žive baze); db:pg:validate =
     # produkcjska (postgresql) shema veljavna.
     - bun run db:pg:check
-    - bun run db:pg:validate
+    # db:pg:validate (postgresql provider) preverja OBLIKO env URL proti
+    # protokolu — CI-only dummy vrednost (brez povezave; globalni DATABASE_URL
+    # je file: za ostale stopnje). db:pg:check je protokol-neodvisen.
+    - DATABASE_URL="postgres://ci-skip:ci-skip@localhost:5432/ci_skip" bun run db:pg:validate
 
 build:
   stage: build

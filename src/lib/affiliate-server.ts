@@ -64,6 +64,7 @@ export interface RecordClickInput {
   provider: AffiliateProviderDef;
   destinationSlug: string | null;
   destinationName: string | null;
+  destinationCountryName: string | null;
   link: BuiltLink;
   userId: string | null;
   sessionKey: string;
@@ -85,7 +86,11 @@ export async function recordAffiliateClick(
         destinationSlug: input.destinationSlug,
         destinationName: input.destinationName,
         affiliateActive: input.link.affiliateActive,
-        url: publicUrlFor(input.provider, input.destinationName),
+        url: publicUrlFor(
+          input.provider,
+          input.destinationName,
+          input.destinationCountryName,
+        ),
         userId: input.userId,
         sessionKey: input.sessionKey,
         referrer: input.referrer,
@@ -105,22 +110,32 @@ export async function recordAffiliateClick(
 export function publicUrlFor(
   provider: AffiliateProviderDef,
   destName: string | null,
+  destCountryName?: string | null,
 ): string {
   if (provider.category === "fuel") {
     return "https://www.openstreetmap.org/";
   }
-  return applyTemplate(provider.publicTmpl, destName, null);
+  if (
+    !destCountryName &&
+    provider.noCountryTmpl &&
+    provider.publicTmpl.includes("{country}")
+  ) {
+    return provider.noCountryTmpl;
+  }
+  return applyTemplate(provider.publicTmpl, destName, null, destCountryName);
 }
 
 // ── Gradnja preusmeritvene povezave (z dest) ──────────────────────────────
 
 /**
  * Izgradi KONČNO povezavo za preusmeritev (z žetonom, če je aktiven).
- * Destinacija se pošlje kot ime za iskanje pri partnerju.
+ * Destinacija se pošlje kot ime za iskanje pri partnerju; država
+ * (countryUrlName iz kode kanonskega nabora) za {country} predloge.
  */
 export function buildRedirectFor(
   providerId: string,
   destName: string | null,
+  destCountryName: string | null = null,
 ): { provider: AffiliateProviderDef; link: BuiltLink } | null {
   const provider = getProvider(providerId);
   if (!provider) return null;
@@ -128,6 +143,7 @@ export function buildRedirectFor(
   const link = buildPartnerLink({
     provider,
     destName,
+    destCountryName,
     affiliateId: env.affiliateId,
     tmplOverride: env.tmplOverride,
   });
@@ -297,10 +313,20 @@ export function commissionDraftFromInput(input: {
     return { ok: false, error: "Vrednost rezervacije mora biti pozitivna." };
   }
   const est = estimateCommission(provider, amount);
-  const commission =
-    input.commissionEur != null && Number.isFinite(Number(input.commissionEur))
-      ? Math.round(Number(input.commissionEur) * 100) / 100
-      : est.commissionEur;
+  const hasExplicitCommission =
+    input.commissionEur != null && Number.isFinite(Number(input.commissionEur));
+  // Iskrenost: partner z neznanim odstotkom (pct null) → provizijo iz
+  // poročila VNESI ročno — ocene ni, ne izmišljujemo je.
+  if (est.pct == null && !hasExplicitCommission) {
+    return {
+      ok: false,
+      error:
+        "Register nima ocene provizije za tega partnerja — vnesi provizijo iz poročila.",
+    };
+  }
+  const commission = hasExplicitCommission
+    ? Math.round(Number(input.commissionEur) * 100) / 100
+    : (est.commissionEur ?? 0);
   const stay = input.stayCompletedAt ? new Date(input.stayCompletedAt) : null;
   const stayOk =
     !input.stayCompletedAt || (stay && !Number.isNaN(stay.getTime()))

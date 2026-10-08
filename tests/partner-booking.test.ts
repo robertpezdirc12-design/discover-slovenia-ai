@@ -118,9 +118,9 @@ describe("partner-booking: kanali (real | demo | partner — trije, strogo loče
 // ─── 2. searchPartnerOffers (iskanje IZKLJUČNO po registru partnerjev) ─────
 
 describe("partner-booking: searchPartnerOffers (register je edini vir ponudb)", () => {
-  test("bled → 5 ponudb, vsaka z vodeno povezavo /api/affiliate/go?provider=…&dest=bled", () => {
+  test("bled → 9 ponudb (P0-F), vsaka z vodeno povezavo /api/affiliate/go?provider=…&dest=bled", () => {
     const offers = searchPartnerOffers("bled");
-    expect(offers.length).toBe(5);
+    expect(offers.length).toBe(9);
     for (const o of offers) {
       expect(o.goPath).toBe(`/api/affiliate/go?provider=${o.providerId}&dest=bled`);
       expect(o.match).toBe("destination");
@@ -129,39 +129,62 @@ describe("partner-booking: searchPartnerOffers (register je edini vir ponudb)", 
     }
   });
 
-  test("kategorije: natanko stays/experiences/flights/car/transfers (po registru); NI goriva", () => {
+  test("kategorije: kanonski vrstni red stays/experiences/car/transfers/flights/tickets (P0-F); NI goriva/eSIM/zavarovanja", () => {
     const offers = searchPartnerOffers("bled");
     expect(offers.map((o) => o.category)).toEqual([
       "stays",
       "experiences",
-      "flights",
+      "experiences",
+      "car",
       "car",
       "transfers",
+      "flights",
+      "flights",
+      "tickets",
     ]);
     // Gorivo (osm-fuel) NI rezervacijska kategorija — nikoli v iskanju.
     expect(offers.some((o) => o.category === "fuel")).toBe(false);
     expect(offers.some((o) => o.providerId === "osm-fuel")).toBe(false);
-    // Vrsta red = vrsta (zmrznjenega) registra — abecedno po ID-jih.
+    // eSIM/zavarovanje sta ravni celotnega potovanja — NISTA v iskanju po
+    // postanku (P0-F: dosegljivi na /go straneh partnerjev).
+    expect(offers.some((o) => o.category === "esim")).toBe(false);
+    expect(offers.some((o) => o.category === "insurance")).toBe(false);
+    // Vrsta red = kanon kategorij, znotraj kategorije vrsta registra.
     expect(offers.map((o) => o.providerId)).toEqual([
       "booking",
       "getyourguide",
-      "kiwi",
+      "viator",
       "rentalcars",
+      "discovercars",
       "omio",
+      "kiwi",
+      "skyscanner",
+      "tiqets",
     ]);
   });
 
-  test("flights ponudba (kiwi) nosi letališče regije (Bled/gorenjska → LJU)", () => {
-    const flights = searchPartnerOffers("bled").find((o) => o.category === "flights");
-    expect(flights).toBeDefined();
-    expect(flights!.providerId).toBe("kiwi");
-    expect(flights!.airport).toEqual({
-      code: "LJU",
-      name: "Letališče Jožeta Pučnika Ljubljana",
-    });
+  test("flights ponudbe (kiwi + skyscanner, P0-F) nosita letališče regije (Bled/gorenjska → LJU)", () => {
+    const flights = searchPartnerOffers("bled").filter(
+      (o) => o.category === "flights"
+    );
+    expect(flights.length).toBe(2);
+    expect(flights.map((o) => o.providerId)).toEqual(["kiwi", "skyscanner"]);
+    for (const f of flights) {
+      expect(f.airport).toEqual({
+        code: "LJU",
+        name: "Letališče Jožeta Pučnika Ljubljana",
+      });
+    }
     // Regija se spoštuje tudi drugje: Piran/primorska → TRS, Maribor/stajerska → GRZ.
-    expect(searchPartnerOffers("piran").find((o) => o.category === "flights")!.airport!.code).toBe("TRS");
-    expect(searchPartnerOffers("maribor").find((o) => o.category === "flights")!.airport!.code).toBe("GRZ");
+    const piranFlights = searchPartnerOffers("piran").filter(
+      (o) => o.category === "flights"
+    );
+    expect(piranFlights.every((o) => o.airport!.code === "TRS")).toBe(true);
+    expect(
+      searchPartnerOffers("maribor")
+        .filter((o) => o.category === "flights")
+        .every((o) => o.airport!.code === "GRZ")
+    ).toBe(true);
     // Neflights kategorije letališča ne nosijo (ni izmišljenih letališč).
     for (const o of searchPartnerOffers("bled")) {
       if (o.category !== "flights") expect(o.airport).toBeNull();
@@ -171,7 +194,7 @@ describe("partner-booking: searchPartnerOffers (register je edini vir ponudb)", 
   test("custom postanek (null/prazen/neznan) → match custom, goPath BREZ dest parametra", () => {
     for (const slug of [null, "", "   ", "atlantida"]) {
       const offers = searchPartnerOffers(slug);
-      expect(offers.length).toBe(5);
+      expect(offers.length).toBe(9);
       for (const o of offers) {
         expect(o.match).toBe("custom");
         expect(o.goPath).toBe(`/api/affiliate/go?provider=${o.providerId}`);
@@ -192,19 +215,29 @@ describe("partner-booking: searchPartnerOffers (register je edini vir ponudb)", 
     expect(a.map((o) => o.providerName)).toEqual(b.map((o) => o.providerName));
   });
 
-  test("komisijski odstotki pozitivni (pogodbena ocena — razkritje, ne obljuba)", () => {
+  test("komisijski odstotki: znani pozitivni, neznani null (pogodbena ocena — razkritje, ne obljuba)", () => {
     for (const o of searchPartnerOffers("bled")) {
-      expect(o.commissionPct).toBeGreaterThan(0);
+      // P0-F: null = ocena neznana do pogodbe (novi partnerji) — iskreno,
+      // nikoli 0 in nikoli izmišljen odstotek.
+      if (o.commissionPct != null) {
+        expect(o.commissionPct).toBeGreaterThan(0);
+      }
       // Odstotek je 1:1 iz registra (brez izmišljenih števil).
       expect(o.commissionPct).toBe(getProvider(o.providerId)!.commissionPct);
     }
-    // Konkretno stanje registra 2.5.0/2.6.0 (5 rezervacijskih partnerjev).
-    expect(searchPartnerOffers("bled").map((o) => [o.providerId, o.commissionPct])).toEqual([
+    // Konkretno stanje registra P0-F/2.10.0 (9 partnerjev v verigi).
+    expect(
+      searchPartnerOffers("bled").map((o) => [o.providerId, o.commissionPct])
+    ).toEqual([
       ["booking", 6],
       ["getyourguide", 8],
-      ["kiwi", 3],
+      ["viator", 8],
       ["rentalcars", 6],
+      ["discovercars", null],
       ["omio", 4],
+      ["kiwi", 3],
+      ["skyscanner", null],
+      ["tiqets", null],
     ]);
   });
 });
@@ -996,8 +1029,8 @@ describe("partner-booking: iskrenostni kontrast (partner ≠ demo ≠ real)", ()
       expect("pricePerPerson" in o).toBe(false);
       expect("totalPrice" in o).toBe(false);
     }
-    // Register 2.5.0/2.6.0: 5 provizijskih + 1 gorivo (izven iskanja).
-    expect(AFFILIATE_PROVIDERS.length).toBe(6);
+    // Register P0-F/2.10.0: 12 provizijskih + 1 gorivo (izven iskanja).
+    expect(AFFILIATE_PROVIDERS.length).toBe(13);
     expect(AFFILIATE_PROVIDERS.filter((p) => p.category === "fuel").length).toBe(1);
   });
 });

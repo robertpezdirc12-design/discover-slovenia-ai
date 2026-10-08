@@ -24,6 +24,7 @@ import {
   ClipboardList,
   Clock,
   Fuel,
+  Landmark,
   Loader2,
   Lock,
   MousePointerClick,
@@ -31,6 +32,8 @@ import {
   Plane,
   Plus,
   RefreshCw,
+  ShieldCheck,
+  Smartphone,
   Ticket,
   TrainFront,
   type LucideIcon,
@@ -117,6 +120,9 @@ const CATEGORY_ICONS: Record<AffiliateCategory, LucideIcon> = {
   flights: Plane,
   car: Car,
   transfers: TrainFront,
+  tickets: Landmark,
+  esim: Smartphone,
+  insurance: ShieldCheck,
   fuel: Fuel,
 };
 
@@ -208,8 +214,8 @@ export default function OwnerProvizijePage() {
     // Forma
     formTitle: { sl: "Nov vnos iz poročila", en: "New entry from a report" },
     formNote: {
-      sl: "Vnos iz poročila partnerja: rezervacijska številka in znesek. Provizijo, če je ne vpišeš, ocenimo iz registra — poročilo je resnica.",
-      en: "An entry from a partner report: booking reference and value. If you leave the commission empty, we estimate it from the registry — the report is the truth.",
+      sl: "Vnos iz poročila partnerja: rezervacijska številka in znesek. Provizijo, če je ne vpišeš, ocenimo iz registra — pri partnerjih brez ocene (P0-F: novi partnerji) je vnos provizije obvezen, saj ocene ne izmišljujemo. Poročilo je resnica.",
+      en: "An entry from a partner report: booking reference and value. If you leave the commission empty, we estimate it from the registry — for partners without an estimate (P0-F: new partners) the commission input is required, as we do not invent estimates. The report is the truth.",
     },
     fPartner: { sl: "Partner", en: "Partner" },
     fPartnerPh: { sl: "Izberi partnerja", en: "Select a partner" },
@@ -221,6 +227,10 @@ export default function OwnerProvizijePage() {
     fCommission: { sl: "Provizija (EUR)", en: "Commission (EUR)" },
     fCommissionPh: { sl: "prazno = ocena {pct} %", en: "empty = estimate {pct} %" },
     fCommissionPhNoPct: { sl: "prazno = ocena po registru", en: "empty = registry estimate" },
+    fCommissionPhUnknown: {
+      sl: "obvezno — register nima ocene",
+      en: "required — registry has no estimate",
+    },
     fStay: { sl: "Datum zaključka bivanja", en: "Stay completed on" },
     fNote: { sl: "Opomba", en: "Note" },
     fSubmit: { sl: "Dodaj vnos", en: "Add entry" },
@@ -390,7 +400,9 @@ export default function OwnerProvizijePage() {
   const providers = providersPublicDTO().filter((p) => p.commissionable);
   const selectedDef = form.providerId ? getProvider(form.providerId) : null;
   const commissionPlaceholder = selectedDef
-    ? pick(l, L.fCommissionPh).replace("{pct}", String(selectedDef.commissionPct))
+    ? selectedDef.commissionPct == null
+      ? pick(l, L.fCommissionPhUnknown)
+      : pick(l, L.fCommissionPh).replace("{pct}", String(selectedDef.commissionPct))
     : pick(l, L.fCommissionPhNoPct);
 
   const onSubmit = async (e: React.FormEvent) => {

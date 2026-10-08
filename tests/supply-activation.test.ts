@@ -186,6 +186,33 @@ describe("cross-ref: /go hub + affiliate register + matrika", () => {
     }
   });
 
+  test("P0-F popolnost: VSAK ponudnik z dostopom affiliate-deeplink je v registru partnerjev", () => {
+    // Pravilo P0-F (2.10.0): register partnerjev sprejme VSE supply
+    // ponudnike z accessType „affiliate-deeplink" (+ osm-fuel izjema za
+    // gorivo). kiwitaxi (partner-feed) in travelpayouts (api) NAMENOMA
+    // nista — njuna plast sta vir/API, ne globoka povezava.
+    const pričakovani = SUPPLY_REGISTRY.filter(
+      (p) => p.accessType === "affiliate-deeplink"
+    ).map((p) => p.id as string);
+    const registrirani = new Set(
+      AFFILIATE_PROVIDERS.map((p) => p.id as string)
+    );
+    for (const id of pričakovani) {
+      expect(registrirani.has(id)).toBe(true);
+    }
+    // In obratno: vsak ne-gorivni vnos registra ima affiliate-deeplink
+    // dostop v supply registru (usklajenost dostopov).
+    for (const p of AFFILIATE_PROVIDERS) {
+      if (p.category === "fuel") continue;
+      expect(getProviderCapabilities(p.id)?.accessType).toBe(
+        "affiliate-deeplink"
+      );
+    }
+    // 12 moniziranih + gorivo = 13 vnosov registra.
+    expect(AFFILIATE_PROVIDERS.length).toBe(13);
+    expect(pričakovani.length).toBe(12);
+  });
+
   test("goSlug navzkrižne reference obstajajo v GO_PARTNERS", () => {
     const rute = new Set(GO_PARTNERS.map((r) => r.slug as string));
     for (const e of PRODUCTION_MATRIX) {
@@ -319,11 +346,11 @@ describe("deriveProductionState — mehanska pravila", () => {
 describe("checkAllProviders — dejansko stanje (2.x resnica)", () => {
   const prazno = checkAllProviders({});
 
-  test("števci: 3 ACTIVE · 1 CONFIGURED · 8 NOT_CONFIGURED · 7 BLOCKED (po P0-C)", () => {
+  test("števci: 3 ACTIVE · 1 CONFIGURED · 15 NOT_CONFIGURED · 0 BLOCKED (po P0-F)", () => {
     expect(prazno.counts.ACTIVE).toBe(3);
     expect(prazno.counts.CONFIGURED).toBe(1);
-    expect(prazno.counts.NOT_CONFIGURED).toBe(8);
-    expect(prazno.counts.BLOCKED).toBe(7);
+    expect(prazno.counts.NOT_CONFIGURED).toBe(15);
+    expect(prazno.counts.BLOCKED).toBe(0);
     expect(prazno.rows.length).toBe(19);
   });
 
@@ -338,12 +365,29 @@ describe("checkAllProviders — dejansko stanje (2.x resnica)", () => {
   });
 
   test("rezervacijski partnerji so NOT_CONFIGURED brez env (iskrene javne povezave)", () => {
-    for (const id of ["booking", "getyourguide", "kiwi", "rentalcars", "omio"]) {
+    for (const id of [
+      "booking",
+      "getyourguide",
+      "kiwi",
+      "rentalcars",
+      "omio",
+      "viator",
+      "tiqets",
+      "skyscanner",
+      "airalo",
+      "discovercars",
+      "worldnomads",
+      "safetywing",
+    ]) {
       expect(checkProviderById(id, {})?.state).toBe("NOT_CONFIGURED");
     }
   });
 
-  test("partnerji z zunanjimi odobritvami so BLOCKED (CODE_READY ≠ ACTIVE)", () => {
+  test("P0-F: affiliate partnerji izvirnikovega /go registra niso več BLOCKED — plast je živa, vrata so env", () => {
+    // 2.9.0: ti partnerji so bili BLOCKED (partner-approval/contract), ker
+    // providerska plast ni obstajala. P0-F (2.10.0) je register razširil na
+    // vseh 12 affiliate-deeplink ponudnikov — ovira je ODSTRANJENA, vrata
+    // aktivacije so zdaj env (prijava v program + TMPL/ID — lastnikovo dejanje).
     for (const id of [
       "viator",
       "tiqets",
@@ -353,8 +397,14 @@ describe("checkAllProviders — dejansko stanje (2.x resnica)", () => {
       "worldnomads",
       "safetywing",
     ]) {
-      expect(checkProviderById(id, {})?.state).toBe("BLOCKED");
+      const vnos = getMatrixEntry(id)!;
+      expect(vnos.codeStatus).toBe("LIVE");
+      expect(vnos.gate).toBe("env");
+      expect(vnos.envKeys.length).toBeGreaterThan(0);
+      expect(checkProviderById(id, {})?.state).toBe("NOT_CONFIGURED");
     }
+    // Ni ZUNANJE ovire več — 0 BLOCKED.
+    expect(checkAllProviders({}).counts.BLOCKED).toBe(0);
   });
 
   test("fsq/kiwitaxi: koda obnovljena (P0-C), a čakata PODATKOVNI VIR → NOT_CONFIGURED (gate data)", () => {
@@ -364,7 +414,7 @@ describe("checkAllProviders — dejansko stanje (2.x resnica)", () => {
     }
   });
 
-  test("z ves env nastavljenimi postanejo rezervacijski partnerji ACTIVE", () => {
+  test("z ves env nastavljenimi postanejo VSI affiliate partnerji ACTIVE (12)", () => {
     const env: EnvLike = {
       AFFILIATE_BOOKING_ID: "b1",
       AFFILIATE_BOOKING_TMPL: "https://b/{id}",
@@ -376,14 +426,41 @@ describe("checkAllProviders — dejansko stanje (2.x resnica)", () => {
       AFFILIATE_RENTALCARS_TMPL: "https://r/{id}",
       AFFILIATE_OMIO_ID: "o1",
       AFFILIATE_OMIO_TMPL: "https://o/{id}",
+      AFFILIATE_VIATOR_ID: "v1",
+      AFFILIATE_VIATOR_TMPL: "https://v/{id}",
+      AFFILIATE_TIQETS_ID: "t1",
+      AFFILIATE_TIQETS_TMPL: "https://t/{id}",
+      AFFILIATE_SKYSCANNER_ID: "s1",
+      AFFILIATE_SKYSCANNER_TMPL: "https://s/{id}",
+      AFFILIATE_AIRALO_ID: "a1",
+      AFFILIATE_AIRALO_TMPL: "https://a/{id}",
+      AFFILIATE_DISCOVERCARS_ID: "d1",
+      AFFILIATE_DISCOVERCARS_TMPL: "https://d/{id}",
+      AFFILIATE_WORLDNOMADS_ID: "w1",
+      AFFILIATE_WORLDNOMADS_TMPL: "https://w/{id}",
+      AFFILIATE_SAFETYWING_ID: "sw1",
+      AFFILIATE_SAFETYWING_TMPL: "https://sw/{id}",
     };
     const poročilo = checkAllProviders(env);
-    expect(poročilo.counts.ACTIVE).toBe(8); // osm-fuel + osm + sto + 5 partnerjev
-    for (const id of ["booking", "getyourguide", "kiwi", "rentalcars", "omio"]) {
+    expect(poročilo.counts.ACTIVE).toBe(15); // osm-fuel + osm + sto + 12 partnerjev
+    for (const id of [
+      "booking",
+      "getyourguide",
+      "kiwi",
+      "rentalcars",
+      "omio",
+      "viator",
+      "tiqets",
+      "skyscanner",
+      "airalo",
+      "discovercars",
+      "worldnomads",
+      "safetywing",
+    ]) {
       expect(checkProviderById(id, env)?.state).toBe("ACTIVE");
     }
-    // BLOCKED se NE spremeni z env (zunanja ovira ostane)
-    expect(poročilo.counts.BLOCKED).toBe(7);
+    // P0-F: zunanjih ovir ni več (BLOCKED 0)
+    expect(poročilo.counts.BLOCKED).toBe(0);
   });
 
   test("stanja imajo slovenske in angleške oznake", () => {

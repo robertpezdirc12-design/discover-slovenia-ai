@@ -609,13 +609,13 @@ describe("E2E 6 · PARTNER — načrt → partner booking → navigacija", () =>
     return r.booking;
   }
 
-  test("plan → partner iskanje za postanek načrta: 5 ponudb, vse vezane na dest=bled", () => {
+  test("plan → partner iskanje za postanek načrta: 9 ponudb (P0-F), vse vezane na dest=bled", () => {
     const stops = draft().plan.days[0]!;
     const bledStop = stops.find((s) => s.slug === "bled")!;
     expect(bledStop).toBeDefined();
     // Iskanje po slugu postanka NAŠEGA načrta (faza PLAN → BOOKING).
     const offers = searchPartnerOffers(bledStop.slug!);
-    expect(offers.length).toBe(5);
+    expect(offers.length).toBe(9);
     for (const o of offers) {
       expect(o.goPath).toBe(`/api/affiliate/go?provider=${o.providerId}&dest=bled`);
       expect(o.match).toBe("destination");
@@ -625,9 +625,13 @@ describe("E2E 6 · PARTNER — načrt → partner booking → navigacija", () =>
     }
     // Gorivo NI rezervacijska kategorija — nikoli med partner ponudbami.
     expect(offers.some((o) => o.category === "fuel")).toBe(false);
-    // Leti za gorenjsko nosijo letališče regije (iskreno razkritje).
-    const flights = offers.find((o) => o.category === "flights")!;
-    expect(flights.airport!.code).toBe("LJU");
+    // Leti za gorenjsko nosijo letališče regije (iskreno razkritje) — oba
+    // letalska partnerja (P0-F: kiwi + skyscanner).
+    const flights = offers.filter((o) => o.category === "flights");
+    expect(flights.length).toBe(2);
+    for (const f of flights) {
+      expect(f.airport!.code).toBe("LJU");
+    }
   });
 
   test("createPartnerBooking → PENDING (rezervacija se zgodi pri partnerju, ne pri nas)", () => {

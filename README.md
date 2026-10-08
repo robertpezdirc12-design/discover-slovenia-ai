@@ -5,7 +5,7 @@
 > realnimi koordinatami in deterministični načrtovalnik poti (isti vhod → isti načrt,
 > 0 AI žetonov v jedru).
 
-**Verzija: 2.9.0 — P0-E: UVOZ REZERVACIJ + REALNI DATUMI POTI + DNEVNO VREME + NATISLJIVO POTRDILO + IZPLAČILA TRŽNICE (2026-10-07).**
+**Verzija: 2.10.0 — P0-F: AFFILIATE REGISTER POVEZAN S SUPPLY REGISTROM — VODENE /go POVEZAVE 12 PARTNERJEV (2026-10-08).**
 Izdaje rekonstrukcije: 2.1.0 skupnostne funkcije → 2.2.0 aplikacijska lupina →
 2.3.0 issue #1 (živi GPS, booking, pomočnik) → 2.3.1 infra CI → 2.4.0 PWA
 offline → 2.5.0 rezervacijski sloj → 2.6.0 partner kanal booking verige →
@@ -18,7 +18,14 @@ viewportu; cron reingest; vercel.json) → 2.9.0 P0-E Journey/My Trip
 IMPORTED; realni datumi poti DST-varno + dnevno vreme po dnevih (Open-Meteo
 16 dni, iskren horizont); natisljivo potrdilo poti z rezervacijami in
 atestacijami; izplačila lastne tržnice not_due → due → processing → paid z
-AuditLog + zahtevki kupca po preklicu).
+AuditLog + zahtevki kupca po preklicu) → 2.10.0 P0-F affiliate RECONCILE
+(register povezan s supply registrom po dostopu »affiliate-deeplink«: 7 novih
+partnerjev — Viator/Tiqets/Skyscanner/Airalo/DiscoverCars/WorldNomads/
+SafetyWing; državne predloge {country} SI/HR/ME/AL; iskrena veriga: brez
+javno dokumentiranega vzorca žetona ID sam NE zgradi provizijske povezave,
+lastnikov TMPL nadomestilo jo lahko; provizija null = neznana do pogodbe,
+nikoli izmišljena; žive vodene povezave na /go hubu in podstraneh;
+vstopnice v partnerskem iskanju postanka; matrika 7 partnerjev → LIVE).
 Izvorni repozitorij (626 commitov, v1.190.0) je bil dvakrat izgubljen v posledici
 vdorov v GitHub račun (2026-10-06). Ta aplikacija je temeljita rekonstrukcija iz
 obnovitvenih virov (delovni dnevnik + izpisi izvorne kode + produkcijski posnetek +
@@ -56,11 +63,20 @@ ter testna vrata (86 testov) + GitLab CI.
   stripe/contact/newsletter) izključno mreža — uporabniški podatki se nikoli ne
   predpomnijo; registracija v produkciji samodejno ali prek `?sw=1`; preverba
   `pwa:offline` v `/api/health`
-- **Rezervacijski sloj s provizijo (2.5.0)** — 5 provizijskih partnerjev
-  (Booking.com, GetYourGuide, Kiwi.com, Rentalcars.com, Omio): povezave prek
+- **Rezervacijski sloj s provizijo (2.5.0 → razširitev P0-F 2.10.0)** — 12
+  provizijskih partnerjev (Booking.com, GetYourGuide, Kiwi.com, Rentalcars.com,
+  Omio + P0-F: Viator, Tiqets, Skyscanner, Airalo, DiscoverCars, WorldNomads,
+  SafetyWing): povezave prek
   `/api/affiliate/go` (302 + best-effort zapis klika, `rel="sponsored"`) v
-  booking hubu na domači strani, kartici na strani destinacije in popupu
-  zemljevida; bencinske črpalke (66, kurirani odprti podatki po osnovi OSM
+  booking hubu na domači strani, kartici na strani destinacije, popupu
+  zemljevida in na /go straneh partnerjev (vodene povezave z razkritvem);
+  državne predloge `{country}` (SI/HR/ME/AL — npr. DiscoverCars `/croatia/Zagreb`,
+  Airalo `/slovenia-eSIM`); iskrena veriga: partnerji brez javno dokumentiranega
+  vzorca žetona (`affiliateTmpl ""`) ob ID-ju ostanejo na javni povezavi —
+  lastnikov `AFFILIATE_*_TMPL` s pravim vzorcem iz programa aktivira provizijo;
+  provizija `null` = neznana do pogodbe (nikoli izmišljena ocena — vnos iz
+  poročila takrat zahteva ročno provizijo); bencinske črpalke (66, kurirani
+  odprti podatki po osnovi OSM
   (ODbL), plast na zemljevidu — gorivo izrecno brez provizije); provizijski
   dnevnik in klikanja za skrbnike (`/owner/provizije`, dostop
   `DSA_ADMIN_EMAILS`); izplačilni koledar T+3 meseci, 28. v mesecu
@@ -136,10 +152,17 @@ PWA offline: service worker se v razvoju registrira na `http://localhost:3000/?s
 (preizkusna pot), v produkciji samodejno.
 
 Rezervacijski sloj (neobvezni env): `AFFILIATE_BOOKING_ID` / `AFFILIATE_GYG_ID` /
-`AFFILIATE_KIWI_ID` / `AFFILIATE_RENTALCARS_ID` / `AFFILIATE_OMIO_ID` (ID partnerja
+`AFFILIATE_KIWI_ID` / `AFFILIATE_RENTALCARS_ID` / `AFFILIATE_OMIO_ID` in P0-F
+`AFFILIATE_VIATOR_ID` / `AFFILIATE_TIQETS_ID` / `AFFILIATE_SKYSCANNER_ID` /
+`AFFILIATE_AIRALO_ID` / `AFFILIATE_DISCOVERCARS_ID` / `AFFILIATE_WORLDNOMADS_ID` /
+`AFFILIATE_SAFETYWING_ID` (ID partnerja
 v partnerskem programu) aktivirajo provizijske povezave, `AFFILIATE_*_TMPL`
 (neobvezna predloga) jih po potrebi prilagodi — brez žetona povezave delujejo
-javno, klikanja se štejejo. Skrbniški dostop do `/owner/provizije` omogoča
+javno, klikanja se štejejo. Pri P0-F partnerjih brez javno dokumentiranega
+vzorca žetona (Viator/Tiqets/Skyscanner/Airalo/DiscoverCars/WorldNomads/
+SafetyWing) ID sam ne zgradi provizijske povezave — aktivira jo šele
+`AFFILIATE_*_TMPL` s pravim vzorcem iz odobrenega partnerskega programa.
+Skrbniški dostop do `/owner/provizije` omogoča
 `DSA_ADMIN_EMAILS` (vejica ločen seznam e-poštnih naslovov).
 
 ## Struktura

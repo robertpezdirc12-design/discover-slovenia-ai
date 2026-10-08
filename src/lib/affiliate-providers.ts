@@ -1,13 +1,22 @@
 /**
- * AFFILIATE-PROVIDERS — čisti register rezervacijskih partnerjev (v2.5.0).
+ * AFFILIATE-PROVIDERS — čisti register rezervacijskih partnerjev.
  *
- * Analiza vzorca MindTrip (mindtrip.ai, raziskano 2026-10-08 prek spletne
- * raziskave): njihova ponudba je ZMOŽNOST REZERVACIJE po celotnem
- * zemljevidu (stays/Booking.com 6 %, izkušnje/Viator 8 %, Priceline 6 %,
- * leti, rent-a-car) + provizijski dnevnik (Creator Hub: pending/completed/
- * history) + izplačila T+3 meseci po bivanju, 28. v mesecu.
+ * v2.5.0 (MindTrip vzorec): 5 partnerjev (booking/getyourguide/kiwi/
+ * rentalcars/omio) + gorivo. v2.10.0 (P0-F RECONCILE): register POVEZAN
+ * s supply registrom — sprejme VSE ponudnike z dostopom
+ * »affiliate-deeplink« (glej src/lib/supply/registry.ts):
+ *  · novi: viator (doživetja), tiqets (vstopnice), skyscanner (leti),
+ *    airalo (eSIM), discovercars (najem avtov), worldnomads + safetywing
+ *    (zavarovanje) — 12 moniziranih + gorivo;
+ *  · izven ostajata pošteno: kiwitaxi (partner-feed — pride s CSV viri)
+ *    in travelpayouts (api — partnerski API, ne globoka povezava).
  *
- * Ta register je SLOVENSKI odgovor: pošten, fail-closed in testabilen.
+ * Kanon URL-jev (P0-F): vsak publicTmpl je PREVERJEN (curl 200 ali
+ * spletne reference), NIČ izmišljenih vzorcev. Partnerji BREZ javno
+ * dokumentiranega vzorca provizijskega parametra imajo affiliateTmpl ""
+ * — takrat ID SAMO ZASEBE ne more zgraditi provizijske povezave;
+ * lastnikovo AFFILIATE_*_TMPL nadomestilo (s pravim vzorcem iz programa)
+ * jo lahko (iskrena veriga v buildPartnerLink).
  *
  * KANONI (skladno s projektom):
  *  · ČISTA LOGIKA — brez process.env, brez db, brez stranskih učinkov;
@@ -16,9 +25,10 @@
  *  · ISKRENOST — partner brez ID-ja še vedno preusmeri na JAVNO iskanje
  *    (uporabniku koristno), klik pa se zabeleži z affiliateActive:false,
  *    da lastnik vidi povpraševanje, ki ga (še) ne monizira.
- *  · PROVIZIJSKI ODSTOTKI so POGODBENI in se spreminjajo — zato so v
- *    registru vidno označeni kot ocena (estimate) iz javno dostopnih
- *    pogojev partnerskih programov, nikoli kot obljuba.
+ *  · PROVIZIJSKI ODSTOTKI so POGODBENI in se spreminjajo — null pomeni
+ *    »ocena neznana do pogodbe« (nikoli ne izmišljujemo odstotka); znane
+ *    ocene so vidno označene kot ocena iz javno dostopnih pogojev
+ *    partnerskih programov, nikoli kot obljuba.
  *  · BENCIN ni provizijska kategorija — brezplačni odprti podatki
  *    (glej src/lib/fuel-stations.ts), eksplicitno 0 %.
  */
@@ -31,6 +41,9 @@ export type AffiliateCategory =
   | "flights" // letalske karte
   | "car" // rent-a-car
   | "transfers" // prevozi (vlaki/avtobusi)
+  | "tickets" // vstopnice (muzeji, znamenitosti)
+  | "esim" // eSIM podatki za potovanje
+  | "insurance" // popotniško zavarovanje
   | "fuel"; // bencinske črpalke — brez provizije
 
 export interface AffiliateCategoryLabel {
@@ -47,6 +60,9 @@ export const AFFILIATE_CATEGORIES: Record<
   flights: { sl: "Letalske karte", en: "Flights" },
   car: { sl: "Rent-a-car", en: "Car rental" },
   transfers: { sl: "Prevozi", en: "Transfers" },
+  tickets: { sl: "Vstopnice", en: "Tickets" },
+  esim: { sl: "eSIM podatki", en: "eSIM data" },
+  insurance: { sl: "Zavarovanje", en: "Insurance" },
   fuel: { sl: "Bencinske", en: "Fuel" },
 };
 
@@ -58,6 +74,13 @@ export type AffiliateProviderId =
   | "kiwi"
   | "rentalcars"
   | "omio"
+  | "viator"
+  | "tiqets"
+  | "skyscanner"
+  | "airalo"
+  | "discovercars"
+  | "worldnomads"
+  | "safetywing"
   | "osm-fuel";
 
 export interface AffiliateProviderDef {
@@ -65,8 +88,11 @@ export interface AffiliateProviderDef {
   /** Javno ime partnerja. */
   name: string;
   category: AffiliateCategory;
-  /** Ocena provizije v % (pogodbena — glej kanon zgoraj). 0 = brez provizije. */
-  commissionPct: number;
+  /**
+   * Ocena provizije v % (pogodbena — glej kanon zgoraj).
+   * 0 = brez provizije (gorivo). null = ocena NEZNANA do pogodbe.
+   */
+  commissionPct: number | null;
   /** Kratek slovenski opis ponudbe partnerja. */
   descSl: string;
   descEn: string;
@@ -74,17 +100,27 @@ export interface AffiliateProviderDef {
   envId: string;
   /** Env spremenljivka z opisno predlogo povezave (neobvezna pregl. za lastnika). */
   envTmpl: string;
-  /** Privzeta javna predloga povezave — {dest} se nadomesti z imenom kraja. */
+  /** Privzeta javna predloga povezave — {dest}/{country} se nadomestita. */
   publicTmpl: string;
-  /** Predloga z žetonom — {id} = partnerjev ID, {dest} = ime kraja. */
+  /**
+   * Javni namestnik, kadar predloga zahteva {country}, ta pa ni znana
+   * (npr. airalo: /{country}-eSIM brez države → domača stran, kjer
+   * uporabnik izbere državo). Če ni podan, velja čiščenje applyTemplate.
+   */
+  noCountryTmpl?: string;
+  /**
+   * Predloga z žetonom — {id} = partnerjev ID. PRAZNA, kadar vzorca
+   * provizijskega parametra NI javno dokumentiranega (ID sam zato ne
+   * more zgraditi provizijske povezave — pošteno, brez izmišljanja).
+   */
   affiliateTmpl: string;
   /** Domena partnerja (za prikaz uporabniku — "odpre pri …"). */
   domain: string;
 }
 
 /**
- * Register partnerjev. Zmrznjen (Object.freeze) — prirejanje registrskih
- * vnosov v produkciji je napaka, ne lastnost.
+ * Register partnerjev (P0-F RECONCILE). Zmrznjen (Object.freeze) —
+ * prirejanje registrskih vnosov v produkciji je napaka, ne lastnost.
  */
 export const AFFILIATE_PROVIDERS: readonly AffiliateProviderDef[] =
   Object.freeze([
@@ -117,6 +153,34 @@ export const AFFILIATE_PROVIDERS: readonly AffiliateProviderDef[] =
       domain: "getyourguide.com",
     },
     {
+      id: "viator",
+      name: "Viator (Tripadvisor)",
+      category: "experiences",
+      commissionPct: 8,
+      descSl: "Izkušnje in izleti po svetu — Tripadvisorova družina ponudb.",
+      descEn: "Experiences and tours worldwide — the Tripadvisor family.",
+      envId: "AFFILIATE_VIATOR_ID",
+      envTmpl: "AFFILIATE_VIATOR_TMPL",
+      publicTmpl: "https://www.viator.com/searchResults/all?text={dest}",
+      // Vzorec provizijskega parametra ni javno dokumentiran — ID sam ne
+      // zgradi provizijske povezave; lastnikov TMPL nadomestilo jo lahko.
+      affiliateTmpl: "",
+      domain: "viator.com",
+    },
+    {
+      id: "tiqets",
+      name: "Tiqets",
+      category: "tickets",
+      commissionPct: null,
+      descSl: "Vstopnice za muzeje in znamenitosti — takoj na telefon.",
+      descEn: "Museum and attraction tickets — straight to your phone.",
+      envId: "AFFILIATE_TIQETS_ID",
+      envTmpl: "AFFILIATE_TIQETS_TMPL",
+      publicTmpl: "https://www.tiqets.com/en/search?search_query={dest}",
+      affiliateTmpl: "",
+      domain: "tiqets.com",
+    },
+    {
       id: "kiwi",
       name: "Kiwi.com",
       category: "flights",
@@ -128,6 +192,19 @@ export const AFFILIATE_PROVIDERS: readonly AffiliateProviderDef[] =
       publicTmpl: "https://www.kiwi.com/en/search?query={dest}",
       affiliateTmpl: "https://www.kiwi.com/en/search?query={dest}&aid={id}",
       domain: "kiwi.com",
+    },
+    {
+      id: "skyscanner",
+      name: "Skyscanner",
+      category: "flights",
+      commissionPct: null,
+      descSl: "Primerjava letov — iskanje izhodišča izbereš na strani.",
+      descEn: "Flight comparison — pick your origin on their site.",
+      envId: "AFFILIATE_SKYSCANNER_ID",
+      envTmpl: "AFFILIATE_SKYSCANNER_TMPL",
+      publicTmpl: "https://www.skyscanner.net/",
+      affiliateTmpl: "",
+      domain: "skyscanner.net",
     },
     {
       id: "rentalcars",
@@ -143,6 +220,19 @@ export const AFFILIATE_PROVIDERS: readonly AffiliateProviderDef[] =
       domain: "rentalcars.com",
     },
     {
+      id: "discovercars",
+      name: "DiscoverCars",
+      category: "car",
+      commissionPct: null,
+      descSl: "Najem avtov — brezplačna odpoved, primerjava cen.",
+      descEn: "Car hire — free cancellation, price comparison.",
+      envId: "AFFILIATE_DISCOVERCARS_ID",
+      envTmpl: "AFFILIATE_DISCOVERCARS_TMPL",
+      publicTmpl: "https://www.discovercars.com/{country}/{dest}",
+      affiliateTmpl: "",
+      domain: "discovercars.com",
+    },
+    {
       id: "omio",
       name: "Omio",
       category: "transfers",
@@ -155,6 +245,47 @@ export const AFFILIATE_PROVIDERS: readonly AffiliateProviderDef[] =
       affiliateTmpl:
         "https://www.omio.com/search?resultsTo={dest}&aid={id}",
       domain: "omio.com",
+    },
+    {
+      id: "airalo",
+      name: "Airalo",
+      category: "esim",
+      commissionPct: null,
+      descSl: "eSIM paketi za potovanja — internet brez kartice.",
+      descEn: "Travel eSIM packs — internet without a physical SIM.",
+      envId: "AFFILIATE_AIRALO_ID",
+      envTmpl: "AFFILIATE_AIRALO_TMPL",
+      publicTmpl: "https://www.airalo.com/{country}-eSIM",
+      // Brez znane države (splošne povezave) → domača stran z izbiro države.
+      noCountryTmpl: "https://www.airalo.com/",
+      affiliateTmpl: "",
+      domain: "airalo.com",
+    },
+    {
+      id: "worldnomads",
+      name: "World Nomads",
+      category: "insurance",
+      commissionPct: null,
+      descSl: "Popotniško zavarovanje — ponudba po državljanstvu.",
+      descEn: "Travel insurance — quote by residency.",
+      envId: "AFFILIATE_WORLDNOMADS_ID",
+      envTmpl: "AFFILIATE_WORLDNOMADS_TMPL",
+      publicTmpl: "https://www.worldnomads.com/travel-insurance",
+      affiliateTmpl: "",
+      domain: "worldnomads.com",
+    },
+    {
+      id: "safetywing",
+      name: "SafetyWing",
+      category: "insurance",
+      commissionPct: null,
+      descSl: "Nomadsko zavarovanje — mesečno, kjerkoli na poti.",
+      descEn: "Nomad insurance — monthly, anywhere on the road.",
+      envId: "AFFILIATE_SAFETYWING_ID",
+      envTmpl: "AFFILIATE_SAFETYWING_TMPL",
+      publicTmpl: "https://safetywing.com/nomad-insurance",
+      affiliateTmpl: "",
+      domain: "safetywing.com",
     },
     {
       id: "osm-fuel",
@@ -181,15 +312,38 @@ export function getProvider(
   );
 }
 
+// ── Države v URL-jih partnerjev ({country} — preverjeni vzorci) ────────────
+
+/**
+ * Imena držav kanonskega nabora (SI/HR/ME/AL), kot jih uporabljajo
+ * javne strani partnerjev (npr. discovercars.com/slovenia/bled,
+ * airalo.com/slovenia-eSIM — vzorci preverjeni s curl 200).
+ */
+export const COUNTRY_URL_NAMES: Readonly<Record<string, string>> =
+  Object.freeze({
+    SI: "slovenia",
+    HR: "croatia",
+    ME: "montenegro",
+    AL: "albania",
+  });
+
+/** Ime države za {country} v predlogi (null za neznano kodo). */
+export function countryUrlName(countryCode: string | null | undefined): string | null {
+  if (!countryCode) return null;
+  return COUNTRY_URL_NAMES[countryCode.toUpperCase()] ?? null;
+}
+
 // ── Gradnja povezave (čista) ───────────────────────────────────────────────
 
 export interface BuildLinkInput {
   provider: AffiliateProviderDef;
   /** Ime kraja/destinacije (npr. "Bled"). Prazno → izpusti {dest}. */
   destName?: string | null;
+  /** Ime države za {country} (npr. "slovenia"). Prazno → izpusti {country}. */
+  destCountryName?: string | null;
   /** Partnerjev ID ali null, kadar program še ni aktiviran. */
   affiliateId?: string | null;
-  /** Lastnikova predloga iz env (podpora {id} in {dest}); prireja privzeto. */
+  /** Lastnikova predloga iz env (podpora {id}, {dest}, {country}); prireja privzeto. */
   tmplOverride?: string | null;
 }
 
@@ -202,26 +356,39 @@ export interface BuiltLink {
   tmpl: "override" | "affiliate" | "public";
 }
 
-/** URL-nadomestitev {dest} in {id} (oba encodeURIComponent — varno za query). */
+/** URL-nadomestitev {dest}, {country} in {id} (encodeURIComponent — varno za query). */
 export function applyTemplate(
   tmpl: string,
   destName: string | null,
   affiliateId: string | null,
+  destCountryName?: string | null,
 ): string {
   let out = tmpl;
   if (destName) {
     out = out.replaceAll("{dest}", encodeURIComponent(destName));
   }
+  if (destCountryName) {
+    out = out.replaceAll("{country}", encodeURIComponent(destCountryName));
+  }
   if (affiliateId) {
     out = out.replaceAll("{id}", encodeURIComponent(affiliateId));
   }
-  // Iskrenost: če predloga zahteva {dest}, ga ni pa ni bilo, počistimo
-  // ostanek parametra, da URL ne vsebuje dobesednega "{dest}".
+  // Iskrenost: če predloga zahteva {dest}/{country}, ju ni pa bilo,
+  // počistimo ostanek parametra, da URL ne vsebuje dobesednih oznak.
   if (!destName) {
     out = out
       .replaceAll("={dest}", "=")
       .replaceAll("&{dest}", "")
+      .replaceAll("/{dest}", "")
       .replaceAll("{dest}", "");
+  }
+  if (!destCountryName) {
+    out = out
+      .replaceAll("={country}", "=")
+      .replaceAll("&{country}", "")
+      .replaceAll("/{country}/", "/")
+      .replaceAll("/{country}", "")
+      .replaceAll("{country}", "");
   }
   return out;
 }
@@ -229,14 +396,20 @@ export function applyTemplate(
 /**
  * Izgradi povezavo do partnerja. Vrsta reda (najvišja prednost prva):
  *  1. lastnikova predloga (env) — z ID, če je podan;
- *  2. privzeta provizijska predloga — če je ID podan;
+ *  2. privzeta provizijska predloga — SAMO če registrski vnos pozna
+ *     vzorec (affiliateTmpl ≠ "") IN je ID podan;
  *  3. javna predloga — brez ID (partner koristen, klik zabeležen neaktiven).
+ *
+ * ISKRENOST: ID brez znanega vzorca (affiliateTmpl = "") NE more
+ * prikazati provizijsko povezavo — pade na javno, affiliateActive:false
+ * (lastnik vidi klik, ve da mora nastaviti TMPL iz programa).
  *
  * Za gorivo (osm-fuel) vrne javno domeno OpenStreetMap (ni rezervacija).
  */
 export function buildPartnerLink(input: BuildLinkInput): BuiltLink {
   const { provider } = input;
   const destName = input.destName?.trim() || null;
+  const destCountryName = input.destCountryName?.trim() || null;
   const affiliateId = input.affiliateId?.trim() || null;
 
   if (provider.category === "fuel") {
@@ -249,20 +422,47 @@ export function buildPartnerLink(input: BuildLinkInput): BuiltLink {
 
   if (input.tmplOverride?.trim()) {
     return {
-      url: applyTemplate(input.tmplOverride, destName, affiliateId),
+      url: applyTemplate(
+        input.tmplOverride,
+        destName,
+        affiliateId,
+        destCountryName,
+      ),
       affiliateActive: Boolean(affiliateId),
       tmpl: "override",
     };
   }
-  if (affiliateId) {
+  if (affiliateId && provider.affiliateTmpl) {
     return {
-      url: applyTemplate(provider.affiliateTmpl, destName, affiliateId),
+      url: applyTemplate(
+        provider.affiliateTmpl,
+        destName,
+        affiliateId,
+        destCountryName,
+      ),
       affiliateActive: true,
       tmpl: "affiliate",
     };
   }
+  // Javna predloga — z iskrenim namestnikom, kadar {country} manjka.
+  if (
+    !destCountryName &&
+    provider.noCountryTmpl &&
+    provider.publicTmpl.includes("{country}")
+  ) {
+    return {
+      url: applyTemplate(provider.noCountryTmpl, null, null, null),
+      affiliateActive: false,
+      tmpl: "public",
+    };
+  }
   return {
-    url: applyTemplate(provider.publicTmpl, destName, null),
+    url: applyTemplate(
+      provider.publicTmpl,
+      destName,
+      null,
+      destCountryName,
+    ),
     affiliateActive: false,
     tmpl: "public",
   };
@@ -273,19 +473,26 @@ export function buildPartnerLink(input: BuildLinkInput): BuiltLink {
 export interface CommissionEstimate {
   /** Osnova (vrednost rezervacije). */
   baseEur: number;
-  /** Ocenjena provizija (zaokroženo na 2 decimalki). */
-  commissionEur: number;
-  /** Odstopek v % (iz registra — ocena, ne obljuba). */
-  pct: number;
+  /** Ocenjena provizija (null, kadar odstotka ne poznamo). */
+  commissionEur: number | null;
+  /** Odstopek v % (iz registra — ocena, ne obljuba). null = neznano do pogodbe. */
+  pct: number | null;
 }
 
-/** Ocene provizije za dano vrednost rezervacije (negativne → 0). */
+/**
+ * Ocene provizije za dano vrednost rezervacije (negativne osnove → 0).
+ * Za partnerje z neznanim odstotkom (pct null) je ocena null —
+ * provizijo truthfully prinese samo partnerjevo poročilo.
+ */
 export function estimateCommission(
   provider: AffiliateProviderDef,
   baseEur: number,
 ): CommissionEstimate {
   const base = Number.isFinite(baseEur) && baseEur > 0 ? baseEur : 0;
   const pct = provider.commissionPct;
+  if (pct == null) {
+    return { baseEur: base, commissionEur: null, pct: null };
+  }
   const commission = Math.round(base * (pct / 100) * 100) / 100;
   return { baseEur: base, commissionEur: commission, pct };
 }
@@ -370,6 +577,8 @@ export interface ProviderPublicDTO {
   domain: string;
   /** Ali je kategorija provizijska (gorivo = false). */
   commissionable: boolean;
+  /** Ocena provizije v % (null = neznana do pogodbe; 0 = gorivo). */
+  commissionPct: number | null;
 }
 
 /** Javni seznam partnerjev (brez predlog in odstopkov). */
@@ -383,5 +592,6 @@ export function providersPublicDTO(): ProviderPublicDTO[] {
     descEn: p.descEn,
     domain: p.domain,
     commissionable: p.category !== "fuel",
+    commissionPct: p.commissionPct,
   }));
 }

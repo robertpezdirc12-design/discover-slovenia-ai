@@ -19,6 +19,8 @@ import {
   Sailboat,
   Search,
   Send,
+  ShieldCheck,
+  Smartphone,
   Sparkles,
   Ticket,
   TrainFront,
@@ -500,6 +502,9 @@ const CATEGORY_ICONS: Record<
   flights: Plane,
   car: Car,
   transfers: TrainFront,
+  tickets: Landmark,
+  esim: Smartphone,
+  insurance: ShieldCheck,
   fuel: Fuel,
 };
 

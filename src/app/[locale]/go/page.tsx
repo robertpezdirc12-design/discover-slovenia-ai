@@ -6,9 +6,12 @@
  * 10 partnerskih kategorij (po /go povezavah iz mirror index.html:
  * hotels, flights, cars, transfers, transport, activities, viator,
  * tickets, insurance, esim) z ISKRENIMI statusi iz registra ponudnikov
- * (PROVIDER_REGISTRY). Zunanje partnerske povezave v peskovniku niso
- * konfigurirane → kartice vodijo na lastne podstrani /go/[partner],
- * kjer je vsebina (kjer je bila zajeta) + pošten namestnik povezave.
+ * (PROVIDER_REGISTRY). P0-F: kartice registrskih partnerjev (12
+ * moniziranih — glej affiliate-providers.ts) nosijo žeton "Povezava:
+ * na voljo" — na podstrani so vodene povezave prek /api/affiliate/go
+ * (klik štet, provizija pogodbena, cena za uporabnika nespremenjena).
+ * Rute brez registrskih ponudnikov (transfers — kiwitaxi partner-feed)
+ * ostajajo POŠTENI. Kartice vodijo na lastne podstrani /go/[partner].
  */
 
 import {
@@ -33,6 +36,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
 import { pick } from "@/lib/i18n-pick";
+import { getProvider } from "@/lib/affiliate-providers";
 import { GO_PARTNERS, SUPPLY_STATUS_LABELS } from "@/lib/go-data";
 import type { GoRouteSlug } from "@/lib/go-data";
 import { cn } from "@/lib/utils";
@@ -61,11 +65,12 @@ export default function GoHubPage() {
       en: "Everything you need on the road: stays, flights, cars, transfers, transport, experiences, tickets, insurance and eSIM — via verified partners.",
     },
     disclosure: {
-      sl: "Affiliate povezave — zaslužimo provizijo pri rezervacijah; cena zate se ne poveča. Povezave posameznih partnerjev se konfigurirajo po odobritvi programov (iskreni namestniki, brez izmišljenih URL-jev).",
-      en: "Affiliate links — we earn a commission on bookings; your price stays the same. Individual partner links are configured once programmes approve us (honest placeholders, no invented URLs).",
+      sl: "Affiliate razkritje — partnerji iz našega registra imajo žive vodene povezave: ob rezervaciji zaslužimo provizijo (pogodbena, po pogojih partnerskega programa), zate pa cena ostane enaka. Partnerji, ki še niso v registru (npr. transferji prek partnerskega vira), imajo iskrene namestnike — ne izmišljujemo URL-jev.",
+      en: "Affiliate disclosure — register partners now have live guided links: on a booking we earn a commission (contractual, per the partner programme's terms) while your price stays the same. Partners not yet in the register (e.g. transfers via a partner feed) keep honest placeholders — we do not invent URLs.",
     },
     contentReady: { sl: "Vsebina obnovljena", en: "Content recovered" },
     contentComing: { sl: "V pripravi", en: "In preparation" },
+    linkLive: { sl: "Povezava: na voljo", en: "Link: available" },
     providersWord: { sl: "Ponudnik", en: "Provider" },
     open: { sl: "Odpri podstran", en: "Open subpage" },
   } as const;
@@ -83,6 +88,12 @@ export default function GoHubPage() {
         {GO_PARTNERS.map((route) => {
           const Icon = ROUTE_ICONS[route.slug];
           const ready = route.content === "available";
+          // P0-F: živi žeton — rute z vsaj enim registrskim ponudnikom
+          // (kategorija ≠ gorivo) imajo na podstrani vodene povezave.
+          const hasLive = route.providers.some((p) => {
+            const reg = getProvider(p.slug);
+            return reg !== null && reg.category !== "fuel";
+          });
           return (
             <li key={route.slug}>
               <Card
@@ -96,16 +107,26 @@ export default function GoHubPage() {
                     <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                       <Icon className="size-5" aria-hidden="true" />
                     </span>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        ready
-                          ? "border-primary/40 bg-primary/10 text-primary"
-                          : "border-muted-foreground/30 text-muted-foreground"
+                    <div className="flex flex-wrap items-center justify-end gap-1.5">
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          ready
+                            ? "border-primary/40 bg-primary/10 text-primary"
+                            : "border-muted-foreground/30 text-muted-foreground"
+                        )}
+                      >
+                        {ready ? t("contentReady") : t("contentComing")}
+                      </Badge>
+                      {hasLive && (
+                        <Badge
+                          variant="outline"
+                          className="border-primary/40 bg-primary/10 text-primary"
+                        >
+                          {t("linkLive")}
+                        </Badge>
                       )}
-                    >
-                      {ready ? t("contentReady") : t("contentComing")}
-                    </Badge>
+                    </div>
                   </div>
 
                   <div>

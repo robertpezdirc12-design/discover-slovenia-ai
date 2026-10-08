@@ -259,8 +259,12 @@ const PARTNER_L = {
   offersLabel: { sl: "Ponudbe partnerjev", en: "Partner offers" },
   offerEmpty: { sl: "Ni ponudb — izberi drug postanek", en: "No offers — pick another stop" },
   commission: {
-    sl: (pct: number) => `ocena ${pct} %, pogodbena`,
-    en: (pct: number) => `estimate ${pct} %, contractual`,
+    // P0-F: null = ocena neznana do pogodbe (novi partnerji) — iskreno,
+    // ne izmišljujemo odstotka, ki partnerjevi pogodbi še ni znan.
+    sl: (pct: number | null) =>
+      pct == null ? "provizija neznana (po pogodbi)" : `ocena ${pct} %, pogodbena`,
+    en: (pct: number | null) =>
+      pct == null ? "commission unknown (per contract)" : `estimate ${pct} %, contractual`,
   },
   airportLabel: { sl: "Letališče regije", en: "Region airport" },
   customSearchNote: {
@@ -2071,12 +2075,15 @@ export function TripReservations({
                       </div>
                     ) : null}
 
-                    {/* REALNE ponudbe partnerjev (do 5 kategorij) — vodene
-                        povezave /api/affiliate/go (klik se šteje). */}
+                    {/* REALNE ponudbe partnerjev (P0-F: 9 ponudb / 6
+                        kategorij na postanek) — vodene povezave
+                        /api/affiliate/go (klik se šteje). Seznam ima svoj
+                        ozek scroll (pravilo UI: max-h-96 + scrollbar-slim),
+                        da obrazec spodaj ostane v dosegu. */}
                     <div className="space-y-1.5">
                       <Label>{pick(l, PARTNER_L.offersLabel)}</Label>
                       {ptOffers.length > 0 ? (
-                        <ul className="space-y-2">
+                        <ul className="scrollbar-slim max-h-96 space-y-2 overflow-y-auto pr-1">
                           {ptOffers.map((offer) => {
                             const selected = offer.providerId === ptProvider;
                             return (

@@ -4,10 +4,13 @@
  * /go/[partner] — partnerska podstran (esim, transfers, tickets, insurance
  * z vsebino izluščeno iz production-mirror; ostali kot iskreni stub-i).
  *
- * ZUNANJA povezava partnerja v peskovniku NI konfigurirana: namesto
- * izmišljenega affiliate URL-ja izrišemo onemogočen gumb (aria-disabled)
- * z opombo "povezava se konfigurira". Dokumentacijske povezave registra
- * (docsUrl) so realne in javne.
+ * P0-F (vodene povezave): ponudniki IZ REGISTRA (affiliate-providers.ts,
+ * kategorija ≠ gorivo) dobijo ŽIVO vodeno povezavo prek lastne končne
+ * točke /api/affiliate/go (302 + zapis klika). Ponudniki IZVEN registra
+ * (kiwitaxi — partner-feed; travelpayouts — partnerski API) ostajajo
+ * POŠTENI: brez izmišljenega URL-ja izrišemo onemogočen gumb
+ * (aria-disabled) z opombo "povezava se konfigurira". Dokumentacijske
+ * povezave registra (docsUrl) so realne in javne.
  */
 
 import {
@@ -36,6 +39,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
 import { pick } from "@/lib/i18n-pick";
+import { getProvider } from "@/lib/affiliate-providers";
 import {
   getGoRoute,
   SUPPLY_STATUS_LABELS,
@@ -80,6 +84,16 @@ export default function GoPartnerPage() {
       en: "Subpage in preparation — content will be reconstructed from the production snapshot. Category, providers and access status are described below.",
     },
     linkComing: { sl: "Povezava se konfigurira", en: "Link being configured" },
+    openWith: {
+      // Živa vodena povezava (P0-F) — samo za ponudnike IZ registra.
+      sl: (name: string) => `Odpri pri ${name}`,
+      en: (name: string) => `Open with ${name}`,
+    },
+    guidedTitle: { sl: "Vodena povezava partnerja", en: "Guided partner link" },
+    guidedNote: {
+      sl: "Povezave teh ponudnikov vodimo prek naše lastne končne točke /api/affiliate/go: klik je štet, morebitna provizija je pogodbena (po pogojih partnerskega programa), cena zate pa ostane popolnoma enaka — to je affiliate razkritje, ne dodatek k ceni.",
+      en: "Links for these providers are guided through our own /api/affiliate/go endpoint: each click is counted, any commission is contractual (per the partner programme's terms), and your price stays exactly the same — this is an affiliate disclosure, not a surcharge.",
+    },
     provenance: {
       sl: "Vsebina podstrani je izluščena iz posnetka produkcije (production-mirror/go/" + route.slug + ") — brez dodanih podatkov.",
       en: "Subpage content is extracted from the production snapshot (production-mirror/go/" + route.slug + ") — with no data added.",
@@ -92,6 +106,15 @@ export default function GoPartnerPage() {
   const title = l === "en" ? route.title.en : route.title.sl;
   const lead = l === "en" ? route.lead.en : route.lead.sl;
   const coverage = l === "en" ? route.coverage.en : route.coverage.sl;
+
+  // P0-F: ponudniki z ŽIVO vodeno povezavo — samo registrski vnosi
+  // (affiliate-providers.ts), ki niso gorivo (gorivo ni provizijsko).
+  // kiwitaxi (partner-feed) in travelpayouts (API) ostajajo iskreni.
+  const isLiveProvider = (slug: string) => {
+    const reg = getProvider(slug);
+    return reg !== null && reg.category !== "fuel";
+  };
+  const liveProviders = route.providers.filter((p) => isLiveProvider(p.slug));
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
@@ -199,6 +222,27 @@ export default function GoPartnerPage() {
                       <ExternalLink className="size-3" aria-hidden="true" />
                     </a>
                   )}
+                  {/* P0-F: ŽIVA vodena povezava — samo registrski vnosi (ne
+                      gorivo). Izven registra (kiwitaxi, travelpayouts) gumba
+                      NIČ — brez izmišljenega URL-ja. */}
+                  {isLiveProvider(p.slug) && (
+                    <div className="mt-3 flex sm:justify-end">
+                      <Button
+                        asChild
+                        variant="outline"
+                        className="min-h-11 w-full gap-1.5 sm:w-auto"
+                      >
+                        <a
+                          href={`/api/affiliate/go?provider=${p.slug}`}
+                          target="_blank"
+                          rel="nofollow sponsored noopener"
+                        >
+                          {t("openWith")(p.label)}
+                          <ExternalLink className="size-3.5" aria-hidden="true" />
+                        </a>
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </li>
@@ -206,27 +250,63 @@ export default function GoPartnerPage() {
         </ul>
       </section>
 
-      {/* Zunanja povezava — iskren onemogočen namestnik (NIČ izmišljenih URL-jev) */}
-      <Card className="mt-8 border-dashed">
-        <CardContent className="flex flex-col items-start gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="font-bold">{t("linkTitle")}</p>
-            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-              {t("linkNote")}
-            </p>
-          </div>
-          {/* aria-disabled + href="#" = onemogočen namestnik (brez href ne bi bil fokusljiv) */}
-          <a
-            href="#"
-            aria-disabled="true"
-            onClick={(e) => e.preventDefault()}
-            className="inline-flex h-11 cursor-not-allowed items-center gap-2 rounded-xl border bg-muted px-5 text-sm font-semibold text-muted-foreground select-none"
-          >
-            {t("linkComing")}
-            <ExternalLink className="size-4" aria-hidden="true" />
-          </a>
-        </CardContent>
-      </Card>
+      {/* Povezava partnerja — P0-F: registrski ponudniki dobijo ŽIVO
+          vodeno kartico (/api/affiliate/go, provizijsko razkrito); rute
+          BREZ registrskih ponudnikov (transfers — kiwitaxi partner-feed)
+          obdržijo POŠTEN onemogočen namestnik (NIČ izmišljenih URL-jev). */}
+      {liveProviders.length > 0 ? (
+        <Card className="mt-8 border-primary/30 bg-primary/5">
+          <CardContent className="space-y-3 p-5">
+            <div>
+              <p className="font-bold">{t("guidedTitle")}</p>
+              <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                {t("guidedNote")}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {liveProviders.map((p) => (
+                <Button
+                  key={p.slug}
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="min-h-11 gap-1.5 bg-background"
+                >
+                  <a
+                    href={`/api/affiliate/go?provider=${p.slug}`}
+                    target="_blank"
+                    rel="nofollow sponsored noopener"
+                  >
+                    {t("openWith")(p.label)}
+                    <ExternalLink className="size-3.5" aria-hidden="true" />
+                  </a>
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="mt-8 border-dashed">
+          <CardContent className="flex flex-col items-start gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-bold">{t("linkTitle")}</p>
+              <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                {t("linkNote")}
+              </p>
+            </div>
+            {/* aria-disabled + href="#" = onemogočen namestnik (brez href ne bi bil fokusljiv) */}
+            <a
+              href="#"
+              aria-disabled="true"
+              onClick={(e) => e.preventDefault()}
+              className="inline-flex h-11 cursor-not-allowed items-center gap-2 rounded-xl border bg-muted px-5 text-sm font-semibold text-muted-foreground select-none"
+            >
+              {t("linkComing")}
+              <ExternalLink className="size-4" aria-hidden="true" />
+            </a>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Provenanca vsebine (kjer je bila zajeta) */}
       {ready && (

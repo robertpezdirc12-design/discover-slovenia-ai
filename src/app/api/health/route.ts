@@ -85,28 +85,34 @@ export async function GET() {
     });
   }
 
-  // 5) Provizijski sloj (v2.5.0) + partner kanal booking verige (v2.6.0):
-  //    register partnerjev + nabor črpalk + partner rezervacije v My Trips
-  //    ( AFFILIATE_*_ID žetoni se NAMENOMA ne preverjajo — fail-closed
-  //    pomeni: brez žetona povezave delujejo javno, klikanja se štejejo).
+  // 5) Provizijski sloj (v2.5.0) + partner kanal booking verige (v2.6.0)
+  //    + registrska razširitev P0-F (v2.10.0): register partnerjev +
+  //    nabor črpalk + partner rezervacije v My Trips ( AFFILIATE_*_ID
+  //    žetoni se NAMENOMA ne preverjajo — fail-closed pomeni: brez
+  //    žetona povezave delujejo javno, klikanja se štejejo).
   try {
     const { AFFILIATE_PROVIDERS } = await import("@/lib/affiliate-providers");
     const { FUEL_STATIONS } = await import("@/lib/fuel-stations");
-    const { BOOKING_CHANNELS, searchPartnerOffers } = await import(
-      "@/lib/journey/booking-provider",
-    );
+    const {
+      BOOKING_CHANNELS,
+      PARTNER_SEARCH_CATEGORIES,
+      searchPartnerOffers,
+    } = await import("@/lib/journey/booking-provider");
     const commissionable = AFFILIATE_PROVIDERS.filter(
       (p) => p.category !== "fuel",
     ).length;
+    const inChain = AFFILIATE_PROVIDERS.filter((p) =>
+      PARTNER_SEARCH_CATEGORIES.includes(p.category),
+    ).length;
     const partnerSearchOk =
       BOOKING_CHANNELS.includes("partner") &&
-      searchPartnerOffers("bled").length === commissionable;
+      searchPartnerOffers("bled").length === inChain;
     startup.push({
       name: "booking:affiliate",
       status: partnerSearchOk ? "ok" : "degraded",
       detail: partnerSearchOk
-        ? `${commissionable} provizijskih partnerjev (rezervacija v booking verigi, PENDING → potrditev) + ${FUEL_STATIONS.length} črpalk (gorivo brez provizije — odprti podatki)`
-        : `Register partnerjev (${commissionable}) ni uskladen s partner iskanjem — preveri booking-provider`,
+        ? `${inChain}/${commissionable} provizijskih partnerjev v booking verigi (PENDING → potrditev; ostali na /go straneh) + ${FUEL_STATIONS.length} črpalk (gorivo brez provizije — odprti podatki)`
+        : `Register partnerjev (${inChain}/${commissionable}) ni uskladen s partner iskanjem — preveri booking-provider`,
       at: now(),
     });
   } catch {
@@ -213,7 +219,7 @@ export async function GET() {
 
   return NextResponse.json({
     status: "ok",
-    version: "2.9.0",
+    version: "2.10.0",
     startup,
     checkedAt: now(),
   });

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getDestination } from "@/lib/slovenia-data";
+import { countryUrlName } from "@/lib/affiliate-providers";
 import { getSessionUserId } from "@/lib/trip-auth";
 import {
   buildRedirectFor,
@@ -53,12 +54,14 @@ export async function GET(request: Request) {
     );
   }
 
-  // Destinacija (neobvezna) — po slugu kanonskega nabora.
+  // Destinacija (neobvezna) — po slugu kanonskega nabora. Država se
+  // razreši za {country} predloge (airalo, discovercars — P0-F).
   const destSlug = searchParams.get("dest")?.trim() || null;
   const dest = destSlug ? getDestination(destSlug) ?? null : null;
   const destName = dest?.name ?? null;
+  const destCountryName = countryUrlName(dest?.country ?? null);
 
-  const built = buildRedirectFor(providerId, destName);
+  const built = buildRedirectFor(providerId, destName, destCountryName);
   if (!built) {
     return NextResponse.json(
       { error: "Neznan rezervacijski partner." },
@@ -86,6 +89,7 @@ export async function GET(request: Request) {
     provider: built.provider,
     destinationSlug: dest?.slug ?? null,
     destinationName: destName,
+    destinationCountryName: destCountryName,
     link: built.link,
     userId,
     sessionKey,

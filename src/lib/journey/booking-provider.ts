@@ -743,20 +743,30 @@ export interface PartnerOffer {
   destinationName: string;
   /** Vodena povezava — /api/affiliate/go (klik + morebitna provizija). */
   goPath: string;
-  /** Ocena provizije v % (pogodbena — razkritje, ne obljuba). */
-  commissionPct: number;
+  /**
+   * Ocena provizije v % (pogodbena — razkritje, ne obljuba).
+   * null = ocena neznana do pogodbe (P0-F: novi partnerji brez
+   * javno dokumentiranih pogojev programa).
+   */
+  commissionPct: number | null;
   /** Letališče regije (samo za kategorijo flights). */
   airport: { code: string; name: string } | null;
   match: PartnerOfferMatch;
 }
 
-/** Kanonski vrstni red kategorij v partnerskem iskanju. */
-const PARTNER_SEARCH_CATEGORIES: readonly AffiliateCategory[] = [
+/**
+ * Kanonski vrstni red kategorij v partnerskem iskanju (P0-F: dodane
+ * vstopnice — destinacijsko vezane, kot postanek). eSIM in zavarovanje
+ * sta NAMENOMA izven: nista vezana na posamezen postanek (ravni sta
+ * celotnega potovanja — dosegljivi na /go straneh partnerjev).
+ */
+export const PARTNER_SEARCH_CATEGORIES: readonly AffiliateCategory[] = [
   "stays",
   "experiences",
   "car",
   "transfers",
   "flights",
+  "tickets",
 ];
 
 /** Vodena povezava do partnerja (dest je kanonski slug, če je znan). */
@@ -792,13 +802,14 @@ function toPartnerOffer(
 
 /**
  * Poišči partnerjeve ponudbe za postanek (REALNI kanal, vzorec MindTrip):
- *  - poznan slug destinacije → do 5 ponudb (nastanitev, doživetje,
- *    rent-a-car, prevoz + leti z letališča regije), vsaka z vodeno
- *    povezavo /api/affiliate/go?provider=…&dest=… (klik se šteje);
+ *  - poznan slug destinacije → ponudbe vseh registrskih partnerjev
+ *    kategorij iskanja (P0-F: do 9 — nastanitev, 2× doživetje, 2× najem,
+ *    prevoz, 2× leti, vstopnice), vsaka z vodeno povezavo
+ *    /api/affiliate/go?provider=…&dest=… (klik se šteje);
  *  - custom postanek → enake ponudbe brez dest parametra (partnerjeva
  *    splošna iskanja — iskreno match:"custom").
- * Gorivo NI rezervacijska kategorija (odprti podatki, 0 %) — nikoli
- * ni del partnerskega iskanja.
+ * Gorivo, eSIM in zavarovanje NISO destinacijske kategorije tega
+ *    iskanja (gorivo: odprti podatki 0 %; eSIM/zavarovanje: /go strani).
  */
 export function searchPartnerOffers(
   stopSlug: string | null | undefined
@@ -810,6 +821,15 @@ export function searchPartnerOffers(
     if (!PARTNER_SEARCH_CATEGORIES.includes(provider.category)) continue;
     out.push(toPartnerOffer(provider, slug));
   }
+  // Vrstni red ponudb = kanonski vrstni red KATEGORIJ (stays → … → tickets),
+  // znotraj kategorije vrstni red registra (stabilno, deterministično).
+  const canonIdx = new Map(
+    PARTNER_SEARCH_CATEGORIES.map((c, i) => [c, i] as const)
+  );
+  out.sort(
+    (a, b) =>
+      (canonIdx.get(a.category) ?? 99) - (canonIdx.get(b.category) ?? 99)
+  );
   return out;
 }
 

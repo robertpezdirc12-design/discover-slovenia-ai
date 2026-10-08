@@ -5,15 +5,17 @@
  * T+3 meseci in javni DTO.
  *
  * Zaklene kanone:
- * - REGISTER: zmrznjen (Object.isFrozen), 6 partnerjev z unikatnimi id-ji,
- *   ocene provizij >= 0; gorivo (osm-fuel) je izrecno brez provizije — 0 %
- *   in prazen envId (bencin = brezplačni odprti podatki, ne rezervacija).
+ * - REGISTER: zmrznjen (Object.isFrozen), 13 partnerjev z unikatnimi id-ji
+ *   (P0-F: 12 provizijskih + gorivo); ocene provizij >= 0 ALI null (= ocena
+ *   neznana do pogodbe — nikoli izmišljena); gorivo (osm-fuel) je izrecno
+ *   brez provizije — 0 % in prazen envId (bencin = odprti podatki).
  * - ISKRENOST: partner brez ID-ja še vedno preusmeri na JAVNO iskanje
  *   (tmpl "public", affiliateActive false) — uporabnik pride do cilja,
  *   lastnik pa vidi povpraševanje, ki ga (še) ne monizira.
  * - VARNOST: javni DTO (providersPublicDTO) ne nosi NOBENEGA od polj
- *   envId/envTmpl/publicTmpl/affiliateTmpl/commissionPct — javni odgovor
- *   nikoli ne razkrije predlog povezav niti odstopkov provizij.
+ *   envId/envTmpl/publicTmpl/affiliateTmpl — javni odgovor nikoli ne
+ *   razkrije predlog povezav. commissionPct je NAMENOMO javen od P0-F
+ *   (javno razkritje ocene, pogodbena — ne skrivnost).
  * - DETERMINISTIČNOST: payoutDueDate vedno 28. v mesecu ob 12:00 UTC.
  */
 
@@ -44,23 +46,56 @@ describe("affiliate-providers: register (kanonski nabor)", () => {
     expect(Object.isFrozen(AFFILIATE_PROVIDERS)).toBe(true);
   });
 
-  test("šest partnerjev z unikatnimi id-ji", () => {
-    expect(AFFILIATE_PROVIDERS.length).toBe(6);
+  test("13 partnerjev z unikatnimi id-ji (P0-F: 12 provizijskih + gorivo)", () => {
+    expect(AFFILIATE_PROVIDERS.length).toBe(13);
     const ids = AFFILIATE_PROVIDERS.map((p) => p.id);
-    expect(new Set(ids).size).toBe(6);
+    expect(new Set(ids).size).toBe(13);
     expect([...ids].sort()).toEqual([
+      "airalo",
       "booking",
+      "discovercars",
       "getyourguide",
       "kiwi",
       "omio",
       "osm-fuel",
       "rentalcars",
+      "safetywing",
+      "skyscanner",
+      "tiqets",
+      "viator",
+      "worldnomads",
     ]);
   });
 
-  test("vsi commissionPct >= 0 (ocena, nikoli negativna obljuba)", () => {
+  test("commissionPct: znani >= 0, neznani null (ocena, nikoli negativna obljuba)", () => {
     for (const p of AFFILIATE_PROVIDERS) {
+      if (p.commissionPct == null) continue; // null = neznano do pogodbe (P0-F)
       expect(p.commissionPct).toBeGreaterThanOrEqual(0);
+    }
+    // Partnerji z javno raziskano oceno (2.5.0 MindTrip raziskava + P0-F).
+    expect(mustProvider("booking").commissionPct).toBe(6);
+    expect(mustProvider("getyourguide").commissionPct).toBe(8);
+    expect(mustProvider("viator").commissionPct).toBe(8);
+    expect(mustProvider("kiwi").commissionPct).toBe(3);
+    expect(mustProvider("rentalcars").commissionPct).toBe(6);
+    expect(mustProvider("omio").commissionPct).toBe(4);
+    // Partnerji brez javno dokumentirane ocene → null (iskreno).
+    for (const id of ["tiqets", "skyscanner", "airalo", "discovercars", "worldnomads", "safetywing"]) {
+      expect(mustProvider(id).commissionPct).toBeNull();
+    }
+  });
+
+  test("P0-F: novi partnerji s praznim affiliateTmpl — ID sam NE more zgraditi provizijske povezave", () => {
+    for (const id of ["viator", "tiqets", "skyscanner", "airalo", "discovercars", "worldnomads", "safetywing"]) {
+      expect(mustProvider(id).affiliateTmpl).toBe("");
+      // Javna predloga pa obstaja in je neprazna (preverjeni vzorci).
+      expect(mustProvider(id).publicTmpl.length).toBeGreaterThan(0);
+      expect(mustProvider(id).publicTmpl).toMatch(/^https:\/\//);
+    }
+    // Partnerji z javno dokumentiranim vzorcem žetona ostajajo (2.5.0).
+    for (const id of ["booking", "getyourguide", "kiwi", "rentalcars", "omio"]) {
+      expect(mustProvider(id).affiliateTmpl.length).toBeGreaterThan(0);
+      expect(mustProvider(id).affiliateTmpl).toContain("{id}");
     }
   });
 
@@ -335,9 +370,9 @@ describe("affiliate-providers: nearestAirportForRegion (heuristika po regiji)", 
 });
 
 describe("affiliate-providers: providersPublicDTO (javni DTO — varnostni kanon)", () => {
-  test("dolžina 6, id-ji in imena 1:1 z registrom", () => {
+  test("dolžina 13, id-ji in imena 1:1 z registrom", () => {
     const dtos = providersPublicDTO();
-    expect(dtos.length).toBe(6);
+    expect(dtos.length).toBe(13);
     expect(dtos.map((d) => d.id)).toEqual(AFFILIATE_PROVIDERS.map((p) => p.id));
     for (const d of dtos) {
       const p = AFFILIATE_PROVIDERS.find((x) => x.id === d.id);
@@ -348,24 +383,29 @@ describe("affiliate-providers: providersPublicDTO (javni DTO — varnostni kanon
     }
   });
 
-  test("VARNOST: noben DTO ne nosi envId/envTmpl/publicTmpl/affiliateTmpl/commissionPct", () => {
+  test("VARNOST: noben DTO ne nosi envId/envTmpl/publicTmpl/affiliateTmpl (ocena provizije je javna — P0-F)", () => {
     const dtos = providersPublicDTO();
     const prepovedana = [
       "envId",
       "envTmpl",
       "publicTmpl",
       "affiliateTmpl",
-      "commissionPct",
     ];
     for (const d of dtos) {
       for (const polje of prepovedana) {
         expect(polje in d).toBe(false);
       }
+      // P0-F: commissionPct je NAMENOMO v DTO (javno razkritje ocene) in je
+      // 1:1 z registrom (null = neznano do pogodbe).
+      expect(d.commissionPct).toBe(
+        AFFILIATE_PROVIDERS.find((p) => p.id === d.id)!.commissionPct
+      );
     }
     // niti vrednostno: v celem javnem odgovoru ni predlog niti env imen
     const json = JSON.stringify(dtos);
     expect(json).not.toContain("{dest}");
     expect(json).not.toContain("{id}");
+    expect(json).not.toContain("{country}");
     expect(json).not.toContain("AFFILIATE_");
   });
 
@@ -390,13 +430,16 @@ describe("affiliate-providers: providersPublicDTO (javni DTO — varnostni kanon
 });
 
 describe("affiliate-providers: AFFILIATE_CATEGORIES (ključi kategorij)", () => {
-  test("6 ključev, vsak z oznakama sl + en", () => {
+  test("9 ključev (P0-F: + tickets/esim/insurance), vsak z oznakama sl + en", () => {
     expect(Object.keys(AFFILIATE_CATEGORIES).sort()).toEqual([
       "car",
+      "esim",
       "experiences",
       "flights",
       "fuel",
+      "insurance",
       "stays",
+      "tickets",
       "transfers",
     ]);
     for (const lbl of Object.values(AFFILIATE_CATEGORIES)) {
@@ -406,5 +449,8 @@ describe("affiliate-providers: AFFILIATE_CATEGORIES (ključi kategorij)", () => 
     // kanon predstavniških oznak
     expect(AFFILIATE_CATEGORIES.stays).toEqual({ sl: "Nastanitve", en: "Stays" });
     expect(AFFILIATE_CATEGORIES.fuel).toEqual({ sl: "Bencinske", en: "Fuel" });
+    expect(AFFILIATE_CATEGORIES.tickets).toEqual({ sl: "Vstopnice", en: "Tickets" });
+    expect(AFFILIATE_CATEGORIES.esim).toEqual({ sl: "eSIM podatki", en: "eSIM data" });
+    expect(AFFILIATE_CATEGORIES.insurance).toEqual({ sl: "Zavarovanje", en: "Insurance" });
   });
 });

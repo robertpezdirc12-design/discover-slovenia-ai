@@ -31,6 +31,8 @@
  *    odmik se izpiše, ne pa prikrije.
  */
 
+import { sanitizeUntrustedText } from "@/lib/system-data-guard";
+
 // ── Baseline izvirnika (pričakovana sestava — za iskrene odmike) ───────────
 
 export const FSQ_SNAPSHOT_DATE_BASELINE = "2025-02-06";
@@ -112,7 +114,10 @@ export function validateFsqLine(raw: unknown): FsqValidation {
   if (typeof d.fsq_id !== "string" || d.fsq_id.trim().length === 0) {
     return { ok: false, reason: "manjka fsq_id" };
   }
-  if (typeof d.name !== "string" || d.name.trim().length === 0) {
+  // SYSTEM_DATA_GUARD (P0-I §23): ime je ZUNANJI podatek (FSQ dump) —
+  // sanitizirano ob vstopu; prazno po čiščenju = neveljavna vrstica.
+  const name = sanitizeUntrustedText(d.name, { maxLen: 160, fallback: "" });
+  if (name.length === 0) {
     return { ok: false, reason: "manjka ime" };
   }
   const lat = d.latitude;
@@ -146,16 +151,17 @@ export function validateFsqLine(raw: unknown): FsqValidation {
     ok: true,
     place: {
       fsq_id: d.fsq_id.trim(),
-      name: d.name.trim(),
+      name,
       latitude: lat,
       longitude: lng,
       country: d.country,
       category: d.category,
+      // Naslov/kraj sta prav tako zunanja niza — sanitizirana (SYSTEM_DATA_GUARD).
       ...(typeof d.address === "string" && d.address.trim()
-        ? { address: d.address.trim() }
+        ? { address: sanitizeUntrustedText(d.address, { maxLen: 200, fallback: "" }) || undefined }
         : {}),
       ...(typeof d.locality === "string" && d.locality.trim()
-        ? { locality: d.locality.trim() }
+        ? { locality: sanitizeUntrustedText(d.locality, { maxLen: 120, fallback: "" }) || undefined }
         : {}),
     },
   };

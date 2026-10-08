@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { db } from "@/lib/db";
 import { getTripForRead, getTripForWrite, parseJourneyPlan } from "@/lib/trip-auth";
+import { sanitizeUntrustedText } from "@/lib/system-data-guard";
 import {
   AI_ADVISOR_NAME,
   answerAiQuestion,
@@ -68,7 +69,17 @@ export async function POST(request: Request, { params }: RouteParams) {
     return NextResponse.json({ error: "Neveljaven zahtevek (JSON)." }, { status: 400 });
   }
 
-  const text = typeof body.body === "string" ? body.body.trim() : "";
+  // SYSTEM_DATA_GUARD (P0-I §23): telo sporočila je uporabniški vnos —
+  // pred shranjevanjem odstranimo nadzorne/zero-width/bidi znake
+  // (večvrstična struktura ostane). Dolžinska meja velja po čiščenju.
+  const text =
+    typeof body.body === "string"
+      ? sanitizeUntrustedText(body.body.trim(), {
+          maxLen: null,
+          collapseWhitespace: false,
+          fallback: "",
+        })
+      : "";
   if (text.length < BODY_MIN || text.length > BODY_MAX) {
     return NextResponse.json(
       { error: `Sporočilo mora imeti med ${BODY_MIN} in ${BODY_MAX} znakov.` },

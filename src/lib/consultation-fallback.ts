@@ -17,6 +17,10 @@ import { randomBytes } from "node:crypto";
 import { DESTINATIONS, getDestination } from "@/lib/slovenia-data";
 import { getProvider, type AffiliateProviderId } from "@/lib/affiliate-providers";
 import {
+  detectPromptInjection,
+  sanitizeUntrustedText,
+} from "@/lib/system-data-guard";
+import {
   CONSULTATION_BUDGETS,
   CONSULTATION_BUDGET_LABELS,
   type ConsultationBudget,
@@ -86,14 +90,25 @@ export function validateConsultationInput(input: ConsultationInput): Consultatio
   if (!EMAIL_RE.test(email) || email.length > 160) {
     return { ok: false, error: "Vpiši veljaven e-poštni naslov." };
   }
-  const question = typeof input.question === "string" ? input.question.trim() : "";
+  const question =
+    typeof input.question === "string"
+      // SYSTEM_DATA_GUARD (P0-I §23): vprašanje je uporabniški vnos —
+      // ohranimo vrstično strukturo (večvrstična vprašanja so legitimna),
+      // odstranimo pa nadzorne/zero-width/bidi znake.
+      ? sanitizeUntrustedText(input.question.trim(), {
+          maxLen: null, // dolžinska meja ostaja spodaj (20–2000)
+          collapseWhitespace: false,
+          fallback: "",
+        })
+      : "";
   if (question.length < 20 || question.length > 2000) {
     return { ok: false, error: "Vprašanje mora imeti med 20 in 2000 znakov." };
   }
   const optText = (v: unknown, max: number): string | null => {
     if (typeof v !== "string") return null;
-    const t = v.trim();
-    return t.length === 0 ? null : t.slice(0, max);
+    // SYSTEM_DATA_GUARD: dodatki (destinacija/datumi/druščina) so
+    // uporabniški vnosi — sanitizirani in omejeni pred odmevom v odgovoru.
+    return sanitizeUntrustedText(v, { maxLen: max, fallback: "" }) || null;
   };
   const destinationName = optText(input.destinationName, 80);
   const travelDates = optText(input.travelDates, 60);
@@ -178,6 +193,11 @@ export function buildConsultationFallbackAnswer(input: ConsultationNormalized): 
   const lines: string[] = [];
   const dest = input.destinationName ? matchDestination(input.destinationName) : undefined;
 
+  // SYSTEM_DATA_GUARD (P0-I §23): če vprašanje vsebuje znane vzorce navodil
+  // za AI, to ODKRITO zapišemo v odgovor (vsebine ne odmevamo) — vodnik je
+  // determinističen in vzorci nanj ne vplivajo, kar tudi povemo.
+  const injection = detectPromptInjection(input.question);
+
   lines.push("Hvala za tvoje vprašanje! Tukaj je tvoj osebni potovalni vodnik.");
 
   if (dest) {
@@ -237,6 +257,13 @@ export function buildConsultationFallbackAnswer(input: ConsultationNormalized): 
     lines.push("");
     lines.push(
       `DRUŠČINA (${input.partyDescription}): pri rezervaciji pri partnerjih preveri kapaciteto in pogoje za otroke/skupine — najboljša resnica je na strani ponudnika.`
+    );
+  }
+
+  if (injection.hit) {
+    lines.push("");
+    lines.push(
+      "OPOMBA VARNOSTNEGA STRAŽARJA: tvoje vprašanje vsebuje znane vzorce navodil za AI (npr. „ignore previous instructions\"). Tega vodnika takšni vzorci ne morejo preusmeriti — sestavljen je deterministično iz uradnega registra, brez AI."
     );
   }
 

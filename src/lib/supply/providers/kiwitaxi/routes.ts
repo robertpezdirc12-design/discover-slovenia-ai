@@ -18,6 +18,8 @@
 
 import { readFile } from "node:fs/promises";
 
+import { sanitizeUntrustedText } from "@/lib/system-data-guard";
+
 // ── Vrste ──────────────────────────────────────────────────────────────────
 
 /** Canonical transfer ruta (2.x oblika — dokumentirana v DATA-PROVENANCE). */
@@ -76,10 +78,15 @@ export function validateKiwitaxiRoute(raw: unknown): RouteValidation {
     return { ok: false, reason: "ruta ni objekt" };
   }
   const d = raw as Record<string, unknown>;
-  if (typeof d.fromName !== "string" || d.fromName.trim().length === 0) {
+  // SYSTEM_DATA_GUARD (P0-I §23): imeni lokacij sta ZUNANJI podatki
+  // (partnerjev CSV feed) — sanitizirani ob vstopu; prazno po čiščenju
+  // = neveljavna vrstica (iskren izpust).
+  const fromName = sanitizeUntrustedText(d.fromName, { maxLen: 80, fallback: "" });
+  const toName = sanitizeUntrustedText(d.toName, { maxLen: 80, fallback: "" });
+  if (fromName.length === 0) {
     return { ok: false, reason: "manjka fromName" };
   }
-  if (typeof d.toName !== "string" || d.toName.trim().length === 0) {
+  if (toName.length === 0) {
     return { ok: false, reason: "manjka toName" };
   }
   if (typeof d.fromCountry !== "string" || !ISO2.test(d.fromCountry)) {
@@ -92,8 +99,6 @@ export function validateKiwitaxiRoute(raw: unknown): RouteValidation {
   if (typeof price !== "number" || !Number.isFinite(price) || price <= 0) {
     return { ok: false, reason: `cena ni pozitivna: ${String(price)}` };
   }
-  const fromName = d.fromName.trim();
-  const toName = d.toName.trim();
   return {
     ok: true,
     route: {
@@ -104,7 +109,7 @@ export function validateKiwitaxiRoute(raw: unknown): RouteValidation {
       toCountry: d.toCountry,
       priceFromEur: Math.round(price * 100) / 100,
       ...(typeof d.vehicleClass === "string" && d.vehicleClass.trim()
-        ? { vehicleClass: d.vehicleClass.trim() }
+        ? { vehicleClass: sanitizeUntrustedText(d.vehicleClass, { maxLen: 40, fallback: "" }) || undefined }
         : {}),
       ...(typeof d.url === "string" && /^https:\/\//.test(d.url)
         ? { url: d.url }

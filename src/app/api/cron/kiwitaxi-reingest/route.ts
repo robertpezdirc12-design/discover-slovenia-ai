@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { loadKiwitaxiRoutes } from "@/lib/supply/providers/kiwitaxi/routes";
 import { KIWITAXI_ATTRIBUTION } from "@/lib/supply/providers/kiwitaxi/routes";
+import { requireCronSecret } from "@/lib/cron-auth";
 
 export const dynamic = "force-dynamic";
 
 /**
  * /api/cron/kiwitaxi-reingest — tedenska osvežitev KT feeda (sreda 7:30 UTC,
- * vercel.json). Bearer CRON_SECRET je OBVEZEN (brez njega 401 — fail-closed).
+ * vercel.json). Bearer CRON_SECRET je OBVEZEN (requireCronSecret —
+ * fail-closed).
  *
  * ISKRENOST: partner CSV feed še ni nameščen (P0-C čaka vir — feed je ostal
  * na mrtvem GitHub računu). Dokler vir ne obstaja, je odgovor namernen
@@ -15,17 +17,8 @@ export const dynamic = "force-dynamic";
  * pobarvamo praznine kot uspeh, nikoli ne pišemo prazne množice.
  */
 async function handle(req: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || secret.trim().length === 0) {
-    return NextResponse.json(
-      { error: "CRON_SECRET ni nastavljen — cron je zaprt (fail-closed)" },
-      { status: 401 },
-    );
-  }
-  const auth = req.headers.get("authorization") ?? "";
-  if (auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "neveljaven žeton" }, { status: 401 });
-  }
+  const denied = requireCronSecret(req);
+  if (denied) return denied;
 
   const loaded = await loadKiwitaxiRoutes();
   if (loaded.status === "ok") {

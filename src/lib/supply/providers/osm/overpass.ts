@@ -18,6 +18,8 @@
  *    road-routing-serverja).
  */
 
+import { sanitizeUntrustedText } from "@/lib/system-data-guard";
+
 // ── Konstante vira ─────────────────────────────────────────────────────────
 
 /** Javna zrcala Overpass API (po vrsti = primarno najprej). */
@@ -151,14 +153,17 @@ export function mapOverpassElement(el: unknown): OsmPoi | null {
   const lat = typeof d.lat === "number" ? d.lat : d.center?.lat;
   const lon = typeof d.lon === "number" ? d.lon : d.center?.lon;
   const tags = d.tags ?? {};
-  const name = tags["name"];
+  // SYSTEM_DATA_GUARD (P0-I §23): ime POI je ZUNANJI podatek (ODbL prispevki
+  // prostovoljcev) in se izpisuje uporabnikom — ob vstopu sanitizirano
+  // (nadzorni/zero-width/bidi znaki ven, dolžina omejena). Prazno po
+  // čiščenju = neuporabno za sloj (iskren izpust).
+  const name = sanitizeUntrustedText(tags["name"], { maxLen: 120, fallback: "" });
   if (
     typeof lat !== "number" ||
     typeof lon !== "number" ||
     !Number.isFinite(lat) ||
     !Number.isFinite(lon) ||
-    typeof name !== "string" ||
-    name.trim().length === 0
+    name.length === 0
   ) {
     // POI brez imena/koordinat ni uporaben za sloj — iskreno izpust.
     return null;
@@ -169,7 +174,8 @@ export function mapOverpassElement(el: unknown): OsmPoi | null {
       return val === undefined ? key in tags : tags[key] === val;
     }) ?? "other";
   // Omejen izpis oznak (samo potovalno-relevantne — brez zasebnosti
-  // nepotrebnih polj, brez contact:* itd.).
+  // nepotrebnih polj, brez contact:* itd.). Vrednosti so prav tako zunanji
+  // podatki — sanitizirane (SYSTEM_DATA_GUARD).
   const relevantTags: Record<string, string> = {};
   for (const key of [
     "tourism",
@@ -181,11 +187,13 @@ export function mapOverpassElement(el: unknown): OsmPoi | null {
     "opening_hours",
     "website",
   ]) {
-    if (tags[key]) relevantTags[key] = tags[key];
+    if (tags[key]) {
+      relevantTags[key] = sanitizeUntrustedText(tags[key], { maxLen: 200, fallback: "" });
+    }
   }
   return {
     id: `${d.type ?? "n"}-${d.id ?? "?"}`,
-    name: name.trim(),
+    name,
     latitude: lat,
     longitude: lon,
     kind,

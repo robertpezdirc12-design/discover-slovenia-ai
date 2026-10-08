@@ -80,6 +80,7 @@ interface ProductRow {
   lng: number | null;
   submittedAt: string | null;
   reviewedAt: string | null;
+  updatedAt: string;
   rejectionReason: string | null;
   stats: { sold: number; pendingOrders: number; cancellations: number };
 }
@@ -242,6 +243,14 @@ export default function PartnerPage() {
   function fmtDate(iso: string | null): string | null {
     if (!iso) return null;
     return new Date(iso).toLocaleDateString(l === "sl" ? "sl-SI" : "en-GB", { dateStyle: "medium" });
+  }
+
+  /** Dni od ISO datuma (nudge prag: 7 — enako /api/cron/draft-reminders). */
+  function daysSinceIso(iso: string): number {
+    const ms = Date.parse(iso);
+    if (!Number.isFinite(ms)) return 0;
+    const days = Math.floor((Date.now() - ms) / 86_400_000);
+    return days > 0 ? days : 0;
   }
 
   // ── Nalaganje ────────────────────────────────────────────────────────────
@@ -459,6 +468,20 @@ export default function PartnerPage() {
                       </>
                     )}
                   </p>
+
+                  {/* NUDGE za zamujen osnutek (P0-I /api/cron/draft-reminders):
+                      iskrena opomba brez e-pošte — partner jo vidi TU, ko je
+                      osnutek čakal ≥ 7 dni (isto pravilo kot cron job). */}
+                  {row.status === "draft" &&
+                    daysSinceIso(row.updatedAt) >= 7 && (
+                      <p className="mt-2 flex items-start gap-2 rounded-md border border-amber-600/50 bg-amber-600/10 px-3 py-2 text-xs leading-relaxed text-amber-700 dark:text-amber-400">
+                        <Clock className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+                        {pick(l, {
+                          sl: `Osnutek čaka ${daysSinceIso(row.updatedAt)} dni — predaj ga v pregled, ko bo pripravljen. Opomba je vidna samo tukaj (ne pošiljamo e-pošte).`,
+                          en: `This draft has been waiting ${daysSinceIso(row.updatedAt)} days — submit it for review when ready. The reminder is visible only here (we send no e-mail).`,
+                        })}
+                      </p>
+                    )}
 
                   {/* Dejanja */}
                   <div className="mt-4 flex flex-wrap gap-2">

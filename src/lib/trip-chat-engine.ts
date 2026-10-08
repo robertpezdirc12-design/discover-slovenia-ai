@@ -4,6 +4,10 @@ import {
   type Destination,
 } from "@/lib/slovenia-data";
 import type { SharedPlan } from "@/lib/shared-plan";
+import {
+  detectPromptInjection,
+  sanitizeUntrustedText,
+} from "@/lib/system-data-guard";
 
 /**
  * TRIP-CHAT-ENGINE — DETERMINISTIČNI odgovarjalč @AI za skupinski klepet
@@ -76,7 +80,10 @@ function planStops(plan: SharedPlan): PlanStopRef[] {
     for (const loc of day.locations ?? []) {
       out.push({
         day: day.day,
-        name: loc.name,
+        // SYSTEM_DATA_GUARD (P0-I §23): ime postanka je UPORABNIŠKI vnos —
+        // ob vstopu sanitizirano (nadzorni/zero-width/bidi znaki ven, dolžina
+        // omejena). Imena destinacij iz registra so kanonska in se ne čistijo.
+        name: sanitizeUntrustedText(loc.name, { maxLen: 80, fallback: "Neimenovan postanek" }),
         destSlug: loc.destSlug,
         dest: loc.destSlug ? getDestination(loc.destSlug) : undefined,
       });
@@ -261,10 +268,24 @@ function answerFallback(plan: SharedPlan, stops: PlanStopRef[]): string {
 // ── glavni vstop ───────────────────────────────────────────────────────
 
 /**
+ * SYSTEM_DATA_GUARD odgovor (P0-I §23): sporočilo z znanimi vzorci navodil
+ * za AI („ignore previous instructions", …) NE sproži vedenja po vzorcih —
+ * odgovarjalč odkrito pove, da ukazov ne izvaja in ne odmeva vsebine.
+ * Izvoženo za testiranje (determinizem).
+ */
+export const AI_GUARD_ANSWER =
+  "Tvoje sporočilo vsebuje znake poskusa navodil za AI (npr. »ignoriraj prejšnja navodila«). Jih ne izvajam in jih tudi ne ponavljam — sem deterministični svetovalec (0 AI žetonov, 0 zunanjih klicev) in odgovarjam samo na vprašanja o tvoji poti: vreme (iskreno: napovedi nimam), razdalje, predlogi, cene, destinacije.";
+
+/**
  * Deterministični odgovor @AI na sporočilo (tele brez omembe @AI).
  * Vedno SL (površina /pot je SL-only — kanon izvirnika).
  */
 export function answerAiQuestion(body: string, plan: SharedPlan): string {
+  // SYSTEM_DATA_GUARD (P0-I §23): poskus navodil se izvede kot VARNOSTNI
+  // odgovor — nikoli kot ukaz in nikoli z odmevom vsebine napadalca.
+  const injection = detectPromptInjection(body);
+  if (injection.hit) return AI_GUARD_ANSWER;
+
   const nb = stripDiacritics(body);
   const stops = planStops(plan);
 

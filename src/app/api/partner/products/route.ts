@@ -149,6 +149,8 @@ export async function GET(request: Request) {
         lng: p.lng,
         submittedAt: p.submittedAt?.toISOString() ?? null,
         reviewedAt: p.reviewedAt?.toISOString() ?? null,
+        // Zadnja sprememba (osnova nudge opombe za zamujene osnutke — P0-I).
+        updatedAt: p.updatedAt.toISOString(),
         rejectionReason: p.rejectionReason,
         stats: s,
       };

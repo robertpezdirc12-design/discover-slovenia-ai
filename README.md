@@ -5,7 +5,7 @@
 > realnimi koordinatami in deterministični načrtovalnik poti (isti vhod → isti načrt,
 > 0 AI žetonov v jedru).
 
-**Verzija: 2.12.0 — P0-H: B2B TRŽNICA — MODERACIJA VNOSOV + PORTAL PARTNERJA + SKRBNIŠKI PORTAL + KONZULTACIJE »VPRAŠAJ LOKALCA« (2026-10-08).**
+**Verzija: 2.13.0 — P0-I: CRON + OPS + PRODUKCIJSKI DIM — SYSTEM_DATA_GUARD (2026-10-08).**
 Izdaje rekonstrukcije: 2.1.0 skupnostne funkcije → 2.2.0 aplikacijska lupina →
 2.3.0 issue #1 (živi GPS, booking, pomočnik) → 2.3.1 infra CI → 2.4.0 PWA
 offline → 2.5.0 rezervacijski sloj → 2.6.0 partner kanal booking verige →
@@ -45,7 +45,20 @@ razlogom, viden partnerju), konzultacije z ročnimi dopolnitvami
 »Vprašaj lokalca« (deterministični odgovor iz registra destinacij +
 vodene povezave partnerjev, 0 AI §29; zasebna stran /konzultacija/{token},
 3/dan na e-pošto, e-pošte ne pošiljamo; 55 novih testov: 16 varnostnih
-source-contract + listing-moderation + consultation-fallback)).
+source-contract + listing-moderation + consultation-fallback)) →
+2.13.0 P0-I cron/ops/dim (recalculate-status: dnevna materializacija
+izplačil not_due → due z AuditLog v eni transakciji, idempotentno;
+draft-reminders: dnevni opomnik za osnutke ≥ 7 dni BREZ lažne e-pošte —
+AuditLog dedup 7 dni + amber opomba v /partner; skupni requireCronSecret
+fail-closed 401 za vse 4 cron poti; SYSTEM_DATA_GUARD §23: sanitizacija
+nadzornih/zero-width/bidi znakov + dolžinske meje na vseh mejah zunanjih
+in uporabniških podatkov (OSM/FSQ/KiwiTaxi feedi, sporočila klepeta,
+konzultacije, imena postankov) + zaznavanje poskusov navodil za AI
+(SL/EN) z odkritim varnostnim odgovorom @AI svetovalca in opombo
+konzultacije; produkciji dim `bun run smoke` (samo-bralni GET preveri:
+strani, health verzija ≡ package.json, /api/destinations register, /go
+302/400 gedelji, 4× cron 401 brez žetona); health 9/9 z ops:cron;
+runbook docs/OPERATIONS.md; vercel.json 4 urniki).
 Izvorni repozitorij (626 commitov, v1.190.0) je bil dvakrat izgubljen v posledici
 vdorov v GitHub račun (2026-10-06). Ta aplikacija je temeljita rekonstrukcija iz
 obnovitvenih virov (delovni dnevnik + izpisi izvorne kode + produkcijski posnetek +

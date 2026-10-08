@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { readFile } from "node:fs/promises";
 
 import { db } from "@/lib/db";
+import { cronSecretConfigured } from "@/lib/cron-auth";
 import { DATA_STATS, DESTINATIONS } from "@/lib/slovenia-data";
 
 export const dynamic = "force-dynamic";
@@ -242,9 +243,63 @@ export async function GET() {
     });
   }
 
+  // 9) Ops plast (P0-I): cron jobi + fail-closed skrivnost + dim.
+  //    Mehanska preverba: vse 4 cron poti obstajajo v drevesu API + CRON_SECRET
+  //    je nastavljen (vrednost se NE razkrije — samo DA/NE) + AuditLog števec
+  //    strojnih zagonov (sledljivost cron dejanj). Če drevesa virov ni mogoče
+  //    prebrati (npr. standalone pojav), se to ISKRENO izpiše — registracijo
+  //    poti v repotu pa mehansko zaklene test cron-ops-contract (P0-I).
+  try {
+    const cronRoutes = [
+      "sto-reingest",
+      "kiwitaxi-reingest",
+      "recalculate-status",
+      "draft-reminders",
+    ];
+    const fs = await import("node:fs/promises");
+    await fs.access("src/app/api/cron");
+    const routeChecks = await Promise.all(
+      cronRoutes.map(async (route) => {
+        try {
+          await fs.access(`src/app/api/cron/${route}/route.ts`);
+          return true;
+        } catch {
+          return false;
+        }
+      })
+    );
+    const routesOk = routeChecks.every(Boolean);
+    const secretOk = cronSecretConfigured();
+    let cronAuditCount: number | null = null;
+    try {
+      cronAuditCount = await db.auditLog.count({
+        where: { actorType: "system" },
+      });
+    } catch {
+      cronAuditCount = null;
+    }
+    startup.push({
+      name: "ops:cron",
+      status: routesOk ? "ok" : "degraded",
+      detail: routesOk
+        ? `4 cron poti registrirane (${cronRoutes.join(", ")}) · CRON_SECRET: ${
+            secretOk ? "nastavljen (jobi se izvajajo z Bearer žetonom)" : "NI nastavljen — jobi so ZAPRTI (fail-closed 401)"
+          } · dim: \`bun run smoke\` (P0-I)${cronAuditCount !== null ? ` · ${cronAuditCount} sistemskih AuditLog zapisov` : ""}`
+        : "Manjka ena ali več cron poti v src/app/api/cron/ — preveri drevo (P0-I)",
+      at: now(),
+    });
+  } catch {
+    startup.push({
+      name: "ops:cron",
+      status: "skipped",
+      detail: "Drevo virov (src/app/api/cron) v tem okolju ni dosegljivo — registracijo poti mehansko zaklepa test cron-ops-contract; CRON_SECRET gate ostaja fail-closed",
+      at: now(),
+    });
+  }
+
   return NextResponse.json({
     status: "ok",
-    version: "2.12.0",
+    version: "2.13.0",
     startup,
     checkedAt: now(),
   });

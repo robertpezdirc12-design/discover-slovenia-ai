@@ -2204,3 +2204,24 @@ Stage Summary:
 - 785/785 testov, tsc 0, lint 0, E2E 4 posnetki + vse preusmeritve potrjene
 - ČAKA: svež GitLab glpat žeton → push na main → CI → push mirror na GitHub robertpezdirc12-design samodejno
 - Naslednji koraki po P0-A inventuri: P0-G (PWA/offline/Go Mode/collaboration preostanek), P0-H (B2B marketplace payout UI nadgradnja po priključitvi skrbniških sej), P0-I (cron + ops + production smoke); restaurantos GitLab issue #11/#12 ostajata ločeni nalogi
+
+---
+Task ID: 62
+Agent: Z.ai Code (glavni)
+Task: Push 2.10.0 na GitLab z novim glpat žetonom (lastnik v klepetu) + CI verifikacija + GitHub mirror potrditev + komentar na issue #1.
+
+Work Log:
+- Nov žeton validiran (API /user 200: robert.pezdirc12, id 40832654); projekt viden (id 87315476)
+- Ugotovitev: git-over-HTTPS (ls-remote/push) in nekateri API endpointi (personal_access_tokens/self) zadevajo Cloudflare WAF 403 „Blocked" (periodično, ohlajevanje ~60–90 s — znano iz prejšnjih sej, sproži ga POST + git receive-pack)
+- PUSH USPEŠEN na 1. poskus: a5946a6..9948d3c main → main (09:07 UTC), žeton SAMO v pomnilniku lupine (enkratni push URL, nikoli v .git/config/datotekah)
+- CI: pipeline 2925735231 na 9948d3c8 → SUCCESS (lint+test, prejšnja 2924219568/2924006013 tudi zeleni)
+- GITHUB MIRROR: remote_mirrors API → github.com/robertpezdirc12-design/discover-slovenia-ai.git enabled, update_status FINISHED ob 09:08:24 (takoj po pushu — sinhronizacija samodejna in potrjena); repozitorij je zasebni (anonimni ls-remote zahteva prijavo — pričakovano)
+- ISSUE #1: objavljen komentar o P0-F izdaji (note_id 3976234222, 09:15 UTC) — register 12 partnerjev, {country} predloge, iskrena veriga, null provizije, /go UI, matrika 🔴 0, vrata 785/785 + CI zelen + mirror finished; naslednji koraki P0-G/H/I
+- Issue pregled: #1/#2/#3 brez novih odzivov lastnika (zadnji komentarji = naši)
+- P0-A inventura + issue #1 telo shranjena lokalno (/home/z/tmp/) za načrtovanje P0-G
+
+Stage Summary:
+- 2.10.0 ŽIVA na GitLab main (CI zelen) + GitHub mirror robertpezdirc12-design sinhroniziran (finished) — P0-F popolnoma zaključen, objavljen na issue #1
+- WAF vzorez dokumentiran: retry zanke 55–90 s obvladajo vse (push/POST/API GET)
+- Žeton: samo v pomnilniku; lastniku ob zaključku seje priporočiti preklic
+- Naslednji: P0-G (issue §16 Go Mode + §17 PWA/offline + §18 collaboration RECONCILE)

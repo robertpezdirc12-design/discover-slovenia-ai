@@ -297,9 +297,95 @@ export async function GET() {
     });
   }
 
+  // 10) PRODUCTION CUTOVER (issue #2 §8): podatkovna povezava + migracijsko
+  //     stanje + build identiteta — BREZ skrivnosti (samo protokol/latenca/
+  //     števci/SHA, nikoli povezovalni niz).
+  try {
+    const url = process.env.DATABASE_URL ?? "";
+    const engine = url.startsWith("file:")
+      ? "sqlite"
+      : url.startsWith("postgres://") || url.startsWith("postgresql://")
+        ? "postgresql"
+        : null;
+    const t0 = Date.now();
+    await db.$queryRaw`SELECT 1`;
+    const latencyMs = Date.now() - t0;
+
+    if (engine === "postgresql") {
+      // Produkcija: _prisma_migrations obstane SAMO ob pravem `prisma migrate
+      // deploy` (db push NE pusti zgodovine — iskreno odkrito stanje).
+      let migrationDetail = "baza deluje, zgodovina migracij NI dosegljiva";
+      try {
+        const rows = await db.$queryRaw<
+          Array<{ migration_name: string; finished_at: Date | null; applied_steps_count: number }>
+        >`SELECT migration_name, finished_at, applied_steps_count FROM "_prisma_migrations" ORDER BY finished_at DESC LIMIT 1`;
+        const last = rows[0];
+        const total = await db.$queryRaw<Array<{ c: bigint }>>`SELECT COUNT(*)::int AS c FROM "_prisma_migrations"`;
+        migrationDetail = last
+          ? `${total[0]?.c ?? "?"} apliciranih migracij · zadnja: ${last.migration_name} (${
+              last.finished_at ? new Date(last.finished_at).toISOString().slice(0, 10) : "v teku"
+            })`
+          : "0 migracij (prazna zgodovina — preveri db:pg:deploy)";
+      } catch {
+        migrationDetail =
+          "tabela _prisma_migrations ne obstaja — baza je bila materializirana ZUNAJ migracij (db push?). Produkcija zahteva prisma migrate deploy (runbook §6)";
+      }
+      startup.push({
+        name: "db:cutover",
+        status: "ok",
+        detail: `PostgreSQL povezljiv (${latencyMs} ms) · ${migrationDetail}`,
+        at: now(),
+      });
+    } else if (engine === "sqlite") {
+      startup.push({
+        name: "db:cutover",
+        status: "ok",
+        detail: `SQLite povezljiv (${latencyMs} ms) — razvoj/peskovnik/CI plast; produkcija teče na PostgreSQL (prisma/postgres/schema.prisma + migracije; runbook docs/PRODUCTION-CUTOVER.md)`,
+        at: now(),
+      });
+    } else {
+      startup.push({
+        name: "db:cutover",
+        status: "degraded",
+        detail: "DATABASE_URL protokol neprepoznan (podprta: file: / postgres://) — iskren izpis, brez vrednosti",
+        at: now(),
+      });
+    }
+  } catch (err) {
+    startup.push({
+      name: "db:cutover",
+      status: "degraded",
+      detail: `Podatkovna povezava NI dosegljiva (${
+        err instanceof Error ? err.message.split("\n")[0] : "neznana napaka"
+      })`,
+      at: now(),
+    });
+  }
+
+  // 11) Build identiteta (issue #2 §8 "git SHA/build id"): platforma ponudi
+  //     enega odstandardnih env (Vercel: SOURCE_VERSION/VERCEL_GIT_COMMIT_SHA;
+  //     Render: GIT_COMMIT/RENDER_GIT_COMMIT). Brez njih je to iskreno
+  //     lokalni build — vrednosti se NE izmišljujejo.
+  {
+    const sha =
+      process.env.SOURCE_VERSION ??
+      process.env.VERCEL_GIT_COMMIT_SHA ??
+      process.env.GIT_COMMIT ??
+      process.env.RENDER_GIT_COMMIT ??
+      null;
+    startup.push({
+      name: "build:meta",
+      status: "ok",
+      detail: sha
+        ? `build SHA ${sha.slice(0, 12)} (vir: platforma)`
+        : "build SHA ni na voljo (lokalni razvoj — platforma ga ponudi ob deployu)",
+      at: now(),
+    });
+  }
+
   return NextResponse.json({
     status: "ok",
-    version: "2.18.0",
+    version: "2.19.0",
     startup,
     checkedAt: now(),
   });

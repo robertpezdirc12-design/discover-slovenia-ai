@@ -80,6 +80,16 @@ jobs:
       - name: Prisma validate (shema veljavna)
         run: bunx prisma validate
 
+      # ── ISSUE #2 §1: POSTGRES DATA PLANE — CI vrata brez baze ────────────
+      # db:pg:check dokazuje: (a) prisma/postgres/schema.prisma je IDENTIČNA
+      # glavni shemi (edina razlika provider), (b) baseline 0_init je IDENTIČEN
+      # svežemu `prisma migrate diff --from-empty` (migracije ≡ shema).
+      # db:pg:validate: produkcjska shema veljavna (provider postgresql).
+      - name: Postgres data plane (usklajenost sheme + baseline migracije)
+        run: |
+          bun run db:pg:check
+          bun run db:pg:validate
+
       - name: Build (next build, standalone izhod)
         run: bun run build
 

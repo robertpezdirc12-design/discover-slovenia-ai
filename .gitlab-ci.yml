@@ -85,6 +85,14 @@ prisma-validate:
   script:
     - bun install --frozen-lockfile
     - bunx prisma validate
+    # ISSUE #2 §1 — POSTGRES DATA PLANE (CI vrata brez baze):
+    # db:pg:check = (a) prisma/postgres/schema.prisma IDENTIČNA glavni shemi
+    # (edina razlika provider sqlite→postgresql), (b) baseline 0_init
+    # IDENTIČEN svežemu `prisma migrate diff --from-empty` (migracije ≡
+    # shema — dokazljivo na vsak push, brez žive baze); db:pg:validate =
+    # produkcjska (postgresql) shema veljavna.
+    - bun run db:pg:check
+    - bun run db:pg:validate
 
 build:
   stage: build

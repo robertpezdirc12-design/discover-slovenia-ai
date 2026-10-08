@@ -2598,3 +2598,48 @@ Stage Summary:
 - 2.18.0 P1-D: §9 personalizirana domov (7 ploščic nad P1-A preferencami + P1-C obvestili/spremljanji + obstoječimi API-ji — 0 novih poti) + §14 parity scorecard (20 vrstic z dokazi, iskrene vrzeli)
 - Celoten issue #3 po matriki §12: §1–§7, §9–§11, §14 ZAKLJUČENI; §3 delno ( obstoječi @AI + NextStep + P1-B razširitve — enotna orkestracija po potrebi); §8 creator/guide ostaja odprta točka (zavestno, lastnikova odločitev); §13 AI plast NE (lastnikova odločitev 0-AI)
 - Sledi: rsync → merge-dsa → vrata → commit → push → CI → komentar #3 (zadnji P1 komentar)
+
+---
+Task ID: p1-d-izdaja
+Agent: Z.ai Code (glavni)
+Task: Izdaja 2.18.0 (P1-D) — push + CI + končni komentar #3.
+
+Work Log:
+- VRATA v merge-dsa: tsc 0 + 1159/1159 (1159 ms) + lint 0; COMMIT 9cc2552
+- PUSH: 1. poskus 403 (WAF) → 2. poskus USPEŠEN (remote HEAD potrjen prek APIja: 9cc2552d = lokalni commit); žeton samo v pomnilniku, .git/config čist
+- CI: pipeline 2927876526 na 9cc2552 → SUCCESS (6/6 vrat)
+- KONČNI KOMENTAR na issue #3: note_id 3980292521 — §9/§14 v celoti + tabela stanja po fazah (P1-A/B/C/D ✅, §8 🔜 lastnik, §13 ✗ po odločitvi) + izpolnjen STRICT DONE RULE
+- Mirror GitHub: samodejni (dokončne potrditve tokrat ni bilo mogoče pridobiti — mirror/API WAF; enako kot pri P1-C, iskreno zabeleženo)
+
+Stage Summary:
+- 2.18.0 ŽIVA na GitLab main (CI 6/6 zelenih) — P1-D zaključen; S TEM JE CELOTEN P1 PLAN IZVEDEN (P1-A preference/spomin/zasebnost → P1-B agent/razlogi/urejanje/booking → P1-C watch/notifikacije → P1-D domov/scorecard)
+- Issue #3: vse načrtovane sekcije zaključene razen §8 (creator/guide — zavestno odloženo na lastnika) in §13 (AI plast — odklonjena po lastnikovi odločitvi 0-AI); STRICT DONE RULE izpolnjen in utemeljen v komentarju
+- Žeton: preklic priporočen ob zaključku seje (glpat-…uyx7x)
+- Sledi (ločene naloge, ne P1): issue #2 PRODUCTION CUTOVER + POSTGRES; restaurantos #11/#12; morebitni §8 po lastnikovi odločitvi
+
+---
+Task ID: p2
+Agent: Z.ai Code (glavni)
+Task: P2 (issue #2 PRODUCTION CUTOVER + POSTGRES DATA PLANE) — Postgres produkcjska podatkovna plast + versioned migracije + integrity vrata + legacy prenos podatkov + health pogodba + runbook; izdaja 2.19.0. ČISTO DETERMINISTIČNO (0 AI).
+
+Work Log:
+- Konteksta: P1 v celoti zaključen (2.15.0–2.18.0, vse izdano, CI zelen, komentarji na #3); issue #2 prebran v celoti (12 sekcij + STRICT RULE); inventura: shema 27 modelov SQLite (brez @db./enumov), recovery 39 modelov Postgres, CI 6 vrat, health 9 preverb, db:materialize migration safety
+- POSTGRES DATA PLANE (§1): NOV scripts/pg-schema-sync.ts (mehanska transformacija provider sqlite→postgresql; FAIL-CLOSED na @db. nativne tipe in previewFeatures — odkrita zavrnitev, ne tiha predpostavka; --check/--baseline načina) + IZPELJANA prisma/postgres/schema.prisma (en vir resnice = glavna shema; CI dokazuje identiteto razen providerja) + prisma/postgres/migrations/0_init/migration.sql (baseline iz `prisma migrate diff --from-empty` — BREZ baze, deterministično) + migration_lock.toml (provider postgresql)
+- SKRIPTE package.json: db:pg:sync/baseline/check/validate/generate/deploy/dev + build:postgres (prisma generate iz postgres sheme + next build — produkcjski build) + db:integrity + migrate:legacy
+- CI VRATA (GitLab prisma stopnja + GitHub workflow): bun run db:pg:check (postgres shema ≡ glavna + baseline ≡ svež from-empty dif = dokaz "migracije ≡ shema" na vsak push, brez žive baze) + db:pg:validate — mehansko izpolnjen §1 "production startup preveri združljivost"
+- DATA INTEGRITY GATE (§3): NOV scripts/db-integrity-report.ts — štetja VSEH tabel ciljne baze (sqlite prek bun:sqlite, postgres prek pg paketa — dodan v dependencies + @types/pg), _prisma_migrations ločeno, JSON izhod + --compare baseline + --expect-zero "kritične tabele" vrata (exit 1 ob delta ≠ 0) — izpis SAMO protokola URL, nikoli vrednosti
+- MIGRACIJA PODATKOV (§1/§4): NOV scripts/migrate-legacy-data.ts — idempotenten prenos 1.163.4 → 2.x: 14 čistih preslikav (User z bcrypt žetoni, SavedItinerary→TravelJourney z normalizacijo dnevi/lokacije po istem pravilu kot normalizePlanInput a STROŽJE — ≥1 razpoznavna lokacija, anonimne poti iskreno izpuščene; TripCollaborator SAMO ACTIVE, COMMENTER→VIEWER; TripPoll+Options, glasovi anonimnih NE (2.x zahteva račun — dokumentirano); TripComment→TripMessage z isAiBot; Product cena Float→centi Int; Order+OrderItem best-effort z demo KONSERVATIVNO true; AuditLog actorRole→actorType slovar; Lead nov/kontaktiran, zakljucen→arhiv; Newsletter/Consultation/StripeEvent/Listing) + RETIRED_LEGACY_MODELS 25 (arhiv v backupu, matrika); vsak izpust ima razlog in števec; dry-run privzet, --apply izrecen; 0 z-ai uvozov
+- BCRYPT PRIJAVA (kritična rešitev): 2.x password.ts je scrypt — preneseni uporabniki 1.163.4 (bcrypt) bi bili ZAKLENJENI. Dodan bcryptjs (dependencies) + isLegacyBcryptHash ($2a/$2b/$2y detekcija) + verifyPassword bcrypt veja — prijava brez izgube (§ "brez izgube podatkov" vključuje dostop)
+- MATRIKA (§4): NOV docs/RECOVERY-MODEL-MATRIX.md — vseh 39 modelov: RECONCILE 14 (z mehanskim prenosom + razlikami), RETIRE 25 (z razlogi + 2.x nadomestili: Owner→role=partner, Experience→Product kind, Booking→Order/TripReservation, AIUsageLog→0-AI izrecno, PushSubscription→ni infrastrukture, CommissionInvoice/Payout*→CommissionEntry/Order.payoutStatus), RESTORE 0, KEEP 0 (vsi skupni zavestno preoblikovani) + 12 novih 2.x modelov + zgostitev po integrity virih
+- HEALTH (§8): /api/health +2 preverbi (11 skupaj): db:cutover (provider detekcija iz protokola, latenca, migracijsko stanje — postgres: števec+zadnja iz _prisma_migrations, odkrivanje db-push zunaj migracij; sqlite: iskren opis razvojne plasti) + build:meta (SHA iz SOURCE_VERSION/VERCEL_GIT_COMMIT_SHA/GIT_COMMIT/RENDER_GIT_COMMIT — nikoli izmišljen)
+- RUNBOOK (§2): NOV docs/PRODUCTION-CUTOVER.md — 10 korakov vsak z ukazom/endpunktom (pg_dump backup+sha256 → preflight db:pg:check+shadow difa → migrate deploy dry-run → integrity BEFORE → cutover okno → migracija dry-run/apply/idempotenca+ročni pregledi → deployment build:postgres → health rdeče zastavke → E2E smoke+zlata pot → rollback z vadbo) + dnevnik izvedbe + sprejemni kriteriji §11 odkljukani (3 iskreno označena kot lastnikova zunanja dejanja)
+- README: glava 2.19.0 + POPRAVLJENA ZASTARELA GLAVA (bila še 2.17.0 — P1-D je pozabil bump README glave!) + dodani manjkajoči 2.18.0 vrstica + nova 2.19.0 vrstica + tehnični sklad (PostgreSQL produkcija) + produkcjski ukazi + struktura
+- TESTI +59 = 1218/1218 (10016 expect): tests/legacy-migration.test.ts (37 čistih: vseh 14 preslikav — skrajne vrednosti, izpusti z razlogi, sqlite 0/1 vs postgres true/false booleani, valute, statusne slovarje, bcrypt roundtrip) + tests/legacy-migration-e2e.test.ts (1 E2E ~2.5 s: materializacija legacy baze iz TRANSFORMIRANE recovery sheme (postgresql→sqlite ista mehanska preslikava) + nova baza + 20+ fixture vrstic → dry-run → apply → preverba 17 števil po tabelah + vsebina prenesene pote → DRUGI apply = 0 novih = IDEMPOTENCA DOKAZANA) + tests/p2-data-plane.test.ts (21 source-contract: transformacija čista+fail-closed, shema usklajena točno z generirano, baseline 27 tabel=modelom, CI vrata obe platformi, package skripte, integrity vrata brez URL izpisa, RETIRED seznam, idempotenca findUnique≥create, dry-run privzet, bcrypt veja, health pogodba brez skrivnosti, verzija 4 mesta, runbook 10 korakov, matrika 39, 0-AI čistost)
+- VRATA: tsc 0, lint 0 (POPRAVEK: 2× require() → statična import pg — eslint no-require-imports), bun test 1218/1218; dev strežnik umrl med fazo → dvojna vilička setsid ponovni zagon (znani vzorec P1)
+- VERZIJA 2.19.0: package.json + health + sw.js + footer + kanarček pwa-sw + README glava/vrstica
+- E2E DOKAZI docs/evidence/p2/: health-2.19.0.json (11 preverb, db:cutover SQLite 0 ms iskren opis, build:meta lokalni) + legacy-migration-e2e.txt (1+37+21 testov) + home-2.19.0.png + profil-2.19.0.png (agent-browser: naslov OK, 0 page errors, 0 console errors, /moj-profil z API 200)
+
+Stage Summary:
+- 2.19.0 P2: Postgres produkcjska plast (izpeljana shema + versioned baseline + CI dokaz "migracije ≡ shema" na vsak push) + integrity vrata (--expect-zero) + idempotenten legacy prenos (E2E dokazan, vključno bcrypt prijave) + matrika 39 (RECONCILE 14/RETIRE 25/RESTORE 0) + health db:cutover/build:meta + 10-korakov runbook z rollback — vse 0-AI, brez spremembe SQLite razvojne plasti (kanon "samo dodajaj")
+- ISKRENA MEJA: dejanski cutover (Neon backup, Vercel/Render prevezava, produkcijski smoke) so LASTNIKOVA zunanja dejanja — runbook jih vodi korak-po-korak; CI peskovnika tega ne more izvesti namesto njega (eksplicitno v issueju #2 in odkljukano kot "lastnik" v sprejemnih kriterijih)
+- Sledi: rsync → merge-dsa → vrata → commit → push → CI → komentar na issue #2

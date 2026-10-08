@@ -5,7 +5,7 @@
 > realnimi koordinatami in deterministični načrtovalnik poti (isti vhod → isti načrt,
 > 0 AI žetonov v jedru).
 
-**Verzija: 2.17.0 — P1-C: SPREMLJANJE (WATCH) + NOTIFIKACIJSKI CENTER (issue #3 §4/§10).**
+**Verzija: 2.19.0 — P2: POSTGRES DATA PLANE + PRODUKCIJSKI CUTOVER PRIPRAVA (issue #2).**
 Izdaje rekonstrukcije: 2.1.0 skupnostne funkcije → 2.2.0 aplikacijska lupina →
 2.3.0 issue #1 (živi GPS, booking, pomočnik) → 2.3.1 infra CI → 2.4.0 PWA
 offline → 2.5.0 rezervacijski sloj → 2.6.0 partner kanal booking verige →
@@ -195,8 +195,10 @@ ter testna vrata (86 testov) + GitLab CI.
 ## Tehnični sklad
 
 Next.js 16 (App Router) · TypeScript 5 (strict) · Tailwind CSS 4 + shadcn/ui ·
-Prisma ORM (SQLite za razvoj; izvirna Neon Postgres shema z 39 modeli je ohranjena v
-`docs/recovery/schema-1.163.4.prisma`) · next-intl · Leaflet/OSM · lucide-react
+Prisma ORM (SQLite za razvoj/peskovnik/CI; **PostgreSQL za produkcijo** —
+`prisma/postgres/schema.prisma` + versioned migracije, glej `docs/PRODUCTION-CUTOVER.md`;
+izvirna Neon Postgres shema z 39 modeli je klasificirana v
+`docs/RECOVERY-MODEL-MATRIX.md`) · next-intl · Leaflet/OSM · lucide-react
 
 ## Razvoj
 
@@ -207,6 +209,22 @@ bun run db:push           # ustvari tabele
 bun run dev               # http://localhost:3000
 bun run lint
 ```
+
+**Produkcija (PostgreSQL)** — priprava in prevezava:
+
+```bash
+bun run db:pg:sync        # regeneriraj postgres shemo iz glavne (po vsaki spremembi)
+bun run db:pg:check       # vrata: shema ≡ glavna + baseline ≡ from-empty dif
+bun run db:pg:deploy      # prisma migrate deploy (SAMO ta mehanizem v produkciji)
+bun run build:postgres    # produkcjski build (prisma generate iz postgres sheme)
+bun run db:integrity      # štetja tabel (before/after cutover primerjava)
+bun run migrate:legacy    # prenos podatkov 1.163.4 → 2.x (dry-run privzeto)
+```
+
+Celoten postopek: **`docs/PRODUCTION-CUTOVER.md`** (backup → preflight →
+dry-run → integrity vrata → migracija → deployment → health → E2E →
+rollback). Klasifikacija vseh 39 modelov izvirnika:
+`docs/RECOVERY-MODEL-MATRIX.md`.
 
 PWA offline: service worker se v razvoju registrira na `http://localhost:3000/?sw=1`
 (preizkusna pot), v produkciji samodejno.
@@ -236,12 +254,17 @@ src/components/pwa/   # registracija service workerja + offline obvestila
 src/lib/              # slovenia-data (38 destinacij), itinerary-engine (deterministični),
                       # my-trip, plan-store, lokali/trznica/go/content-data, i18n,
                       # affiliate-providers + affiliate-server (provizije), fuel-stations
-prisma/               # SQLite razvojna shema
+prisma/               # SQLite razvojna shema (en vir resnice)
+prisma/postgres/      # PRODUKCIJA: postgres shema (izpeljana) + migracije 0_init
+scripts/              # pg-schema-sync, db-integrity-report, migrate-legacy-data,
+                      # activation-check, smoke, ingesti (sto/fsq/kiwitaxi)
 public/sw.js + offline.html  # PWA offline — service worker + zasilna stran
 public/content/       # 84 realnih fotografij destinacij
 docs/recovery/        # OBNOVITVENI ARHIV: RECOVERY-REPORT, snapshots produkcije,
                       # source-sessions (worklog + 57 izpisov izvorne kode),
                       # production-mirror (statični posnetek strani), shema 1.163.4
+docs/RECOVERY-MODEL-MATRIX.md   # 39 modelov: RECONCILE/RETIRE z razlogi + prenos
+docs/PRODUCTION-CUTOVER.md      # runbook: 10 korakov cutoverja z ukazi
 docs/evidence/        # dokazni posnetki rekonstrukcije
 ```
 
@@ -301,4 +324,26 @@ PATCH eno/vse prebrano, DELETE prebrana/vse) + /api/cron/watch-check
 z neprebranimi v glavi (poll 60 s, samo prijavljeni) + /notifikacije
 (center: inbox + spremljanja + iskrenost) + gumb »Spremljaj ceno« na
 tržnici + meni »Spremljaj« na pote (vreme/dnevi/rezervacije, ≥VIEWER);
-PWA push ISKRENO NI implementiran (in-app plast).
+PWA push ISKRENO NI implementiran (in-app plast) →
+2.18.0 P1-D personalizirana domov + parity scorecard (issue #3 §9/§14):
+/api/trips razširitev dateStart/dateEnd + firstStop strežniško;
+personal-home-section 7 ploščic SAMO prijavljenim (Nadaljuj pot,
+Obvestila, Spremljanja, Vreme naslednje pote — iskrena stanja, Ideje
+zate iz preferenc z razlogi, V bližini — 100 % klientni GPS, Odprte
+naloge); docs/PARITY-SCORECARD.md 20 zmožnosti z dokazi (18 PARITY +
+5 SUPERIOR + iskrene vrzeli) →
+2.19.0 P2 Postgres data plane (issue #2): prisma/postgres/schema.prisma
+(IZPELJANA iz glavne z db:pg:sync — provider edina razlika, vrata
+db:pg:check v CI) + versioned baseline migracija 0_init (CI dokazuje
+migracije ≡ shema z migrate diff from-empty) + build:postgres
+(prisma generate iz postgres sheme + next build za produkcijo) +
+scripts/db-integrity-report.ts (štetja po tabelah, --compare +
+--expect-zero vrata na kritičnih tabelah) + scripts/migrate-legacy-data.ts
+(idempotenten prenos 1.163.4 → 2.x po matriki — E2E testiran: dry-run →
+apply → apply = 0 novih) + bcrypt zapisi 1.163.4 se preverijo (prijava
+prenesenih uporabnikov) + /api/health db:cutover (provider/latenca/
+migracijsko stanje) + build:meta (SHA iz platforme) + matrika 39 modelov
+(docs/RECOVERY-MODEL-MATRIX.md: RECONCILE 14 z mehanskim prenosom,
+RETIRE 25 z razlogi, RESTORE 0) + docs/PRODUCTION-CUTOVER.md runbook
+(10 korakov z ukazi: backup → preflight → dry-run → integrity → okno →
+migracija → deployment → health → E2E → rollback).

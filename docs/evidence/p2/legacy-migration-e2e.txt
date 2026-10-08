@@ -1,0 +1,16 @@
+(pass) migrate-legacy-data — E2E (dve bazi, skripta, idempotenca) > dry-run → apply → apply: prenos je pravilen in idempotenten [2568.16ms]
+
+ 1 pass
+ 0 fail
+ 35 expect() calls
+Ran 1 test across 1 file. [2.63s]
+
+ 37 pass
+ 0 fail
+ 77 expect() calls
+Ran 37 tests across 1 file. [184.00ms]
+
+ 21 pass
+ 0 fail
+ 74 expect() calls
+Ran 21 tests across 1 file. [123.00ms]

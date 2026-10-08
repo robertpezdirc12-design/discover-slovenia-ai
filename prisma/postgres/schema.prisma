@@ -1,0 +1,577 @@
+// Prisma shema — PRODUKCIJSKA (PostgreSQL/Neon) različica temelja.
+//
+// IZPELJANA DATOTEKA — en vir resnice je prisma/schema.prisma (SQLite:
+// razvoj, peskovnik, CI). Generira jo `bun run db:pg:sync`
+// (scripts/pg-schema-sync.ts): mehanska preslikava provider
+// sqlite → postgresql, vse ostalo (modeli, relacije, indeksi, komentarji)
+// je IDENTIČNO glavni shemi. NE urejaj ročno — naslednja sinhronizacija bi
+// ročno spremembo pripisala kot razliko (CI vrata db:pg:check padejo).
+//
+// PRODUKCIJA (issue #2 — PRODUCTION CUTOVER + POSTGRES):
+//   - migracije: prisma/postgres/migrations (baseline 0_init; deploy z
+//     `bun run db:pg:deploy` = prisma migrate deploy --schema ta datoteka)
+//   - build produkcijskega klienta: `bun run build:postgres`
+//     (prisma generate iz TE sheme + next build standalone)
+//   - runbook: docs/PRODUCTION-CUTOVER.md (backup → preflight → cutover)
+//
+// OPOMBA: shema je namenoma brez enumov in brez @db. nativnih tipov
+// (hišni stil: String + komentarji — identična obnašanja na obeh
+// providerjih; to velja tudi za izvirno 39-model shemo 1.163.4).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Kanonske destinacije (seed iz src/lib/slovenia-data.ts — 38 zapisov).
+model Destination {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  tagline     String?
+  region      String?
+  type        String?
+  country     String?
+  lat         Float?
+  lng         Float?
+  rating      Float?
+  description String?
+  image       String?
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([region])
+  @@index([type])
+}
+
+/// Lokalni ponudniki (tržnica/lokali — 45-c bo polnil).
+model Listing {
+  id        String   @id @default(cuid())
+  name      String
+  category  String
+  region    String?
+  lat       Float?
+  lng       Float?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([region])
+}
+
+/// Rezervacijska lupina (DRAFT/EXTERNAL priponke Go Mode — payload = JSON).
+model JourneyBooking {
+  ref       String   @id
+  title     String
+  status    String   @default("DRAFT")
+  payload   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Sporočila iz kontaktne obrazce (hramba največ 12 mesecev — politika).
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  message   String
+  createdAt DateTime @default(now())
+}
+
+/// Prijava na novice ("Prejmi skrite bisere Slovenije").
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+/// Lead iz "Pridruži se" obrazca (za-ponudnike).
+/// status (P0-H): "new" | "contacted" | "approved" | "rejected" —
+/// odločitev skrbnika v /admin (approve hkrati dvigne User.role na "partner").
+model Lead {
+  id        String   @id @default(cuid())
+  email     String
+  interest  String?
+  note      String?
+  status    String   @default("new")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([email])
+}
+
+// ── SKUPNOSTNE FUNKCIJE POTOVANJ (Task 48-a — mostovna rekonstrukcija) ──
+// Po vzoru izvirnika (docs/recovery/schema-1.163.4.prisma: User /
+// TravelJourney / TripCollaborator / TripInvite / TripReservation /
+// TripPoll / TripPollOption / TripPollVote / TripMessage), v SQLite
+// minimalni obliki. NextAuth v4 JWT strategija → BREZ Account/Session tabel.
+
+/// Uporabniški račun popotnika (credentials, JWT — brez Account/Session).
+/// role (P0-H): "user" (privzeto) | "partner" (odobri skrbnik prek /admin —
+/// prijava na /za-ponudnike + Lead approve). Skrbnik NI vloga — kanon
+/// DSA_ADMIN_EMAILS (isAdminSession) ostaja edini vir skrbništva.
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         String   @default("user")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  journeys     TravelJourney[]     @relation("JourneyOwner")
+  collaborations TripCollaborator[]
+  pollVotes    TripPollVote[]
+  messages     TripMessage[]
+  preferences  UserPreference[]
+  memories     MemoryItem[]
+  watches      WatchItem[]
+  notifications Notification[]
+}
+
+/// P1-A §1 (issue #3) — uporabniške potovalne preference.
+/// VEDNO izbrano stanje (ni izpeljav brez zapisa): uporabnik vidi/ureja/briše
+/// vsak zapis na /moj-profil. key je iz nabora PREFERENCE_KEYS
+/// (src/lib/user-preferences.ts — "personalization" | "budget" | "interests" |
+/// "pace" | "season" | "party" | "transport" | "food" | "avoid"), value je JSON
+/// niz, validiran STREŽNIŠKO proti fiksni množici vrednosti (SQLite brez
+/// seznamov). source: "USER_STATED" (uporabnik) | "DERIVED" | "IMPORTED" |
+/// "TRIP_HISTORY" — izpeljani zapisi nastanejo samo z izrecnim potrditvijo.
+model UserPreference {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key       String
+  value     String
+  source    String   @default("USER_STATED")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, key])
+  @@index([userId])
+}
+
+/// P1-A §2 (issue #3) — dolgoročni spomin osebnega agenta ("Kaj si zapomnim
+/// o tebi"). Izključno eksplicitni izvidi o uporabniku — NIČ se ne zbere brez
+/// uporabnikovega dejanja. kind: "fact" | "preference" | "constraint" |
+/// "visit" | "feedback"; source: "USER" | "AGENT_DERIVED" | "TRIP_HISTORY" |
+/// "IMPORTED"; confidence 0–1 iz pravil (uporabniško zapisano = 1).
+/// active=false = mehko brisanje (vidno pozabljeno); fizično čiščenje po
+/// MEMORY_RETENTION_DAYS (lenko brisanje ob branju — planMemoryPurge).
+model MemoryItem {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind       String
+  value      String
+  source     String   @default("USER")
+  confidence Float    @default(1)
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId, active, updatedAt])
+}
+
+/// P1-C §4 (issue #3) — UPORABNIKOVO SPREMLJANJE (watch). Lastnik, cilj,
+/// pogoj/prag, stanje in zadnje opažanje. ISKRENOSTNI KANON:
+///  - opozorilo nastane SAMO iz dveh preverljivih vrednosti (npr. prejšnja
+///    cena v lastObservation proti trenutni ceni izdelka) — nikoli »cena
+///    je padla« brez osnove;
+///  - nepodprte vrste (razpoložljivost restavracij, spremembe letov) se
+///    ZAVRNEJO ob dodajanju z iskrenim sporočilom (vir ne potrjuje);
+///  - cron (/api/cron/watch-check) je skrivnostno zaščiten, idempotenten
+///    (dedupe po Notification.dedupeKey) in retry-varen.
+/// kind: "price" | "weather" | "trip_day" | "booking";
+/// targetKind: "product" (slug tržnice) | "journey" (shareId pote);
+/// state: "active" | "paused" (izbris je fizičen — ni arhiva).
+model WatchItem {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind        String
+  targetKind  String
+  targetId    String
+  /// Ime cilja ob dodajanju (strežniško določeno — snapshot za prikaz).
+  targetName  String
+  /// Pogoji/pragi kot kompakten JSON (validirano po vrsti — watch-engine).
+  condition   String    @default("{}")
+  state       String    @default("active")
+  /// Zadnje opažanje (JSON: cena v centih, povzetek vremena, …) — osnova
+  /// za primerjavo dveh preverljivih vrednosti. null = še ni preverjeno.
+  lastObservation String?
+  lastCheckedAt   DateTime?
+  lastTriggeredAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([userId, kind, targetKind, targetId])
+  @@index([state, kind])
+}
+
+/// P1-C §10 (issue #3) — NOTIFIKACIJSKI CENTER (in-app inbox).
+/// source: "watch" | "trip" | "booking" | "system"; severity:
+/// "info" | "warning" | "success". data je kompakten JSON brez skrivnosti
+/// (npr. {action:"/trznica", priceCents:…}). dedupeKey je enoten na
+/// uporabnika → cron vzporedni zagon NE podvoji obvestil (idempotenca).
+/// PWA push NI implementiran (iskrena odločitev) — plast je in-app inbox.
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source    String    @default("watch")
+  severity  String    @default("info")
+  title     String
+  body      String
+  data      String    @default("{}")
+  readAt    DateTime?
+  dedupeKey String
+  createdAt DateTime  @default(now())
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, readAt, createdAt])
+}
+
+/// Deljena pot v oblaku (data = JSON serializacija oblike SharedPlan).
+model TravelJourney {
+  id            String   @id @default(cuid())
+  shareId       String   @unique
+  ownerId       String
+  owner         User     @relation("JourneyOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  title         String
+  isPublic      Boolean  @default(false)
+  data          String
+  /// Realni datumi poti (P0-E §10) — lokalni "YYYY-MM-DD" (DST-varno), null = nedoločeno.
+  dateStart     String?
+  dateEnd       String?
+  renameVersion Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  collaborators TripCollaborator[]
+  invites       TripInvite[]
+  reservations  TripReservation[]
+  polls         TripPoll[]
+  pollVotes     TripPollVote[]
+  messages      TripMessage[]
+
+  @@index([ownerId])
+}
+
+/// Sodelujoči na poti (vloga se izračuna STREŽNIŠKO — fail-closed).
+model TripCollaborator {
+  id        String   @id @default(cuid())
+  journeyId String
+  journey   TravelJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String // "EDITOR" | "VIEWER"
+  invitedBy String?
+  createdAt DateTime @default(now())
+
+  @@unique([journeyId, userId])
+  @@index([userId])
+}
+
+/// Vabilo (?invite={token} — sprejem prek /api/invites/[token]).
+model TripInvite {
+  id        String   @id @default(cuid())
+  journeyId String
+  journey   TravelJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  role      String // "EDITOR" | "VIEWER"
+  status    String   @default("PENDING") // "PENDING" | "ACCEPTED" | "REVOKED"
+  createdAt DateTime @default(now())
+
+  @@index([journeyId])
+}
+
+/// Rezervacijska vrstica na poti (postanek-dan osnova, izvor vedno razkrit).
+model TripReservation {
+  id        String   @id @default(cuid())
+  journeyId String
+  journey   TravelJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  createdBy String
+  dayIndex  Int
+  stopSlug  String?
+  stopName  String
+  status    String   @default("IDEA") // "IDEA" | "CONFIRMED" | "CANCELLED"
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([journeyId])
+}
+
+/// Skupinska anketa na poti.
+model TripPoll {
+  id        String   @id @default(cuid())
+  journeyId String
+  journey   TravelJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  createdBy String
+  question  String
+  status    String   @default("OPEN") // "OPEN" | "CLOSED"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  options   TripPollOption[]
+
+  @@index([journeyId])
+}
+
+/// Možnost ankete (sortiranje po sortOrder).
+model TripPollOption {
+  id        String   @id @default(cuid())
+  pollId    String
+  poll      TripPoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  label     String
+  sortOrder Int      @default(0)
+  votes     TripPollVote[]
+
+  @@index([pollId])
+}
+
+/// Glas v anketi (en glas na uporabika na anketo — "zadnji velja").
+model TripPollVote {
+  id        String   @id @default(cuid())
+  optionId  String
+  option    TripPollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journeyId String
+  journey   TravelJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([optionId, userId])
+  @@index([journeyId, userId])
+}
+
+/// Vrstica skupinskega klepeta (isAiBot=true IZKLJUČNO strežniško — 1.131.0).
+model TripMessage {
+  id         String   @id @default(cuid())
+  journeyId  String
+  journey    TravelJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  authorId   String?
+  author     User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorName String
+  isAiBot    Boolean  @default(false)
+  body       String
+  createdAt  DateTime @default(now())
+
+  @@index([journeyId, createdAt])
+}
+
+// ── LASTNA TRŽNICA — B2C CHECKOUT (Task 48-c, rekonstrukcija issue #20 FAZA 2) ──
+// Stripe Checkout (mode payment) z atomarno pending rezervacijo zaloga,
+// demo plačili (DSA_DEMO_PAYMENTS=1) in fail-closed ob manjkajoči konfiguraciji.
+// userId je NAMENOMA brez relacije na User — gost checkout je dovoljen in
+// obstoječi model User ostaja nedotaknjen (kanon "samo dodajaj").
+
+/// Izdelek/izkušnja lastne tržnice (cena v centih; zaloga = dejanski inventar).
+/// B2B moderacija (P0-H §22): status draft → pending → published (+rejected);
+/// partner ustvari osnutek, SAMO skrbnik objavi; sprememba vsebine objavljenega
+/// vnosa sproži ponovno moderacijo (nazaj v pending). ownerId NAMENOMA brez
+/// relacije (kanon Order.userId) — partner pripadnost je stolpec z indeksom.
+/// Lat/lng je geo pin partnerja (validiran na SI·HR·ME·AL bbox) — null je
+/// iskrena odsotnost, nikoli izmišljena lokacija.
+model Product {
+  id          String      @id @default(cuid())
+  slug        String      @unique
+  name        String
+  description String
+  /// Cena v centih (costPerPerson destinacije × 100 — izključno realni vir).
+  priceCents  Int
+  /// "experience" | "ticket" | "product"
+  kind        String      @default("experience")
+  stock       Int
+  saleCount   Int         @default(0)
+  active      Boolean     @default(true)
+  /// "draft" | "pending" | "published" | "rejected" (listing-moderation.ts)
+  status      String      @default("draft")
+  /// Partner-lastnik (null = platforma/seed — ti so uredniško pregledani).
+  ownerId     String?
+  /// Geo pin (validiran ob vnosu; prikaz na zemljevidu pri objavi).
+  lat         Float?
+  lng         Float?
+  submittedAt DateTime?
+  reviewedAt  DateTime?
+  reviewedBy  String?
+  /// Razlog zavrnitve (viden partnerju — iskreno, brez tihe zavrnitve).
+  rejectionReason String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  items       OrderItem[]
+
+  @@index([active])
+  @@index([status])
+  @@index([ownerId])
+}
+
+/// Naročilo lastne tržnice (gost checkout dovoljen — userId/visitorKey).
+model Order {
+  id              String      @id @default(cuid())
+  /// Lastnik naročila (prijavljen uporabnik) ali null za gostega.
+  userId          String?
+  /// UUID gosta (localStorage "dai:visitor-key") — dedup nezaključenih naročil.
+  visitorKey      String?
+  /// "pending" | "paid" | "cancelled" | "expired"
+  status          String      @default("pending")
+  /// true IZKLJUČNO za demo plačila (DSA_DEMO_PAYMENTS — brez prave bremenitve).
+  demo            Boolean     @default(false)
+  /// Kdaj je naročilo prešlo v "paid" (webhook/demo pot) — osnova izpeljave izplačila.
+  paidAt          DateTime?
+  stripeSessionId String?     @unique
+  totalCents      Int
+  expiresAt       DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  items           OrderItem[]
+
+  /// Življenjski cikel izplačila lastniku (P0-E §11): not_due → due → processing → paid.
+  /// "due" se izpelje (paidAt + zadrževalna doba) — glej src/lib/marketplace-types.ts.
+  payoutStatus         String    @default("not_due")
+  payoutUpdatedAt      DateTime?
+  /// Zahtevek kupca po preklicu/povratilu (P0-E §11) — NE povzroči povratila
+  /// sama; vidi ga lastnik (povratek teče pri plačilnem ponudniku).
+  cancellationRequestedAt DateTime?
+
+  @@index([status])
+  @@index([userId])
+  @@index([payoutStatus])
+}
+
+/// Vrstica naročila — zaloga se ob sprostitvi obnavlja SAMO iz teh vrstic.
+model OrderItem {
+  id                 String  @id @default(cuid())
+  orderId            String
+  order              Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId          String
+  /// Restrict — izdelek z naročili se NE sme izbrisati (zgodovina cen/zaloge).
+  product            Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  /// Ime ob nakupu (izdelek se lahko preimenuje — vrstica ostane resnica).
+  nameSnapshot       String
+  priceCentsSnapshot Int
+  qty                Int
+
+  @@index([orderId])
+}
+
+/// VPRAŠAJ LOKALCA (P0-H §20) — brezplačna globja konzultacija z zasebno
+/// povezavo /konzultacija/{accessToken} (lastnik = poznalec žetona).
+/// answerSource: "fallback" (deterministični odgovor iz registra — glej
+/// src/lib/consultation-fallback.ts) | "manual" (ročna dopolnitev skrbnika).
+/// interests je JSON seznam (SQLite brez list primitivov).
+model Consultation {
+  id               String    @id @default(cuid())
+  accessToken      String    @unique
+  email            String
+  question         String
+  destinationName  String?
+  travelDates      String?
+  partyDescription String?
+  budget           String?
+  interests        String?
+  answer           String?
+  answerSource     String    @default("fallback")
+  status           String    @default("pending") // "pending" | "delivered"
+  deliveredAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([email, createdAt])
+  @@index([status])
+}
+
+/// Dedup Stripe webhook dogodkov (eventId @unique → P2002 → dogodek prezrt).
+model ProcessedStripeEvent {
+  id          String   @id @default(cuid())
+  eventId     String   @unique
+  type        String
+  processedAt DateTime @default(now())
+}
+
+/// Klik na rezervacijsko povezavo partnerja (v2.5.0 — izhodišče provizijske
+/// sledi po vzorcu MindTrip: vodeni klikanjí → partnerjevo poročilo → dnevnik).
+/// ISKRENOST: hranimo SAMO affiliateActive (ali je bil žeton aktiven) —
+/// povezava se shrani brez žetona; brez IP in brez PIQ.
+model AffiliateClick {
+  id              String   @id @default(cuid())
+  providerId      String
+  category        String
+  destinationSlug String?
+  destinationName String?
+  /// Ali je partnerjev ID žeton bil nastavljen ob kliku (moniziran klik).
+  affiliateActive Boolean  @default(false)
+  /// Končna javna povezava BREZ žetona (partner.iskanje?ss=Bled).
+  url             String
+  userId          String?
+  /// Anonimni ključ seje (kolendič dsa_aff) — vezava klikov v seji.
+  sessionKey      String
+  referrer        String?
+  createdAt       DateTime @default(now())
+
+  @@index([providerId, createdAt])
+  @@index([createdAt])
+  @@index([sessionKey])
+}
+
+/// Provizijski dnevnik — vnosi IZKLJUČNO iz partnerjevih poročil (ročni
+/// vnos ali CSV uvoz); nikoli samodejno „potrjeno" (kanon trip-reservations:
+/// potrjevanje je atestacija iz vira poročila, source vidno zapisan).
+model CommissionEntry {
+  id               String    @id @default(cuid())
+  providerId       String
+  /// Številka rezervacije iz partnerjevega poročila (edinstvena na partnerja).
+  bookingRef       String
+  bookedFor        String?
+  /// Vrednost rezervacije v EUR (osnova iz poročila).
+  amountEur        Float
+  /// Provizija v EUR IZ poročila (ne naša ocena — ocena je samo predlog).
+  commissionEur    Float
+  status           String    @default("PENDING") // PENDING | CONFIRMED | PAID
+  /// Datum zaključka bivanja/aktivnosti (osnova T+3 izplačila).
+  stayCompletedAt  DateTime?
+  /// Predviden izplatni datum (28. v mesecu, +3 meseca — vzorec MindTrip).
+  payoutDueAt      DateTime?
+  source           String    @default("MANUAL") // MANUAL | CSV_IMPORT
+  note             String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@unique([providerId, bookingRef])
+  @@index([status])
+  @@index([payoutDueAt])
+}
+
+/// REVIZIJSKI DNEVNIK (P0-E §11) — en sam dnevnik za tržnico (naročila,
+/// izplačila, zahtevki po preklicu). Vnosi NISO brišljivi (append-only);
+/// meta je kompakten JSON (nikoli skrivnosti).
+/// P1-A: osebna plast (preferences/memory) zapiše dejanja "preference.*" /
+/// "memory.*" z actorType "customer" in actorId = userId (uporabnik sam).
+model AuditLog {
+  id         String   @id @default(cuid())
+  /// "system" | "owner" | "customer" | "partner" (P0-H) — kdo je sprožil dejanje.
+  actorType  String
+  /// Identiteta akterja (userId / email skrbnika / null za sistem).
+  actorId    String?
+  /// Kanonsko dejanje, npr. "order.paid", "payout.processing", "order.cancellation_requested".
+  action     String
+  /// Vrsta entitete: "order" | "payout" | "reservation" | ...
+  entityType String
+  entityId   String
+  /// Kompakten JSON z dodatnimi podatki (brez skrivnosti).
+  meta       String
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}

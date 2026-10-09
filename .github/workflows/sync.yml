@@ -1,3 +1,18 @@
+# =============================================================================
+# DVOSMERNA SINHRONIZACIJA GitLab <-> GitHub
+#
+# Prožilci: push (vsi branchi/tagi) + cron '23 */6 * * *' + dispatch.
+#
+# VAROVALKA ŽETONA (2026-10-09, run #13): potekel/preklican GITLAB_TOKEN je
+# pomenil ~5 min retryjev na vsakem branchu + ~4 min lint-test joba na vsakem
+# urniku (4×/dan) ≈ 35 min/dan kvote zasebnega repa (meja 2000 min/mes) —
+# pri 0 opravljenega dela. Vzorec enak prod-cron.yml health varovalki:
+# neveljaven žeton → ZELEN preskok z ::warning:: opozorilom (brez rdeče
+# rijve), deluje samodejno takoj, ko lastnik rotira skrivnost GITLAB_TOKEN.
+#
+# Žeton potuje SAMO v glavi (PRIVATE-TOKEN / oauth2 basic auth), nikoli v
+# URL-ju ali logu (github actions maskira skrivnosti).
+
 name: Dvosmerna sinhronizacija GitLab <-> GitHub
 
 on:
@@ -24,12 +39,45 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    outputs:
+      mirror_ok: ${{ steps.sklep.outputs.mirror_ok }}
     steps:
+      # ── VAROVALKA ŽETONA — PRVI korak, brez checkouta (fail-fast) ──────
+      # En sam API klic (~1 s) namesto ~9 min zastonj runa. Neveljaven
+      # žeton (401/403) ali nedosegljiv GitLab → zelen preskok z opozorilom.
+      - name: Varovalka GitLab žetona (fail-fast pred checkoutom)
+        id: gate
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GITLAB_PROJECT_PATH: ${{ secrets.GITLAB_PROJECT_PATH }}
+        run: |
+          ENC_PATH="${GITLAB_PROJECT_PATH//\//%2F}"
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 \
+            --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+            "https://gitlab.com/api/v4/projects/${ENC_PATH}")
+          case "$CODE" in
+            200)
+              echo "mirror_ok=true" >> "$GITHUB_OUTPUT"
+              echo "GitLab žeton veljaven (API 200) — sinhronizacija se izvede."
+              ;;
+            401|403)
+              echo "mirror_ok=false" >> "$GITHUB_OUTPUT"
+              echo "::warning::GitLab žeton ZAVRNJEN (HTTP $CODE) — zrcalo preskočeno. Lastnik: nov osebni žeton (scope read_api + read_repository + write_repository) v skrivnost GITLAB_TOKEN."
+              ;;
+            *)
+              echo "mirror_ok=false" >> "$GITHUB_OUTPUT"
+              echo "::warning::GitLab nedosegljiv/neznano stanje (HTTP ${CODE:-?}) — zrcalo preskočeno, nova priložnost ob naslednjem prožilcu."
+              ;;
+          esac
+
       - uses: actions/checkout@v4
+        if: steps.gate.outputs.mirror_ok == 'true'
         with:
           fetch-depth: 0
 
       - name: Pridobi vsebino z obeh strani
+        id: fetch
+        if: steps.gate.outputs.mirror_ok == 'true'
         env:
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
           GITLAB_PROJECT_PATH: ${{ secrets.GITLAB_PROJECT_PATH }}
@@ -48,11 +96,24 @@ jobs:
             echo "fetch poskus $i ni uspel, cakam..."
             sleep 15
           done
+          # VAROVALKA TIHEGA PADA (bug iz runa #13): zanka zgoraj ob 3
+          # neuspešnih poskusih NE pade — brez te preverbe bi bil
+          # refs/remotes/gitlab/* prazen, vsi branchi bi napačno šli v smer
+          # „samo na GitHub" in pushi bi 5 min kurili retryje.
+          if ! git for-each-ref --format='%(refname)' refs/remotes/gitlab/ | grep -q .; then
+            echo "fetch_ok=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::git fetch iz GitLaba ni uspel po 3 poskusih — zrcalo preskočeno (prejšnja različica bi stekla naprej in kurila kvoto)."
+            exit 0
+          fi
+          echo "fetch_ok=true" >> "$GITHUB_OUTPUT"
 
       - name: Zdruzi in poslji vse branche v obe smeri
+        id: merge
+        if: steps.fetch.outputs.fetch_ok == 'true'
         run: |
           ALLB=$( (git for-each-ref --format='%(refname:short)' refs/remotes/origin | sed 's|^origin/||'; \
                    git for-each-ref --format='%(refname:short)' refs/remotes/gitlab | sed 's|^gitlab/||') | sort -u )
+          PUSH_FAILED=0
           for BR in $ALLB; do
             case "$BR" in HEAD) continue;; esac
             OB=$(git rev-parse -q --verify "refs/remotes/origin/$BR" 2>/dev/null || true)
@@ -81,30 +142,60 @@ jobs:
             else
               WIN="$GB"; echo "$BR: samo na GitLab -> push na GitHub"
             fi
+            OK=0
             for i in 1 2 3; do
               if git push origin "$WIN:refs/heads/$BR" && git push gitlab "$WIN:refs/heads/$BR"; then
                 echo "$BR: uspesno sinhroniziran"
+                OK=1
                 break
               fi
               echo "$BR: push poskus $i ni uspel, cakam..."
               sleep 12
             done
+            if [ "$OK" != "1" ]; then
+              PUSH_FAILED=$((PUSH_FAILED + 1))
+              echo "::warning::branch $BR: push ni uspel po 3 poskusih — preveri scope GITLAB_TOKEN (write_repository) in branch zaščito na GitLabu."
+            fi
           done
+          echo "push_failed=$PUSH_FAILED" >> "$GITHUB_OUTPUT"
 
       - name: Sinhroniziraj tage (obe smeri)
+        if: steps.fetch.outputs.fetch_ok == 'true'
         run: |
           git push origin 'refs/tags/*:refs/tags/*' --force 2>/dev/null || true
           git push gitlab 'refs/tags/*:refs/tags/*' --force 2>/dev/null || true
 
+      - name: Sklep (iskren povzetek zrcala)
+        id: sklep
+        if: always()
+        run: |
+          GATE="${{ steps.gate.outputs.mirror_ok }}"
+          FETCH="${{ steps.fetch.outputs.fetch_ok }}"
+          if [ "$GATE" = "true" ] && [ "$FETCH" = "true" ]; then
+            echo "mirror_ok=true" >> "$GITHUB_OUTPUT"
+            FAILED="${{ steps.merge.outputs.push_failed }}"
+            if [ "${FAILED:-0}" != "0" ]; then
+              echo "::warning::Sinhronizacija DELNO uspela — ${FAILED} branch(i) niso bili potisnjeni (glej warninge zgoraj)."
+            fi
+            echo "Zrcalo obravnavano (podrobnosti v koraku Zdruzi)."
+          else
+            echo "mirror_ok=false" >> "$GITHUB_OUTPUT"
+            echo "Zrcalo PRESKOČENO (žeton ali dosegljivost GitLaba) — 0 nadaljnjih korakov, ~0 min kvote."
+          fi
+
       - name: Povzetek
+        if: steps.fetch.outputs.fetch_ok == 'true'
         run: echo "Sinhronizacija zakljucena."
 
   # CI VRATA PO SINHRONIZACIJI — pushi, ki jih naredi sync (GITHUB_TOKEN),
   # NE sprožijo ci.yml (GitHub preprečuje rekurzivne workflowe), zato tu
-  # po vsakem usklajenju pognemo še lint + test nad glavnim stanjem.
+  # po vsakem USPEŠNEM usklajenju pognamo še lint + test nad glavnim
+  # stanjem. POGOJENO na mirror_ok: ko je žeton neveljaven, se ne kuri
+  # 4 min za testiranje nespremenjene kode (to že pokriva ci.yml).
   lint-test:
     name: lint + test (po sync)
     needs: sync
+    if: needs.sync.outputs.mirror_ok == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:

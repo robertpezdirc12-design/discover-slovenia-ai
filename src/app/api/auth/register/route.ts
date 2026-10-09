@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
+import { rateLimited } from "@/lib/rate-limit";
 
 /**
  * POST /api/auth/register — ustvari račun popotnika (credentials).
@@ -9,6 +10,8 @@ import { hashPassword } from "@/lib/password";
  * Izvirnik: polna registracija prek API-ja; tukaj mostovna oblika:
  * e-pošta (unique) + ime + geslo (scrypt hash). 409 ob že obstoječem
  * naslovu — iskreno, brez tihega prepisovanja.
+ * Rate limit: 5/min na odjemalca (P0 AUDIT M1 — masovno ustvarjanje
+ * računov / ugibanje naslovov prek 409 je bilo neomejeno).
  */
 
 interface RegisterBody {
@@ -20,6 +23,13 @@ interface RegisterBody {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export async function POST(request: Request) {
+  if (rateLimited(request, 5)) {
+    return NextResponse.json(
+      { error: "Preveč poskusov registracije — poskusi znova čez minuto." },
+      { status: 429, headers: { "Retry-After": "60" } }
+    );
+  }
+
   let body: RegisterBody;
   try {
     body = (await request.json()) as RegisterBody;

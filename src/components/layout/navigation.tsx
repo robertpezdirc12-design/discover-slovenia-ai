@@ -280,7 +280,7 @@ export function Navigation() {
                       <Link
                         href={link.href}
                         onClick={() => setMobileOpen(false)}
-                        className="block rounded-md px-3 py-2.5 text-sm font-medium text-foreground/90 hover:bg-accent hover:text-accent-foreground"
+                        className="block rounded-md px-3 py-2.5 text-sm font-medium text-foreground/90 hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                       >
                         {link.label}
                       </Link>
@@ -298,7 +298,7 @@ export function Navigation() {
                           <Link
                             href={link.href}
                             onClick={() => setMobileOpen(false)}
-                            className="block rounded-md px-3 py-2.5 text-sm text-foreground/80 hover:bg-accent hover:text-accent-foreground"
+                            className="block rounded-md px-3 py-2.5 text-sm text-foreground/80 hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                           >
                             {link.label}
                           </Link>

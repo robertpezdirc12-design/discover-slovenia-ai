@@ -160,9 +160,13 @@ describe("sw: isPublicApiPath (javni API — sme se predpomniti)", () => {
 });
 
 describe("sw: isAssetPath (NESPREMENLJIVA statična sredstva — cache-first)", () => {
-  test("predponi /content/ in /icons/ sta sredstvo; /_next/* NI (je asset-soft)", () => {
+  test("predpona /content/ je sredstvo; mrtva /icons/ odstranjena; /_next/* NI (asset-soft)", () => {
     expect(swApi.isAssetPath("/content/ble.jpg")).toBe(true);
-    expect(swApi.isAssetPath("/icons/znamenje.png")).toBe(true);
+    // P0 AUDIT: /icons/ predpona je bila odstranjena iz sw.js — mapa
+    // public/icons/ NE obstaja (ikone so /icon-192.png + /icon-512.png v
+    // korenu, ki jita SW precasha eksplicitno prek APP_SHELL) — mrtva
+    // predpona bi le napihovala pravila predpomnilnika.
+    expect(swApi.isAssetPath("/icons/znamenje.png")).toBe(false);
     // /_next/* so network-first (asset-soft) — glej isSoftAssetPath
     expect(swApi.isAssetPath("/_next/static/chunks/app.js")).toBe(false);
   });

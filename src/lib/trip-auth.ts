@@ -1,3 +1,5 @@
+import { randomBytes } from "crypto";
+
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
@@ -239,6 +241,29 @@ export function normalizePlanInput(input: unknown): {
   };
 }
 
+/**
+ * Zagonljivo-abecedni žeton iz CRYPTO-naključnega vira (ne Math.random —
+ * P0 AUDIT H1: napovedljiv PRNG bi omogočal ugibanje žetonov vabil zanjihnih
+ * zasebnih poti). Enaka abeceda/dolžina kot prej — le vir naključnosti zamenjan.
+ */
+function cryptoToken(length: number): string {
+  const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
+  const bytes = randomBytes(length);
+  let out = "";
+  for (let i = 0; i < length; i++) {
+    // 36 ne deli 256 — zavrnimo odvečne bajte (enakomerna porazdelitev,
+    // brez modulo pristranosti) in izčrpajmo nov zapor vektorja.
+    const b = bytes[i];
+    if (b >= 256 - (256 % alphabet.length)) {
+      const fresh = randomBytes(1);
+      out += alphabet[fresh[0] % alphabet.length];
+    } else {
+      out += alphabet[b % alphabet.length];
+    }
+  }
+  return out;
+}
+
 /** Ustvari vabilo (žeton) za pot — skupna logika collaborators/invites POST. */
 export async function issueTripInvite(
   journeyId: string,
@@ -246,9 +271,7 @@ export async function issueTripInvite(
 ): Promise<string> {
   let token = "";
   for (let i = 0; i < 5; i++) {
-    const t = Array.from({ length: 24 }, () =>
-      "abcdefghijklmnopqrstuvwxyz0123456789".charAt(Math.floor(Math.random() * 36))
-    ).join("");
+    const t = cryptoToken(24);
     const clash = await db.tripInvite.findUnique({ where: { token: t } });
     if (!clash) {
       token = t;

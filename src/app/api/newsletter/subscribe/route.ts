@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { db } from "@/lib/db";
+import { rateLimited } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -9,12 +10,20 @@ export const dynamic = "force-dynamic";
  * /api/newsletter/subscribe — POST {email} → upsert NewsletterSubscriber.
  * Idempotentno: ponovna prijava istega naslova ne ustvari dvojnika
  * (upsert po unique email) in vrne already: true.
+ * Rate limit: 5/min (P0 AUDIT M2 — javna pisanja v bazo so bila neomejena).
  */
 const SubscribeSchema = z.object({
   email: z.string().trim().email().max(160),
 });
 
 export async function POST(request: Request) {
+  if (rateLimited(request, 5)) {
+    return NextResponse.json(
+      { ok: false, error: "Preveč zahtevkov — poskusi znova čez minuto." },
+      { status: 429, headers: { "Retry-After": "60" } }
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -51,12 +60,13 @@ export async function POST(request: Request) {
       already: Boolean(existing),
       id: record.id,
     });
-  } catch (err) {
+  } catch {
+    // P0 AUDIT L1: podrobnost napake NE gre k odjemalcu — dnevnik na strežniku.
+    console.error("[api/newsletter] prijava ni uspela");
     return NextResponse.json(
       {
         ok: false,
         error: "Prijava trenutno ni mogoča — poskusi kasneje.",
-        detail: err instanceof Error ? err.message.split("\n")[0] : undefined,
       },
       { status: 503 }
     );

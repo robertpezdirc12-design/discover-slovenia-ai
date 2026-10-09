@@ -178,9 +178,17 @@ describe("p0j [source-contract]: db:materialize je varen kanon", () => {
     const pkg = await Bun.file("package.json").json();
     const scripts = pkg.scripts as Record<string, string>;
     expect(scripts["db:materialize"]).toBe("prisma db push --skip-generate");
-    // CI uporablja izključno materialize (db:push z --accept-data-loss je
-    // NAMENOMA samo za razvojni peskovnik):
-    expect(scripts["db:push"]).toContain("--accept-data-loss");
+    // P0 AUDIT (podatkovna plast): db:push ima --accept-data-loss SAMO za
+    // lokalni peskovnik in je zdaj ZAKLENJEN z varovalko, ki zavrača vse
+    // ne-file: DATABASE_URL protokole (postgres://… → izhod 1 + navodilo
+    // na db:pg:deploy). Prej je bil --accept-data-loss golo v skripti —
+    // varovalka zdaj IZVAJA ta namen namesto naključja providerja.
+    expect(scripts["db:push"]).toBe("bun scripts/db-push-guarded.ts");
+    const guard = await src("scripts/db-push-guarded.ts");
+    expect(guard).toContain("--accept-data-loss");
+    expect(guard).toContain("file:");
+    expect(guard).toContain("postgres://");
+    expect(guard).toContain("db:pg:deploy");
     expect(scripts["smoke"]).toBe("bun scripts/smoke.ts");
   });
 

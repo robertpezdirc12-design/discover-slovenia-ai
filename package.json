@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "activation:check": "bun scripts/activation-check.ts",
-    "db:push": "prisma db push --accept-data-loss",
+    "db:push": "bun scripts/db-push-guarded.ts",
     "db:materialize": "prisma db push --skip-generate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",

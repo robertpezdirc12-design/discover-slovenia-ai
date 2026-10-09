@@ -2643,3 +2643,21 @@ Stage Summary:
 - 2.19.0 P2: Postgres produkcjska plast (izpeljana shema + versioned baseline + CI dokaz "migracije ≡ shema" na vsak push) + integrity vrata (--expect-zero) + idempotenten legacy prenos (E2E dokazan, vključno bcrypt prijave) + matrika 39 (RECONCILE 14/RETIRE 25/RESTORE 0) + health db:cutover/build:meta + 10-korakov runbook z rollback — vse 0-AI, brez spremembe SQLite razvojne plasti (kanon "samo dodajaj")
 - ISKRENA MEJA: dejanski cutover (Neon backup, Vercel/Render prevezava, produkcijski smoke) so LASTNIKOVA zunanja dejanja — runbook jih vodi korak-po-korak; CI peskovnika tega ne more izvesti namesto njega (eksplicitno v issueju #2 in odkljukano kot "lastnik" v sprejemnih kriterijih)
 - Sledi: rsync → merge-dsa → vrata → commit → push → CI → komentar na issue #2
+
+---
+Task ID: p0-audit
+Agent: Z.ai Code (glavni)
+Task: Issue #2 P0 AUDIT — dokazljiv end-to-end pregled produkcijske pripravljenosti + varni popravki + docs/PRODUCT-AUDIT.md.
+
+Work Log:
+- Izhodišče: HEAD 4adb9b1 (main, PR #1 zlito), v2.19.0, CI #28 zelen; 6 vzporednih revizijskih agentov (booking/affiliate/varnost/podatki/tokovi/PWA-i18n-a11y) — poročila z dokazi datoteka:vrstica
+- POTRJENA ISKRENOST (ni lažnih potrditev): booking 3 kanali (demo ekspliciten, partner PENDING do atestacije, real API fail-closed 503 na 3 mestih); Stripe paid SAMO prek podpisanega webhooka z ujemanjem zneska; provizije IZKLJUČNO iz poročil (klik nikoli ne ustvari provizije); affiliate 0 ugibanih povezav (7 ponudnikov z affiliateTmpl="" pade na javno predlogo, ID se ne razkrije — test zaklenen); države SI/HR/ME/AL fail-closed; uvoz rezervacij determinističen z atestacijo ali iskrenim osnutkom
+- NAJDENE IN POPRAVLJENE NAPAKE (vse zaklenjene s testi tests/p0-audit-hardening.test.ts, 30 novih): H1 Math.random žetoni vabil/shareId → crypto.randomBytes (napovedljiv PRNG = eskalacija vloge); M4 cron Bearer !== → timingSafeEqual (+ popravljen napačen komentar); M6 Prisma log:['query'] v produkciji (PIJ) → NODE_ENV pogoj; M5 0 varnostnih glav → X-Content-Type-Options/XFO/Referrer-Policy/Permissions-Policy/HSTS; M1/M2/M3/M8 manjkajoči rate limiti (register/contact/newsletter 5, checkout 10, trips 10-30, sporočila/rezervacije/ankete/glasovi 30) + skupni lib/rate-limit.ts; affiliate zapis klika 30/min SAMO na zapis (preusmeritev nikoli zavrnjena); L1 err.message razkritje → splošno sporočilo; L2 checkout origin iz glav zahteve → NEXT_PUBLIC_SITE_URL prednost; db:push --accept-data-loss golo v skripti → scripts/db-push-guarded.ts varovalka (file:-only, .zscripts nepoškodovan, test ⑬ okrepčen); cutover-evidence/ gitignored (pg_dump s PIJ bi lahko pristal v git); re-baseline opozorilo v pg-schema-sync + runbook §10.5 (razvoj sheme po cutoverju z novimi migracijami)
+- ISKRENOSTNI UX: pasica ?placilo=uspeh ne trdi več potrjenega naročila (podtakljiv URL param → webhook je edina resnica); checkout modal nevtralno besedilo pred oddajo; mrtev link /destinacija/[slug]/guide/[tema] → /vodici (rute ni bilo nikoli); manifest screenshots 404 odstranjen; mrtva /icons/ SW predpona; offline.html lang="en"; focus-obroči mobilni meni; poln slovar zvončka (6 jezikov); vreme slovnica; 4 nekoreferencirana PNG (1,8 MB) izbrisani
+- VRATA: tsc 0, lint 0, bun test 1249/1249 (10.095 expect; prej 1219 — +30), db:pg:check OK (shema ≡ baseline ≡ from-empty), activation:check izhod 0 (OSM+STO živa, ostali iskreno ⚪)
+- docs/PRODUCT-AUDIT.md (NOV): matrika 16 tokov DONE/PARTIAL/PLACEHOLDER/BLOCKED/BROKEN z dokazi, rezultati testov §6, blokade §9 (lastnikova zunanja dejanja: cutover, Stripe ključi, affiliate programi, ponudniki, FSQ/KiwiTaxi feedi, DSA_ADMIN_EMAILS) + priporočeni naslednji koraki (CSP nonce, skupna shramba rate limitov, prevodi)
+
+Stage Summary:
+- Issue #2 P0 AUDIT izveden dokazljivo: iskrenostni kanon POTRDJEN (0 lažnih potrditev/provizij/povezav), 2 HIGH + ~18 varnih napak odpravljenih, vsi popravek zaklenjeni s 30 novimi testi (1249/1249), PRODUCT-AUDIT.md z izpolnjenim Definition of Done
+- Izkazane meje (iskreno): produkcija še ni prevezana (cutover = lastnikovo dejanje po runbooku), Lighthouse/CWV bodo izmerjeni na živi instanci, pomnilniški rate limit je NA PRIMER (serverless)
+- Sledi: rsync → vrata → commit → push → PR → komentar na issue #2

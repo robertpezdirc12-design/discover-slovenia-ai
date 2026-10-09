@@ -421,13 +421,30 @@ export function buildPartnerLink(input: BuildLinkInput): BuiltLink {
   }
 
   if (input.tmplOverride?.trim()) {
+    const overrideUrl = applyTemplate(
+      input.tmplOverride,
+      destName,
+      affiliateId,
+      destCountryName,
+    );
+    // P0 AUDIT: lastnikova predloga MORA biti https (javna vrata 302 —
+    // http/javascript: sheme zavrnemo in iskreno pademo na javno predlogo).
+    // Domena je zavestno NE preverjana: affiliate programi pogosto izdajo
+    // vzorce na sledilnih domenah, ki se razlikujejo od glavne (test to zaklene).
+    if (!overrideUrl.startsWith("https://")) {
+      return {
+        url: applyTemplate(
+          provider.publicTmpl,
+          destName,
+          null,
+          destCountryName,
+        ),
+        affiliateActive: false,
+        tmpl: "public",
+      };
+    }
     return {
-      url: applyTemplate(
-        input.tmplOverride,
-        destName,
-        affiliateId,
-        destCountryName,
-      ),
+      url: overrideUrl,
       affiliateActive: Boolean(affiliateId),
       tmpl: "override",
     };

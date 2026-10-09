@@ -2699,3 +2699,21 @@ Stage Summary:
 - Celoten podatkovni cutover pipeline §1–§6.5 PRVIČ dokazan na pravem PostgreSQL (ne SQLite preslikavi) — vključno z 3 pastmi, ki bi vse tri zadlele lastnika na pravih Neon podatkih (vse fail-closed, vse popravljene in zaklenjene s testi)
 - Lastniku za cutover zdaj ostane SAMO: dodaj LEGACY_DATABASE_URL + DATABASE_URL skrivnosti (Neon konzola) → poganjaj faze cutover-data.yml po vrsti (backup ima PII artefakt — naloži lokalno, 3-2-1) → deploy 2.x na Vercel (§7 + CRON_SECRET mirror) → health/smoke fazi workflowa
 - PR: chore/cutover-pipeline-proof
+
+---
+Task ID: sync-token-gate
+Agent: Z.ai Code (glavni)
+Task: "preveri ce sinhronizirano z gitlab" — diagnoza zrcala + fail-fast varovalka kvote (issue #2)
+
+Work Log:
+- Diagnoza zrcala: sync.yml je bil disabled_manually (zadnji uspešen run #12, 2026-10-07 18:50 UTC, main „enaka (7a369ce8)"); od takrat je bil GitHub main napredoval za 33 commitov (PR #3–#6, b54a6a4c) — GitLab zrcalo ZASPALO
+- Sync ponovno omogočen + dispatch (run #13, 38003512383): job „uspešen", a DOKAZANO NEUSPEŠEN na GitLab strani — vsi pushi zavrnjeni („HTTP Basic: Access denied"; token potekel/preklican — drugi lastnikov glpat je bil priporočen za preklic po varnostnem kanonu); fetch je padel TIHO (zanka brez preverbe → refs/remotes/gitlab/* prazen → vsi branchi napačno „samo na GitHub")
+- POSLEDICA BREZ POPRAVKA: ~9 min kvote na vsakem prožilcu (5 min retryjev + 4 min lint-test) × 4 urniki/dan ≈ 35 min/dan zasebnega repa (meja 2000 min/mes) za 0 dela
+- Popravek .github/workflows/sync.yml: (1) NOV gate korak ŽE PRED checkoutom — en API klic PRIVATE-TOKEN (žeton samo v glavi) → 200 = nadaljuj, 401/403 = zelen preskok z ::warning:: (rotacija GITLAB_TOKEN), drugo = zelen preskok (nedosegljiv); (2) tihi padec fetcha zaprt (for-each-ref preverba refs/remotes/gitlab/* → fetch_ok); (3) števec push_failed + izrecna ::warning:: ob neuspešnem pushu brancha (prej tiho); (4) sklep korak (if: always) izda mirror_ok izhod joba; (5) lint-test POGOJEN na mirror_ok (ne testiramo nespremenjene kode, ki jo že pokriva ci.yml)
+- Samoozdravitev: ko lastnik rotira GITLAB_TOKEN skrivnost, naslednji prožilec (urnik vsakih 6 h ali push) takoj sinhronizira 33+ commitov — brez spremembe workflowa
+- NOV tests/sync-contract.test.ts (5 testov): vrata pred checkoutom, žeton samo v glavi, 401/403 zelen preskok, zaprt tihi fetch padec, pogojeni lint-test, števec push_failed
+
+Stage Summary:
+- Zrcalo GitLab trenutno NEDELOUČNO (žeton zavrnjen) — lastnikovo dejanje: nov osebni žeton (scope read_api + read_repository + write_repository) v skrivnost GITLAB_TOKEN; potem se 33+ commitov sinhronizira samodejno
+- Kvota Actions zaščitena: neveljaven žeton zdaj stane ~1 min namesto ~9 min na prožilec; vsi preskoki ZELENI z opozorili (iskren signal, brez lažne rdečine)
+- PR: chore/sync-token-gate

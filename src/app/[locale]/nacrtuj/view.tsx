@@ -42,7 +42,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useRouter } from "@/i18n/navigation";
-import { pick } from "@/lib/i18n-pick";
+import { asPickLocale, pick } from "@/lib/i18n-pick";
 import {
   formatDuration,
   formatMoney,
@@ -76,22 +76,22 @@ const POPULAR_CHIPS = 24;
 
 const L = {
   kicker: { sl: "Načrtuj", en: "Plan", it: "Pianifica", de: "Planen", fr: "Planifier", es: "Planifica" },
-  title: { sl: "Načrtuj svojo pot po Sloveniji", en: "Plan your journey across Slovenia", it: "Pianifica il tuo viaggio in Slovenia", de: "Plane deine Reise durch Slowenien", fr: "Planifiez votre voyage en Slovénie", es: "Planifica tu viaje por Eslovenia" },
+  title: { sl: "Načrtuj svojo pot po Sloveniji", en: "Plan your journey across Slovenia", it: "Pianifica il tuo viaggio in Slovenia", de: "Plane deine Reise durch Slowenien", fr: "Planifie ton voyage en Slovénie", es: "Planifica tu viaje por Eslovenia" },
   lead: {
     sl: "Izberi želje — deterministični motor sestavi dnevni načrt iz kanonskih podatkov 38 destinacij. Isti vhod vedno da isti načrt (0 AI žetonov, 0 presenečenj).",
     en: "Pick your wishes — the deterministic engine builds a day plan from the canonical data of 38 destinations. The same input always yields the same plan (0 AI tokens, 0 surprises).",
     it: "Scegli i tuoi desideri — il motore deterministico costruisce un piano giornaliero dai dati canonici di 38 destinazioni. Lo stesso input dà sempre lo stesso piano (0 token AI, 0 sorprese).",
     de: "Wähle deine Wünsche — die deterministische Engine erstellt aus den kanonischen Daten von 38 Reisezielen einen Tagesplan. Gleiche Eingabe ergibt immer denselben Plan (0 KI-Tokens, 0 Überraschungen).",
-    fr: "Choisissez vos envies — le moteur déterministe construit un plan quotidien à partir des données canoniques de 38 destinations. La même entrée donne toujours le même plan (0 jeton d’IA, 0 surprise).",
+    fr: "Choisis tes envies — le moteur déterministe construit un plan quotidien à partir des données canoniques de 38 destinations. La même entrée donne toujours le même plan (0 jeton d’IA, 0 surprise).",
     es: "Elige tus deseos — el motor determinista construye un plan diario con los datos canónicos de 38 destinos. La misma entrada da siempre el mismo plan (0 fichas de IA, 0 sorpresas).",
   },
-  formTitle: { sl: "Kaj želiš doživeti?", en: "What do you want to experience?", it: "Cosa vuoi vivere?", de: "Was möchtest du erleben?", fr: "Que souhaitez-vous vivre ?", es: "¿Qué quieres vivir?" },
+  formTitle: { sl: "Kaj želiš doživeti?", en: "What do you want to experience?", it: "Cosa vuoi vivere?", de: "Was möchtest du erleben?", fr: "Que veux-tu vivre ?", es: "¿Qué quieres vivir?" },
   formLead: {
     sl: "Izberi interese (čipi iz dejanskih podatkov destinacij) ali napiši svoje — nato sestavi načrt.",
     en: "Pick interests (chips from actual destination data) or write your own — then build the plan.",
     it: "Scegli gli interessi (chip dai dati reali delle destinazioni) o scrivi i tuoi — poi crea il piano.",
     de: "Wähle Interessen (Chips aus echten Reisezieldaten) oder schreibe eigene — dann erstelle den Plan.",
-    fr: "Choisissez des centres d’intérêt (puces issues des données réelles des destinations) ou écrivez les vôtres — puis composez le plan.",
+    fr: "Choisis des centres d’intérêt (puces issues des données réelles des destinations) ou écris les tiens — puis compose le plan.",
     es: "Elige intereses (fichas con datos reales de los destinos) o escribe los tuyos — y luego crea el plan.",
   },
   interestsLabel: { sl: "Interesi", en: "Interests", it: "Interessi", de: "Interessen", fr: "Centres d’intérêt", es: "Intereses" },
@@ -100,7 +100,7 @@ const L = {
     en: "Or write your own wishes (comma-separated)",
     it: "Oppure scrivi i tuoi desideri (separati da virgola)",
     de: "Oder schreibe eigene Wünsche (durch Komma getrennt)",
-    fr: "Ou écrivez vos propres envies (séparées par des virgules)",
+    fr: "Ou écris tes propres envies (séparées par des virgules)",
     es: "O escribe tus propios deseos (separados por comas)",
   },
   customAdd: { sl: "Dodaj", en: "Add", it: "Aggiungi", de: "Hinzufügen", fr: "Ajouter", es: "Añadir" },
@@ -126,7 +126,7 @@ const L = {
     en: "Pick or write at least one interest.",
     it: "Scegli o scrivi almeno un interesse.",
     de: "Wähle oder schreibe mindestens ein Interesse.",
-    fr: "Choisissez ou écrivez au moins un centre d’intérêt.",
+    fr: "Choisis ou écris au moins un centre d’intérêt.",
     es: "Elige o escribe al menos un interés.",
   },
   networkError: { sl: "Omrežna napaka — poskusi znova.", en: "Network error — please try again.", it: "Errore di rete — riprova.", de: "Netzwerkfehler — bitte erneut versuchen.", fr: "Erreur réseau — veuillez réessayer.", es: "Error de red — inténtalo de nuevo." },
@@ -158,7 +158,7 @@ const L = {
     en: "Pick at least one interest and press “Build the plan” — or use a preset.",
     it: "Scegli almeno un interesse e premi «Crea il piano» — oppure usa un preset.",
     de: "Wähle mindestens ein Interesse und klicke auf „Plan erstellen“ — oder nutze eine Voreinstellung.",
-    fr: "Choisissez au moins un centre d’intérêt et appuyez sur « Créer le plan » — ou utilisez un préréglage.",
+    fr: "Choisis au moins un centre d’intérêt et appuie sur « Créer le plan » — ou utilise un préréglage.",
     es: "Elige al menos un interés y pulsa «Crear el plan» — o usa un ajuste rápido.",
   },
   errorTitle: { sl: "Načrta ni bilo mogoče sestaviti", en: "The plan could not be built", it: "Impossibile creare il piano", de: "Der Plan konnte nicht erstellt werden", fr: "Le plan n’a pas pu être créé", es: "No se pudo crear el plan" },
@@ -172,7 +172,7 @@ const L = {
     es: "Motor determinista: misma entrada → misma salida; todos los tiempos y precios provienen de datos reales de los destinos (los trayectos son estimaciones a ~60 km/h).",
   },
   selectedInterests: { sl: "Izbrani interesi", en: "Selected interests", it: "Interessi selezionati", de: "Ausgewählte Interessen", fr: "Intérêts sélectionnés", es: "Intereses seleccionados" },
-  noChipsFound: { sl: "Noben čip ne ustreza iskanju.", en: "No chips match your search.", it: "Nessuna chip corrisponde alla ricerca.", de: "Keine Chips entsprechen deiner Suche.", fr: "Aucune puce ne correspond à votre recherche.", es: "Ninguna ficha coincide con tu búsqueda." },
+  noChipsFound: { sl: "Noben čip ne ustreza iskanju.", en: "No chips match your search.", it: "Nessuna chip corrisponde alla ricerca.", de: "Keine Chips entsprechen deiner Suche.", fr: "Aucune puce ne correspond à ta recherche.", es: "Ninguna ficha coincide con tu búsqueda." },
   stopsWord: {
     sl: (n: number) => `${n} ${n === 1 ? "postanek" : n === 2 ? "postanka" : "postankov"}`,
     en: (n: number) => `${n} ${n === 1 ? "stop" : "stops"}`,
@@ -353,7 +353,7 @@ function PlannerApp() {
   const l = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const lang: PlannerLang = l === "en" ? "en" : "sl";
+  const lang: PlannerLang = asPickLocale(l);
 
   const chips = useMemo(() => interestChips(), []);
   const chipLabels = useMemo(() => new Set(chips.map((c) => c.label)), [chips]);
@@ -700,7 +700,7 @@ function PlannerApp() {
                   <SelectItem value="all">{pick(l, L.regionAny)}</SelectItem>
                   {Object.entries(REGIONS).map(([id, r]) => (
                     <SelectItem key={id} value={id}>
-                      {lang === "en" ? r.en : r.sl}
+                      {pick(l, r)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -717,7 +717,7 @@ function PlannerApp() {
                   <SelectItem value="any">{pick(l, L.seasonAny)}</SelectItem>
                   {SEASONS.map((s) => (
                     <SelectItem key={s.value} value={s.value}>
-                      {lang === "en" ? s.en : s.sl}
+                      {pick(l, s)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -734,7 +734,7 @@ function PlannerApp() {
                   <SelectItem value="any">{pick(l, L.budgetAny)}</SelectItem>
                   {BUDGETS.map((b) => (
                     <SelectItem key={b.value} value={b.value}>
-                      {lang === "en" ? b.en : b.sl}
+                      {pick(l, b)}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -53,7 +53,8 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGeolocation, type UseGeolocation } from "@/hooks/use-geolocation";
 import { Link, useRouter } from "@/i18n/navigation";
-import { pick } from "@/lib/i18n-pick";
+import { asPickLocale, pick } from "@/lib/i18n-pick";
+import { intlDateLocale } from "@/lib/intl-locale";
 import {
   arrivalCheck,
   bearingDeg,
@@ -440,7 +441,7 @@ interface Resolved {
 
 function GoModeApp() {
   const l = useLocale();
-  const lang: PlannerLang = l === "en" ? "en" : "sl";
+  const lang: PlannerLang = asPickLocale(l);
   // Locale-zavedajoči router (iz @/i18n/navigation) — /en prefix se ohrani.
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -548,7 +549,7 @@ function GoModeApp() {
     return {
       km,
       min,
-      clock: arrival.toLocaleTimeString(lang === "en" ? "en-GB" : "sl-SI", {
+      clock: arrival.toLocaleTimeString(intlDateLocale(l), {
         hour: "2-digit",
         minute: "2-digit",
       }),
@@ -737,7 +738,7 @@ function GoModeApp() {
                     )}
                     <p className="mt-3 text-xs text-muted-foreground">
                       {pick(l, L.startedAt)}:{" "}
-                      {new Date(go.startedAt).toLocaleString(lang === "en" ? "en-GB" : "sl-SI")}
+                      {new Date(go.startedAt).toLocaleString(intlDateLocale(l))}
                     </p>
                   </CardContent>
                 </Card>

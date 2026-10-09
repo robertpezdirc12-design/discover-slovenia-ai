@@ -109,7 +109,7 @@ export function DestinationsExplorer() {
       en: "No destinations match your search or filter combination. Try a different query or clear the filters.",
       it: "Nessuna destinazione corrisponde alla ricerca o alla combinazione di filtri. Prova un’altra ricerca o azzera i filtri.",
       de: "Keine Reiseziele entsprechen deiner Suche oder Filterkombination. Versuche eine andere Suche oder setze die Filter zurück.",
-      fr: "Aucune destination ne correspond à votre recherche ou à vos filtres. Essayez une autre recherche ou effacez les filtres.",
+      fr: "Aucune destination ne correspond à ta recherche ou à tes filtres. Essaie une autre recherche ou efface les filtres.",
       es: "Ningún destino coincide con tu búsqueda o combinación de filtros. Prueba otra búsqueda o borra los filtros.",
     },
     resultsLabel: { sl: "Rezultati", en: "Results", it: "Risultati", de: "Ergebnisse", fr: "Résultats", es: "Resultados" },

@@ -68,11 +68,36 @@ const WMO_LABELS: Readonly<
   99: ["nevihta", "thunderstorm", "temporale", "gewitter", "orage", "tormenta"],
 };
 
-/** WMO vremenska koda → oznaka; SL privzeto, EN prek locale. */
-export function weatherLabel(code: number, locale: "sl" | "en"): string {
+/** Indeks jezika v tercah WMO_LABELS ([sl, en, it, de, fr, es]). */
+const WMO_INDEX: Record<"sl" | "en" | "it" | "de" | "fr" | "es", number> = {
+  sl: 0,
+  en: 1,
+  it: 2,
+  de: 3,
+  fr: 4,
+  es: 5,
+};
+
+/** Oznaka za neznano WMO kodo po jeziku (iskren fallback). */
+const WMO_FALLBACK: Record<"sl" | "en" | "it" | "de" | "fr" | "es", string> = {
+  sl: "vreme",
+  en: "weather",
+  it: "meteo",
+  de: "Wetter",
+  fr: "météo",
+  es: "tiempo",
+};
+
+/**
+ * WMO vremenska koda → oznaka (6 jezikov od 2.21.0/4-c; prej sl/en).
+ * Vrstni red terc WMO_LABELS: [sl, en, it, de, fr, es] — identičen
+ * vrstnemu redu PICK_LOCALES.
+ */
+export function weatherLabel(code: number, locale: "sl" | "en" | "it" | "de" | "fr" | "es"): string {
   const entry = WMO_LABELS[code];
-  if (!entry) return locale === "en" ? "weather" : "vreme";
-  return locale === "en" ? entry[1] : entry[0];
+  const idx = WMO_INDEX[locale] ?? 0;
+  if (!entry) return WMO_FALLBACK[locale] ?? "vreme";
+  return entry[idx] ?? entry[0];
 }
 
 /** Zaokroži na 2 decimalki in normaliziraj −0 (da je ključ determinističen). */

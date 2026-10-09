@@ -44,6 +44,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { pick } from "@/lib/i18n-pick";
+import { intlDateLocale } from "@/lib/intl-locale";
 import { LISTING_STATUS_LABELS } from "@/lib/listing-moderation";
 
 /**
@@ -122,7 +123,7 @@ function eur(cents: number): string {
 
 function fmtDate(iso: string | null, locale: string): string | null {
   if (!iso) return null;
-  return new Date(iso).toLocaleDateString(locale === "sl" ? "sl-SI" : "en-GB", {
+  return new Date(iso).toLocaleDateString(intlDateLocale(locale), {
     dateStyle: "medium",
   });
 }

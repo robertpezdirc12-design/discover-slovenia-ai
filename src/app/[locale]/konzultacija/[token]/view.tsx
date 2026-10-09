@@ -26,6 +26,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link as I18nLink } from "@/i18n/navigation";
 import { pick } from "@/lib/i18n-pick";
+import { intlDateLocale } from "@/lib/intl-locale";
 import {
   CONSULTATION_BUDGET_LABELS,
   CONSULTATION_INTEREST_LABELS,
@@ -249,12 +250,12 @@ export default function KonzultacijaTokenPage() {
 
   // ── Odgovor ─────────────────────────────────────────────────────────────
   const d = state.data;
-  const created = new Date(d.createdAt).toLocaleString(l === "sl" ? "sl-SI" : "en-GB", {
+  const created = new Date(d.createdAt).toLocaleString(intlDateLocale(l), {
     dateStyle: "medium",
     timeStyle: "short",
   });
   const delivered = d.deliveredAt
-    ? new Date(d.deliveredAt).toLocaleString(l === "sl" ? "sl-SI" : "en-GB", {
+    ? new Date(d.deliveredAt).toLocaleString(intlDateLocale(l), {
         dateStyle: "medium",
         timeStyle: "short",
       })

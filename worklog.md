@@ -2699,3 +2699,30 @@ Stage Summary:
 - Celoten podatkovni cutover pipeline §1–§6.5 PRVIČ dokazan na pravem PostgreSQL (ne SQLite preslikavi) — vključno z 3 pastmi, ki bi vse tri zadlele lastnika na pravih Neon podatkih (vse fail-closed, vse popravljene in zaklenjene s testi)
 - Lastniku za cutover zdaj ostane SAMO: dodaj LEGACY_DATABASE_URL + DATABASE_URL skrivnosti (Neon konzola) → poganjaj faze cutover-data.yml po vrsti (backup ima PII artefakt — naloži lokalno, 3-2-1) → deploy 2.x na Vercel (§7 + CRON_SECRET mirror) → health/smoke fazi workflowa
 - PR: chore/cutover-pipeline-proof
+
+---
+Task ID: i18n-core-activation
+Agent: Z.ai Code (glavni)
+Task: "vse ti naredi nadaljuj" — 4-c jedrska i18n aktivacija (PRODUCT-AUDIT §9) → 2.21.0
+
+Work Log:
+- Obseg po §9 sledilni nalogi 4-c: PlannerLang vrata v jedru + FR register harmonizacija (tu/vous) + ~15 toLocaleDateString vrat
+- src/lib/i18n-pick.ts: NOV asPickLocale() (normalizacija poljubnega niza → PickLocale, neznano → sl — vrata za stroge podpise)
+- src/lib/itinerary-engine.ts (jedro): PlannerLang = PickLocale (6 jezikov; prej sl/en — it/de/fr/es uporabniki so dobili SLOVENSKI načrt); NOV PLANNER_MSG slovar (20 sporočil × 6 jezikov: dayTitle/daysWord/stopsWord/regionsWord/planTitle/summary/matchedInterests/noMatch/selectedCount/regionFilter/seasonPref/budgetFilter/budgetRelaxed/onlyDays/singleStop/datasetNote/draftTitle/draftSummary/draftDayTitle/draftCoverage) — sl/en izhodi BAJTNO identični predhodnim ternarijem; seasonName/regionLabel izbor prek [lang]; formatMoney (€X samo EN); GEO_MSG izbor že pripravljen (slovar 6-jezičen od P3)
+- src/lib/weather.ts: weatherLabel 6 jezikov (WMO_INDEX preslikava terc [sl,en,it,de,fr,es] + WMO_FALLBACK slovar: meteo/Wetter/météo/tiempo)
+- src/lib/journey/booking.ts: statusLabel podpis PickLocale (register STATUS_LABELS je bil že 6-jezičen — samo vrata so bila binarna)
+- src/lib/trip-dates.ts: weekdayShort/weekdayLong/formatDateShort/formatDateLong 6 jezikov (ROČNI tabele — Intl zamenjava bi zlomila bajtno identiteto sl/en: "ned"≠Intl "ned.", genitiv "oktobra"≠nominativ; nove tabele IT/DE/FR/ES: tedni dolgi+kratki, meseci kratki+dolgi; sl genitiv in en mesec-prvi oblika ohranjena)
+- src/lib/go-gps.ts: GpsLang = PickLocale; CARDINALS + CARDINAL_NAMES 6 jezikov (V/O/E konvencije: sl V=vzhod, it/fr/es E=est/est/este, de O=Osten)
+- src/lib/types.ts: ItineraryPlan.meta.locale → 6-jezična unija
+- NOV src/lib/intl-locale.ts: INTL_DATE_LOCALE (sl-SI/en-GB/it-IT/de-DE/fr-FR/es-ES) + intlDateLocale() (neznano → sl-SI); zamenjanih 16 binarnih datumskih vrat na lastniških straneh (admin, partner, izplacila ×3, provizije ×2, moj-profil, vir-podatkov, moja-potovanja ×2, notifikacije, na-poti ×2, konzultacija/[token] ×2, potovanje, printable-confirmation) + 2 duplikatni lokalni slovarja (cloud-trips-section, shared-trip-view) poenotena na skupni modul
+- Klicna mesta: nacrtuj (lang + region/season/budget ternariji → pick), potovanje, na-poti, trip-dates-panel, printable-confirmation, trip-reservations (+formatPriceEUR podpis), personal-home-section — vsa l === "en" ? "en" : "sl" vrata → asPickLocale(l)
+- FR register harmonizacija: 26 vous-oblik → tu v 7 datotekah (home-view ×7, nacrtuj ×8, kontakt ×6, travel-map ×2, trznica-data ×2, destinations-explorer ×1) — dominantni register je tu (158 obstoječih), usklajeno z neformalnim tonom sl/it/de/es; izjema ohranjena: samostalnik "rendez-vous"
+- Znan dolg (iskreno dokumentiran): 2 SL-stavka v trip-collab/trip-reservations (celoten blok še SL — dosledno pusteno, ne mešanje jezikov znotraj stavka)
+- Verzija 2.20.0 → 2.21.0 (package.json, health, sw.js SW_VERSION, footer, README ×2, p2-data-plane + pwa-sw testi); PRODUCT-AUDIT §9: 4-c prečrtan ✅ z dodatkoma
+- NOV tests/i18n-core-activation.test.ts: 18 testov (naslovi/povzetki/determinizem čez locale, draft zbirka, formatMoney, GEO izbor, WMO + fallback, statusLabel, tedni/meseci formanti, kardinali, INTL_DATE_LOCALE enota, FR vous-regresijski scan src, asPickLocale vrata)
+
+Stage Summary:
+- 1292/1292 testov (1274 + 18), tsc 0, lint 0, build izhod 0; sl/en izhodi vseh jed BAJTNO identični (hišni kanon)
+- Jedro aplikacije (načrtovalnik, vreme, statusi, datumi, smeri) zdaj govori vseh 6 jezikov lupine — prej so it/de/fr/es uporabniki dobivali slovenščino
+- FR uporabniški vmesnik v enotnem tu registru; datumski formati po Intl tagih vseh 6 jezikov
+- PR: feat/i18n-core-activation (issue #2 §9 točka 3 ostanek + 4-c)

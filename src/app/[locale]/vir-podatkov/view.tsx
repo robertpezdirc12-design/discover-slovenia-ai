@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { pick } from "@/lib/i18n-pick";
+import { intlDateLocale } from "@/lib/intl-locale";
 import { DESTINATIONS } from "@/lib/slovenia-data";
 
 /** Odziv /api/sto/search (P0-C — uradna STO vsebina, llms.txt ingest). */
@@ -47,7 +48,7 @@ type StoSearchStatus =
 function formatIngestDate(iso: string, locale: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString(locale === "en" ? "en-GB" : "sl-SI", {
+  return d.toLocaleDateString(intlDateLocale(locale), {
     day: "numeric",
     month: "long",
     year: "numeric",

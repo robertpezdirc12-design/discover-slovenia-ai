@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { pick } from "@/lib/i18n-pick";
+import { intlDateLocale } from "@/lib/intl-locale";
 import { payoutStatusLabel, type PayoutStatus } from "@/lib/marketplace-types";
 
 const L = {
@@ -298,12 +299,12 @@ export default function OwnerPayoutsPage() {
                           {o.paidAt && (
                             <span>
                               <Clock className="mr-1 inline size-3" aria-hidden="true" />
-                              {pick(l, L.paidAt)}: {new Date(o.paidAt).toLocaleDateString(lang === "en" ? "en-GB" : "sl-SI")}
+                              {pick(l, L.paidAt)}: {new Date(o.paidAt).toLocaleDateString(intlDateLocale(l))}
                             </span>
                           )}
                           {o.payoutDueAt && (
                             <span>
-                              {pick(l, L.dueAt)}: {new Date(o.payoutDueAt).toLocaleDateString(lang === "en" ? "en-GB" : "sl-SI")}
+                              {pick(l, L.dueAt)}: {new Date(o.payoutDueAt).toLocaleDateString(intlDateLocale(l))}
                             </span>
                           )}
                         </p>
@@ -364,7 +365,7 @@ export default function OwnerPayoutsPage() {
                     {data.audit.map((a) => (
                       <li key={a.id} className="flex flex-wrap gap-2 rounded-md bg-muted px-2 py-1.5">
                         <span className="text-muted-foreground">
-                          {new Date(a.createdAt).toLocaleString(lang === "en" ? "en-GB" : "sl-SI")}
+                          {new Date(a.createdAt).toLocaleString(intlDateLocale(l))}
                         </span>
                         <span className="font-bold">{a.action}</span>
                         <span className="text-muted-foreground">{a.actorType}</span>

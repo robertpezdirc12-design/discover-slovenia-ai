@@ -46,6 +46,17 @@ export function isPickLocale(value: string): value is PickLocale {
 }
 
 /**
+ * Normaliziraj poljuben niz (npr. useLocale()) na podprti jezik.
+ * Neznana/nedoločena vrednost → "sl" (iskren fallback, nikoli ugibanje).
+ * Uporaba: kadar stroga funkcija zahteva PickLocale (npr. PlannerLang
+ * vrata v itinerary-engine, weatherLabel, statusLabel), ne pa pick()
+ * slovarja.
+ */
+export function asPickLocale(l: string | undefined | null): PickLocale {
+  return isPickLocale(l ?? "") ? (l as PickLocale) : "sl";
+}
+
+/**
  * Vrni besedilo za aktivni locale iz (delnega) slovarja.
  * - neznan locale → slovenščina (privzeta)
  * - slovar brez vnosa za aktivni locale → slovenščina (fallback)

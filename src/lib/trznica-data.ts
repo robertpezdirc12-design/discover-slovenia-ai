@@ -325,7 +325,7 @@ export const SUPPLY_SHELVES: SupplyShelf[] = [
       en: "Museum and attraction tickets — instantly on your phone, skip the line.",
       it: "Biglietti per musei e attrazioni — subito sul telefono, senza fila.",
       de: "Tickets für Museen und Sehenswürdigkeiten — sofort auf dem Handy, ohne Anstehen.",
-      fr: "Billets pour musées et sites — immédiatement sur votre téléphone, sans file d'attente.",
+      fr: "Billets pour musées et sites — immédiatement sur ton téléphone, sans file d'attente.",
       es: "Entradas para museos y atracciones — al instante en tu móvil, sin colas.",
     },
     coverage: {
@@ -350,7 +350,7 @@ export const SUPPLY_SHELVES: SupplyShelf[] = [
       en: "Travel insurance for your next adventure — adventure activities included by option.",
       it: "Assicurazione di viaggio per la prossima avventura — attività avventurose incluse su opzione.",
       de: "Reiseversicherung für Ihr nächstes Abenteuer — Abenteueraktivitäten je nach Option inklusive.",
-      fr: "Assurance voyage pour votre prochaine aventure — activités d'aventure incluses en option.",
+      fr: "Assurance voyage pour ta prochaine aventure — activités d'aventure incluses en option.",
       es: "Seguro de viaje para tu próxima aventura — actividades de aventura incluidas según opción.",
     },
     coverage: {

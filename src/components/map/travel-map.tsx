@@ -1039,7 +1039,7 @@ export default function TravelMap() {
       en: "No destinations match your search or filters — clear them and try again.",
       it: "Nessuna destinazione corrisponde alla ricerca o ai filtri — azzerali e riprova.",
       de: "Keine Reiseziele entsprechen deiner Suche oder den Filtern — setze sie zurück und versuche es erneut.",
-      fr: "Aucune destination ne correspond à votre recherche ou à vos filtres — effacez-les et réessayez.",
+      fr: "Aucune destination ne correspond à ta recherche ou à tes filtres — efface-les et réessaie.",
       es: "Ningún destino coincide con tu búsqueda o filtros — bórralos e inténtalo de nuevo.",
     },
     legend: { sl: "Legenda tipov", en: "Type legend", it: "Legenda dei tipi", de: "Typen-Legende", fr: "Légende des types", es: "Leyenda de tipos" },
@@ -1048,7 +1048,7 @@ export default function TravelMap() {
       en: "Click a marker for details · Data: OpenStreetMap (ODbL)",
       it: "Clicca un marker per i dettagli · Dati: OpenStreetMap (ODbL)",
       de: "Klicke auf einen Marker für Details · Daten: OpenStreetMap (ODbL)",
-      fr: "Cliquez sur un marqueur pour les détails · Données : OpenStreetMap (ODbL)",
+      fr: "Clique sur un marqueur pour les détails · Données : OpenStreetMap (ODbL)",
       es: "Pulsa un marcador para ver detalles · Datos: OpenStreetMap (ODbL)",
     },
     mapLabel: {

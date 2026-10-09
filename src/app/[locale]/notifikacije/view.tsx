@@ -61,6 +61,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "@/i18n/navigation";
 import { pick } from "@/lib/i18n-pick";
+import { intlDateLocale } from "@/lib/intl-locale";
 
 // ── Slovar (SL privzet, EN prek locale — ostali iskreno na SL kanonu) ──────
 
@@ -352,7 +353,7 @@ function NotificationCenter() {
   const fmtDate = useCallback(
     (iso: string) => {
       const d = new Date(iso);
-      return d.toLocaleString(locale === "en" ? "en-GB" : "sl-SI", {
+      return d.toLocaleString(intlDateLocale(locale), {
         day: "numeric",
         month: "short",
         hour: "2-digit",

@@ -5,7 +5,8 @@
  * SOURCE-CONTRACT (pošteno označeno): DB-vezani jobi v peskovniku niso
  * enotsko testabilni brez živih vrstic — zaklenemo STRUKTURO izvorne kode
  * in registracijo urnikov. Če kdo odstrani requireCronSecret iz kakšne
- * cron poti, izpusti urnik iz vercel.json ali razbije guard na meji
+ * cron poti, izpusti urnik iz vercel.json / prod-cron.yml ali razbije
+ * guard na meji
  * zunanjih podatkov, regresijska mreža pade.
  */
 
@@ -52,23 +53,34 @@ describe("p0i [source-contract]: cron poti so fail-closed", () => {
   });
 });
 
-// ── Urniki (vercel.json) ──────────────────────────────────────────────────
+// ── Urniki (vercel.json + GitHub Actions) ─────────────────────────────────
+//
+// Hobby plan Vercela dovoli NAJVEČ 2 cron joba na račun in največ 1 zagon
+// na dan — zato sta v vercel.json SAMO dnevna joba, preostale 3 pa poganja
+// .github/workflows/prod-cron.yml (isti Bearer fail-closed kanon).
 
 describe("p0i [source-contract]: urniki cron jobov so registrirani", () => {
-  test("④ vercel.json vsebuje vseh 5 cron vnosov z urniki", async () => {
+  test("④ vercel.json vsebuje 2 DNEVNA cron vnosa (Hobby meja: max 2, 1×/dan)", async () => {
     const raw = JSON.parse(await src("vercel.json"));
     const crons = raw.crons as { path: string; schedule: string }[];
-    const paths = crons.map((c) => c.path);
-    for (const route of CRON_ROUTES) {
-      expect(paths).toContain(`/api/cron/${route}`);
-    }
+    expect(crons.length).toBe(2); // Hobby: max 2 — več jih deploy zavrne
     const recalc = crons.find((c) => c.path === "/api/cron/recalculate-status");
     expect(recalc?.schedule).toBe("30 6 * * *"); // dnevno 6:30 UTC
     const nudge = crons.find((c) => c.path === "/api/cron/draft-reminders");
     expect(nudge?.schedule).toBe("0 8 * * *"); // dnevno 8:00 UTC
-    const watch = crons.find((c) => c.path === "/api/cron/watch-check");
-    expect(watch?.schedule).toBe("15 */2 * * *"); // vsaki 2 uri (P1-C)
-    expect(crons.length).toBe(5);
+  });
+
+  test("④b preostali 3 jobi so v .github/workflows/prod-cron.yml (isti urniki)", async () => {
+    const wf = await src(".github/workflows/prod-cron.yml");
+    expect(wf).toContain("watch-check"); // P1-C: vsaki 2 uri
+    expect(wf).toContain("'15 */2 * * *'");
+    expect(wf).toContain("sto-reingest"); // P0-C: torek 7:30 UTC
+    expect(wf).toContain("'30 7 * * 2'");
+    expect(wf).toContain("kiwitaxi-reingest"); // P0-C: sreda 7:30 UTC
+    expect(wf).toContain("'30 7 * * 3'");
+    // žeton potuje SAMO v glavi (fail-closed kanon), nikoli v URL-ju:
+    expect(wf).toContain("Authorization: Bearer ${CRON_SECRET}");
+    expect(wf).not.toMatch(/CRON_SECRET=/); // nikoli kot query parameter
   });
 });
 

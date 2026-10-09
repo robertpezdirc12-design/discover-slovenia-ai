@@ -92,9 +92,13 @@ describe("p1c [source-contract]: cron kanoni", () => {
     expect(code).toContain("runWatchCheck");
   });
 
-  test("⑦ urnik je registriran v vercel.json", async () => {
-    const code = await src("vercel.json");
-    expect(code).toContain("/api/cron/watch-check");
+  test("⑦ urnik je registriran (Hobby: .github/workflows/prod-cron.yml)", async () => {
+    // Vercel Hobby dovoli max 2 cron joba (1×/dan) — watch-check (vsaki 2
+    // uri) živi v GitHub Actions workflowu, ki kliče isto pot z Bearer
+    // glavo (isti fail-closed kanon; glej tests/cron-ops-contract.test.ts ④b).
+    const wf = await src(".github/workflows/prod-cron.yml");
+    expect(wf).toContain("watch-check");
+    expect(wf).toContain("'15 */2 * * *'"); // vsaki 2 uri (P1-C)
   });
 
   test("⑧ dedupe: (userId, dedupeKey) unique → P2002 = prezrto (idempotenca)", async () => {

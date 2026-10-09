@@ -22,20 +22,32 @@ import { Link } from "@/i18n/navigation";
 import { pick } from "@/lib/i18n-pick";
 
 const L = {
-  watch: { sl: "Spremljaj ceno", en: "Watch price" },
-  watching: { sl: "Ceno spremljam", en: "Watching price" },
+  watch: { sl: "Spremljaj ceno", en: "Watch price", it: "Segui il prezzo", de: "Preis beobachten", fr: "Suivre le prix", es: "Seguir el precio" },
+  watching: { sl: "Ceno spremljam", en: "Watching price", it: "Stai seguendo il prezzo", de: "Preis wird beobachtet", fr: "Tu suis le prix", es: "Siguiendo el precio" },
   signIn: {
     sl: "Za spremljanje cene se prijavi.",
     en: "Sign in to watch the price.",
+    it: "Accedi per seguire il prezzo.",
+    de: "Melde dich an, um den Preis zu beobachten.",
+    fr: "Connecte-toi pour suivre le prix.",
+    es: "Inicia sesión para seguir el precio.",
   },
   added: {
     sl: "Ceno spremljam — opozorim te, ko pade za vsaj 10 % (obe ceni preverjeni iz tržnice).",
     en: "Watching the price — you will be alerted when it drops by at least 10% (both prices verified from the marketplace).",
+    it: "Stai seguendo il prezzo — verrai avvisato quando scenderà di almeno il 10% (entrambi i prezzi verificati dal mercato).",
+    de: "Preis wird beobachtet — du wirst benachrichtigt, wenn er um mindestens 10 % fällt (beide Preise vom Marktplatz verifiziert).",
+    fr: "Prix suivi — tu seras alerté lorsqu'il baissera d'au moins 10 % (les deux prix vérifiés depuis le marché).",
+    es: "Siguiendo el precio — te avisaremos cuando baje al menos un 10 % (ambos precios verificados desde el mercado).",
   },
-  exists: { sl: "To ceno že spremljaš.", en: "You already watch this price." },
+  exists: { sl: "To ceno že spremljaš.", en: "You already watch this price.", it: "Segui già questo prezzo.", de: "Du beobachtest diesen Preis bereits.", fr: "Tu suis déjà ce prix.", es: "Ya sigues este precio." },
   error: {
     sl: "Dodajanje spremljanja ni uspelo.",
     en: "Could not add the watch.",
+    it: "Impossibile aggiungere l'osservazione.",
+    de: "Beobachtung konnte nicht hinzugefügt werden.",
+    fr: "Impossible d'ajouter le suivi.",
+    es: "No se pudo añadir el seguimiento.",
   },
 } as const;
 

@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { pick } from "@/lib/i18n-pick";
 
 const L = {
-  successTitle: { sl: "Hvala za nakup!", en: "Thank you for your purchase!" },
+  successTitle: { sl: "Hvala za nakup!", en: "Thank you for your purchase!", it: "Grazie per il tuo acquisto!", de: "Danke für deinen Kauf!", fr: "Merci pour ton achat !", es: "¡Gracias por tu compra!" },
   successLead: {
     // P0 AUDIT (iskrenost): ta pasica izhaja iz URL parametra, ki ga je mogoče
     // podtakniti — NE trdimo potrjenega naročila, ker potrditev pomeni
@@ -28,14 +28,22 @@ const L = {
     // se osveži po potrditvi ponudnika plačil.
     sl: "Plačilo je bilo uspešno oddano. Naročilo uradno potrdimo, ko prejmemo potrdilo plačila (običajno v nekaj trenutkih) — stanje vidiš v svojih naročilih.",
     en: "Your payment was submitted successfully. We officially confirm the order once the payment confirmation arrives (usually within moments) — see your orders for the status.",
+    it: "Il tuo pagamento è stato inviato con successo. Confermiamo ufficialmente l'ordine appena arriva la conferma di pagamento (di solito entro pochi istanti) — lo stato è visibile nei tuoi ordini.",
+    de: "Deine Zahlung wurde erfolgreich übermittelt. Wir bestätigen die Bestellung offiziell, sobald die Zahlungsbestätigung eintrifft (in der Regel innerhalb von Augenblicken) — den Status siehst du in deinen Bestellungen.",
+    fr: "Ton paiement a été transmis avec succès. Nous confirmons officiellement la commande dès réception de la confirmation de paiement (généralement en quelques instants) — consulte tes commandes pour connaître le statut.",
+    es: "Tu pago se ha enviado correctamente. Confirmamos oficialmente el pedido cuando llegue la confirmación del pago (normalmente en unos momentos) — consulta el estado en tus pedidos.",
   },
-  orderNo: { sl: "Številka naročila", en: "Order number" },
-  cancelledTitle: { sl: "Plačilo je bilo preklicano", en: "Payment was cancelled" },
+  orderNo: { sl: "Številka naročila", en: "Order number", it: "Numero d'ordine", de: "Bestellnummer", fr: "Numéro de commande", es: "Número de pedido" },
+  cancelledTitle: { sl: "Plačilo je bilo preklicano", en: "Payment was cancelled", it: "Il pagamento è stato annullato", de: "Die Zahlung wurde abgebrochen", fr: "Le paiement a été annulé", es: "El pago ha sido cancelado" },
   cancelledLead: {
     sl: "Naročilo ni bilo opravljeno in nič ni bilo zaračunano. Lahko poskusite znova kadarkoli.",
     en: "The order was not placed and nothing was charged. You can try again at any time.",
+    it: "L'ordine non è stato effettuato e non è stato addebitato nulla. Puoi riprovare in qualsiasi momento.",
+    de: "Die Bestellung wurde nicht aufgegeben und es wurde nichts abgebucht. Du kannst es jederzeit erneut versuchen.",
+    fr: "La commande n'a pas été passée et rien n'a été débité. Tu peux réessayer à tout moment.",
+    es: "El pedido no se realizó y no se cobró nada. Puedes intentarlo de nuevo en cualquier momento.",
   },
-  dismiss: { sl: "Zapri pasico", en: "Dismiss banner" },
+  dismiss: { sl: "Zapri pasico", en: "Dismiss banner", it: "Chiudi il banner", de: "Banner schließen", fr: "Fermer la bannière", es: "Cerrar el banner" },
 } as const;
 
 export function PaymentReturnBanner() {

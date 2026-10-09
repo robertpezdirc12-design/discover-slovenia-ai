@@ -33,11 +33,15 @@ export function DestinationCard({
 }) {
   const l = useLocale();
   const L = {
-    featured: { sl: "Izpostavljeno", en: "Featured" },
-    rating: { sl: (n: number) => `Ocena ${n.toFixed(1)} od 5`, en: (n: number) => `Rated ${n.toFixed(1)} of 5` },
+    featured: { sl: "Izpostavljeno", en: "Featured", it: "In evidenza", de: "Empfohlen", fr: "À la une", es: "Destacado" },
+    rating: { sl: (n: number) => `Ocena ${n.toFixed(1)} od 5`, en: (n: number) => `Rated ${n.toFixed(1)} of 5`, it: (n: number) => `Valutato ${n.toFixed(1)} su 5`, de: (n: number) => `Bewertet ${n.toFixed(1)} von 5`, fr: (n: number) => `Noté ${n.toFixed(1)} sur 5`, es: (n: number) => `Valorado ${n.toFixed(1)} sobre 5` },
     toDetail: {
       sl: (name: string) => `Odpri destinacijo ${name}`,
       en: (name: string) => `Open destination ${name}`,
+      it: (name: string) => `Apri la destinazione ${name}`,
+      de: (name: string) => `Reiseziel ${name} öffnen`,
+      fr: (name: string) => `Ouvrir la destination ${name}`,
+      es: (name: string) => `Abrir el destino ${name}`,
     },
   } as const;
 

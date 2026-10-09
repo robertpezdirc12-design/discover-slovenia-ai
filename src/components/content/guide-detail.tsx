@@ -27,25 +27,33 @@ export function GuideDetail({ guide }: { guide: Guide }) {
   const group = GUIDE_GROUPS[guide.group];
 
   const L = {
-    back: { sl: "Vsi vodiči", en: "All guides" },
-    groupLabel: { sl: "Skupina", en: "Group" },
-    days: { sl: (n: number) => `${n} dni`, en: (n: number) => `${n} days` },
-    km: { sl: (n: number) => `${n} km`, en: (n: number) => `${n} km` },
-    published: { sl: "Objavljeno", en: "Published" },
-    intro: { sl: "Povzetek poti", en: "Route summary" },
-    destsTitle: { sl: "Destinacije na tej poti", en: "Destinations on this route" },
+    back: { sl: "Vsi vodiči", en: "All guides", it: "Tutte le guide", de: "Alle Guides", fr: "Tous les guides", es: "Todas las guías" },
+    groupLabel: { sl: "Skupina", en: "Group", it: "Gruppo", de: "Gruppe", fr: "Groupe", es: "Grupo" },
+    days: { sl: (n: number) => `${n} dni`, en: (n: number) => `${n} days`, it: (n: number) => `${n} giorni`, de: (n: number) => `${n} Tage`, fr: (n: number) => `${n} jours`, es: (n: number) => `${n} días` },
+    km: { sl: (n: number) => `${n} km`, en: (n: number) => `${n} km`, it: (n: number) => `${n} km`, de: (n: number) => `${n} km`, fr: (n: number) => `${n} km`, es: (n: number) => `${n} km` },
+    published: { sl: "Objavljeno", en: "Published", it: "Pubblicato", de: "Veröffentlicht", fr: "Publié", es: "Publicado" },
+    intro: { sl: "Povzetek poti", en: "Route summary", it: "Riepilogo del percorso", de: "Routenzusammenfassung", fr: "Résumé de l’itinéraire", es: "Resumen de la ruta" },
+    destsTitle: { sl: "Destinacije na tej poti", en: "Destinations on this route", it: "Destinazioni su questo percorso", de: "Destinationen auf dieser Route", fr: "Destinations sur cet itinéraire", es: "Destinos en esta ruta" },
     destsLead: {
       sl: "Povezane destinacije iz našega kanonskega nabora — odpri jih za podrobnosti, cene in »kaj početi«.",
       en: "Related destinations from our canonical dataset — open them for details, prices and things to do.",
+      it: "Destinazioni correlate dal nostro dataset canonico — aprile per dettagli, prezzi e cose da fare.",
+      de: "Verwandte Destinationen aus unserem kanonischen Datensatz — öffne sie für Details, Preise und Aktivitäten.",
+      fr: "Destinations associées de notre ensemble de données canonique — ouvre-les pour les détails, les prix et les choses à faire.",
+      es: "Destinos relacionados de nuestro conjunto de datos canónico — ábrelos para ver detalles, precios y qué hacer.",
     },
     noDests: {
       sl: "Ta vodnik je splošen priročnik (meje, cestnine, najem avta) in se ne navezuje na posamezno destinacijo iz nabora.",
       en: "This guide is a general handbook (borders, tolls, car rental) and does not tie to an individual destination in the dataset.",
+      it: "Questa guida è un manuale generale (confini, pedaggi, noleggio auto) e non è legata a una singola destinazione del dataset.",
+      de: "Dieser Guide ist ein allgemeines Handbuch (Grenzen, Maut, Mietwagen) und ist nicht mit einer einzelnen Destination des Datensatzes verknüpft.",
+      fr: "Ce guide est un manuel général (frontières, péages, location de voiture) et n’est pas lié à une destination individuelle de l’ensemble de données.",
+      es: "Esta guía es un manual general (fronteras, peajes, alquiler de coche) y no está ligada a un destino individual del conjunto de datos.",
     },
-    addTrip: { sl: "Dodaj v mojo pot", en: "Add to my trip" },
-    added: { sl: "V mojo pot ✓", en: "In my trip ✓" },
-    plan: { sl: "Načrtuj s temi destinacijami", en: "Plan with these destinations" },
-    related: { sl: "Preberi tudi", en: "Read next" },
+    addTrip: { sl: "Dodaj v mojo pot", en: "Add to my trip", it: "Aggiungi al mio viaggio", de: "Zu meiner Reise hinzufügen", fr: "Ajouter à mon voyage", es: "Añadir a mi viaje" },
+    added: { sl: "V mojo pot ✓", en: "In my trip ✓", it: "Nel mio viaggio ✓", de: "In meiner Reise ✓", fr: "Dans mon voyage ✓", es: "En mi viaje ✓" },
+    plan: { sl: "Načrtuj s temi destinacijami", en: "Plan with these destinations", it: "Pianifica con queste destinazioni", de: "Mit diesen Destinationen planen", fr: "Planifier avec ces destinations", es: "Planifica con estos destinos" },
+    related: { sl: "Preberi tudi", en: "Read next", it: "Leggi anche", de: "Lies auch", fr: "À lire aussi", es: "Lee también" },
   } as const;
 
   const dests = guide.destSlugs

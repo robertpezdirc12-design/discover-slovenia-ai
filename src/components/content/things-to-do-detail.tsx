@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Link } from "@/i18n/navigation";
-import { pick } from "@/lib/i18n-pick";
+import { pick, type PickDict } from "@/lib/i18n-pick";
 import { GUIDE_THEMES, thingsToDoIntro } from "@/lib/content-data";
 import {
   type Destination,
@@ -29,11 +29,11 @@ import {
   regionLabel,
 } from "@/lib/slovenia-data";
 
-const SEASONS: Record<Season, { sl: string; en: string }> = {
-  spring: { sl: "Pomlad", en: "Spring" },
-  summer: { sl: "Poletje", en: "Summer" },
-  autumn: { sl: "Jesen", en: "Autumn" },
-  winter: { sl: "Zima", en: "Winter" },
+const SEASONS: Record<Season, PickDict<string>> = {
+  spring: { sl: "Pomlad", en: "Spring", it: "Primavera", de: "Frühling", fr: "Printemps", es: "Primavera" },
+  summer: { sl: "Poletje", en: "Summer", it: "Estate", de: "Sommer", fr: "Été", es: "Verano" },
+  autumn: { sl: "Jesen", en: "Autumn", it: "Autunno", de: "Herbst", fr: "Automne", es: "Otoño" },
+  winter: { sl: "Zima", en: "Winter", it: "Inverno", de: "Winter", fr: "Hiver", es: "Invierno" },
 };
 
 const SEASON_EMOJI: Record<Season, string> = {
@@ -55,60 +55,97 @@ export function ThingsToDoDetail({ d }: { d: Destination }) {
   const intro = thingsToDoIntro(d.slug);
 
   const L = {
-    back: { sl: `← ${d.name}`, en: `← ${d.name}` },
-    kicker: { sl: "Vodnik po destinaciji", en: "Destination guide" },
-    title: { sl: `Kaj početi in videti v ${d.name}`, en: `Things to do and see in ${d.name}` },
+    back: { sl: `← ${d.name}`, en: `← ${d.name}`, it: `← ${d.name}`, de: `← ${d.name}`, fr: `← ${d.name}`, es: `← ${d.name}` },
+    kicker: { sl: "Vodnik po destinaciji", en: "Destination guide", it: "Guida della destinazione", de: "Destinations-Guide", fr: "Guide de la destination", es: "Guía del destino" },
+    title: { sl: `Kaj početi in videti v ${d.name}`, en: `Things to do and see in ${d.name}`, it: `Cose da fare e vedere a ${d.name}`, de: `Sehen und Erleben in ${d.name}`, fr: `Que faire et voir à ${d.name}`, es: `Qué hacer y ver en ${d.name}` },
     introNote: {
       sl: `Podrobna stran z aktivnostmi, nasveti in praktičnimi informacijami — ${d.highlights.length} glavne znamenitosti na enem mestu.`,
       en: `A detailed page with activities, tips and practical information — ${d.highlights.length} key sights in one place.`,
+      it: `Pagina dettagliata con attività, consigli e informazioni pratiche — ${d.highlights.length} attrazioni principali in un unico posto.`,
+      de: `Detaillierte Seite mit Aktivitäten, Tipps und praktischen Infos — ${d.highlights.length} Hauptsehenswürdigkeiten an einem Ort.`,
+      fr: `Page détaillée avec activités, conseils et informations pratiques — ${d.highlights.length} sites incontournables au même endroit.`,
+      es: `Página detallada con actividades, consejos e información práctica — ${d.highlights.length} lugares clave en un solo sitio.`,
     },
-    highlightsTitle: { sl: "Glavne znamenitosti", en: "Key sights" },
-    activitiesTitle: { sl: "Aktivnosti", en: "Activities" },
-    bestForTitle: { sl: "Najboljše za", en: "Best for" },
-    seasonTitle: { sl: "Najboljši čas za obisk", en: "Best time to visit" },
+    highlightsTitle: { sl: "Glavne znamenitosti", en: "Key sights", it: "Attrazioni principali", de: "Hauptsehenswürdigkeiten", fr: "Sites incontournables", es: "Lugares clave" },
+    activitiesTitle: { sl: "Aktivnosti", en: "Activities", it: "Attività", de: "Aktivitäten", fr: "Activités", es: "Actividades" },
+    bestForTitle: { sl: "Najboljše za", en: "Best for", it: "Ideale per", de: "Ideal für", fr: "Idéal pour", es: "Ideal para" },
+    seasonTitle: { sl: "Najboljši čas za obisk", en: "Best time to visit", it: "Miglior periodo per visitare", de: "Beste Reisezeit", fr: "Meilleure période pour visiter", es: "Mejor época para visitar" },
     seasonIn: {
       sl: (s: Season[]) => s.map((x) => pick(l, SEASONS[x])).join(", "),
       en: (s: Season[]) => s.map((x) => pick(l, SEASONS[x])).join(", "),
+      it: (s: Season[]) => s.map((x) => pick(l, SEASONS[x])).join(", "),
+      de: (s: Season[]) => s.map((x) => pick(l, SEASONS[x])).join(", "),
+      fr: (s: Season[]) => s.map((x) => pick(l, SEASONS[x])).join(", "),
+      es: (s: Season[]) => s.map((x) => pick(l, SEASONS[x])).join(", "),
     },
     seasonOff: {
       sl: "Zunaj sezone — produkcija za te mesece priporoča preverjanje odpiralnih časov.",
       en: "Off-season — for these months production recommends checking opening hours.",
+      it: "Fuori stagione — per questi mesi la produzione consiglia di controllare gli orari di apertura.",
+      de: "Nebensaison — für diese Monate empfiehlt die Produktion, die Öffnungszeiten zu prüfen.",
+      fr: "Hors saison — pour ces mois, la production recommande de vérifier les horaires d’ouverture.",
+      es: "Fuera de temporada — para estos meses la producción recomienda comprobar los horarios de apertura.",
     },
-    themesTitle: { sl: "Vodniki po tipu potovanja", en: "Guides by trip type" },
+    themesTitle: { sl: "Vodniki po tipu potovanja", en: "Guides by trip type", it: "Guide per tipo di viaggio", de: "Guides nach Reiseart", fr: "Guides par type de voyage", es: "Guías por tipo de viaje" },
     themesLead: {
       sl: "Ista destinacija, drugačen način potovanja — izberi vodnik po svoji druščini.",
       en: "Same destination, a different way to travel — pick a guide by your party.",
+      it: "Stessa destinazione, un modo diverso di viaggiare — scegli una guida in base al tuo gruppo.",
+      de: "Gleiche Destination, andere Art zu reisen — wähle einen Guide nach deiner Reisegruppe.",
+      fr: "Même destination, une autre façon de voyager — choisis un guide selon ton groupe.",
+      es: "Mismo destino, otra forma de viajar — elige una guía según tu grupo.",
     },
-    faqTitle: { sl: "Pogosta vprašanja", en: "Frequently asked questions" },
-    faqWhen: { sl: "Kdaj je najboljši čas za obisk?", en: "When is the best time to visit?" },
+    faqTitle: { sl: "Pogosta vprašanja", en: "Frequently asked questions", it: "Domande frequenti", de: "Häufig gestellte Fragen", fr: "Questions fréquentes", es: "Preguntas frecuentes" },
+    faqWhen: { sl: "Kdaj je najboljši čas za obisk?", en: "When is the best time to visit?", it: "Quando è il miglior periodo per visitare?", de: "Wann ist die beste Reisezeit?", fr: "Quelle est la meilleure période pour visiter ?", es: "¿Cuál es la mejor época para visitar?" },
     faqWhenA: {
       sl: (s: Season[]) => `Po kanonskem naboru: ${s.map((x) => pick(l, SEASONS[x])).join(", ")}.`,
       en: (s: Season[]) => `Per the canonical dataset: ${s.map((x) => pick(l, SEASONS[x])).join(", ")}.`,
+      it: (s: Season[]) => `Secondo il dataset canonico: ${s.map((x) => pick(l, SEASONS[x])).join(", ")}.`,
+      de: (s: Season[]) => `Laut kanonischem Datensatz: ${s.map((x) => pick(l, SEASONS[x])).join(", ")}.`,
+      fr: (s: Season[]) => `Selon l’ensemble de données canonique : ${s.map((x) => pick(l, SEASONS[x])).join(", ")}.`,
+      es: (s: Season[]) => `Según el conjunto de datos canónico: ${s.map((x) => pick(l, SEASONS[x])).join(", ")}.`,
     },
-    faqCost: { sl: "Koliko stane obisk?", en: "How much does a visit cost?" },
+    faqCost: { sl: "Koliko stane obisk?", en: "How much does a visit cost?", it: "Quanto costa la visita?", de: "Wie viel kostet der Besuch?", fr: "Combien coûte la visite ?", es: "¿Cuánto cuesta la visita?" },
     faqCostA: {
       sl: (c: number, b: string) => `Ocena stroška na osebo ≈ ${c} € (cenovni razred ${b}). Cene vstopnic imajo vire — kjer podatka ni, piše „preveri pred obiskom".`,
       en: (c: number, b: string) => `Estimated cost per person ≈ €${c} (price band ${b}). Ticket prices carry sources — where data is missing it says “check before visiting”.`,
+      it: (c: number, b: string) => `Costo stimato per persona ≈ ${c} € (fascia di prezzo ${b}). I prezzi dei biglietti hanno fonti — dove manca il dato c’è scritto “verifica prima di visitare”.`,
+      de: (c: number, b: string) => `Geschätzte Kosten pro Person ≈ ${c} € (Preisrahmen ${b}). Ticketpreise haben Quellen — wo Daten fehlen, steht „vor dem Besuch prüfen“.`,
+      fr: (c: number, b: string) => `Coût estimé par personne ≈ ${c} € (tranche de prix ${b}). Les prix des billets ont des sources — quand la donnée manque, il est écrit « vérifier avant de visiter ».`,
+      es: (c: number, b: string) => `Coste estimado por persona ≈ ${c} € (banda de precio ${b}). Los precios de las entradas tienen fuentes — donde falta el dato, dice “comprueba antes de visitar”.`,
     },
-    faqTime: { sl: "Koliko časa potrebujem?", en: "How much time do I need?" },
+    faqTime: { sl: "Koliko časa potrebujem?", en: "How much time do I need?", it: "Quanto tempo mi serve?", de: "Wie viel Zeit brauche ich?", fr: "Combien de temps me faut-il ?", es: "¿Cuánto tiempo necesito?" },
     faqTimeA: {
       sl: (t: string) => `Priporočen čas obiska: ${t}.`,
       en: (t: string) => `Recommended visit time: ${t}.`,
+      it: (t: string) => `Tempo di visita consigliato: ${t}.`,
+      de: (t: string) => `Empfohlene Besuchszeit: ${t}.`,
+      fr: (t: string) => `Durée de visite conseillée : ${t}.`,
+      es: (t: string) => `Tiempo de visita recomendado: ${t}.`,
     },
-    faqMust: { sl: "Česa ne smem zamuditi?", en: "What must I not miss?" },
+    faqMust: { sl: "Česa ne smem zamuditi?", en: "What must I not miss?", it: "Cosa non devo perdere?", de: "Was darf ich nicht verpassen?", fr: "Qu’est-ce que je ne dois pas manquer ?", es: "¿Qué no debo perderme?" },
     faqMustA: {
       sl: (h: string[]) => `Glavne znamenitosti: ${h.join(", ")}.`,
       en: (h: string[]) => `Key sights: ${h.join(", ")}.`,
+      it: (h: string[]) => `Attrazioni principali: ${h.join(", ")}.`,
+      de: (h: string[]) => `Hauptsehenswürdigkeiten: ${h.join(", ")}.`,
+      fr: (h: string[]) => `Sites incontournables : ${h.join(", ")}.`,
+      es: (h: string[]) => `Lugares clave: ${h.join(", ")}.`,
     },
-    ratingNote: { sl: "Uredniška ocena, nikoli uporabniška recenzija.", en: "Editorial rating, never a user review." },
-    addTrip: { sl: "Dodaj v mojo pot", en: "Add to my trip" },
-    added: { sl: "V mojo pot ✓", en: "In my trip ✓" },
-    planCta: { sl: "Načrtuj obisk", en: "Plan the visit" },
-    eventsCta: { sl: "Dogodki v okolici", en: "Events nearby" },
-    metaRegion: { sl: "Regija", en: "Region" },
+    rating: { sl: "Ocena", en: "Rating", it: "Valutazione", de: "Bewertung", fr: "Note", es: "Valoración" },
+    ratingNote: { sl: "Uredniška ocena, nikoli uporabniška recenzija.", en: "Editorial rating, never a user review.", it: "Valutazione editoriale, mai una recensione utente.", de: "Redaktionelle Bewertung, niemals eine Nutzerbewertung.", fr: "Note éditoriale, jamais un avis d’utilisateur.", es: "Valoración editorial, nunca una reseña de usuario." },
+    addTrip: { sl: "Dodaj v mojo pot", en: "Add to my trip", it: "Aggiungi al mio viaggio", de: "Zu meiner Reise hinzufügen", fr: "Ajouter à mon voyage", es: "Añadir a mi viaje" },
+    added: { sl: "V mojo pot ✓", en: "In my trip ✓", it: "Nel mio viaggio ✓", de: "In meiner Reise ✓", fr: "Dans mon voyage ✓", es: "En mi viaje ✓" },
+    planCta: { sl: "Načrtuj obisk", en: "Plan the visit", it: "Pianifica la visita", de: "Besuch planen", fr: "Planifier la visite", es: "Planifica la visita" },
+    eventsCta: { sl: "Dogodki v okolici", en: "Events nearby", it: "Eventi nelle vicinanze", de: "Veranstaltungen in der Nähe", fr: "Événements à proximité", es: "Eventos cercanos" },
+    metaRegion: { sl: "Regija", en: "Region", it: "Regione", de: "Region", fr: "Région", es: "Región" },
     enNote: {
       sl: "",
       en: "Content note: the destination dataset is canonically Slovenian; an English content overlay is not yet available.",
+      it: "Nota sui contenuti: il dataset delle destinazioni è canonicamente in sloveno; un overlay dei contenuti in inglese non è ancora disponibile.",
+      de: "Inhaltshinweis: der Destinations-Datensatz ist kanonisch slowenisch; ein englischer Inhalts-Overlay ist noch nicht verfügbar.",
+      fr: "Note de contenu : l’ensemble de données des destinations est canoniquement en slovène ; une surcouche de contenu en anglais n’est pas encore disponible.",
+      es: "Nota de contenido: el conjunto de datos de destinos es canónicamente en esloveno; una superposición de contenido en inglés aún no está disponible.",
     },
   } as const;
 
@@ -142,7 +179,7 @@ export function ThingsToDoDetail({ d }: { d: Destination }) {
         <p className="mt-2 text-sm text-muted-foreground">{pick(l, L.introNote)}</p>
       </header>
 
-      {l === "en" && pick(l, L.enNote) && (
+      {l !== "sl" && pick(l, L.enNote) && (
         <p className="mt-6 rounded-md border border-dashed border-primary/30 bg-primary/5 px-4 py-2.5 text-xs text-muted-foreground">
           {pick(l, L.enNote)}
         </p>
@@ -154,7 +191,7 @@ export function ThingsToDoDetail({ d }: { d: Destination }) {
           <div className="flex items-center gap-2.5">
             <Star className="size-5 shrink-0 fill-primary text-primary" aria-hidden="true" />
             <div>
-              <p className="text-xs font-medium text-muted-foreground">Ocena</p>
+              <p className="text-xs font-medium text-muted-foreground">{pick(l, L.rating)}</p>
               <p className="text-sm font-bold">{d.rating.toFixed(1)} / 5</p>
               <p className="text-[11px] text-muted-foreground">{pick(l, L.ratingNote)}</p>
             </div>
@@ -171,7 +208,7 @@ export function ThingsToDoDetail({ d }: { d: Destination }) {
             <div>
               <p className="text-xs font-medium text-muted-foreground">{pick(l, L.faqCost)}</p>
               <p className="text-sm font-bold">
-                ≈ {d.costPerPerson} € / {pick(l, { sl: "osebo", en: "person" })} · {d.budget}
+                ≈ {d.costPerPerson} € / {pick(l, { sl: "osebo", en: "person", it: "persona", de: "Person", fr: "personne", es: "persona" })} · {d.budget}
               </p>
             </div>
           </div>
@@ -226,7 +263,7 @@ export function ThingsToDoDetail({ d }: { d: Destination }) {
                   />
                   {i === 0 && (
                     <Badge className="absolute top-2 left-2">
-                      {pick(l, { sl: "Najbolj znano", en: "Most iconic" })}
+                      {pick(l, { sl: "Najbolj znano", en: "Most iconic", it: "Il più iconico", de: "Am bekanntesten", fr: "Le plus emblématique", es: "El más icónico" })}
                     </Badge>
                   )}
                 </div>
@@ -336,7 +373,7 @@ export function ThingsToDoDetail({ d }: { d: Destination }) {
                 {theme.description}
               </p>
               <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary">
-                {pick(l, { sl: "Odpri vodnike", en: "Open the guides" })}
+                {pick(l, { sl: "Odpri vodnike", en: "Open the guides", it: "Apri le guide", de: "Guides öffnen", fr: "Ouvrir les guides", es: "Abrir las guías" })}
                 <ArrowRight className="size-3" aria-hidden="true" />
               </span>
             </Link>
@@ -363,6 +400,10 @@ export function ThingsToDoDetail({ d }: { d: Destination }) {
           {pick(l, {
             sl: "Odgovori so izpeljani iz kanonskega nabora podatkov (niki izmišljeni); viri so zapisani pri vsaki destinaciji.",
             en: "Answers are derived from the canonical dataset (nothing invented); sources are recorded on each destination.",
+            it: "Le risposte derivano dal dataset canonico (niente di inventato); le fonti sono registrate per ogni destinazione.",
+            de: "Die Antworten leiten sich aus dem kanonischen Datensatz ab (nichts erfunden); Quellen sind bei jeder Destination hinterlegt.",
+            fr: "Les réponses dérivent de l’ensemble de données canonique (rien d’inventé) ; les sources sont enregistrées pour chaque destination.",
+            es: "Las respuestas se derivan del conjunto de datos canónico (nada inventado); las fuentes están registradas en cada destino.",
           })}
         </p>
       </section>
@@ -376,7 +417,7 @@ export function ThingsToDoDetail({ d }: { d: Destination }) {
           </Link>
         </Button>
         <Button asChild variant="outline" className="tap-target font-semibold">
-          <Link href="/destinacije">{pick(l, { sl: "Vse destinacije", en: "All destinations" })}</Link>
+          <Link href="/destinacije">{pick(l, { sl: "Vse destinacije", en: "All destinations", it: "Tutte le destinazioni", de: "Alle Destinationen", fr: "Toutes les destinations", es: "Todos los destinos" })}</Link>
         </Button>
       </div>
     </div>

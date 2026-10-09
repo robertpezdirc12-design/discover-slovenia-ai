@@ -380,7 +380,7 @@ describe("p1b [source-contract]: plan-edit integracija", () => {
   });
 
   test("plošča plan-edit-panel je vgrajena v načrtovalnik", async () => {
-    const page = await Bun.file("src/app/[locale]/nacrtuj/page.tsx").text();
+    const page = await Bun.file("src/app/[locale]/nacrtuj/view.tsx").text();
     expect(page).toContain("PlanEditPanel");
     const panel = await Bun.file("src/components/plan/plan-edit-panel.tsx").text();
     expect(panel).toContain("/api/plan-edit");

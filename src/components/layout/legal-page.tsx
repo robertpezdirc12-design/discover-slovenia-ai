@@ -31,6 +31,10 @@ export function LegalPage({
   const updatedLabel = pick(l, {
     sl: "Zadnja posodobitev",
     en: "Last updated",
+    it: "Ultimo aggiornamento",
+    de: "Zuletzt aktualisiert",
+    fr: "Dernière mise à jour",
+    es: "Última actualización",
   });
 
   return (

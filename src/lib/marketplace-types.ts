@@ -140,11 +140,11 @@ export function payoutDueDate(
 
 // ── Statusne oznake (SL/EN — enak kanon kot booking.ts) ────────────────────
 
-const PAYOUT_LABELS: Record<PayoutStatus, { sl: string; en: string }> = {
-  not_due: { sl: "Še ne zapadlo", en: "Not yet due" },
-  due: { sl: "Zapadlo", en: "Due" },
-  processing: { sl: "Izplačilo v teku", en: "Payout processing" },
-  paid: { sl: "Izplačano", en: "Paid out" },
+const PAYOUT_LABELS: Record<PayoutStatus, { sl: string; en: string; it: string; de: string; fr: string; es: string }> = {
+  not_due: { sl: "Še ne zapadlo", en: "Not yet due", it: "Non ancora dovuto", de: "Noch nicht fällig", fr: "Pas encore dû", es: "Aún no vencido" },
+  due: { sl: "Zapadlo", en: "Due", it: "Dovuto", de: "Fällig", fr: "Dû", es: "Vencido" },
+  processing: { sl: "Izplačilo v teku", en: "Payout processing", it: "Pagamento in corso", de: "Auszahlung läuft", fr: "Paiement en cours", es: "Pago en proceso" },
+  paid: { sl: "Izplačano", en: "Paid out", it: "Pagato", de: "Ausgezahlt", fr: "Payé", es: "Pagado" },
 };
 
 /** Oznaka statusa izplačila za UI (SL privzeto / EN). Neznan → surovo. */

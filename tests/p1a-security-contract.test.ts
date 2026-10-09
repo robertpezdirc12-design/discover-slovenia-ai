@@ -18,7 +18,7 @@ async function src(path: string): Promise<string> {
 const PREF_ROUTE = "src/app/api/preferences/route.ts";
 const MEM_ROUTE = "src/app/api/memory/route.ts";
 const MEM_ID_ROUTE = "src/app/api/memory/[id]/route.ts";
-const PAGE = "src/app/[locale]/moj-profil/page.tsx";
+const PAGE = "src/app/[locale]/moj-profil/view.tsx";
 const SERVER_LIB = "src/lib/user-preferences-server.ts";
 const PURE_LIB = "src/lib/user-preferences.ts";
 

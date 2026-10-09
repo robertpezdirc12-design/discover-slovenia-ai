@@ -199,7 +199,7 @@ describe("p0i [source-contract]: produkcijski dim + health", () => {
 
 describe("p0i [source-contract]: portal partnerja — vidna opomba", () => {
   test("⑲ /partner izpisuje nudge za osnutek ≥ 7 dni z iskrenim »ne pošiljamo e-pošte«", async () => {
-    const code = await src("src/app/[locale]/partner/page.tsx");
+    const code = await src("src/app/[locale]/partner/view.tsx");
     expect(code).toContain("daysSinceIso(row.updatedAt) >= 7");
     expect(code).toContain("ne pošiljamo e-pošte");
   });

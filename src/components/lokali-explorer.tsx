@@ -57,48 +57,68 @@ export function LokaliExplorer() {
   const [sort, setSort] = React.useState<SortKey>("featured");
 
   const L = {
-    kicker: { sl: "Tržnica", en: "Marketplace" },
-    title: { sl: "Lokalni ponudniki", en: "Local providers" },
+    kicker: { sl: "Tržnica", en: "Marketplace", it: "Mercato", de: "Marktplatz", fr: "Marché", es: "Mercado" },
+    title: { sl: "Lokalni ponudniki", en: "Local providers", it: "Fornitori locali", de: "Lokale Anbieter", fr: "Prestataires locaux", es: "Proveedores locales" },
     lead: {
       sl: "Hoteli, restavracije, znamenitosti in aktivnosti preverjenih lokalnih partnerjev — rezervirajte direktno pri ponudniku, brez provizije.",
       en: "Hotels, restaurants, sights and activities of verified local partners — book directly with the provider, with no commission.",
+      it: "Hotel, ristoranti, attrazioni e attività di partner locali verificati — prenota direttamente dal fornitore, senza commissioni.",
+      de: "Hotels, Restaurants, Sehenswürdigkeiten und Aktivitäten verifizierter lokaler Partner — buche direkt beim Anbieter, ohne Provision.",
+      fr: "Hôtels, restaurants, sites et activités de partenaires locaux vérifiés — réserve directement auprès du prestataire, sans commission.",
+      es: "Hoteles, restaurantes, monumentos y actividades de socios locales verificados — reserva directamente con el proveedor, sin comisión.",
     },
-    b2b: { sl: "B2B imenik", en: "B2B directory" },
-    sectionTitle: { sl: "Lokali v Sloveniji", en: "Venues in Slovenia" },
+    b2b: { sl: "B2B imenik", en: "B2B directory", it: "Elenco B2B", de: "B2B-Verzeichnis", fr: "Annuaire B2B", es: "Directorio B2B" },
+    sectionTitle: { sl: "Lokali v Sloveniji", en: "Venues in Slovenia", it: "Locali in Slovenia", de: "Lokale in Slowenien", fr: "Établissements en Slovénie", es: "Lugares en Eslovenia" },
     sectionLead: {
       sl: "Hotelir, restavracije in aktivnosti — neposredno od lastnikov.",
       en: "Hotels, restaurants and activities — directly from the owners.",
+      it: "Hotel, ristoranti e attività — direttamente dai proprietari.",
+      de: "Hotels, Restaurants und Aktivitäten — direkt von den Inhabern.",
+      fr: "Hôtels, restaurants et activités — directement des propriétaires.",
+      es: "Hoteles, restaurantes y actividades — directamente de los dueños.",
     },
-    searchLabel: { sl: "Išči lokal po imenu ali opisu", en: "Search venues by name or description" },
-    searchPlaceholder: { sl: "Iskanje: Franko, hotel, Bled …", en: "Search: Franko, hotel, Bled …" },
-    allCategories: { sl: "Vse kategorije", en: "All categories" },
-    categoryFilter: { sl: "Filtriraj po kategoriji", en: "Filter by category" },
-    allRegions: { sl: "Vse regije", en: "All regions" },
-    regionFilter: { sl: "Filtriraj po regiji", en: "Filter by region" },
-    sortFeatured: { sl: "Izpostavljeni", en: "Featured" },
-    sortName: { sl: "Po imeni (A–Ž)", en: "By name (A–Z)" },
-    sortLabel: { sl: "Razvrsti", en: "Sort" },
-    reset: { sl: "Počisti filtre", en: "Clear filters" },
+    searchLabel: { sl: "Išči lokal po imenu ali opisu", en: "Search venues by name or description", it: "Cerca locali per nome o descrizione", de: "Lokale nach Name oder Beschreibung suchen", fr: "Rechercher des établissements par nom ou description", es: "Buscar lugares por nombre o descripción" },
+    searchPlaceholder: { sl: "Iskanje: Franko, hotel, Bled …", en: "Search: Franko, hotel, Bled …", it: "Cerca: Franko, hotel, Bled …", de: "Suche: Franko, Hotel, Bled …", fr: "Rechercher : Franko, hôtel, Bled …", es: "Buscar: Franko, hotel, Bled …" },
+    allCategories: { sl: "Vse kategorije", en: "All categories", it: "Tutte le categorie", de: "Alle Kategorien", fr: "Toutes les catégories", es: "Todas las categorías" },
+    categoryFilter: { sl: "Filtriraj po kategoriji", en: "Filter by category", it: "Filtra per categoria", de: "Nach Kategorie filtern", fr: "Filtrer par catégorie", es: "Filtrar por categoría" },
+    allRegions: { sl: "Vse regije", en: "All regions", it: "Tutte le regioni", de: "Alle Regionen", fr: "Toutes les régions", es: "Todas las regiones" },
+    regionFilter: { sl: "Filtriraj po regiji", en: "Filter by region", it: "Filtra per regione", de: "Nach Region filtern", fr: "Filtrer par région", es: "Filtrar por región" },
+    sortFeatured: { sl: "Izpostavljeni", en: "Featured", it: "In evidenza", de: "Hervorgehoben", fr: "À la une", es: "Destacados" },
+    sortName: { sl: "Po imeni (A–Ž)", en: "By name (A–Z)", it: "Per nome (A–Z)", de: "Nach Name (A–Z)", fr: "Par nom (A–Z)", es: "Por nombre (A–Z)" },
+    sortLabel: { sl: "Razvrsti", en: "Sort", it: "Ordina", de: "Sortieren", fr: "Trier", es: "Ordenar" },
+    reset: { sl: "Počisti filtre", en: "Clear filters", it: "Azzera i filtri", de: "Filter zurücksetzen", fr: "Effacer les filtres", es: "Borrar filtros" },
     count: {
       sl: (n: number) => `${n} od ${LOKALI.length} lokalov`,
       en: (n: number) => `${n} of ${LOKALI.length} venues`,
+      it: (n: number) => `${n} di ${LOKALI.length} locali`,
+      de: (n: number) => `${n} von ${LOKALI.length} Lokalen`,
+      fr: (n: number) => `${n} sur ${LOKALI.length} établissements`,
+      es: (n: number) => `${n} de ${LOKALI.length} lugares`,
     },
-    emptyTitle: { sl: "Ni zadetkov", en: "No matches" },
+    emptyTitle: { sl: "Ni zadetkov", en: "No matches", it: "Nessun risultato", de: "Keine Treffer", fr: "Aucun résultat", es: "Sin resultados" },
     emptyLead: {
       sl: "Za iskani niz ali kombinacijo filtrov ni lokalov. Poskusi drugačen niz ali počisti filtre.",
       en: "No venues match your search or filter combination. Try a different query or clear the filters.",
+      it: "Nessun locale corrisponde alla tua ricerca o combinazione di filtri. Prova con una ricerca diversa o azzera i filtri.",
+      de: "Keine Lokale entsprechen deiner Suche oder Filterkombination. Versuche eine andere Suche oder setze die Filter zurück.",
+      fr: "Aucun établissement ne correspond à ta recherche ou à ta combinaison de filtres. Essaie une autre recherche ou efface les filtres.",
+      es: "Ningún lugar coincide con tu búsqueda o combinación de filtros. Prueba con otra búsqueda o borra los filtros.",
     },
-    add: { sl: "Dodaj v mojo pot", en: "Add to my trip" },
-    added: { sl: "V moji poti", en: "In my trip" },
-    toastAdded: { sl: "Dodano v mojo pot", en: "Added to my trip" },
-    destLink: { sl: "Destinacija", en: "Destination" },
-    ctaTitle: { sl: "Želite biti tukaj?", en: "Want to be here?" },
+    add: { sl: "Dodaj v mojo pot", en: "Add to my trip", it: "Aggiungi al mio viaggio", de: "Zu meiner Reise hinzufügen", fr: "Ajouter à mon voyage", es: "Añadir a mi viaje" },
+    added: { sl: "V moji poti", en: "In my trip", it: "Nel mio viaggio", de: "In meiner Reise", fr: "Dans mon voyage", es: "En mi viaje" },
+    toastAdded: { sl: "Dodano v mojo pot", en: "Added to my trip", it: "Aggiunto al mio viaggio", de: "Zu meiner Reise hinzugefügt", fr: "Ajouté à mon voyage", es: "Añadido a mi viaje" },
+    destLink: { sl: "Destinacija", en: "Destination", it: "Destinazione", de: "Reiseziel", fr: "Destination", es: "Destino" },
+    ctaTitle: { sl: "Želite biti tukaj?", en: "Want to be here?", it: "Vuoi essere qui?", de: "Willst du hier sein?", fr: "Tu veux figurer ici ?", es: "¿Quieres estar aquí?" },
     ctaLead: {
       sl: "Pridruži se in izpostavite svoj lokal.",
       en: "Join us and showcase your venue.",
+      it: "Unisciti a noi e metti in mostra il tuo locale.",
+      de: "Mach mit und präsentiere dein Lokal.",
+      fr: "Rejoins-nous et mets ton établissement en avant.",
+      es: "Únete a nosotros y da a conocer tu lugar.",
     },
-    ctaButton: { sl: "Pridruži se", en: "Join us" },
-    honesty: { sl: "Obseg podatkov", en: "Data coverage" },
+    ctaButton: { sl: "Pridruži se", en: "Join us", it: "Unisciti a noi", de: "Mach mit", fr: "Rejoins-nous", es: "Únete" },
+    honesty: { sl: "Obseg podatkov", en: "Data coverage", it: "Copertura dei dati", de: "Datenabdeckung", fr: "Couverture des données", es: "Cobertura de datos" },
   } as const;
   const t = <K extends keyof typeof L>(k: K) => pick(l, L[k]);
 
@@ -184,7 +204,7 @@ export function LokaliExplorer() {
             <SelectItem value="all">{t("allCategories")}</SelectItem>
             {categories.map((c) => (
               <SelectItem key={c} value={c}>
-                {`${LOKAL_CATEGORIES[c].icon} ${l === "en" ? LOKAL_CATEGORIES[c].en : LOKAL_CATEGORIES[c].sl}`}
+                {`${LOKAL_CATEGORIES[c].icon} ${pick(l, LOKAL_CATEGORIES[c])}`}
               </SelectItem>
             ))}
           </SelectContent>
@@ -272,11 +292,11 @@ export function LokaliExplorer() {
                     <div className="flex items-center justify-between gap-2">
                       <Badge variant="secondary" className="gap-1.5">
                         <span aria-hidden="true">{cat.icon}</span>
-                        {l === "en" ? cat.en : cat.sl}
+                        {pick(l, cat)}
                       </Badge>
                       <span
                         className="inline-flex items-center gap-1 text-xs text-muted-foreground"
-                        title={l === "en" ? weather.en : weather.sl}
+                        title={pick(l, weather)}
                       >
                         {x.weather === "outdoor" ? (
                           <Sun className="size-3.5" aria-hidden="true" />
@@ -284,10 +304,10 @@ export function LokaliExplorer() {
                           <Umbrella className="size-3.5" aria-hidden="true" />
                         )}
                         <span className="hidden sm:inline">
-                          {l === "en" ? weather.en : weather.sl}
+                          {pick(l, weather)}
                         </span>
                         <span className="sr-only">
-                          {l === "en" ? weather.en : weather.sl}
+                          {pick(l, weather)}
                         </span>
                       </span>
                     </div>
@@ -301,7 +321,7 @@ export function LokaliExplorer() {
                     </div>
 
                     <p className="text-sm leading-relaxed text-muted-foreground">
-                      {l === "en" ? x.description.en : x.description.sl}
+                      {pick(l, x.description)}
                     </p>
 
                     <div className="mt-auto flex items-center gap-2 pt-1">
@@ -341,7 +361,7 @@ export function LokaliExplorer() {
         <CardContent className="p-5">
           <p className="text-sm font-semibold text-primary">{t("honesty")}</p>
           <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-            {l === "en" ? LOKALI_HONESTY_NOTE.en : LOKALI_HONESTY_NOTE.sl}
+            {pick(l, LOKALI_HONESTY_NOTE)}
           </p>
         </CardContent>
       </Card>

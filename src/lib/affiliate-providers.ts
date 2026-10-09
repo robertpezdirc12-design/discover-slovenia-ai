@@ -49,21 +49,25 @@ export type AffiliateCategory =
 export interface AffiliateCategoryLabel {
   sl: string;
   en: string;
+  it: string;
+  de: string;
+  fr: string;
+  es: string;
 }
 
 export const AFFILIATE_CATEGORIES: Record<
   AffiliateCategory,
   AffiliateCategoryLabel
 > = {
-  stays: { sl: "Nastanitve", en: "Stays" },
-  experiences: { sl: "Doživetja", en: "Experiences" },
-  flights: { sl: "Letalske karte", en: "Flights" },
-  car: { sl: "Rent-a-car", en: "Car rental" },
-  transfers: { sl: "Prevozi", en: "Transfers" },
-  tickets: { sl: "Vstopnice", en: "Tickets" },
-  esim: { sl: "eSIM podatki", en: "eSIM data" },
-  insurance: { sl: "Zavarovanje", en: "Insurance" },
-  fuel: { sl: "Bencinske", en: "Fuel" },
+  stays: { sl: "Nastanitve", en: "Stays", it: "Soggiorni", de: "Unterkünfte", fr: "Séjours", es: "Alojamientos" },
+  experiences: { sl: "Doživetja", en: "Experiences", it: "Esperienze", de: "Erlebnisse", fr: "Expériences", es: "Experiencias" },
+  flights: { sl: "Letalske karte", en: "Flights", it: "Voli", de: "Flüge", fr: "Vols", es: "Vuelos" },
+  car: { sl: "Rent-a-car", en: "Car rental", it: "Noleggio auto", de: "Mietwagen", fr: "Location de voiture", es: "Alquiler de coches" },
+  transfers: { sl: "Prevozi", en: "Transfers", it: "Trasferimenti", de: "Transfers", fr: "Transferts", es: "Traslados" },
+  tickets: { sl: "Vstopnice", en: "Tickets", it: "Biglietti", de: "Tickets", fr: "Billets", es: "Entradas" },
+  esim: { sl: "eSIM podatki", en: "eSIM data", it: "Dati eSIM", de: "eSIM-Daten", fr: "Données eSIM", es: "Datos eSIM" },
+  insurance: { sl: "Zavarovanje", en: "Insurance", it: "Assicurazione", de: "Versicherung", fr: "Assurance", es: "Seguro" },
+  fuel: { sl: "Bencinske", en: "Fuel", it: "Carburante", de: "Tankstellen", fr: "Carburant", es: "Combustible" },
 };
 
 // ── Registrski vnos partnerja ──────────────────────────────────────────────

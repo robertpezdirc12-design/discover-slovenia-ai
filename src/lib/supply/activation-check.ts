@@ -49,12 +49,12 @@ export type ProductionState =
 
 export const PRODUCTION_STATE_LABELS: Record<
   ProductionState,
-  { sl: string; en: string }
+  { sl: string; en: string; it: string; de: string; fr: string; es: string }
 > = {
-  ACTIVE: { sl: "Dejansko živo", en: "Actually live" },
-  CONFIGURED: { sl: "Konfigurirano (čaka dokaz)", en: "Configured (proof pending)" },
-  NOT_CONFIGURED: { sl: "Ni konfigurirano", en: "Not configured" },
-  BLOCKED: { sl: "Zunanja ovira", en: "Externally blocked" },
+  ACTIVE: { sl: "Dejansko živo", en: "Actually live", it: "Davvero attivo", de: "Tatsächlich live", fr: "Réellement actif", es: "Realmente activo" },
+  CONFIGURED: { sl: "Konfigurirano (čaka dokaz)", en: "Configured (proof pending)", it: "Configurato (in attesa di prova)", de: "Konfiguriert (Nachweis ausstehend)", fr: "Configuré (preuve en attente)", es: "Configurado (prueba pendiente)" },
+  NOT_CONFIGURED: { sl: "Ni konfigurirano", en: "Not configured", it: "Non configurato", de: "Nicht konfiguriert", fr: "Non configuré", es: "No configurado" },
+  BLOCKED: { sl: "Zunanja ovira", en: "Externally blocked", it: "Blocco esterno", de: "Extern blockiert", fr: "Blocage externe", es: "Bloqueo externo" },
 };
 
 /** Env, vbrizgan od klicatelja (lib nikoli ne bere process.env). */

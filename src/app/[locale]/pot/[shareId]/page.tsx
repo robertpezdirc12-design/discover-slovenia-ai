@@ -3,6 +3,7 @@ import { setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { SharedTripView } from "@/components/content/shared-trip-view";
+import { alternatesFor } from "@/lib/hreflang";
 
 /** Veljavna oblika shareId (kanon izvirnika: kratki mali znaki; 48-a
  *  mostovno dopolnjeno z vezaji — npr. /pot/test-shareid mora biti veljavna
@@ -22,13 +23,13 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { shareId } = await params;
+  const { locale, shareId } = await params;
   return {
     title: "Deljena pot",
     description:
       "Deljen AI načrt potovanja po Sloveniji — dnevi, lokacije in prispevek v zbirko Moja pot.",
     robots: { index: false, follow: false },
-    alternates: { canonical: `/pot/${shareId}` },
+    alternates: alternatesFor(locale, `/pot/${shareId}`),
   };
 }
 

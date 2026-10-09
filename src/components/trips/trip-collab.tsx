@@ -105,7 +105,7 @@ const STATUS_LABELS: Record<string, string> = {
 // TASK 8 / F3-B: placeholder nalaganja v L-pattern (SL/EN — D8-A §13
 // „Nalagam…" uhodi so trdi predpogoj za F3-E EN razširitev).
 const L = {
-  loadingRevisions: { sl: "Nalagam sodelovanje …", en: "Loading collaboration …" },
+  loadingRevisions: { sl: "Nalagam sodelovanje …", en: "Loading collaboration …", it: "Caricamento della collaborazione …", de: "Zusammenarbeit wird geladen …", fr: "Chargement de la collaboration …", es: "Cargando la colaboración …" },
 } as const;
 
 function errText(e: unknown): string {

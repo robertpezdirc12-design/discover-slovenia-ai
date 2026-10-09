@@ -49,20 +49,32 @@ import {
 import { getDestination } from "@/lib/slovenia-data";
 import { cn } from "@/lib/utils";
 
-const AVAILABILITY_LABELS: Record<ShelfAvailability, { sl: string; en: string; cls: string }> = {
+const AVAILABILITY_LABELS: Record<ShelfAvailability, { sl: string; en: string; it: string; de: string; fr: string; es: string; cls: string }> = {
   available: {
     sl: "Na voljo",
     en: "Available",
+    it: "Disponibile",
+    de: "Verfügbar",
+    fr: "Disponible",
+    es: "Disponible",
     cls: "border-primary/40 bg-primary/10 text-primary",
   },
   coming: {
     sl: "Prihaja",
     en: "Coming",
+    it: "In arrivo",
+    de: "Kommt",
+    fr: "À venir",
+    es: "Próximamente",
     cls: "border-amber-600/40 bg-amber-600/10 text-amber-700 dark:text-amber-400",
   },
   empty: {
     sl: "Prazno — iskreno",
     en: "Empty — honestly",
+    it: "Vuoto — onestamente",
+    de: "Leer — ehrlich",
+    fr: "Vide — honnêtement",
+    es: "Vacío — honestamente",
     cls: "border-muted-foreground/30 bg-muted text-muted-foreground",
   },
 };
@@ -72,9 +84,13 @@ const SHELF_GROUPS = [
     id: "local",
     sl: "Lokalni viri (odprti podatki)",
     en: "Local sources (open data)",
+    it: "Fonti locali (dati aperti)",
+    de: "Lokale Quellen (offene Daten)",
+    fr: "Sources locales (données ouvertes)",
+    es: "Fuentes locales (datos abiertos)",
   },
-  { id: "own", sl: "Lastna tržnica", en: "Our own marketplace" },
-  { id: "commercial", sl: "Partnerji", en: "Partners" },
+  { id: "own", sl: "Lastna tržnica", en: "Our own marketplace", it: "Il nostro mercato", de: "Unser eigener Marktplatz", fr: "Notre marché", es: "Nuestro mercado" },
+  { id: "commercial", sl: "Partnerji", en: "Partners", it: "Partner", de: "Partner", fr: "Partenaires", es: "Socios" },
 ] as const;
 
 export function TrznicaExplorer() {
@@ -84,42 +100,62 @@ export function TrznicaExplorer() {
   const { ctx: nextStepCtx, ready: nextStepReady } = useNextStepContext();
 
   const L = {
-    kicker: { sl: "Tržnica", en: "Marketplace" },
-    title: { sl: "Tržnica lokalnih izdelkov in doživetij", en: "Marketplace of local products & experiences" },
+    kicker: { sl: "Tržnica", en: "Marketplace", it: "Mercato", de: "Marktplatz", fr: "Marché", es: "Mercado" },
+    title: { sl: "Tržnica lokalnih izdelkov in doživetij", en: "Marketplace of local products & experiences", it: "Mercato di prodotti locali ed esperienze", de: "Marktplatz für lokale Produkte & Erlebnisse", fr: "Marché de produits locaux et d'expériences", es: "Mercado de productos locales y experiencias" },
     lead: {
       sl: "Med, vina, obrti, rafting in gastro doživetja — izdelki in doživetja neposredno od slovenskih ponudnikov, brez posrednikov.",
       en: "Honey, wines, crafts, rafting and gastro experiences — products and experiences directly from Slovenian providers, with no middlemen.",
+      it: "Miele, vini, artigianato, rafting ed esperienze gastronomiche — prodotti ed esperienze direttamente dai fornitori sloveni, senza intermediari.",
+      de: "Honig, Weine, Handwerk, Rafting und Genusserlebnisse — Produkte und Erlebnisse direkt von slowenischen Anbietern, ohne Zwischenhändler.",
+      fr: "Miel, vins, artisanat, rafting et expériences gourmandes — produits et expériences directement de prestataires slovènes, sans intermédiaires.",
+      es: "Miel, vinos, artesanía, rafting y experiencias gastronómicas — productos y experiencias directamente de proveedores eslovenos, sin intermediarios.",
     },
     badge: {
       sl: "Neposredno od slovenskih ponudnikov · Brez skritih stroškov",
       en: "Directly from Slovenian providers · No hidden costs",
+      it: "Direttamente dai fornitori sloveni · Senza costi nascosti",
+      de: "Direkt von slowenischen Anbietern · Keine versteckten Kosten",
+      fr: "Directement de prestataires slovènes · Sans frais cachés",
+      es: "Directamente de proveedores eslovenos · Sin costes ocultos",
     },
-    tabProducts: { sl: "Izdelki", en: "Products" },
-    tabExperiences: { sl: "Izkušnje", en: "Experiences" },
-    tabProviders: { sl: "Ponudniki", en: "Providers" },
-    productsTitle: { sl: "Izdelki se dopolnjujejo", en: "Products are being completed" },
+    tabProducts: { sl: "Izdelki", en: "Products", it: "Prodotti", de: "Produkte", fr: "Produits", es: "Productos" },
+    tabExperiences: { sl: "Izkušnje", en: "Experiences", it: "Esperienze", de: "Erlebnisse", fr: "Expériences", es: "Experiencias" },
+    tabProviders: { sl: "Ponudniki", en: "Providers", it: "Fornitori", de: "Anbieter", fr: "Prestataires", es: "Proveedores" },
+    productsTitle: { sl: "Izdelki se dopolnjujejo", en: "Products are being completed", it: "I prodotti sono in fase di completamento", de: "Produkte werden vervollständigt", fr: "Les produits sont en cours de finalisation", es: "Los productos se están completando" },
     productsLead: {
       sl: "Fizični izdelki (med, vina, obrti) iz produkcije niso bili zajeti v obnovitvenem posnetku. Katalog bomo dopolnili po overjenih virih — nič izmišljenih izdelkov ali cen.",
       en: "Physical products (honey, wines, crafts) from production were not captured in the recovery snapshot. We will complete the catalogue from verified sources — no invented products or prices.",
+      it: "I prodotti fisici (miele, vini, artigianato) della produzione non sono stati inclusi nello snapshot di recupero. Completeremo il catalogo con fonti verificate — nessun prodotto o prezzo inventato.",
+      de: "Physische Produkte (Honig, Weine, Handwerk) aus der Produktion wurden im Wiederherstellungs-Snapshot nicht erfasst. Wir vervollständigen den Katalog aus verifizierten Quellen — keine erfundenen Produkte oder Preise.",
+      fr: "Les produits physiques (miel, vins, artisanat) de la production n'ont pas été capturés dans l'instantané de récupération. Nous compléterons le catalogue à partir de sources vérifiées — aucun produit ni prix inventé.",
+      es: "Los productos físicos (miel, vinos, artesanía) de la producción no fueron capturados en la instantánea de recuperación. Completaremos el catálogo con fuentes verificadas — sin productos ni precios inventados.",
     },
-    experiencesTitle: { sl: "Izkušnje po destinacijah", en: "Experiences by destination" },
+    experiencesTitle: { sl: "Izkušnje po destinacijah", en: "Experiences by destination", it: "Esperienze per destinazione", de: "Erlebnisse nach Reiseziel", fr: "Expériences par destination", es: "Experiencias por destino" },
     experiencesLead: {
       sl: "Izkušnje so izpeljane iz kanonskega nabora destinacij — ime je dejanska aktivnost destinacije, ocena stroška pa polje costPerPerson. Nakup z lastnim checkoutom je na voljo zgoraj (Lastna tržnica); te kartice dodajajo izkušnjo v načrt poti.",
       en: "Experiences are derived from the canonical destination dataset — the name is an actual destination activity, the cost estimate its costPerPerson field. Purchase with our own checkout is available above (Our own marketplace); these cards add the experience to your trip plan.",
+      it: "Le esperienze derivano dal dataset canonico delle destinazioni — il nome è un'attività reale della destinazione, la stima del costo il suo campo costPerPerson. L'acquisto con il nostro checkout è disponibile sopra (Il nostro mercato); queste schede aggiungono l'esperienza al piano di viaggio.",
+      de: "Die Erlebnisse werden aus dem kanonischen Ziel-Datensatz abgeleitet — der Name ist eine tatsächliche Aktivität des Reiseziels, die Kostenschätzung dessen Feld costPerPerson. Der Kauf über unseren eigenen Checkout ist oben verfügbar (Unser eigener Marktplatz); diese Karten fügen das Erlebnis zum Reiseplan hinzu.",
+      fr: "Les expériences sont dérivées de l'ensemble canonique de destinations — le nom est une activité réelle de la destination, l'estimation du coût son champ costPerPerson. L'achat via notre propre checkout est disponible plus haut (Notre marché) ; ces cartes ajoutent l'expérience à ton plan de voyage.",
+      es: "Las experiencias se derivan del conjunto canónico de destinos — el nombre es una actividad real del destino, la estimación de coste su campo costPerPerson. La compra con nuestro propio checkout está disponible arriba (Nuestro mercado); estas tarjetas añaden la experiencia a tu plan de viaje.",
     },
-    estimate: { sl: (n: number) => `≈ ${n} € · ocena`, en: (n: number) => `≈ €${n} · estimate` },
-    available: { sl: "Na voljo", en: "Available" },
-    add: { sl: "Dodaj v mojo pot", en: "Add to my trip" },
-    added: { sl: "V moji poti", en: "In my trip" },
-    toastAdded: { sl: "Dodano v mojo pot", en: "Added to my trip" },
-    providersTitle: { sl: "Police ponudnikov", en: "Provider shelves" },
+    estimate: { sl: (n: number) => `≈ ${n} € · ocena`, en: (n: number) => `≈ €${n} · estimate`, it: (n: number) => `≈ ${n} € · stima`, de: (n: number) => `≈ ${n} € · Schätzung`, fr: (n: number) => `≈ ${n} € · estimation`, es: (n: number) => `≈ ${n} € · estimación` },
+    available: { sl: "Na voljo", en: "Available", it: "Disponibile", de: "Verfügbar", fr: "Disponible", es: "Disponible" },
+    add: { sl: "Dodaj v mojo pot", en: "Add to my trip", it: "Aggiungi al mio viaggio", de: "Zu meiner Reise hinzufügen", fr: "Ajouter à mon voyage", es: "Añadir a mi viaje" },
+    added: { sl: "V moji poti", en: "In my trip", it: "Nel mio viaggio", de: "In meiner Reise", fr: "Dans mon voyage", es: "En mi viaje" },
+    toastAdded: { sl: "Dodano v mojo pot", en: "Added to my trip", it: "Aggiunto al mio viaggio", de: "Zu meiner Reise hinzugefügt", fr: "Ajouté à mon voyage", es: "Añadido a mi viaje" },
+    providersTitle: { sl: "Police ponudnikov", en: "Provider shelves", it: "Scaffali dei fornitori", de: "Anbieter-Regale", fr: "Étagères des prestataires", es: "Estanterías de proveedores" },
     providersLead: {
       sl: "Struktura po registru ponudnikov (TRAVEL SUPPLY MAP): lokalni viri, lastna tržnica in partnerji — statusi so dejansko stanje, ne oblube.",
       en: "Structured after the provider registry (TRAVEL SUPPLY MAP): local sources, our own marketplace and partners — statuses are the actual state, not promises.",
+      it: "Struttura secondo il registro dei fornitori (TRAVEL SUPPLY MAP): fonti locali, nostro mercato e partner — gli stati sono la situazione reale, non promesse.",
+      de: "Struktur nach dem Anbieter-Register (TRAVEL SUPPLY MAP): lokale Quellen, unser eigener Marktplatz und Partner — die Status sind der tatsächliche Stand, keine Versprechen.",
+      fr: "Structure selon le registre des prestataires (TRAVEL SUPPLY MAP) : sources locales, notre marché et partenaires — les statuts sont l'état réel, pas des promesses.",
+      es: "Estructura según el registro de proveedores (TRAVEL SUPPLY MAP): fuentes locales, nuestro mercado y socios — los estados son la situación real, no promesas.",
     },
-    openPartner: { sl: "Odpri partnerja", en: "Open partner" },
-    forProviders: { sl: "Prodajaš izdelke ali izkušnje?", en: "Selling products or experiences?" },
-    forProvidersCta: { sl: "Pridruži se tržnici", en: "Join the marketplace" },
+    openPartner: { sl: "Odpri partnerja", en: "Open partner", it: "Apri partner", de: "Partner öffnen", fr: "Ouvrir le partenaire", es: "Abrir socio" },
+    forProviders: { sl: "Prodajaš izdelke ali izkušnje?", en: "Selling products or experiences?", it: "Vendi prodotti o esperienze?", de: "Verkaufst du Produkte oder Erlebnisse?", fr: "Tu vends des produits ou des expériences ?", es: "¿Vendes productos o experiencias?" },
+    forProvidersCta: { sl: "Pridruži se tržnici", en: "Join the marketplace", it: "Unisciti al mercato", de: "Tritt dem Marktplatz bei", fr: "Rejoins le marché", es: "Únete al mercado" },
   } as const;
   const t = <K extends keyof typeof L>(k: K) => pick(l, L[k]);
 
@@ -130,7 +166,7 @@ export function TrznicaExplorer() {
 
   const onAdd = (p: OwnProduct) => {
     if (inTrip(p.id)) return;
-    const name = l === "en" ? p.name.en : p.name.sl;
+    const name = pick(l, p.name);
     myTrip.add(p.id, name, "experience", "trznica");
     toast({ title: t("toastAdded") });
   };
@@ -193,7 +229,7 @@ export function TrznicaExplorer() {
             {OWN_PRODUCTS.map((p) => {
               const dest = getDestination(p.destinationSlug);
               const added = inTrip(p.id);
-              const name = l === "en" ? p.name.en : p.name.sl;
+              const name = pick(l, p.name);
               return (
                 <li key={p.id}>
                   <Card className="group flex h-full flex-col overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-lg">
@@ -231,7 +267,7 @@ export function TrznicaExplorer() {
                       )}
                       <h3 className="text-base leading-tight font-bold">{name}</h3>
                       <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-                        {l === "en" ? p.description.en : p.description.sl}
+                        {pick(l, p.description)}
                       </p>
                       <div className="mt-auto pt-1">
                         <Button
@@ -275,7 +311,7 @@ export function TrznicaExplorer() {
                     id={`shelf-group-${g.id}`}
                     className="text-xs font-bold tracking-[0.14em] text-muted-foreground uppercase"
                   >
-                    {l === "en" ? g.en : g.sl}
+                    {pick(l, g)}
                   </h3>
                   <ul className="mt-3 grid list-none gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {shelves.map((s) => (
@@ -325,18 +361,18 @@ function ShelfCard({
           <Badge
             variant="outline"
             className={cn("gap-1", avail.cls)}
-            title={locale === "en" ? avail.en : avail.sl}
+            title={pick(locale, avail)}
           >
             <ShieldQuestion className="size-3" aria-hidden="true" />
-            {locale === "en" ? avail.en : avail.sl}
+            {pick(locale, avail)}
           </Badge>
           <Badge variant="secondary">
-            {locale === "en" ? status.en : status.sl}
+            {pick(locale, status)}
           </Badge>
         </div>
 
         <h4 className="text-base leading-tight font-bold">
-          {locale === "en" ? shelf.label.en : shelf.label.sl}
+          {pick(locale, shelf.label)}
         </h4>
         {/* Mobilni UX (issue #1 §4): dolgi seznami ponudnikov prelomimo z
             besedami, opis okvirimo z line-clamp za enotno višino kartice. */}
@@ -344,10 +380,10 @@ function ShelfCard({
           {shelf.providers.join(" · ")}
         </p>
         <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-          {locale === "en" ? shelf.description.en : shelf.description.sl}
+          {pick(locale, shelf.description)}
         </p>
         <p className="text-xs text-muted-foreground">
-          {locale === "en" ? shelf.coverage.en : shelf.coverage.sl}
+          {pick(locale, shelf.coverage)}
         </p>
 
         {shelf.goRoute && (

@@ -50,15 +50,23 @@ export type WatchKind = (typeof WATCH_KINDS)[number];
  * odklonimo, namesto da bi lažno obljubljali opazovanje).
  */
 export const UNSUPPORTED_WATCH_KINDS: Readonly<
-  Record<string, { sl: string; en: string }>
+  Record<string, { sl: string; en: string; it: string; de: string; fr: string; es: string }>
 > = {
   availability: {
     sl: "Razpoložljivost lokala ne morem spremljati — ponudnik tega stanja ne potrjuje prek naše plasti (iskrena zavrnitev, ne lažno opazovanje).",
     en: "Restaurant availability cannot be watched — the provider does not confirm this state through our layer (honest refusal, not a fake watch).",
+    it: "Non posso monitorare la disponibilità del locale — il fornitore non conferma questo stato tramite il nostro livello (rifiuto onesto, non una falsa osservazione).",
+    de: "Die Verfügbarkeit des Lokals kann ich nicht beobachten — der Anbieter bestätigt diesen Zustand nicht über unsere Ebene (ehrliche Absage, keine falsche Beobachtung).",
+    fr: "Je ne peux pas surveiller la disponibilité du restaurant — le prestataire ne confirme pas cet état via notre couche (refus honnête, pas une fausse surveillance).",
+    es: "No puedo seguir la disponibilidad del local — el proveedor no confirma este estado a través de nuestra capa (negativa honesta, no una falsa observación).",
   },
   flight: {
     sl: "Spremljanja letov ne podpiramo — nimamo preverljivega vira letalskih podatkov (ne bomo izmišljevali sprememb).",
     en: "Flight watching is not supported — we have no verifiable flight data source (we will not invent changes).",
+    it: "Il monitoraggio dei voli non è supportato — non abbiamo una fonte verificabile di dati di volo (non inventeremo cambiamenti).",
+    de: "Flugbeobachtung wird nicht unterstützt — wir haben keine überprüfbare Flugdatenquelle (wir erfinden keine Änderungen).",
+    fr: "La surveillance des vols n'est pas prise en charge — nous n'avons pas de source vérifiable de données de vol (nous n'inventerons pas de changements).",
+    es: "No damos soporte al seguimiento de vuelos — no tenemos una fuente verificable de datos de vuelo (no inventaremos cambios).",
   },
 };
 
@@ -147,29 +155,29 @@ export const WATCH_AUDIT_ACTIONS = {
 // ─── Oznake SL/EN (enak vzorec kot ostale plasti) ───────────────────────────
 
 export const WATCH_KIND_LABELS: Readonly<
-  Record<WatchKind, { sl: string; en: string }>
+  Record<WatchKind, { sl: string; en: string; it: string; de: string; fr: string; es: string }>
 > = {
-  price: { sl: "Cena izdelka", en: "Product price" },
-  weather: { sl: "Vreme na poti", en: "Trip weather" },
-  trip_day: { sl: "Dnevi do poti", en: "Trip countdown" },
-  booking: { sl: "Rezervacije pred potjo", en: "Bookings before trip" },
+  price: { sl: "Cena izdelka", en: "Product price", it: "Prezzo del prodotto", de: "Produktpreis", fr: "Prix du produit", es: "Precio del producto" },
+  weather: { sl: "Vreme na poti", en: "Trip weather", it: "Meteo del viaggio", de: "Wetter auf der Reise", fr: "Météo du voyage", es: "Clima del viaje" },
+  trip_day: { sl: "Dnevi do poti", en: "Trip countdown", it: "Conto alla rovescia del viaggio", de: "Countdown zur Reise", fr: "Compte à rebours du voyage", es: "Cuenta atrás del viaje" },
+  booking: { sl: "Rezervacije pred potjo", en: "Bookings before trip", it: "Prenotazioni prima del viaggio", de: "Buchungen vor der Reise", fr: "Réservations avant le voyage", es: "Reservas antes del viaje" },
 };
 
 export const NOTIFICATION_SOURCE_LABELS: Readonly<
-  Record<string, { sl: string; en: string }>
+  Record<string, { sl: string; en: string; it: string; de: string; fr: string; es: string }>
 > = {
-  watch: { sl: "Spremljanje", en: "Watch" },
-  trip: { sl: "Pot", en: "Trip" },
-  booking: { sl: "Rezervacija", en: "Booking" },
-  system: { sl: "Sistem", en: "System" },
+  watch: { sl: "Spremljanje", en: "Watch", it: "Monitoraggio", de: "Beobachtung", fr: "Surveillance", es: "Seguimiento" },
+  trip: { sl: "Pot", en: "Trip", it: "Viaggio", de: "Reise", fr: "Voyage", es: "Viaje" },
+  booking: { sl: "Rezervacija", en: "Booking", it: "Prenotazione", de: "Buchung", fr: "Réservation", es: "Reserva" },
+  system: { sl: "Sistem", en: "System", it: "Sistema", de: "System", fr: "Système", es: "Sistema" },
 };
 
 export const SEVERITY_LABELS: Readonly<
-  Record<string, { sl: string; en: string }>
+  Record<string, { sl: string; en: string; it: string; de: string; fr: string; es: string }>
 > = {
-  info: { sl: "Informacija", en: "Info" },
-  warning: { sl: "Opozorilo", en: "Warning" },
-  success: { sl: "Dobra novica", en: "Good news" },
+  info: { sl: "Informacija", en: "Info", it: "Informazione", de: "Info", fr: "Info", es: "Información" },
+  warning: { sl: "Opozorilo", en: "Warning", it: "Avviso", de: "Warnung", fr: "Avertissement", es: "Aviso" },
+  success: { sl: "Dobra novica", en: "Good news", it: "Buona notizia", de: "Gute Nachricht", fr: "Bonne nouvelle", es: "Buena noticia" },
 };
 
 // ─── Validacija vnosa ───────────────────────────────────────────────────────

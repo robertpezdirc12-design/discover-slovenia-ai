@@ -5,7 +5,7 @@
 > realnimi koordinatami in deterministični načrtovalnik poti (isti vhod → isti načrt,
 > 0 AI žetonov v jedru).
 
-**Verzija: 2.19.0 — P2: POSTGRES DATA PLANE + PRODUKCIJSKI CUTOVER PRIPRAVA (issue #2).**
+**Verzija: 2.20.0 — P3: ŠTIRIJEZIČNA RAZŠIRITEV it/de/fr/es + hreflang (issue #2 §9).**
 Izdaje rekonstrukcije: 2.1.0 skupnostne funkcije → 2.2.0 aplikacijska lupina →
 2.3.0 issue #1 (živi GPS, booking, pomočnik) → 2.3.1 infra CI → 2.4.0 PWA
 offline → 2.5.0 rezervacijski sloj → 2.6.0 partner kanal booking verige →
@@ -346,4 +346,15 @@ migracijsko stanje) + build:meta (SHA iz platforme) + matrika 39 modelov
 (docs/RECOVERY-MODEL-MATRIX.md: RECONCILE 14 z mehanskim prenosom,
 RETIRE 25 z razlogi, RESTORE 0) + docs/PRODUCTION-CUTOVER.md runbook
 (10 korakov z ukazi: backup → preflight → dry-run → integrity → okno →
-migracija → deployment → health → E2E → rollback).
+migracija → deployment → health → E2E → rollback) →
+2.20.0 P3 i18n štirijezična razširitev (issue #2 §9): prevod ~7.400 nizov
+v 71 datotekah (it/de/fr/es v L-slovarjih po kanonu 48-b; iskrenostni
+kanon — sl ostaja resnica/fallback) + aktivacija ~73 klicnih mest
+(ternariji → pick(), INTL_DATE_LOCALE mapa, regionLabel/typeLabel) +
+hreflang alternatesFor() na vseh 36 straneh (26 klientnih razdeljenih na
+page.tsx strežniški ovoj + view.tsx — Next 16 prepoveduje generateMetadata
+v "use client"; 6 source-contract testov usklajenih) + zadnji ostanki
+prevodov (weather WMO_LABELS, recommendation reasons, legal-page) +
+pogodbenski test tests/i18n-quadrilingual.test.ts (pariteta slovarjev
+z prazno izjemo, pokritost hreflang 36/36, enota alternatesFor) →
+1257/1257 testov (10293 expect).

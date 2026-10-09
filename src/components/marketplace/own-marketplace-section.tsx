@@ -36,33 +36,47 @@ import { slUnit } from "@/lib/sl-utils";
 import { getOwnProduct } from "@/lib/trznica-data";
 
 /** Oznaka vrste izdelka (izkušnja/vstopnica/izdelek) po jeziku. */
-const KIND_LABELS: Record<string, { sl: string; en: string }> = {
-  experience: { sl: "Izkušnja", en: "Experience" },
-  ticket: { sl: "Vstopnica", en: "Ticket" },
-  product: { sl: "Izdelek", en: "Product" },
+const KIND_LABELS: Record<string, { sl: string; en: string; it: string; de: string; fr: string; es: string }> = {
+  experience: { sl: "Izkušnja", en: "Experience", it: "Esperienza", de: "Erlebnis", fr: "Expérience", es: "Experiencia" },
+  ticket: { sl: "Vstopnica", en: "Ticket", it: "Biglietto", de: "Ticket", fr: "Billet", es: "Entrada" },
+  product: { sl: "Izdelek", en: "Product", it: "Prodotto", de: "Produkt", fr: "Produit", es: "Producto" },
 };
 
 const L = {
-  title: { sl: "Lastna tržnica", en: "Our own marketplace" },
+  title: { sl: "Lastna tržnica", en: "Our own marketplace", it: "Il nostro mercato", de: "Unser eigener Marktplatz", fr: "Notre marché", es: "Nuestro mercado" },
   lead: {
     sl: "Izdelki in izkušnje z lastnim checkoutom: cene so izključno polje costPerPerson kanonskega nabora destinacij, zaloga je dejansko stanje. V peskovniku so omogočena demo plačila — vsako tako naročilo je izrecno označeno DEMO (brez prave bremenitve).",
     en: "Products and experiences with our own checkout: prices come exclusively from the canonical dataset's costPerPerson field, stock is the actual state. The sandbox runs demo payments — every such order is explicitly labelled DEMO (no real charge).",
+    it: "Prodotti ed esperienze con il nostro checkout: i prezzi provengono esclusivamente dal campo costPerPerson del dataset canonico delle destinazioni, la giacenza è lo stato effettivo. La sandbox esegue pagamenti demo — ogni ordine di questo tipo è esplicitamente contrassegnato DEMO (nessun addebito reale).",
+    de: "Produkte und Erlebnisse mit unserem eigenen Checkout: Preise stammen ausschließlich aus dem costPerPerson-Feld des kanonischen Datensatzes, der Bestand ist der tatsächliche Stand. Die Sandbox führt Demo-Zahlungen aus — jede solche Bestellung ist ausdrücklich als DEMO gekennzeichnet (keine echte Belastung).",
+    fr: "Produits et expériences avec notre propre checkout : les prix proviennent exclusivement du champ costPerPerson de l'ensemble canonique de destinations, le stock est l'état réel. La sandbox exécute des paiements démo — chaque commande de ce type est explicitement marquée DEMO (aucun débit réel).",
+    es: "Productos y experiencias con nuestro propio checkout: los precios provienen exclusivamente del campo costPerPerson del conjunto canónico de destinos, el stock es el estado real. El sandbox ejecuta pagos demo — cada pedido de este tipo está explícitamente marcado como DEMO (sin cargo real).",
   },
-  liveBadge: { sl: "Živi checkout", en: "Live checkout" },
+  liveBadge: { sl: "Živi checkout", en: "Live checkout", it: "Checkout live", de: "Live-Checkout", fr: "Checkout live", es: "Checkout en vivo" },
   stock: {
     sl: (n: number) =>
       `Zaloga: ${n} ${slUnit(n, "kos", "kosa", "kosi", "kosov")}`,
     en: (n: number) => (n === 1 ? "1 unit in stock" : `${n} units in stock`),
+    it: (n: number) => (n === 1 ? "1 unità in magazzino" : `${n} unità in magazzino`),
+    de: (n: number) => (n === 1 ? "1 Stück auf Lager" : `${n} Stück auf Lager`),
+    fr: (n: number) => (n === 1 ? "1 unité en stock" : `${n} unités en stock`),
+    es: (n: number) => (n === 1 ? "1 unidad en stock" : `${n} unidades en stock`),
   },
-  soldOut: { sl: "Razprodano", en: "Sold out" },
-  buy: { sl: "Kupi", en: "Buy" },
+  soldOut: { sl: "Razprodano", en: "Sold out", it: "Esaurito", de: "Ausverkauft", fr: "Épuisé", es: "Agotado" },
+  buy: { sl: "Kupi", en: "Buy", it: "Acquista", de: "Kaufen", fr: "Acheter", es: "Comprar" },
   sold: {
     sl: (n: number) => `${n} ${slUnit(n, "prodan", "prodana", "prodani", "prodanih")}`,
     en: (n: number) => (n === 1 ? "1 sold" : `${n} sold`),
+    it: (n: number) => (n === 1 ? "1 venduto" : `${n} venduti`),
+    de: (n: number) => (n === 1 ? "1 verkauft" : `${n} verkauft`),
+    fr: (n: number) => (n === 1 ? "1 vendu" : `${n} vendus`),
+    es: (n: number) => (n === 1 ? "1 vendido" : `${n} vendidos`),
   },
-  loading: { sl: "Nalaganje tržnice …", en: "Loading the marketplace …" },
-  errorTitle: { sl: "Tržnice ni bilo mogoče naložiti", en: "Could not load the marketplace" },
-  retry: { sl: "Poskusi znova", en: "Try again" },
+  loading: { sl: "Nalaganje tržnice …", en: "Loading the marketplace …", it: "Caricamento del mercato …", de: "Marktplatz wird geladen …", fr: "Chargement du marché …", es: "Cargando el mercado …" },
+  errorTitle: { sl: "Tržnice ni bilo mogoče naložiti", en: "Could not load the marketplace", it: "Impossibile caricare il mercato", de: "Marktplatz konnte nicht geladen werden", fr: "Impossible de charger le marché", es: "No se pudo cargar el mercado" },
+  errorBody: { sl: "Tržnica trenutno ni dosegljiva.", en: "The marketplace is currently unreachable.", it: "Il mercato è attualmente irraggiungibile.", de: "Der Marktplatz ist derzeit nicht erreichbar.", fr: "Le marché est actuellement inaccessible.", es: "El mercado no está disponible actualmente." },
+  emptyBody: { sl: "Trenutno ni razpoložljivih izdelkov.", en: "No products are currently available.", it: "Al momento non ci sono prodotti disponibili.", de: "Derzeit sind keine Produkte verfügbar.", fr: "Aucun produit n'est actuellement disponible.", es: "Actualmente no hay productos disponibles." },
+  retry: { sl: "Poskusi znova", en: "Try again", it: "Riprova", de: "Erneut versuchen", fr: "Réessayer", es: "Reintentar" },
 } as const;
 
 interface CardProduct extends MarketplaceProduct {
@@ -97,20 +111,16 @@ export function OwnMarketplaceSection() {
           const own = getOwnProduct(p.slug);
           return {
             ...p,
-            overlayName: l === "en" && own ? own.name.en : p.name,
+            overlayName: own ? pick(l, own.name) : p.name,
             overlayDescription:
-              l === "en" && own ? own.description.en : p.description,
+              own ? pick(l, own.description) : p.description,
             image: own?.image ?? null,
             destinationSlug: own?.destinationSlug ?? null,
           };
         })
       );
     } catch {
-      setLoadError(
-        l === "en"
-          ? "The marketplace is currently unreachable."
-          : "Tržnica trenutno ni dosegljiva."
-      );
+      setLoadError(t("errorBody"));
     }
   }, [l]);
 
@@ -201,9 +211,7 @@ export function OwnMarketplaceSection() {
         <div className="mt-6 rounded-xl border border-dashed p-10 text-center">
           <PackageOpen className="mx-auto size-8 text-muted-foreground" aria-hidden="true" />
           <p className="mt-3 text-sm text-muted-foreground">
-            {l === "en"
-              ? "No products are currently available."
-              : "Trenutno ni razpoložljivih izdelkov."}
+            {t("emptyBody")}
           </p>
         </div>
       )}

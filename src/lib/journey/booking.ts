@@ -346,21 +346,21 @@ export function validateConfirmationRecord(
 
 // ─── Statusne oznake za UI (SL/EN za vseh 14 statusov) ──────────────────────
 
-const STATUS_LABELS: Record<ConfirmationStatus, { sl: string; en: string }> = {
-  DRAFT: { sl: "Osnutek", en: "Draft" },
-  SELECTED: { sl: "Izbrano", en: "Selected" },
-  BOOKING_REQUESTED: { sl: "Zahtevek za rezervacijo poslan", en: "Booking requested" },
-  PENDING: { sl: "V obdelavi pri ponudniku", en: "Pending at provider" },
-  PAYMENT_REQUIRED: { sl: "Čaka plačilo", en: "Payment required" },
-  PAID: { sl: "Plačano", en: "Paid" },
-  CONFIRMED: { sl: "Potrjeno", en: "Confirmed" },
-  MODIFIED: { sl: "Spremenjeno", en: "Modified" },
-  REFUNDED: { sl: "Povrnjeno", en: "Refunded" },
-  EXPIRED: { sl: "Poteklo", en: "Expired" },
-  FAILED: { sl: "Spodletelo", en: "Failed" },
-  CANCELLED: { sl: "Preklicano", en: "Cancelled" },
-  UNKNOWN: { sl: "Neznano", en: "Unknown" },
-  EXTERNAL: { sl: "Zunanja rezervacija (pri ponudniku)", en: "External booking (at provider)" },
+const STATUS_LABELS: Record<ConfirmationStatus, { sl: string; en: string; it: string; de: string; fr: string; es: string }> = {
+  DRAFT: { sl: "Osnutek", en: "Draft", it: "Bozza", de: "Entwurf", fr: "Brouillon", es: "Borrador" },
+  SELECTED: { sl: "Izbrano", en: "Selected", it: "Selezionato", de: "Ausgewählt", fr: "Sélectionné", es: "Seleccionado" },
+  BOOKING_REQUESTED: { sl: "Zahtevek za rezervacijo poslan", en: "Booking requested", it: "Richiesta di prenotazione inviata", de: "Buchungsanfrage gesendet", fr: "Demande de réservation envoyée", es: "Solicitud de reserva enviada" },
+  PENDING: { sl: "V obdelavi pri ponudniku", en: "Pending at provider", it: "In attesa dal fornitore", de: "Beim Anbieter in Bearbeitung", fr: "En attente chez le prestataire", es: "Pendiente en el proveedor" },
+  PAYMENT_REQUIRED: { sl: "Čaka plačilo", en: "Payment required", it: "In attesa di pagamento", de: "Zahlung erforderlich", fr: "Paiement requis", es: "Pendiente de pago" },
+  PAID: { sl: "Plačano", en: "Paid", it: "Pagato", de: "Bezahlt", fr: "Payé", es: "Pagado" },
+  CONFIRMED: { sl: "Potrjeno", en: "Confirmed", it: "Confermato", de: "Bestätigt", fr: "Confirmé", es: "Confirmado" },
+  MODIFIED: { sl: "Spremenjeno", en: "Modified", it: "Modificato", de: "Geändert", fr: "Modifié", es: "Modificado" },
+  REFUNDED: { sl: "Povrnjeno", en: "Refunded", it: "Rimborsato", de: "Erstattet", fr: "Remboursé", es: "Reembolsado" },
+  EXPIRED: { sl: "Poteklo", en: "Expired", it: "Scaduto", de: "Abgelaufen", fr: "Expiré", es: "Caducado" },
+  FAILED: { sl: "Spodletelo", en: "Failed", it: "Non riuscito", de: "Fehlgeschlagen", fr: "Échec", es: "Fallido" },
+  CANCELLED: { sl: "Preklicano", en: "Cancelled", it: "Cancellato", de: "Storniert", fr: "Annulé", es: "Cancelado" },
+  UNKNOWN: { sl: "Neznano", en: "Unknown", it: "Sconosciuto", de: "Unbekannt", fr: "Inconnu", es: "Desconocido" },
+  EXTERNAL: { sl: "Zunanja rezervacija (pri ponudniku)", en: "External booking (at provider)", it: "Prenotazione esterna (presso il fornitore)", de: "Externe Buchung (beim Anbieter)", fr: "Réservation externe (chez le prestataire)", es: "Reserva externa (en el proveedor)" },
 };
 
 /**

@@ -131,48 +131,72 @@ type SearchTab = "partner" | "demo";
 
 // Dvojezične oznake novih površin (SL je resnica, EN je prevod — kanon L).
 const L = {
-  statusIdea: { sl: "Zamisel — ni še potrjena", en: "Idea — not confirmed yet" },
-  statusConfirmed: { sl: "Potrjeno (uporabniški vnos)", en: "Confirmed (user entry)" },
-  statusModified: { sl: "Spremenjeno (uporabniški vnos)", en: "Modified (user entry)" },
-  statusCancelled: { sl: "Preklicano", en: "Cancelled" },
-  confirmReservation: { sl: "Potrdi rezervacijo", en: "Confirm reservation" },
-  updateProof: { sl: "Posodobi potrdilo", en: "Update proof" },
-  cancelReservation: { sl: "Prekliči", en: "Cancel" },
-  saveIdea: { sl: "Shrani kot zamisel", en: "Save as idea" },
+  statusIdea: { sl: "Zamisel — ni še potrjena", en: "Idea — not confirmed yet", it: "Idea — non ancora confermata", de: "Idee — noch nicht bestätigt", fr: "Idée — pas encore confirmée", es: "Idea — aún sin confirmar" },
+  statusConfirmed: { sl: "Potrjeno (uporabniški vnos)", en: "Confirmed (user entry)", it: "Confermata (inserimento utente)", de: "Bestätigt (Benutzereintrag)", fr: "Confirmée (saisie utilisateur)", es: "Confirmada (entrada de usuario)" },
+  statusModified: { sl: "Spremenjeno (uporabniški vnos)", en: "Modified (user entry)", it: "Modificata (inserimento utente)", de: "Geändert (Benutzereintrag)", fr: "Modifiée (saisie utilisateur)", es: "Modificada (entrada de usuario)" },
+  statusCancelled: { sl: "Preklicano", en: "Cancelled", it: "Cancellata", de: "Storniert", fr: "Annulée", es: "Cancelada" },
+  confirmReservation: { sl: "Potrdi rezervacijo", en: "Confirm reservation", it: "Conferma la prenotazione", de: "Reservierung bestätigen", fr: "Confirmer la réservation", es: "Confirmar la reserva" },
+  updateProof: { sl: "Posodobi potrdilo", en: "Update proof", it: "Aggiorna la prova", de: "Nachweis aktualisieren", fr: "Mettre à jour la preuve", es: "Actualizar la prueba" },
+  cancelReservation: { sl: "Prekliči", en: "Cancel", it: "Annulla", de: "Abbrechen", fr: "Annuler", es: "Cancelar" },
+  saveIdea: { sl: "Shrani kot zamisel", en: "Save as idea", it: "Salva come idea", de: "Als Idee speichern", fr: "Enregistrer comme idée", es: "Guardar como idea" },
   confirmWithProof: {
     sl: "Potrdi s potrdilom ponudnika …",
     en: "Confirm with provider proof …",
+    it: "Conferma con la prova del fornitore …",
+    de: "Mit Anbieternachweis bestätigen …",
+    fr: "Confirmer avec la preuve du prestataire …",
+    es: "Confirmar con la prueba del proveedor …",
   },
-  close: { sl: "Zapri", en: "Close" },
-  modalTitleConfirm: { sl: "Potrdi rezervacijo", en: "Confirm reservation" },
-  modalTitleUpdate: { sl: "Posodobi potrdilo rezervacije", en: "Update reservation proof" },
+  close: { sl: "Zapri", en: "Close", it: "Chiudi", de: "Schließen", fr: "Fermer", es: "Cerrar" },
+  modalTitleConfirm: { sl: "Potrdi rezervacijo", en: "Confirm reservation", it: "Conferma la prenotazione", de: "Reservierung bestätigen", fr: "Confirmer la réservation", es: "Confirmar la reserva" },
+  modalTitleUpdate: { sl: "Posodobi potrdilo rezervacije", en: "Update reservation proof", it: "Aggiorna la prova della prenotazione", de: "Reservierungsnachweis aktualisieren", fr: "Mettre à jour la preuve de réservation", es: "Actualizar la prueba de la reserva" },
   modalHonesty: {
     sl: "To je tvoj vnos iz potrdila ponudnika — ni naša integracija. Podatki se shranijo kot uporabniška atestacija (source: USER).",
     en: "This is your entry from the provider's confirmation — not our integration. The data is saved as a user attestation (source: USER).",
+    it: "Questo è il tuo inserimento dalla conferma del fornitore — non la nostra integrazione. I dati si salvano come attestazione utente (source: USER).",
+    de: "Dies ist dein Eintrag aus der Bestätigung des Anbieters — nicht unsere Integration. Die Daten werden als Benutzer-Attestierung gespeichert (source: USER).",
+    fr: "Ceci est ta saisie issue de la confirmation du prestataire — pas notre intégration. Les données sont enregistrées comme attestation utilisateur (source: USER).",
+    es: "Esta es tu entrada de la confirmación del proveedor — no nuestra integración. Los datos se guardan como atestación de usuario (source: USER).",
   },
-  forStop: { sl: "Postanek", en: "Stop" },
+  forStop: { sl: "Postanek", en: "Stop", it: "Fermata", de: "Stopp", fr: "Arrêt", es: "Parada" },
   bookingIdLabel: {
     sl: "Številka rezervacije (potrdilo ponudnika)",
     en: "Booking number (provider confirmation)",
+    it: "Numero di prenotazione (conferma del fornitore)",
+    de: "Buchungsnummer (Anbieterbestätigung)",
+    fr: "Numéro de réservation (confirmation du prestataire)",
+    es: "Número de reserva (confirmación del proveedor)",
   },
-  bookingIdPlaceholder: { sl: "npr. BLED-2026-114", en: "e.g. BLED-2026-114" },
-  priceLabel: { sl: "Cena (EUR)", en: "Price (EUR)" },
-  pricePlaceholder: { sl: "npr. 49,50", en: "e.g. 49.50" },
-  noteLabel: { sl: "Opomba", en: "Note" },
-  submitConfirm: { sl: "Shrani kot potrjeno", en: "Save as confirmed" },
-  submitUpdate: { sl: "Shrani spremembo", en: "Save change" },
-  proofLine: { sl: "Potrdilo", en: "Proof" },
+  bookingIdPlaceholder: { sl: "npr. BLED-2026-114", en: "e.g. BLED-2026-114", it: "es. BLED-2026-114", de: "z. B. BLED-2026-114", fr: "ex. BLED-2026-114", es: "p. ej. BLED-2026-114" },
+  priceLabel: { sl: "Cena (EUR)", en: "Price (EUR)", it: "Prezzo (EUR)", de: "Preis (EUR)", fr: "Prix (EUR)", es: "Precio (EUR)" },
+  pricePlaceholder: { sl: "npr. 49,50", en: "e.g. 49.50", it: "es. 49.50", de: "z. B. 49.50", fr: "ex. 49.50", es: "p. ej. 49.50" },
+  noteLabel: { sl: "Opomba", en: "Note", it: "Nota", de: "Notiz", fr: "Note", es: "Nota" },
+  submitConfirm: { sl: "Shrani kot potrjeno", en: "Save as confirmed", it: "Salva come confermata", de: "Als bestätigt speichern", fr: "Enregistrer comme confirmée", es: "Guardar como confirmada" },
+  submitUpdate: { sl: "Shrani spremembo", en: "Save change", it: "Salva la modifica", de: "Änderung speichern", fr: "Enregistrer la modification", es: "Guardar el cambio" },
+  proofLine: { sl: "Potrdilo", en: "Proof", it: "Prova", de: "Nachweis", fr: "Preuve", es: "Prueba" },
   errBookingId: {
     sl: "Vpiši številko rezervacije iz potrdila ponudnika.",
     en: "Enter the booking number from the provider's confirmation.",
+    it: "Inserisci il numero di prenotazione dalla conferma del fornitore.",
+    de: "Gib die Buchungsnummer aus der Bestätigung des Anbieters ein.",
+    fr: "Saisis le numéro de réservation de la confirmation du prestataire.",
+    es: "Introduce el número de reserva de la confirmación del proveedor.",
   },
   errPrice: {
     sl: "Vpiši ceno iz potrdila ponudnika (število, večje od 0).",
     en: "Enter the price from the provider's confirmation (a number greater than 0).",
+    it: "Inserisci il prezzo dalla conferma del fornitore (un numero maggiore di 0).",
+    de: "Gib den Preis aus der Bestätigung des Anbieters ein (eine Zahl größer als 0).",
+    fr: "Saisis le prix de la confirmation du prestataire (un nombre supérieur à 0).",
+    es: "Introduce el precio de la confirmación del proveedor (un número mayor que 0).",
   },
   errStop: {
     sl: "Izberi postanek s seznama ali vpiši ime (vsaj 2 znaka).",
     en: "Pick a stop from the list or enter a name (at least 2 characters).",
+    it: "Scegli una fermata dall'elenco o inserisci un nome (almeno 2 caratteri).",
+    de: "Wähle einen Stopp aus der Liste oder gib einen Namen ein (mindestens 2 Zeichen).",
+    fr: "Choisis un arrêt dans la liste ou saisis un nom (au moins 2 caractères).",
+    es: "Elige una parada de la lista o introduce un nombre (al menos 2 caracteres).",
   },
 } as const;
 
@@ -181,57 +205,85 @@ const L = {
 // SIMULIRANO (kanal demo je strogo ločen od realnega ponudnika, ki v
 // peskovniku ni aktiven — fail-closed 503 na strežniku).
 const DEMO_L = {
-  bookDemo: { sl: "Rezerviraj (demo)", en: "Book (demo)" },
-  modalTitle: { sl: "Išči ponudbo — demo simulator", en: "Search an offer — demo simulator" },
+  bookDemo: { sl: "Rezerviraj (demo)", en: "Book (demo)", it: "Prenota (demo)", de: "Buchen (Demo)", fr: "Réserver (démo)", es: "Reservar (demo)" },
+  modalTitle: { sl: "Išči ponudbo — demo simulator", en: "Search an offer — demo simulator", it: "Cerca un'offerta — simulatore demo", de: "Angebot suchen — Demo-Simulator", fr: "Rechercher une offre — simulateur démo", es: "Buscar una oferta — simulador demo" },
   modalDesc: {
     sl: "Izberi dan, postanek in ponudbo iz našega kanonskega nabora — simulator takoj izstavi demo potrditev.",
     en: "Pick a day, stop and an offer from our canonical set — the simulator issues a demo confirmation instantly.",
+    it: "Scegli giorno, fermata e un'offerta dal nostro insieme canonico — il simulatore emette subito una conferma demo.",
+    de: "Wähle Tag, Stopp und ein Angebot aus unserem kanonischen Set — der Simulator stellt sofort eine Demo-Bestätigung aus.",
+    fr: "Choisis un jour, un arrêt et une offre de notre ensemble canonique — le simulateur émet instantanément une confirmation démo.",
+    es: "Elige día, parada y una oferta de nuestro conjunto canónico — el simulador emite al instante una confirmación demo.",
   },
   honesty: {
     sl: "DEMO SIMULATOR — rezervacija je simulirana, ni realna potrditev ponudnika.",
     en: "DEMO SIMULATOR — the booking is simulated, not a real provider confirmation.",
+    it: "SIMULATORE DEMO — la prenotazione è simulata, non una conferma reale del fornitore.",
+    de: "DEMO-SIMULATOR — die Buchung ist simuliert, keine echte Anbieterbestätigung.",
+    fr: "SIMULATEUR DÉMO — la réservation est simulée, pas une vraie confirmation du prestataire.",
+    es: "SIMULADOR DEMO — la reserva es simulada, no una confirmación real del proveedor.",
   },
   realNote: {
     sl: "Realnega ponudniškega kanala ni mogoče uporabiti (ni poverilnic) — nikoli ne lažemo.",
     en: "The real provider channel cannot be used (no credentials) — we never lie.",
+    it: "Il canale reale del fornitore non è utilizzabile (nessuna credenziale) — non mentiamo mai.",
+    de: "Der echte Anbieterkanal kann nicht genutzt werden (keine Zugangsdaten) — wir lügen nie.",
+    fr: "Le canal réel du prestataire ne peut pas être utilisé (aucun identifiant) — nous ne mentons jamais.",
+    es: "El canal real del proveedor no se puede usar (sin credenciales) — nunca mentimos.",
   },
-  day: { sl: "Dan", en: "Day" },
-  stop: { sl: "Postanek", en: "Stop" },
-  customStopLabel: { sl: "Ime postanka (ročni vnos)", en: "Stop name (manual entry)" },
-  offerLabel: { sl: "Ponudba", en: "Offer" },
-  perPerson: { sl: "/osebo", en: "/person" },
-  matchExact: { sl: "ta postanek", en: "this stop" },
-  matchRegion: { sl: "ista regija", en: "same region" },
-  matchSuggested: { sl: "predlog", en: "suggested" },
-  offerEmpty: { sl: "Ni ponudb — izberi drug postanek", en: "No offers — pick another stop" },
-  dateLabel: { sl: "Datum", en: "Date" },
-  peopleLabel: { sl: "Število ljudi (1–12)", en: "People (1–12)" },
-  nameLabel: { sl: "Ime na rezervaciji (neobvezno)", en: "Name on the booking (optional)" },
-  submit: { sl: "Rezerviraj (demo)", en: "Book (demo)" },
-  successTitle: { sl: "Demo rezervacija potrjena", en: "Demo booking confirmed" },
+  day: { sl: "Dan", en: "Day", it: "Giorno", de: "Tag", fr: "Jour", es: "Día" },
+  stop: { sl: "Postanek", en: "Stop", it: "Fermata", de: "Stopp", fr: "Arrêt", es: "Parada" },
+  customStopLabel: { sl: "Ime postanka (ročni vnos)", en: "Stop name (manual entry)", it: "Nome della fermata (inserimento manuale)", de: "Stoppname (manueller Eintrag)", fr: "Nom de l'arrêt (saisie manuelle)", es: "Nombre de la parada (entrada manual)" },
+  offerLabel: { sl: "Ponudba", en: "Offer", it: "Offerta", de: "Angebot", fr: "Offre", es: "Oferta" },
+  perPerson: { sl: "/osebo", en: "/person", it: "/persona", de: "/Person", fr: "/personne", es: "/persona" },
+  matchExact: { sl: "ta postanek", en: "this stop", it: "questa fermata", de: "dieser Stopp", fr: "cet arrêt", es: "esta parada" },
+  matchRegion: { sl: "ista regija", en: "same region", it: "stessa regione", de: "gleiche Region", fr: "même région", es: "misma región" },
+  matchSuggested: { sl: "predlog", en: "suggested", it: "suggerita", de: "vorgeschlagen", fr: "suggéré", es: "sugerida" },
+  offerEmpty: { sl: "Ni ponudb — izberi drug postanek", en: "No offers — pick another stop", it: "Nessuna offerta — scegli un'altra fermata", de: "Keine Angebote — wähle einen anderen Stopp", fr: "Aucune offre — choisis un autre arrêt", es: "Sin ofertas — elige otra parada" },
+  dateLabel: { sl: "Datum", en: "Date", it: "Data", de: "Datum", fr: "Date", es: "Fecha" },
+  peopleLabel: { sl: "Število ljudi (1–12)", en: "People (1–12)", it: "Persone (1–12)", de: "Personen (1–12)", fr: "Personnes (1–12)", es: "Personas (1–12)" },
+  nameLabel: { sl: "Ime na rezervaciji (neobvezno)", en: "Name on the booking (optional)", it: "Nome sulla prenotazione (facoltativo)", de: "Name auf der Buchung (optional)", fr: "Nom sur la réservation (facultatif)", es: "Nombre en la reserva (opcional)" },
+  submit: { sl: "Rezerviraj (demo)", en: "Book (demo)", it: "Prenota (demo)", de: "Buchen (Demo)", fr: "Réserver (démo)", es: "Reservar (demo)" },
+  successTitle: { sl: "Demo rezervacija potrjena", en: "Demo booking confirmed", it: "Prenotazione demo confermata", de: "Demo-Buchung bestätigt", fr: "Réservation démo confirmée", es: "Reserva demo confirmada" },
   successBody: {
     sl: (id: string) => `Številka ${id} je SIMULIRANA potrditev demo simulatorja — ni je mogoče unovčiti pri ponudniku.`,
     en: (id: string) => `Number ${id} is a SIMULATED confirmation of the demo simulator — it cannot be redeemed with a provider.`,
+    it: (id: string) => `Il numero ${id} è una conferma SIMULATA del simulatore demo — non è riscattabile presso un fornitore.`,
+    de: (id: string) => `Die Nummer ${id} ist eine SIMULIERTE Bestätigung des Demo-Simulators — sie kann bei keinem Anbieter eingelöst werden.`,
+    fr: (id: string) => `Le numéro ${id} est une confirmation SIMULÉE du simulateur démo — elle ne peut pas être échangée chez un prestataire.`,
+    es: (id: string) => `El número ${id} es una confirmación SIMULADA del simulador demo — no se puede canjear con un proveedor.`,
   },
   peopleWord: {
     sl: (n: number) => `${n} ${n === 1 ? "oseba" : n === 2 ? "osebi" : n === 3 || n === 4 ? "osebe" : "oseb"}`,
     en: (n: number) => `${n} ${n === 1 ? "person" : "people"}`,
+    it: (n: number) => `${n} ${n === 1 ? "persona" : "persone"}`,
+    de: (n: number) => `${n} ${n === 1 ? "Person" : "Personen"}`,
+    fr: (n: number) => `${n} ${n === 1 ? "personne" : "personnes"}`,
+    es: (n: number) => `${n} ${n === 1 ? "persona" : "personas"}`,
   },
-  editTitle: { sl: "Spremeni demo rezervacijo", en: "Modify demo booking" },
+  editTitle: { sl: "Spremeni demo rezervacijo", en: "Modify demo booking", it: "Modifica la prenotazione demo", de: "Demo-Buchung ändern", fr: "Modifier la réservation démo", es: "Modificar la reserva demo" },
   editDesc: {
     sl: "Spremeni datum, število ljudi ali ime — prehod teče skozi življenjski cikel rezervacije.",
     en: "Change the date, people or name — the change goes through the booking lifecycle.",
+    it: "Cambia data, persone o nome — la modifica passa per il ciclo di vita della prenotazione.",
+    de: "Ändere Datum, Personen oder Namen — die Änderung durchläuft den Buchungslebenszyklus.",
+    fr: "Change la date, les personnes ou le nom — la modification passe par le cycle de vie de la réservation.",
+    es: "Cambia la fecha, las personas o el nombre — el cambio pasa por el ciclo de vida de la reserva.",
   },
-  editSubmit: { sl: "Shrani spremembo (demo)", en: "Save change (demo)" },
-  modify: { sl: "Spremeni", en: "Modify" },
-  cancelDemo: { sl: "Odpovej", en: "Cancel booking" },
-  demoProof: { sl: "Demo potrditev", en: "Demo confirmation" },
-  channelWord: { sl: "kanal", en: "channel" },
-  errOffer: { sl: "Izberi ponudbo iz iskanja.", en: "Pick an offer from the search." },
-  errDate: { sl: "Vpiši veljaven datum (YYYY-MM-DD).", en: "Enter a valid date (YYYY-MM-DD)." },
+  editSubmit: { sl: "Shrani spremembo (demo)", en: "Save change (demo)", it: "Salva la modifica (demo)", de: "Änderung speichern (Demo)", fr: "Enregistrer la modification (démo)", es: "Guardar el cambio (demo)" },
+  modify: { sl: "Spremeni", en: "Modify", it: "Modifica", de: "Ändern", fr: "Modifier", es: "Modificar" },
+  cancelDemo: { sl: "Odpovej", en: "Cancel booking", it: "Annulla la prenotazione", de: "Buchung stornieren", fr: "Annuler la réservation", es: "Cancelar la reserva" },
+  demoProof: { sl: "Demo potrditev", en: "Demo confirmation", it: "Conferma demo", de: "Demo-Bestätigung", fr: "Confirmation démo", es: "Confirmación demo" },
+  channelWord: { sl: "kanal", en: "channel", it: "canale", de: "Kanal", fr: "canal", es: "canal" },
+  errOffer: { sl: "Izberi ponudbo iz iskanja.", en: "Pick an offer from the search.", it: "Scegli un'offerta dalla ricerca.", de: "Wähle ein Angebot aus der Suche.", fr: "Choisis une offre dans la recherche.", es: "Elige una oferta de la búsqueda." },
+  errDate: { sl: "Vpiši veljaven datum (YYYY-MM-DD).", en: "Enter a valid date (YYYY-MM-DD).", it: "Inserisci una data valida (AAAA-MM-GG).", de: "Gib ein gültiges Datum ein (JJJJ-MM-TT).", fr: "Saisis une date valide (AAAA-MM-JJ).", es: "Introduce una fecha válida (AAAA-MM-DD)." },
   errPeople: {
     sl: "Število ljudi mora biti celo število med 1 in 12.",
     en: "People must be a whole number between 1 and 12.",
+    it: "Le persone devono essere un numero intero tra 1 e 12.",
+    de: "Personen müssen eine ganze Zahl zwischen 1 und 12 sein.",
+    fr: "Les personnes doivent être un nombre entier entre 1 et 12.",
+    es: "Las personas deben ser un número entero entre 1 y 12.",
   },
 } as const;
 
@@ -241,23 +293,31 @@ const DEMO_L = {
 // dodaj na pot" (PENDING) → atestacija s partnerjevim potrdilom
 // (CONFIRMED). Demo simulator in partner kanal sta STROGO ločena.
 const PARTNER_L = {
-  bookPartner: { sl: "Rezerviraj pri partnerju", en: "Book with a partner" },
-  tabPartner: { sl: "Pri partnerju", en: "With a partner" },
-  tabDemo: { sl: "Demo simulator", en: "Demo simulator" },
-  modalTitle: { sl: "Išči ponudbo", en: "Search an offer" },
+  bookPartner: { sl: "Rezerviraj pri partnerju", en: "Book with a partner", it: "Prenota con un partner", de: "Bei einem Partner buchen", fr: "Réserver chez un partenaire", es: "Reservar con un socio" },
+  tabPartner: { sl: "Pri partnerju", en: "With a partner", it: "Con un partner", de: "Bei einem Partner", fr: "Chez un partenaire", es: "Con un socio" },
+  tabDemo: { sl: "Demo simulator", en: "Demo simulator", it: "Simulatore demo", de: "Demo-Simulator", fr: "Simulateur démo", es: "Simulador demo" },
+  modalTitle: { sl: "Išči ponudbo", en: "Search an offer", it: "Cerca un'offerta", de: "Angebot suchen", fr: "Rechercher une offre", es: "Buscar una oferta" },
   modalDesc: {
     sl: "Dva jasno ločena kanala: realna rezervacija pri partnerju ali demo simulator — nikoli pomešano.",
     en: "Two clearly separated channels: a real booking with a partner or the demo simulator — never mixed.",
+    it: "Due canali chiaramente separati: una prenotazione reale con un partner o il simulatore demo — mai mescolati.",
+    de: "Zwei klar getrennte Kanäle: eine echte Buchung bei einem Partner oder der Demo-Simulator — nie vermischt.",
+    fr: "Deux canaux clairement séparés : une vraie réservation chez un partenaire ou le simulateur démo — jamais mélangés.",
+    es: "Dos canales claramente separados: una reserva real con un socio o el simulador demo — nunca mezclados.",
   },
   honesty: {
     sl: "Rezervacija se zaključi pri partnerju (odpre se njihova stran). Če rezerviraš prek naše povezave, portal podpiramo z ocenjeno provizijo partnerja (pogodbena).",
     en: "The booking is completed with the partner (their site opens). If you book through our link, you support the portal with the partner's estimated commission (contractual).",
+    it: "La prenotazione si conclude con il partner (si apre il loro sito). Se prenoti tramite il nostro link, sostieni il portale con la provvigione stimata del partner (contrattuale).",
+    de: "Die Buchung wird beim Partner abgeschlossen (seine Seite öffnet sich). Buchst du über unseren Link, unterstützt du das Portal mit der geschätzten Provision des Partners (vertraglich).",
+    fr: "La réservation se finalise chez le partenaire (leur site s'ouvre). Si tu réserves via notre lien, tu soutiens le portail avec la commission estimée du partenaire (contractuelle).",
+    es: "La reserva se completa con el socio (se abre su sitio). Si reservas a través de nuestro enlace, apoyas el portal con la comisión estimada del socio (contractual).",
   },
-  day: { sl: "Dan", en: "Day" },
-  stop: { sl: "Postanek", en: "Stop" },
-  customStopLabel: { sl: "Ime postanka (ročni vnos)", en: "Stop name (manual entry)" },
-  offersLabel: { sl: "Ponudbe partnerjev", en: "Partner offers" },
-  offerEmpty: { sl: "Ni ponudb — izberi drug postanek", en: "No offers — pick another stop" },
+  day: { sl: "Dan", en: "Day", it: "Giorno", de: "Tag", fr: "Jour", es: "Día" },
+  stop: { sl: "Postanek", en: "Stop", it: "Fermata", de: "Stopp", fr: "Arrêt", es: "Parada" },
+  customStopLabel: { sl: "Ime postanka (ročni vnos)", en: "Stop name (manual entry)", it: "Nome della fermata (inserimento manuale)", de: "Stoppname (manueller Eintrag)", fr: "Nom de l'arrêt (saisie manuelle)", es: "Nombre de la parada (entrada manual)" },
+  offersLabel: { sl: "Ponudbe partnerjev", en: "Partner offers", it: "Offerte dei partner", de: "Partnerangebote", fr: "Offres des partenaires", es: "Ofertas de socios" },
+  offerEmpty: { sl: "Ni ponudb — izberi drug postanek", en: "No offers — pick another stop", it: "Nessuna offerta — scegli un'altra fermata", de: "Keine Angebote — wähle einen anderen Stopp", fr: "Aucune offre — choisis un autre arrêt", es: "Sin ofertas — elige otra parada" },
   commission: {
     // P0-F: null = ocena neznana do pogodbe (novi partnerji) — iskreno,
     // ne izmišljujemo odstotka, ki partnerjevi pogodbi še ni znan.
@@ -265,77 +325,129 @@ const PARTNER_L = {
       pct == null ? "provizija neznana (po pogodbi)" : `ocena ${pct} %, pogodbena`,
     en: (pct: number | null) =>
       pct == null ? "commission unknown (per contract)" : `estimate ${pct} %, contractual`,
+    it: (pct: number | null) =>
+      pct == null ? "provvigione sconosciuta (da contratto)" : `stima ${pct} %, contrattuale`,
+    de: (pct: number | null) =>
+      pct == null ? "Provision unbekannt (laut Vertrag)" : `Schätzung ${pct} %, vertraglich`,
+    fr: (pct: number | null) =>
+      pct == null ? "commission inconnue (selon le contrat)" : `estimation ${pct} %, contractuelle`,
+    es: (pct: number | null) =>
+      pct == null ? "comisión desconocida (según contrato)" : `estimación ${pct} %, contractual`,
   },
-  airportLabel: { sl: "Letališče regije", en: "Region airport" },
+  airportLabel: { sl: "Letališče regije", en: "Region airport", it: "Aeroporto della regione", de: "Flughafen der Region", fr: "Aéroport de la région", es: "Aeropuerto de la región" },
   customSearchNote: {
     sl: "splošno iskanje pri partnerju (brez destinacije)",
     en: "general search with the partner (no destination)",
+    it: "ricerca generale con il partner (senza destinazione)",
+    de: "allgemeine Suche beim Partner (ohne Ziel)",
+    fr: "recherche générale chez le partenaire (sans destination)",
+    es: "búsqueda general con el socio (sin destino)",
   },
-  openAtPartner: { sl: "Odpri pri partnerju", en: "Open with the partner" },
-  bookedFormTitle: { sl: "Sem rezerviral — dodaj na pot", en: "I have booked — add to my trip" },
+  openAtPartner: { sl: "Odpri pri partnerju", en: "Open with the partner", it: "Apri con il partner", de: "Beim Partner öffnen", fr: "Ouvrir chez le partenaire", es: "Abrir con el socio" },
+  bookedFormTitle: { sl: "Sem rezerviral — dodaj na pot", en: "I have booked — add to my trip", it: "Ho prenotato — aggiungi al mio viaggio", de: "Ich habe gebucht — zu meiner Reise hinzufügen", fr: "J'ai réservé — ajouter à mon voyage", es: "Ya reservé — añadir a mi viaje" },
   pickPartnerHint: {
     sl: "Najprej izberi partnerja zgoraj — povezava te odpelje na njegovo stran.",
     en: "First pick a partner above — the link takes you to their site.",
+    it: "Prima scegli un partner qui sopra — il link ti porta sul loro sito.",
+    de: "Wähle zuerst oben einen Partner — der Link führt dich zu seiner Seite.",
+    fr: "Choisis d'abord un partenaire ci-dessus — le lien t'amène sur leur site.",
+    es: "Primero elige un socio arriba — el enlace te lleva a su sitio.",
   },
-  dateLabel: { sl: "Datum", en: "Date" },
-  peopleLabel: { sl: "Število ljudi (1–12)", en: "People (1–12)" },
-  nameLabel: { sl: "Ime na rezervaciji (neobvezno)", en: "Name on the booking (optional)" },
+  dateLabel: { sl: "Datum", en: "Date", it: "Data", de: "Datum", fr: "Date", es: "Fecha" },
+  peopleLabel: { sl: "Število ljudi (1–12)", en: "People (1–12)", it: "Persone (1–12)", de: "Personen (1–12)", fr: "Personnes (1–12)", es: "Personas (1–12)" },
+  nameLabel: { sl: "Ime na rezervaciji (neobvezno)", en: "Name on the booking (optional)", it: "Nome sulla prenotazione (facoltativo)", de: "Name auf der Buchung (optional)", fr: "Nom sur la réservation (facultatif)", es: "Nombre en la reserva (opcional)" },
   formNote: {
     sl: "Rezervacijo in plačilo zaključiš pri partnerju; tu vodimo stanje, dokler ne vpišeš številke iz njegovega potrdila.",
     en: "You complete the booking and payment with the partner; here we track the status until you enter the number from their confirmation.",
+    it: "Prenotazione e pagamento le completi con il partner; qui seguiamo lo stato finché non inserisci il numero dalla loro conferma.",
+    de: "Buchung und Zahlung schließt du beim Partner ab; hier verfolgen wir den Status, bis du die Nummer aus seiner Bestätigung eingibst.",
+    fr: "Tu termines la réservation et le paiement chez le partenaire ; ici, nous suivons le statut jusqu'à ce que tu saisisses le numéro de leur confirmation.",
+    es: "La reserva y el pago los completas con el socio; aquí seguimos el estado hasta que introduzcas el número de su confirmación.",
   },
-  submit: { sl: "Dodaj na pot", en: "Add to my trip" },
-  successTitle: { sl: "Zapis dodan na pot", en: "Record added to your trip" },
+  submit: { sl: "Dodaj na pot", en: "Add to my trip", it: "Aggiungi al mio viaggio", de: "Zu meiner Reise hinzufügen", fr: "Ajouter à mon voyage", es: "Añadir a mi viaje" },
+  successTitle: { sl: "Zapis dodan na pot", en: "Record added to your trip", it: "Record aggiunto al tuo viaggio", de: "Eintrag zu deiner Reise hinzugefügt", fr: "Entrée ajoutée à ton voyage", es: "Registro añadido a tu viaje" },
   pendingBadge: {
     sl: "ČAKA POTRDITEV — partner bo poslal potrdilo; številko vnesi, ko pride.",
     en: "AWAITING CONFIRMATION — the partner will send a confirmation; enter its number when it arrives.",
+    it: "IN ATTESA DI CONFERMA — il partner invierà una conferma; inseriscine il numero quando arriva.",
+    de: "BESTÄTIGUNG AUSSTEHEND — der Partner sendet eine Bestätigung; gib ihre Nummer ein, sobald sie ankommt.",
+    fr: "EN ATTENTE DE CONFIRMATION — le partenaire enverra une confirmation ; saisis son numéro dès qu'elle arrive.",
+    es: "PENDIENTE DE CONFIRMACIÓN — el socio enviará una confirmación; introduce su número cuando llegue.",
   },
-  errOffer: { sl: "Izberi partnerja iz seznama ponudb.", en: "Pick a partner from the offer list." },
-  errDate: { sl: "Vpiši veljaven datum (YYYY-MM-DD).", en: "Enter a valid date (YYYY-MM-DD)." },
+  errOffer: { sl: "Izberi partnerja iz seznama ponudb.", en: "Pick a partner from the offer list.", it: "Scegli un partner dall'elenco offerte.", de: "Wähle einen Partner aus der Angebotsliste.", fr: "Choisis un partenaire dans la liste des offres.", es: "Elige un socio de la lista de ofertas." },
+  errDate: { sl: "Vpiši veljaven datum (YYYY-MM-DD).", en: "Enter a valid date (YYYY-MM-DD).", it: "Inserisci una data valida (AAAA-MM-GG).", de: "Gib ein gültiges Datum ein (JJJJ-MM-TT).", fr: "Saisis une date valide (AAAA-MM-JJ).", es: "Introduce una fecha válida (AAAA-MM-DD)." },
   errPeople: {
     sl: "Število ljudi mora biti celo število med 1 in 12.",
     en: "People must be a whole number between 1 and 12.",
+    it: "Le persone devono essere un numero intero tra 1 e 12.",
+    de: "Personen müssen eine ganze Zahl zwischen 1 und 12 sein.",
+    fr: "Les personnes doivent être un nombre entier entre 1 et 12.",
+    es: "Las personas deben ser un número entero entre 1 y 12.",
   },
   // Vrstice seznama (partner zapis iz note)
-  rowStatusPending: { sl: "Čaka potrditev partnerja", en: "Awaiting partner confirmation" },
-  rowStatusConfirmed: { sl: "Potrjena (partner)", en: "Confirmed (partner)" },
-  rowStatusModified: { sl: "Spremenjena (partner)", en: "Modified (partner)" },
-  rowStatusCancelled: { sl: "Preklicana", en: "Cancelled" },
-  manageAtPartner: { sl: "Upravljaj pri partnerju", en: "Manage with the partner" },
-  enterProof: { sl: "Vnesi potrdilo partnerja", en: "Enter the partner confirmation" },
-  modify: { sl: "Spremeni", en: "Modify" },
-  cancel: { sl: "Odpovej", en: "Cancel booking" },
+  rowStatusPending: { sl: "Čaka potrditev partnerja", en: "Awaiting partner confirmation", it: "In attesa di conferma del partner", de: "Warten auf Partnerbestätigung", fr: "En attente de confirmation du partenaire", es: "Esperando confirmación del socio" },
+  rowStatusConfirmed: { sl: "Potrjena (partner)", en: "Confirmed (partner)", it: "Confermata (partner)", de: "Bestätigt (Partner)", fr: "Confirmée (partenaire)", es: "Confirmada (socio)" },
+  rowStatusModified: { sl: "Spremenjena (partner)", en: "Modified (partner)", it: "Modificata (partner)", de: "Geändert (Partner)", fr: "Modifiée (partenaire)", es: "Modificada (socio)" },
+  rowStatusCancelled: { sl: "Preklicana", en: "Cancelled", it: "Cancellata", de: "Storniert", fr: "Annulée", es: "Cancelada" },
+  manageAtPartner: { sl: "Upravljaj pri partnerju", en: "Manage with the partner", it: "Gestisci con il partner", de: "Beim Partner verwalten", fr: "Gérer chez le partenaire", es: "Gestionar con el socio" },
+  enterProof: { sl: "Vnesi potrdilo partnerja", en: "Enter the partner confirmation", it: "Inserisci la conferma del partner", de: "Partnerbestätigung eingeben", fr: "Saisir la confirmation du partenaire", es: "Introducir la confirmación del socio" },
+  modify: { sl: "Spremeni", en: "Modify", it: "Modifica", de: "Ändern", fr: "Modifier", es: "Modificar" },
+  cancel: { sl: "Odpovej", en: "Cancel booking", it: "Annulla la prenotazione", de: "Buchung stornieren", fr: "Annuler la réservation", es: "Cancelar la reserva" },
   rowHint: {
     sl: "Dejansko spremembo ali preklic opraviš pri partnerju — tu označujemo stanje na poti.",
     en: "The actual change or cancellation is made with the partner — here we only track the status on your trip.",
+    it: "La modifica o cancellazione effettiva si fa con il partner — qui segnamo solo lo stato sul tuo viaggio.",
+    de: "Die eigentliche Änderung oder Stornierung erfolgt beim Partner — hier verfolgen wir nur den Status auf deiner Reise.",
+    fr: "La modification ou l'annulation réelle se fait chez le partenaire — ici, nous suivons seulement le statut sur ton voyage.",
+    es: "El cambio o la cancelación real se hace con el socio — aquí solo seguimos el estado en tu viaje.",
   },
-  confirmTitle: { sl: "Vnesi potrdilo partnerja", en: "Enter the partner confirmation" },
+  confirmTitle: { sl: "Vnesi potrdilo partnerja", en: "Enter the partner confirmation", it: "Inserisci la conferma del partner", de: "Partnerbestätigung eingeben", fr: "Saisir la confirmation du partenaire", es: "Introducir la confirmación del socio" },
   confirmDesc: {
     sl: "Prepiši številko rezervacije in ceno iz potrdila, ki ga je poslal partner — shranita se kot tvoja atestacija.",
     en: "Copy the booking number and price from the confirmation the partner sent you — they are saved as your attestation.",
+    it: "Trascrivi il numero di prenotazione e il prezzo dalla conferma che ti ha inviato il partner — si salvano come tua attestazione.",
+    de: "Übernimm Buchungsnummer und Preis aus der Bestätigung, die dir der Partner geschickt hat — sie werden als deine Attestierung gespeichert.",
+    fr: "Recopie le numéro de réservation et le prix de la confirmation que le partenaire t'a envoyée — ils sont enregistrés comme ton attestation.",
+    es: "Copia el número de reserva y el precio de la confirmación que te envió el socio — se guardan como tu atestación.",
   },
   bookingIdLabel: {
     sl: "Številka rezervacije (potrdilo partnerja)",
     en: "Booking number (partner confirmation)",
+    it: "Numero di prenotazione (conferma del partner)",
+    de: "Buchungsnummer (Partnerbestätigung)",
+    fr: "Numéro de réservation (confirmation du partenaire)",
+    es: "Número de reserva (confirmación del socio)",
   },
-  bookingIdPlaceholder: { sl: "npr. 4529-8871", en: "e.g. 4529-8871" },
-  priceLabel: { sl: "Cena (EUR)", en: "Price (EUR)" },
-  pricePlaceholder: { sl: "npr. 89,90", en: "e.g. 89.90" },
+  bookingIdPlaceholder: { sl: "npr. 4529-8871", en: "e.g. 4529-8871", it: "es. 4529-8871", de: "z. B. 4529-8871", fr: "ex. 4529-8871", es: "p. ej. 4529-8871" },
+  priceLabel: { sl: "Cena (EUR)", en: "Price (EUR)", it: "Prezzo (EUR)", de: "Preis (EUR)", fr: "Prix (EUR)", es: "Precio (EUR)" },
+  pricePlaceholder: { sl: "npr. 89,90", en: "e.g. 89.90", it: "es. 89.90", de: "z. B. 89.90", fr: "ex. 89.90", es: "p. ej. 89.90" },
   errBookingId: {
     sl: "Vpiši številko rezervacije iz partnerjevega potrdila.",
     en: "Enter the booking number from the partner's confirmation.",
+    it: "Inserisci il numero di prenotazione dalla conferma del partner.",
+    de: "Gib die Buchungsnummer aus der Bestätigung des Partners ein.",
+    fr: "Saisis le numéro de réservation de la confirmation du partenaire.",
+    es: "Introduce el número de reserva de la confirmación del socio.",
   },
   errPrice: {
     sl: "Vpiši ceno iz partnerjevega potrdila (število, večje od 0).",
     en: "Enter the price from the partner's confirmation (a number greater than 0).",
+    it: "Inserisci il prezzo dalla conferma del partner (un numero maggiore di 0).",
+    de: "Gib den Preis aus der Bestätigung des Partners ein (eine Zahl größer als 0).",
+    fr: "Saisis le prix de la confirmation du partenaire (un nombre supérieur à 0).",
+    es: "Introduce el precio de la confirmación del socio (un número mayor que 0).",
   },
-  submitConfirm: { sl: "Shrani kot potrjeno", en: "Save as confirmed" },
-  editTitle: { sl: "Spremeni partner rezervacijo", en: "Modify partner booking" },
+  submitConfirm: { sl: "Shrani kot potrjeno", en: "Save as confirmed", it: "Salva come confermata", de: "Als bestätigt speichern", fr: "Enregistrer comme confirmée", es: "Guardar como confirmada" },
+  editTitle: { sl: "Spremeni partner rezervacijo", en: "Modify partner booking", it: "Modifica la prenotazione del partner", de: "Partnerbuchung ändern", fr: "Modifier la réservation du partenaire", es: "Modificar la reserva del socio" },
   editDesc: {
     sl: "Spremeni datum, število ljudi ali ime. Dejansko spremembo opraviš pri partnerju — tu vodimo stanje na poti.",
     en: "Change the date, people or name. The actual change is made with the partner — here we track the status on your trip.",
+    it: "Cambia data, persone o nome. La modifica effettiva si fa con il partner — qui seguiamo lo stato sul tuo viaggio.",
+    de: "Ändere Datum, Personen oder Namen. Die eigentliche Änderung erfolgt beim Partner — hier verfolgen wir den Status auf deiner Reise.",
+    fr: "Change la date, les personnes ou le nom. La modification réelle se fait chez le partenaire — ici, nous suivons le statut sur ton voyage.",
+    es: "Cambia la fecha, las personas o el nombre. El cambio real se hace con el socio — aquí seguimos el estado en tu viaje.",
   },
-  editSubmit: { sl: "Shrani spremembo", en: "Save change" },
+  editSubmit: { sl: "Shrani spremembo", en: "Save change", it: "Salva la modifica", de: "Änderung speichern", fr: "Enregistrer la modification", es: "Guardar el cambio" },
 } as const;
 
 /** Kanalne značke vrstic (issue #1: demo/uporabniška/realna/partner — razkritje ob statusu). */
@@ -372,21 +484,24 @@ const CHANNEL_BADGES: Record<
  * vrstica je VIJOLIČNA — nikoli smaragdna „provider potrjeno" (kanon
  * izvirnika: izvor je vedno razkrit).
  */
-const STATUS_BADGES: Record<string, { label: { sl: string; en: string }; cls: string }> = {
+const STATUS_BADGES: Record<
+  string,
+  { label: { sl: string; en: string; it: string; de: string; fr: string; es: string }; cls: string }
+> = {
   IDEA: {
-    label: { sl: L.statusIdea.sl, en: L.statusIdea.en },
+    label: { sl: L.statusIdea.sl, en: L.statusIdea.en, it: L.statusIdea.it, de: L.statusIdea.de, fr: L.statusIdea.fr, es: L.statusIdea.es },
     cls: "border-amber-500/50 text-amber-700 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-700",
   },
   CONFIRMED: {
-    label: { sl: L.statusConfirmed.sl, en: L.statusConfirmed.en },
+    label: { sl: L.statusConfirmed.sl, en: L.statusConfirmed.en, it: L.statusConfirmed.it, de: L.statusConfirmed.de, fr: L.statusConfirmed.fr, es: L.statusConfirmed.es },
     cls: "border-violet-500/50 text-violet-700 bg-violet-50 dark:bg-violet-950/30 dark:text-violet-300 dark:border-violet-700",
   },
   MODIFIED: {
-    label: { sl: L.statusModified.sl, en: L.statusModified.en },
+    label: { sl: L.statusModified.sl, en: L.statusModified.en, it: L.statusModified.it, de: L.statusModified.de, fr: L.statusModified.fr, es: L.statusModified.es },
     cls: "border-violet-500/50 text-violet-700 bg-violet-50 dark:bg-violet-950/30 dark:text-violet-300 dark:border-violet-700",
   },
   CANCELLED: {
-    label: { sl: L.statusCancelled.sl, en: L.statusCancelled.en },
+    label: { sl: L.statusCancelled.sl, en: L.statusCancelled.en, it: L.statusCancelled.it, de: L.statusCancelled.de, fr: L.statusCancelled.fr, es: L.statusCancelled.es },
     cls: "border-border text-muted-foreground",
   },
 };
@@ -399,22 +514,22 @@ const STATUS_BADGES: Record<string, { label: { sl: string; en: string }; cls: st
  */
 const PARTNER_STATUS_BADGES: Record<
   string,
-  { label: { sl: string; en: string }; cls: string }
+  { label: { sl: string; en: string; it: string; de: string; fr: string; es: string }; cls: string }
 > = {
   PENDING: {
-    label: { sl: PARTNER_L.rowStatusPending.sl, en: PARTNER_L.rowStatusPending.en },
+    label: { sl: PARTNER_L.rowStatusPending.sl, en: PARTNER_L.rowStatusPending.en, it: PARTNER_L.rowStatusPending.it, de: PARTNER_L.rowStatusPending.de, fr: PARTNER_L.rowStatusPending.fr, es: PARTNER_L.rowStatusPending.es },
     cls: "border-amber-500/50 text-amber-700 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-300",
   },
   CONFIRMED: {
-    label: { sl: PARTNER_L.rowStatusConfirmed.sl, en: PARTNER_L.rowStatusConfirmed.en },
+    label: { sl: PARTNER_L.rowStatusConfirmed.sl, en: PARTNER_L.rowStatusConfirmed.en, it: PARTNER_L.rowStatusConfirmed.it, de: PARTNER_L.rowStatusConfirmed.de, fr: PARTNER_L.rowStatusConfirmed.fr, es: PARTNER_L.rowStatusConfirmed.es },
     cls: "border-emerald-500/50 text-emerald-700 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300",
   },
   MODIFIED: {
-    label: { sl: PARTNER_L.rowStatusModified.sl, en: PARTNER_L.rowStatusModified.en },
+    label: { sl: PARTNER_L.rowStatusModified.sl, en: PARTNER_L.rowStatusModified.en, it: PARTNER_L.rowStatusModified.it, de: PARTNER_L.rowStatusModified.de, fr: PARTNER_L.rowStatusModified.fr, es: PARTNER_L.rowStatusModified.es },
     cls: "border-violet-500/50 text-violet-700 bg-violet-50 dark:bg-violet-950/30 dark:text-violet-300 dark:border-violet-700",
   },
   CANCELLED: {
-    label: { sl: PARTNER_L.rowStatusCancelled.sl, en: PARTNER_L.rowStatusCancelled.en },
+    label: { sl: PARTNER_L.rowStatusCancelled.sl, en: PARTNER_L.rowStatusCancelled.en, it: PARTNER_L.rowStatusCancelled.it, de: PARTNER_L.rowStatusCancelled.de, fr: PARTNER_L.rowStatusCancelled.fr, es: PARTNER_L.rowStatusCancelled.es },
     cls: "border-red-500/50 text-red-700 bg-red-50 dark:border-red-700 dark:bg-red-950/30 dark:text-red-300",
   },
 };
@@ -427,19 +542,31 @@ const CUSTOM_STOP = "__custom__";
 // pa aplikacijski flow „Na poti" (živi GPS, ETA, napredek). Brez znanega
 // sluga/koordinat gumba NI — do neznane lokacije ne navigiramo (iskrenost).
 const NAV_L = {
-  navigate: { sl: "Navigiraj", en: "Navigate" },
+  navigate: { sl: "Navigiraj", en: "Navigate", it: "Naviga", de: "Navigieren", fr: "Naviguer", es: "Navegar" },
   navigateTo: {
     sl: (name: string) => `Navigiraj do ${name}`,
     en: (name: string) => `Navigate to ${name}`,
+    it: (name: string) => `Naviga verso ${name}`,
+    de: (name: string) => `Navigiere zu ${name}`,
+    fr: (name: string) => `Naviguer vers ${name}`,
+    es: (name: string) => `Navegar a ${name}`,
   },
   navOptions: {
     sl: "Več možnosti navigacije",
     en: "More navigation options",
+    it: "Altre opzioni di navigazione",
+    de: "Weitere Navigationsoptionen",
+    fr: "Plus d'options de navigation",
+    es: "Más opciones de navegación",
   },
-  openInGoMode: { sl: "Odpri v Na poti", en: "Open in On the way" },
+  openInGoMode: { sl: "Odpri v Na poti", en: "Open in On the way", it: "Apri in In viaggio", de: "In Unterwegs öffnen", fr: "Ouvrir dans En route", es: "Abrir en En camino" },
   goModeHint: {
     sl: "Navigacijski potek aplikacije z živim GPS in ETA",
     en: "The app's navigation flow with live GPS and ETA",
+    it: "Il flusso di navigazione dell'app con GPS dal vivo ed ETA",
+    de: "Der Navigationsfluss der App mit Live-GPS und ETA",
+    fr: "Le flux de navigation de l'app avec GPS en direct et ETA",
+    es: "El flujo de navegación de la app con GPS en vivo y ETA",
   },
 } as const;
 
@@ -1400,7 +1527,7 @@ export function TripReservations({
                         </span>
                         <span aria-hidden="true">·</span>
                         <span>
-                          {DEMO_L.peopleWord[lang](partnerRecord.people)} · {partnerRecord.date}
+                          {pick(l, DEMO_L.peopleWord)(partnerRecord.people)} · {partnerRecord.date}
                           {partnerRecord.name ? ` · ${partnerRecord.name}` : ""}
                         </span>
                         {partnerRecord.providerBookingId ? (
@@ -1434,7 +1561,7 @@ export function TripReservations({
                         <span>{formatPriceEUR(demoRecord.price, lang)}</span>
                         <span aria-hidden="true">·</span>
                         <span>
-                          {DEMO_L.peopleWord[lang](demoRecord.people)} · {demoRecord.date}
+                          {pick(l, DEMO_L.peopleWord)(demoRecord.people)} · {demoRecord.date}
                         </span>
                         <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
                           kanal: demo (simulator)
@@ -2001,7 +2128,7 @@ export function TripReservations({
                             {partnerDone.providerName}
                           </span>{" "}
                           · {partnerDone.stopName} ·{" "}
-                          {DEMO_L.peopleWord[lang](partnerDone.people)} · {partnerDone.date}
+                          {pick(l, DEMO_L.peopleWord)(partnerDone.people)} · {partnerDone.date}
                         </p>
                         <p className="text-xs font-semibold tracking-wide text-amber-700 dark:text-amber-300">
                           {pick(l, PARTNER_L.pendingBadge)}
@@ -2122,7 +2249,7 @@ export function TripReservations({
                                       </Badge>
                                     </span>
                                     <span className="mt-1 block text-xs text-muted-foreground">
-                                      {PARTNER_L.commission[lang](offer.commissionPct)}
+                                      {pick(l, PARTNER_L.commission)(offer.commissionPct)}
                                       {offer.category === "flights" && offer.airport ? (
                                         <span className="ml-2 inline-flex items-center gap-1">
                                           <Plane className="size-3" aria-hidden="true" />
@@ -2272,11 +2399,11 @@ export function TripReservations({
                             {demoDone.stopName}
                           </span>{" "}
                           · {formatPriceEUR(demoDone.price, lang)} ·{" "}
-                          {DEMO_L.peopleWord[lang](demoDone.people)} · {demoDone.date}
+                          {pick(l, DEMO_L.peopleWord)(demoDone.people)} · {demoDone.date}
                         </p>
                         <p className="font-mono text-xs">{demoDone.providerBookingId}</p>
                         <p className="text-xs text-muted-foreground">
-                          {DEMO_L.successBody[lang](demoDone.providerBookingId)}
+                          {pick(l, DEMO_L.successBody)(demoDone.providerBookingId)}
                         </p>
                       </div>
                     </div>
@@ -2370,7 +2497,7 @@ export function TripReservations({
                           <span className="font-medium text-foreground">
                             {formatPriceEUR(selectedDemoOffer.totalPrice, lang)}
                           </span>{" "}
-                          ({DEMO_L.peopleWord[lang](demoPeopleNum)})
+                          ({pick(l, DEMO_L.peopleWord)(demoPeopleNum)})
                         </p>
                       ) : null}
                     </div>

@@ -31,39 +31,41 @@ export interface WeatherResponse {
 }
 
 /**
- * WMO weather_code → oznaka [sl, en]. Samo nabor, ki ga znamo POŠTENO
- * imenovati (jasno/oblačno/megla/rosenje/dež/plohe/sneg/nevihta);
+ * WMO weather_code → oznaka [sl, en, it, de, fr, es]. Samo nabor, ki ga
+ * znamo POŠTENO imenovati (jasno/oblačno/megla/rosenje/dež/plohe/sneg/nevihta);
  * NERAZPOZNANA koda → "vreme"/"weather" brez lažne natančnosti.
  */
-const WMO_LABELS: Readonly<Record<number, readonly [string, string]>> = {
-  0: ["jasno", "clear"],
-  1: ["pretežno jasno", "mainly clear"],
-  2: ["delno oblačno", "partly cloudy"],
-  3: ["oblačno", "overcast"],
-  45: ["megla", "fog"],
-  48: ["megla", "fog"],
-  51: ["rosenje", "drizzle"],
-  53: ["rosenje", "drizzle"],
-  55: ["rosenje", "drizzle"],
-  56: ["rosenje", "drizzle"],
-  57: ["rosenje", "drizzle"],
-  61: ["dež", "rain"],
-  63: ["dež", "rain"],
-  65: ["dež", "rain"],
-  66: ["dež", "rain"],
-  67: ["dež", "rain"],
-  71: ["sneg", "snow"],
-  73: ["sneg", "snow"],
-  75: ["sneg", "snow"],
-  77: ["sneg", "snow"],
-  85: ["sneg", "snow"],
-  86: ["sneg", "snow"],
-  80: ["plohe", "rain showers"],
-  81: ["plohe", "rain showers"],
-  82: ["plohe", "rain showers"],
-  95: ["nevihta", "thunderstorm"],
-  96: ["nevihta", "thunderstorm"],
-  99: ["nevihta", "thunderstorm"],
+const WMO_LABELS: Readonly<
+  Record<number, readonly [string, string, string, string, string, string]>
+> = {
+  0: ["jasno", "clear", "sereno", "klar", "ciel dégagé", "despejado"],
+  1: ["pretežno jasno", "mainly clear", "prevalentemente sereno", "überwiegend klar", "peu nuageux", "poco nuboso"],
+  2: ["delno oblačno", "partly cloudy", "parzialmente nuvoloso", "teilweise bewölkt", "partiellement nuageux", "parcialmente nublado"],
+  3: ["oblačno", "overcast", "nuvoloso", "bewölkt", "nuageux", "nublado"],
+  45: ["megla", "fog", "nebbia", "nebel", "brouillard", "niebla"],
+  48: ["megla", "fog", "nebbia", "nebel", "brouillard", "niebla"],
+  51: ["rosenje", "drizzle", "pioviggine", "nieselregen", "bruine", "llovizna"],
+  53: ["rosenje", "drizzle", "pioviggine", "nieselregen", "bruine", "llovizna"],
+  55: ["rosenje", "drizzle", "pioviggine", "nieselregen", "bruine", "llovizna"],
+  56: ["rosenje", "drizzle", "pioviggine", "nieselregen", "bruine", "llovizna"],
+  57: ["rosenje", "drizzle", "pioviggine", "nieselregen", "bruine", "llovizna"],
+  61: ["dež", "rain", "pioggia", "regen", "pluie", "lluvia"],
+  63: ["dež", "rain", "pioggia", "regen", "pluie", "lluvia"],
+  65: ["dež", "rain", "pioggia", "regen", "pluie", "lluvia"],
+  66: ["dež", "rain", "pioggia", "regen", "pluie", "lluvia"],
+  67: ["dež", "rain", "pioggia", "regen", "pluie", "lluvia"],
+  71: ["sneg", "snow", "neve", "schnee", "neige", "nieve"],
+  73: ["sneg", "snow", "neve", "schnee", "neige", "nieve"],
+  75: ["sneg", "snow", "neve", "schnee", "neige", "nieve"],
+  77: ["sneg", "snow", "neve", "schnee", "neige", "nieve"],
+  85: ["sneg", "snow", "neve", "schnee", "neige", "nieve"],
+  86: ["sneg", "snow", "neve", "schnee", "neige", "nieve"],
+  80: ["plohe", "rain showers", "rovesci di pioggia", "regenschauer", "averses de pluie", "chubascos"],
+  81: ["plohe", "rain showers", "rovesci di pioggia", "regenschauer", "averses de pluie", "chubascos"],
+  82: ["plohe", "rain showers", "rovesci di pioggia", "regenschauer", "averses de pluie", "chubascos"],
+  95: ["nevihta", "thunderstorm", "temporale", "gewitter", "orage", "tormenta"],
+  96: ["nevihta", "thunderstorm", "temporale", "gewitter", "orage", "tormenta"],
+  99: ["nevihta", "thunderstorm", "temporale", "gewitter", "orage", "tormenta"],
 };
 
 /** WMO vremenska koda → oznaka; SL privzeto, EN prek locale. */

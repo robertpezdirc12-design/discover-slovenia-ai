@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { HomeView } from "@/components/home/home-view";
+import { alternatesFor } from "@/lib/hreflang";
 
 /**
  * / — DOMAČA STRAN (strežniški ovoj).
@@ -14,20 +15,8 @@ export async function generateMetadata({
 }: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-  await params;
-  return {
-    alternates: {
-      languages: {
-        sl: "/",
-        en: "/en",
-        it: "/it",
-        de: "/de",
-        fr: "/fr",
-        es: "/es",
-        "x-default": "/",
-      },
-    },
-  };
+  const { locale } = await params;
+  return { alternates: alternatesFor(locale, "/") };
 }
 
 export default function HomePage() {

@@ -11,14 +11,18 @@ import { pick } from "@/lib/i18n-pick";
 export default function LocaleNotFound() {
   const l = useLocale();
   const L = {
-    code: { sl: "404", en: "404" },
-    title: { sl: "Te strani (še) ni na zemljevidu", en: "This page is not on the map yet" },
+    code: { sl: "404", en: "404", it: "404", de: "404", fr: "404", es: "404" },
+    title: { sl: "Te strani (še) ni na zemljevidu", en: "This page is not on the map yet", it: "Questa pagina non è ancora sulla mappa", de: "Diese Seite ist (noch) nicht auf der Karte", fr: "Cette page n’est pas encore sur la carte", es: "Esta página aún no está en el mapa" },
     lead: {
       sl: "Pot, ki si jo odprl, ne obstaja — ali pa je še nismo rekonstruirali. Vrni se na raziskovanje Slovenije.",
       en: "The path you opened doesn't exist — or we haven't reconstructed it yet. Return to exploring Slovenia.",
+      it: "Il percorso che hai aperto non esiste — oppure non lo abbiamo ancora ricostruito. Torna a esplorare la Slovenia.",
+      de: "Der von dir geöffnete Pfad existiert nicht — oder wir haben ihn noch nicht rekonstruiert. Kehre zurück zur Entdeckung Sloweniens.",
+      fr: "Le chemin que tu as ouvert n’existe pas — ou nous ne l’avons pas encore reconstruit. Reviens explorer la Slovénie.",
+      es: "La ruta que abriste no existe — o aún no la hemos reconstruido. Vuelve a explorar Eslovenia.",
     },
-    home: { sl: "Nazaj na domov", en: "Back to home" },
-    destinations: { sl: "Odkrij destinacije", en: "Discover destinations" },
+    home: { sl: "Nazaj na domov", en: "Back to home", it: "Torna alla home", de: "Zurück zur Startseite", fr: "Retour à l’accueil", es: "Volver al inicio" },
+    destinations: { sl: "Odkrij destinacije", en: "Discover destinations", it: "Scopri le destinazioni", de: "Destinationen entdecken", fr: "Découvrir les destinations", es: "Descubre los destinos" },
   } as const;
 
   return (

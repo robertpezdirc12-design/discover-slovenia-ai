@@ -93,12 +93,12 @@ export function transitionAuditAction(from: ListingStatus, to: ListingStatus): s
 // ── Oznake za UI (dvojezično) ──────────────────────────────────────────────
 
 export const LISTING_STATUS_LABELS: Readonly<
-  Record<ListingStatus, { sl: string; en: string }>
+  Record<ListingStatus, { sl: string; en: string; it: string; de: string; fr: string; es: string }>
 > = Object.freeze({
-  draft: { sl: "Osnutek", en: "Draft" },
-  pending: { sl: "V predaji", en: "Pending review" },
-  published: { sl: "Objavljeno", en: "Published" },
-  rejected: { sl: "Zavrnjeno", en: "Rejected" },
+  draft: { sl: "Osnutek", en: "Draft", it: "Bozza", de: "Entwurf", fr: "Brouillon", es: "Borrador" },
+  pending: { sl: "V predaji", en: "Pending review", it: "In revisione", de: "In Prüfung", fr: "En cours de révision", es: "En revisión" },
+  published: { sl: "Objavljeno", en: "Published", it: "Pubblicato", de: "Veröffentlicht", fr: "Publié", es: "Publicado" },
+  rejected: { sl: "Zavrnjeno", en: "Rejected", it: "Rifiutato", de: "Abgelehnt", fr: "Rejeté", es: "Rechazado" },
 });
 
 // ── Validacija vsebine vnosa ───────────────────────────────────────────────

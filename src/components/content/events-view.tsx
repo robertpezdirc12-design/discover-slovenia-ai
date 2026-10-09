@@ -33,9 +33,14 @@ function categoryIcon(cat: EventCategory) {
   return CATEGORY_ICONS[EVENT_CATEGORIES[cat].icon];
 }
 
-/** Množinska oblika števca dogodkov (SL: dogodek/dogodka/dogodki; EN: event(s)). */
+/** Množinska oblika števca dogodkov (SL: ednina/dvojina/množina; EN/IT/DE/FR/ES: ednina/množina). */
 function eventCountLabel(l: string, n: number): string {
   if (l === "en") return n === 1 ? "1 event" : `${n} events`;
+  if (l === "it") return n === 1 ? "1 evento" : `${n} eventi`;
+  if (l === "de") return n === 1 ? "1 Veranstaltung" : `${n} Veranstaltungen`;
+  if (l === "fr") return n === 1 ? "1 événement" : `${n} événements`;
+  if (l === "es") return n === 1 ? "1 evento" : `${n} eventos`;
+  // slovenščina: ednina/dvojina/množina
   if (n === 1) return "1 dogodek";
   if (n === 2) return "2 dogodka";
   if (n >= 3 && n <= 4) return `${n} dogodki`;
@@ -53,41 +58,61 @@ export function EventsView() {
   const [category, setCategory] = React.useState<EventCategory | "all">("all");
 
   const L = {
-    kicker: { sl: "Dogodki", en: "Events" },
-    title: { sl: "Dogodki in prireditve v Sloveniji", en: "Events in Slovenia" },
+    kicker: { sl: "Dogodki", en: "Events", it: "Eventi", de: "Veranstaltungen", fr: "Événements", es: "Eventos" },
+    title: { sl: "Dogodki in prireditve v Sloveniji", en: "Events in Slovenia", it: "Eventi in Slovenia", de: "Veranstaltungen in Slowenien", fr: "Événements en Slovénie", es: "Eventos en Eslovenia" },
     lead: {
       sl: "Od festivalov in sejemov do športa in kulture — koledar dogodkov po vsej Sloveniji z datumi, lokacijami in kategorijami.",
       en: "From festivals and fairs to sport and culture — a calendar of events across Slovenia with dates, venues and categories.",
+      it: "Dai festival e dalle fiere allo sport e alla cultura — un calendario di eventi in tutta la Slovenia con date, luoghi e categorie.",
+      de: "Von Festivals und Messen bis zu Sport und Kultur — ein Veranstaltungskalender für ganz Slowenien mit Daten, Orten und Kategorien.",
+      fr: "Des festivals aux foires, du sport à la culture — un calendrier d’événements dans toute la Slovénie avec dates, lieux et catégories.",
+      es: "De festivales y ferias a deporte y cultura — un calendario de eventos por toda Eslovenia con fechas, lugares y categorías.",
     },
-    metaNote: { sl: "Filtri po mesecu in kategoriji · Brez prijave", en: "Filters by month and category · No sign-up needed" },
+    metaNote: { sl: "Filtri po mesecu in kategoriji · Brez prijave", en: "Filters by month and category · No sign-up needed", it: "Filtri per mese e categoria · Senza registrazione", de: "Filter nach Monat und Kategorie · Keine Anmeldung nötig", fr: "Filtres par mois et catégorie · Sans inscription", es: "Filtros por mes y categoría · Sin registro" },
     calendarTitle: {
       sl: "Koledar dogodkov",
       en: "Event calendar",
+      it: "Calendario degli eventi",
+      de: "Veranstaltungskalender",
+      fr: "Calendrier des événements",
+      es: "Calendario de eventos",
     },
     calendarLead: {
       sl: "Festivali, prireditve in dogodki skozi vse leto",
       en: "Festivals, happenings and events throughout the year",
+      it: "Festival, manifestazioni ed eventi durante tutto l’anno",
+      de: "Festivals, Veranstaltungen und Events das ganze Jahr über",
+      fr: "Festivals, manifestations et événements toute l’année",
+      es: "Festivales, acontecimientos y eventos durante todo el año",
     },
-    allMonths: { sl: "Vse leto", en: "All year" },
-    allCategories: { sl: "Vse kategorije", en: "All categories" },
-    filterMonth: { sl: "Filtriraj po mesecu", en: "Filter by month" },
-    filterCategory: { sl: "Filtriraj po kategoriji", en: "Filter by category" },
+    allMonths: { sl: "Vse leto", en: "All year", it: "Tutto l’anno", de: "Ganzes Jahr", fr: "Toute l’année", es: "Todo el año" },
+    allCategories: { sl: "Vse kategorije", en: "All categories", it: "Tutte le categorie", de: "Alle Kategorien", fr: "Toutes les catégories", es: "Todas las categorías" },
+    filterMonth: { sl: "Filtriraj po mesecu", en: "Filter by month", it: "Filtra per mese", de: "Nach Monat filtern", fr: "Filtrer par mois", es: "Filtrar por mes" },
+    filterCategory: { sl: "Filtriraj po kategoriji", en: "Filter by category", it: "Filtra per categoria", de: "Nach Kategorie filtern", fr: "Filtrer par catégorie", es: "Filtrar por categoría" },
     noEvents: {
       sl: "Za izbrano kombinacijo filtra ni dogodkov — počisti filter ali izberi drug mesec.",
       en: "No events match this filter combination — clear the filters or pick another month.",
+      it: "Nessun evento per questa combinazione di filtri — azzera i filtri o scegli un altro mese.",
+      de: "Keine Veranstaltungen passen zu dieser Filterkombination — setze die Filter zurück oder wähle einen anderen Monat.",
+      fr: "Aucun événement ne correspond à cette combinaison de filtres — efface les filtres ou choisis un autre mois.",
+      es: "Ningún evento coincide con esta combinación de filtros — borra los filtros o elige otro mes.",
     },
-    clearFilters: { sl: "Počisti filtre", en: "Clear filters" },
-    addTrip: { sl: "Dodaj v mojo pot", en: "Add to my trip" },
-    added: { sl: "V mojo pot ✓", en: "In my trip ✓" },
-    website: { sl: "Spletna stran", en: "Website" },
-    exploreDest: { sl: "Razišči destinacijo", en: "Explore the destination" },
-    dateTitle: { sl: "Datum dogodka", en: "Event date" },
-    venueTitle: { sl: "Lokacija", en: "Location" },
-    priceTitle: { sl: "Vstopnina", en: "Admission" },
-    featured: { sl: "Izpostavljeno", en: "Featured" },
+    clearFilters: { sl: "Počisti filtre", en: "Clear filters", it: "Azzera i filtri", de: "Filter zurücksetzen", fr: "Effacer les filtres", es: "Borrar filtros" },
+    addTrip: { sl: "Dodaj v mojo pot", en: "Add to my trip", it: "Aggiungi al mio viaggio", de: "Zu meiner Reise hinzufügen", fr: "Ajouter à mon voyage", es: "Añadir a mi viaje" },
+    added: { sl: "V mojo pot ✓", en: "In my trip ✓", it: "Nel mio viaggio ✓", de: "In meiner Reise ✓", fr: "Dans mon voyage ✓", es: "En mi viaje ✓" },
+    website: { sl: "Spletna stran", en: "Website", it: "Sito web", de: "Webseite", fr: "Site web", es: "Sitio web" },
+    exploreDest: { sl: "Razišči destinacijo", en: "Explore the destination", it: "Esplora la destinazione", de: "Destination entdecken", fr: "Explorer la destination", es: "Explora el destino" },
+    dateTitle: { sl: "Datum dogodka", en: "Event date", it: "Data dell’evento", de: "Veranstaltungsdatum", fr: "Date de l’événement", es: "Fecha del evento" },
+    venueTitle: { sl: "Lokacija", en: "Location", it: "Luogo", de: "Ort", fr: "Lieu", es: "Lugar" },
+    priceTitle: { sl: "Vstopnina", en: "Admission", it: "Ingresso", de: "Eintritt", fr: "Entrée", es: "Entrada" },
+    featured: { sl: "Izpostavljeno", en: "Featured", it: "In evidenza", de: "Empfohlen", fr: "En vedette", es: "Destacado" },
     enNote: {
       sl: "",
       en: "Content note: the event calendar is canonically Slovenian (production source); an English content overlay is not yet available.",
+      it: "Nota sui contenuti: il calendario eventi è canonicamente in sloveno (fonte di produzione); un overlay dei contenuti in inglese non è ancora disponibile.",
+      de: "Inhaltshinweis: der Veranstaltungskalender ist kanonisch slowenisch (Produktionsquelle); ein englischer Inhalts-Overlay ist noch nicht verfügbar.",
+      fr: "Note de contenu : le calendrier des événements est canoniquement en slovène (source de production) ; une surcouche de contenu en anglais n’est pas encore disponible.",
+      es: "Nota de contenido: el calendario de eventos es canónicamente en esloveno (fuente de producción); una superposición de contenido en inglés aún no está disponible.",
     },
   } as const;
 

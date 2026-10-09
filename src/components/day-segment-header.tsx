@@ -10,6 +10,7 @@
 
 import { useLocale } from "next-intl";
 
+import { pick } from "@/lib/i18n-pick";
 import {
   DAY_SEGMENT_LABELS,
   type DaySegment,
@@ -21,6 +22,19 @@ const GLYPH: Record<DaySegment, string> = {
   evening: "🌙",
 };
 
+/** Množina števca postankov segmenta (SL: ednina/dvojina/množina; EN/IT/DE/FR/ES: ednina/množina). */
+function stopsWordOf(l: string, n: number): string {
+  if (l === "en") return n === 1 ? "stop" : "stops";
+  if (l === "it") return n === 1 ? "tappa" : "tappe";
+  if (l === "de") return n === 1 ? "Stopp" : "Stopps";
+  if (l === "fr") return n === 1 ? "étape" : "étapes";
+  if (l === "es") return n === 1 ? "parada" : "paradas";
+  // slovenščina: ednina/dvojina/množina
+  if (n === 1) return "postanek";
+  if (n === 2) return "postanka";
+  return "postanki";
+}
+
 export function DaySegmentHeader({
   segment,
   count,
@@ -31,17 +45,8 @@ export function DaySegmentHeader({
 }) {
   const l = useLocale();
   const labels = DAY_SEGMENT_LABELS[segment];
-  const label = l === "en" ? labels.en : labels.sl;
-  const stopsWord =
-    l === "en"
-      ? count === 1
-        ? "stop"
-        : "stops"
-      : count === 1
-        ? "postanek"
-        : count === 2
-          ? "postanka"
-          : "postanki";
+  const label = pick(l, labels);
+  const stopsWord = stopsWordOf(l, count);
   return (
     <div
       className="mt-4 flex items-center gap-2 first:mt-0"

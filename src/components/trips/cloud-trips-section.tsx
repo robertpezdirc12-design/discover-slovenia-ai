@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "@/i18n/navigation";
 import { pick } from "@/lib/i18n-pick";
+import { intlDateLocale } from "@/lib/intl-locale";
 import { sharedPlans } from "@/lib/shared-plan";
 
 /**
@@ -42,15 +43,6 @@ interface CloudTrip {
   collaboratorCount: number;
 }
 
-/** Locale → Intl koda za datume (sl-SI/en-GB kanon; it/de/fr/es razširitev 4-b). */
-const INTL_DATE_LOCALE: Record<string, string> = {
-  sl: "sl-SI",
-  en: "en-GB",
-  it: "it-IT",
-  de: "de-DE",
-  fr: "fr-FR",
-  es: "es-ES",
-};
 
 const L = {
   heading: { sl: "Poti v oblaku", en: "Trips in the cloud", it: "Viaggi nel cloud", de: "Reisen in der Cloud", fr: "Voyages dans le cloud", es: "Viajes en la nube" },
@@ -304,7 +296,7 @@ export function CloudTripsSection() {
                     <span className="text-xs text-muted-foreground">
                       {pick(l, L.savedAt)}:{" "}
                       {new Date(trip.updatedAt).toLocaleDateString(
-                        INTL_DATE_LOCALE[l] ?? "sl-SI"
+                        intlDateLocale(l)
                       )}
                     </span>
                     <Button asChild size="sm" className="min-h-11 gap-1.5">

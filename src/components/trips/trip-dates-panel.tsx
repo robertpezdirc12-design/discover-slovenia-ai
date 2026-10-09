@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { pick } from "@/lib/i18n-pick";
+import { asPickLocale, pick } from "@/lib/i18n-pick";
 import {
   eachTripDay,
   formatDateShort,
@@ -108,7 +108,7 @@ export function TripDatesPanel({
   onSaved?: () => void;
 }) {
   const l = useLocale();
-  const lang: "sl" | "en" = l === "en" ? "en" : "sl";
+  const lang: "sl" | "en" | "it" | "de" | "fr" | "es" = asPickLocale(l);
 
   const [start, setStart] = React.useState(tripDates?.start ?? "");
   const [end, setEnd] = React.useState(tripDates?.end ?? "");
@@ -333,7 +333,7 @@ function WeatherChipView({
   locale,
 }: {
   chip: DayWeatherChip | undefined;
-  lang: "sl" | "en";
+  lang: "sl" | "en" | "it" | "de" | "fr" | "es";
   locale: string;
 }) {
   const l = locale;

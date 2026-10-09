@@ -50,6 +50,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "@/i18n/navigation";
 import { pick } from "@/lib/i18n-pick";
+import { intlDateLocale } from "@/lib/intl-locale";
 import { LISTING_STATUS_LABELS, LISTING_KINDS } from "@/lib/listing-moderation";
 
 /**
@@ -270,7 +271,7 @@ export default function PartnerPage() {
 
   function fmtDate(iso: string | null): string | null {
     if (!iso) return null;
-    return new Date(iso).toLocaleDateString(l === "sl" ? "sl-SI" : "en-GB", { dateStyle: "medium" });
+    return new Date(iso).toLocaleDateString(intlDateLocale(l), { dateStyle: "medium" });
   }
 
   /** Dni od ISO datuma (nudge prag: 7 — enako /api/cron/draft-reminders). */

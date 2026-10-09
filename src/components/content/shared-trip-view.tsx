@@ -40,6 +40,7 @@ import { ReservationImportDialog } from "@/components/trips/reservation-import-d
 import { PrintableConfirmation } from "@/components/trips/printable-confirmation";
 import { Link } from "@/i18n/navigation";
 import { pick } from "@/lib/i18n-pick";
+import { intlDateLocale } from "@/lib/intl-locale";
 import { myTrip } from "@/lib/my-trip";
 import { getDestination } from "@/lib/slovenia-data";
 import { type SharedPlan, sharedPlans } from "@/lib/shared-plan";
@@ -73,15 +74,6 @@ interface DbTrip {
   tripDates: TripDates | null;
 }
 
-/** Locale → Intl koda za datume (sl-SI/en-GB kanon; it/de/fr/es razširitev 4-b). */
-const INTL_DATE_LOCALE: Record<string, string> = {
-  sl: "sl-SI",
-  en: "en-GB",
-  it: "it-IT",
-  de: "de-DE",
-  fr: "fr-FR",
-  es: "es-ES",
-};
 
 export function SharedTripView({ shareId }: { shareId: string }) {
   const l = useLocale();
@@ -359,7 +351,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
             </span>
             <span className="font-mono text-xs">
               /pot/{shareId} · {pick(l, L.createdAt)}{" "}
-              {new Date(db.createdAt).toLocaleDateString(INTL_DATE_LOCALE[l] ?? "sl-SI")}
+              {new Date(db.createdAt).toLocaleDateString(intlDateLocale(l))}
             </span>
           </div>
         </PageHeader>
@@ -591,7 +583,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
               )}
               <span className="font-mono text-xs">
                 /pot/{shareId} · {pick(l, L.createdAt)}{" "}
-                {new Date(localPlan.createdAt).toLocaleDateString(INTL_DATE_LOCALE[l] ?? "sl-SI")}
+                {new Date(localPlan.createdAt).toLocaleDateString(intlDateLocale(l))}
               </span>
             </div>
           </PageHeader>

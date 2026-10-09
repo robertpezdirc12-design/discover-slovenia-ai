@@ -27,8 +27,10 @@ export interface GeoPoint {
   lng: number;
 }
 
-/** Jezik oznak (house vzorec L = { sl, en }). */
-export type GpsLang = "sl" | "en";
+import type { PickLocale } from "./i18n-pick";
+
+/** Jezik oznak (6 jezikov od 2.21.0/4-c; identičen PickLocale). */
+export type GpsLang = PickLocale;
 
 // ── Razdalje (kanon geo-distance izvirnika: R = 6371) ───────────────────
 
@@ -64,34 +66,23 @@ export function bearingDeg(from: GeoPoint, to: GeoPoint): number {
 }
 
 /** Oznake 8 sektorjev po house vzorcu L = { sl, en }. */
-export const CARDINALS: { sl: readonly string[]; en: readonly string[] } = {
+export const CARDINALS: Record<GpsLang, readonly string[]> = {
   sl: ["S", "SV", "V", "JV", "J", "JZ", "Z", "SZ"],
   en: ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
+  it: ["N", "NE", "E", "SE", "S", "SO", "O", "NO"],
+  de: ["N", "NO", "O", "SO", "S", "SW", "W", "NW"],
+  fr: ["N", "NE", "E", "SE", "S", "SO", "O", "NO"],
+  es: ["N", "NE", "E", "SE", "S", "SO", "O", "NO"],
 };
 
 /** Polna imena smeri (za sr-only/a11y opis puščice). */
-export const CARDINAL_NAMES: { sl: readonly string[]; en: readonly string[] } =
-  {
-    sl: [
-      "sever",
-      "severovzhod",
-      "vzhod",
-      "jugovzhod",
-      "jug",
-      "jugozahod",
-      "zahod",
-      "severozahod",
-    ],
-    en: [
-      "north",
-      "northeast",
-      "east",
-      "southeast",
-      "south",
-      "southwest",
-      "west",
-      "northwest",
-    ],
+export const CARDINAL_NAMES: Record<GpsLang, readonly string[]> = {
+    sl: ["sever", "severovzhod", "vzhod", "jugovzhod", "jug", "jugozahod", "zahod", "severozahod"],
+    en: ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"],
+    it: ["nord", "nord-est", "est", "sud-est", "sud", "sud-ovest", "ovest", "nord-ovest"],
+    de: ["Norden", "Nordosten", "Osten", "Südosten", "Süden", "Südwesten", "Westen", "Nordwesten"],
+    fr: ["nord", "nord-est", "est", "sud-est", "sud", "sud-ouest", "ouest", "nord-ouest"],
+    es: ["norte", "noreste", "este", "sureste", "sur", "suroeste", "oeste", "noroeste"],
   };
 
 /**

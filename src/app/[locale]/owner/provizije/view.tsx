@@ -71,6 +71,7 @@ import {
   type AffiliateCategory,
 } from "@/lib/affiliate-providers";
 import { pick } from "@/lib/i18n-pick";
+import { intlDateLocale } from "@/lib/intl-locale";
 
 // ── Oblike odgovorov /api/affiliate/* (drift ulovi strogi tsc) ─────────────
 
@@ -336,7 +337,7 @@ export default function OwnerProvizijePage() {
     if (!iso) return "—";
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return "—";
-    return new Intl.DateTimeFormat(l === "en" ? "en-GB" : "sl-SI", {
+    return new Intl.DateTimeFormat(intlDateLocale(l), {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -347,7 +348,7 @@ export default function OwnerProvizijePage() {
     if (!iso) return "—";
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return "—";
-    return new Intl.DateTimeFormat(l === "en" ? "en-GB" : "sl-SI", {
+    return new Intl.DateTimeFormat(intlDateLocale(l), {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",

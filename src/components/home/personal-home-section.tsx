@@ -56,7 +56,7 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "@/i18n/navigation";
-import { pick } from "@/lib/i18n-pick";
+import { asPickLocale, pick } from "@/lib/i18n-pick";
 import {
   buildCandidateReasons,
   formatReasonsInline,
@@ -646,7 +646,7 @@ function WeatherCard({
             </p>
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <Compass className="size-4" aria-hidden="true" />
-              {weatherLabel(day.code, l === "en" ? "en" : "sl")}
+              {weatherLabel(day.code, asPickLocale(l))}
               {day.precipMm > 0 &&
                 ` · ${day.precipMm.toFixed(1).replace(".", ",")} mm`}
             </p>

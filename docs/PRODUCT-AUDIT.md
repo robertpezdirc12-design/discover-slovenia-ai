@@ -18,9 +18,17 @@
 > **P3 dodatek (2.20.0):** §9 točki 3 (prevod it/de/fr/es) in 4-del-1
 > (hreflang) zaključeni — ~7.400 prevodov v 71 datotekah, ~73 aktiviranih
 > klicnih mest, hreflang na 36 straneh; 1257/1257 testov (10293 expect),
-> tsc 0, lint 0, build OK. Preostali i18n sledilni nalogi: PlannerLang
-> vrata v jedru (itinerary-engine/booking statusLabel/weather izbor),
-> FR register harmonizacija (tu/vous), ~15 toLocaleDateString vrat.
+> tsc 0, lint 0, build OK.
+>
+> **4-c dodatek (2.21.0):** sledilna naloga 4-c ZAKLJUČENA — PlannerLang
+> = 6 jezikov (itinerary-engine PLANNER_MSG + GEO_MSG izbor, weather
+> weatherLabel, journey/booking statusLabel, trip-dates tedni/meseci,
+> go-gps kardinali), FR register harmonizacija (vous → tu, 26 mest v 7
+> datotekah), 16 datumskih vrat poenotenih prek `intl-locale.ts`
+> (INTL_DATE_LOCALE), `asPickLocale()` vrata; 1292/1292 testov (+18
+> i18n-core-activation), tsc 0, lint 0. Znani dolg: 2 SL-stavka v
+> trip-collab/trip-reservations (celoten blok je še SL — dosledno
+> pusteno, ne mešanje jezikov).
 
 ## 1. Matrika tokov (UI → API → podatki → integracija → test)
 
@@ -221,10 +229,11 @@ meja peskovnika, ne izpuščen korak.
 2. Skupna shramba rate limitov (Upstash/DB) ob rasti prometa.
 3. ~~Prevod 59 sl/en datotek v it/de/fr/es~~ ✅ **P3 (2.20.0) zaključeno:**
    ~7.400 prevodov v 71 datotekah + aktivacija ~73 klicnih mest
-   (ternariji → `pick()`); ostanek (sledilna naloga 4-c): PlannerLang
-   vrata v jedru (itinerary-engine GEO_MSG/seasonName, booking.ts
-   statusLabel podpis, weather.ts izbor) in FR register harmonizacija
-   (tu/vous) + ~15 toLocaleDateString vrat na straneh lastnika.
+   (ternariji → `pick()`).
+   ~~Ostanek (sledilna naloga 4-c)~~ ✅ **4-c (2.21.0) zaključeno:**
+   PlannerLang 6 jezikov v jedru (PLANNER_MSG/GEO_MSG/statusLabel/
+   weatherLabel/trip-dates/go-gps) + FR tu/vous harmonizacija (26 mest)
+   + 16 datumskih vrat (`INTL_DATE_LOCALE`).
 4. ~~hreflang razširitev po prevodu~~ ✅ **P3 (2.20.0) zaključeno:**
    `alternatesFor()` na vseh 36 straneh (26 klientnih razdeljenih na
    page.tsx + view.tsx po kanonu Next 16); Kobarid/Soča regija ŠE VEDNO

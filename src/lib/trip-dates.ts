@@ -15,6 +15,8 @@
  * ============================================================================
  */
 
+import type { PickLocale } from "./i18n-pick";
+
 /** Datumska množica poti — lokalna datuma "YYYY-MM-DD". */
 export interface TripDates {
   start: string;
@@ -170,6 +172,28 @@ const WEEKDAYS_EN = [
 ] as const;
 const WEEKDAYS_SHORT_SL = ["ned", "pon", "tor", "sre", "čet", "pet", "sob"] as const;
 const WEEKDAYS_SHORT_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+const WEEKDAYS_SHORT_IT = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"] as const;
+const WEEKDAYS_SHORT_DE = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"] as const;
+const WEEKDAYS_SHORT_FR = ["dim", "lun", "mar", "mer", "jeu", "ven", "sam"] as const;
+const WEEKDAYS_SHORT_ES = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"] as const;
+
+const WEEKDAYS_LONG: Record<PickLocale, readonly string[]> = {
+  sl: WEEKDAYS_SL,
+  en: WEEKDAYS_EN,
+  it: ["domenica", "lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"],
+  de: ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"],
+  fr: ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"],
+  es: ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"],
+};
+
+const WEEKDAYS_SHORT: Record<PickLocale, readonly string[]> = {
+  sl: WEEKDAYS_SHORT_SL,
+  en: WEEKDAYS_SHORT_EN,
+  it: WEEKDAYS_SHORT_IT,
+  de: WEEKDAYS_SHORT_DE,
+  fr: WEEKDAYS_SHORT_FR,
+  es: WEEKDAYS_SHORT_ES,
+};
 
 const MONTHS_SHORT_SL = [
   "jan",
@@ -199,50 +223,70 @@ const MONTHS_SHORT_EN = [
   "Nov",
   "Dec",
 ] as const;
+const MONTHS_SHORT_IT = ["gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"] as const;
+const MONTHS_SHORT_DE = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"] as const;
+const MONTHS_SHORT_FR = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."] as const;
+const MONTHS_SHORT_ES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"] as const;
 
-/** Kratek oznak dneva v tednu ("pet" / "Fri"). Neznan datum → "". */
-export function weekdayShort(iso: string, lang: "sl" | "en" = "sl"): string {
+/** Dolgi meseci po jeziku (sl v rodilniku — "17. oktobra"; ostali nominativ). */
+const MONTHS_LONG: Record<Exclude<PickLocale, "sl" | "en">, string[]> = {
+  it: ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"],
+  de: ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"],
+  fr: ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"],
+  es: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
+};
+
+/** Kratek oznak dneva v tednu ("pet" / "Fri" / "ven"). Neznan datum → "". */
+export function weekdayShort(iso: string, lang: PickLocale = "sl"): string {
   const noon = toLocalNoon(iso);
   if (!noon) return "";
-  const i = noon.getDay();
-  return lang === "en" ? WEEKDAYS_SHORT_EN[i] : WEEKDAYS_SHORT_SL[i];
+  return (WEEKDAYS_SHORT[lang] ?? WEEKDAYS_SHORT_SL)[noon.getDay()] ?? "";
 }
 
-/** Polni oznak dneva v tednu ("petek" / "Friday"). Neznan datum → "". */
-export function weekdayLong(iso: string, lang: "sl" | "en" = "sl"): string {
+/** Polni oznak dneva v tednu ("petek" / "Friday" / "venerdì"). Neznan datum → "". */
+export function weekdayLong(iso: string, lang: PickLocale = "sl"): string {
   const noon = toLocalNoon(iso);
   if (!noon) return "";
-  const i = noon.getDay();
-  return lang === "en" ? WEEKDAYS_EN[i] : WEEKDAYS_SL[i];
+  return (WEEKDAYS_LONG[lang] ?? WEEKDAYS_SL)[noon.getDay()] ?? "";
 }
 
-/** "17. okt 2026" / "Oct 17, 2026" (krajša oblika za čipe). */
-export function formatDateShort(iso: string, lang: "sl" | "en" = "sl"): string {
+/** "17. okt 2026" / "Oct 17, 2026" / "17 ott 2026" (krajša oblika za čipe). */
+export function formatDateShort(iso: string, lang: PickLocale = "sl"): string {
   const p = parseIsoDate(iso);
   if (!p || !isValidYmd(p.y, p.m, p.d)) return iso;
   if (lang === "en") return `${MONTHS_SHORT_EN[p.m - 1]} ${p.d}, ${p.y}`;
+  if (lang === "it") return `${p.d} ${MONTHS_SHORT_IT[p.m - 1]} ${p.y}`;
+  if (lang === "de") return `${p.d}. ${MONTHS_SHORT_DE[p.m - 1]} ${p.y}`;
+  if (lang === "fr") return `${p.d} ${MONTHS_SHORT_FR[p.m - 1]} ${p.y}`;
+  if (lang === "es") return `${p.d} ${MONTHS_SHORT_ES[p.m - 1]} ${p.y}`;
   return `${p.d}. ${MONTHS_SHORT_SL[p.m - 1]} ${p.y}`;
 }
 
-/** "17. oktobra 2026" (sl) / "October 17, 2026" (en). */
-export function formatDateLong(iso: string, lang: "sl" | "en" = "sl"): string {
+/** "17. oktobra 2026" (sl) / "October 17, 2026" (en) / "17. Oktober 2026" (de). */
+export function formatDateLong(iso: string, lang: PickLocale = "sl"): string {
   const p = parseIsoDate(iso);
   if (!p || !isValidYmd(p.y, p.m, p.d)) return iso;
-  const monthsLongEn = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-  if (lang === "en") return `${monthsLongEn[p.m - 1]} ${p.d}, ${p.y}`;
+  if (lang === "en") {
+    const monthsLongEn = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    return `${monthsLongEn[p.m - 1]} ${p.d}, ${p.y}`;
+  }
+  if (lang === "it") return `${p.d} ${MONTHS_LONG.it[p.m - 1]} ${p.y}`;
+  if (lang === "de") return `${p.d}. ${MONTHS_LONG.de[p.m - 1]} ${p.y}`;
+  if (lang === "fr") return `${p.d} ${MONTHS_LONG.fr[p.m - 1]} ${p.y}`;
+  if (lang === "es") return `${p.d} de ${MONTHS_LONG.es[p.m - 1]} de ${p.y}`;
   const monthsSl = [
     "januarja",
     "februarja",

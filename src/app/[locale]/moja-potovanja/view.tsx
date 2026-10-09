@@ -31,6 +31,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "@/i18n/navigation";
 import { pick } from "@/lib/i18n-pick";
+import { intlDateLocale } from "@/lib/intl-locale";
 import { buildPlanFromMyTrip, formatMoney, type PlannerLang } from "@/lib/itinerary-engine";
 import { myTrip, useMyTripList } from "@/lib/my-trip";
 import { useGoTrip, useLastPlan } from "@/lib/plan-store";
@@ -585,7 +586,7 @@ export default function MyTripsPage() {
                         <p className="mt-1.5 text-[11px] text-muted-foreground">
                           {pick(l, L.savedAt)}:{" "}
                           {new Date(item.addedAt).toLocaleDateString(
-                            lang === "en" ? "en-GB" : "sl-SI"
+                            intlDateLocale(l)
                           )}
                           {item.source ? ` · ${item.source}` : ""}
                         </p>
@@ -669,7 +670,7 @@ export default function MyTripsPage() {
                 </Badge>
                 <span className="text-xs text-muted-foreground">
                   {pick(l, L.savedAt)}:{" "}
-                  {new Date(lastPlan.savedAt).toLocaleString(lang === "en" ? "en-GB" : "sl-SI")}
+                  {new Date(lastPlan.savedAt).toLocaleString(intlDateLocale(l))}
                 </span>
               </div>
               <Separator className="my-4" />

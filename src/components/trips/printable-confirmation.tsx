@@ -6,7 +6,8 @@ import React from "react";
 import { createPortal } from "react-dom";
 
 import { Button } from "@/components/ui/button";
-import { pick } from "@/lib/i18n-pick";
+import { asPickLocale, pick } from "@/lib/i18n-pick";
+import { intlDateLocale } from "@/lib/intl-locale";
 import {
   parseAttestationNote,
   statusLabel,
@@ -100,7 +101,7 @@ export function PrintableConfirmation({
   plan: SharedPlan | null;
 }) {
   const l = useLocale();
-  const lang: "sl" | "en" = l === "en" ? "en" : "sl";
+  const lang: "sl" | "en" | "it" | "de" | "fr" | "es" = asPickLocale(l);
   const [state, setState] = React.useState<"idle" | "preparing" | "ready">("idle");
   const [doc, setDoc] = React.useState<{
     reservations: ReservationRowDto[];
@@ -274,7 +275,7 @@ export function PrintableConfirmation({
               {pick(l, L.honesty)}
             </p>
             <p className="mt-2 text-[11px]">
-              {pick(l, L.generated)}: {new Date(doc.generatedAt).toLocaleString(lang === "en" ? "en-GB" : "sl-SI")}{" "}
+              {pick(l, L.generated)}: {new Date(doc.generatedAt).toLocaleString(intlDateLocale(l))}{" "}
               · {pick(l, L.source)}
             </p>
           </div>

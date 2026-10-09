@@ -47,6 +47,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Link } from "@/i18n/navigation";
 import { pick } from "@/lib/i18n-pick";
+import { intlDateLocale } from "@/lib/intl-locale";
 
 /**
  * /moj-profil — P1-A (issue #3 §1/§2): OSEBNI POTOVALNI PROFIL.
@@ -388,7 +389,7 @@ function sourceLabel(source: string, t: tFn): string {
 
 function formatDate(iso: string, locale: string): string {
   try {
-    return new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "sl-SI", {
+    return new Intl.DateTimeFormat(intlDateLocale(locale), {
       dateStyle: "medium",
     }).format(new Date(iso));
   } catch {

@@ -26,6 +26,8 @@
  * ============================================================================
  */
 
+import type { PickLocale } from "../i18n-pick";
+
 // ─── Statusi (izvorni types.ts:83-97 + DRAFT iz Issue #4 val 3) ─────────────
 
 /** 14 statusov (izvorni types.ts:83-97 + DRAFT val 3). */
@@ -364,13 +366,14 @@ const STATUS_LABELS: Record<ConfirmationStatus, { sl: string; en: string; it: st
 };
 
 /**
- * Oznaka statusa za UI (SL privzeto / EN). Neznan status se NE prevaja v
- * izmišljeno oznako — vrne surovo vrednost (iskrenost).
+ * Oznaka statusa za UI (6 jezikov od 2.21.0/4-c; privzeto SL). Neznan
+ * status se NE prevaja v izmišljeno oznako — vrne surovo vrednost
+ * (iskrenost).
  */
-export function statusLabel(status: string, locale: "sl" | "en" = "sl"): string {
+export function statusLabel(status: string, locale: PickLocale = "sl"): string {
   if (!isConfirmationStatus(status)) return status;
   const label = STATUS_LABELS[status];
-  return locale === "en" ? label.en : label.sl;
+  return locale in label ? label[locale as keyof typeof label] : label.sl;
 }
 
 // ─── Atestacijski JSON v stolpcu `note` (shema se NE spreminja, 51-c) ───────

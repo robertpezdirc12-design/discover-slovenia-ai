@@ -22,9 +22,183 @@ import {
   type Destination,
   type Season,
 } from "./slovenia-data";
+import { asPickLocale, type PickLocale } from "./i18n-pick";
 import type { ItineraryPlan, MyTripItem, TripStop } from "./types";
 
-export type PlannerLang = "sl" | "en";
+/**
+ * Jezik načrtovalca — od 2.21.0 (4-c) vsi podprti jeziki lupine
+ * (prej „sl" | "en": it/de/fr/es uporabniki so dobili slovenski načrt).
+ * Zgodovinsko ime tipa se ohranja (javní podpis), identičen PickLocale.
+ */
+export type PlannerLang = PickLocale;
+
+/**
+ * Sporočila motorja načrta (6 jezikov, isti vzorec kot GEO_MSG).
+ * sl/en izhodi so BAJTNO identični predhodnim ternarijem; it/de/fr/es
+ * so novi prevodi (4-c, PRODUCT-AUDIT §9).
+ */
+const PLANNER_MSG = {
+  dayTitle: {
+    sl: (n: number, head: string, name: string) => `Dan ${n} · ${head}${name}`,
+    en: (n: number, head: string, name: string) => `Day ${n} · ${head}${name}`,
+    it: (n: number, head: string, name: string) => `Giorno ${n} · ${head}${name}`,
+    de: (n: number, head: string, name: string) => `Tag ${n} · ${head}${name}`,
+    fr: (n: number, head: string, name: string) => `Jour ${n} · ${head}${name}`,
+    es: (n: number, head: string, name: string) => `Día ${n} · ${head}${name}`,
+  },
+  daysWord: {
+    sl: (n: number) => `${n} ${n === 1 ? "dan" : "dni"}`,
+    en: (n: number) => `${n} ${n === 1 ? "day" : "days"}`,
+    it: (n: number) => `${n} ${n === 1 ? "giorno" : "giorni"}`,
+    de: (n: number) => `${n} ${n === 1 ? "Tag" : "Tage"}`,
+    fr: (n: number) => `${n} ${n === 1 ? "jour" : "jours"}`,
+    es: (n: number) => `${n} ${n === 1 ? "día" : "días"}`,
+  },
+  stopsWord: {
+    sl: (n: number) => `${n} ${n === 1 ? "postanek" : n === 2 ? "postanka" : "postankov"}`,
+    en: (n: number) => `${n} ${n === 1 ? "stop" : "stops"}`,
+    it: (n: number) => `${n} ${n === 1 ? "tappa" : "tappe"}`,
+    de: (n: number) => `${n} ${n === 1 ? "Stopp" : "Stopps"}`,
+    fr: (n: number) => `${n} ${n === 1 ? "arrêt" : "arrêts"}`,
+    es: (n: number) => `${n} ${n === 1 ? "parada" : "paradas"}`,
+  },
+  regionsWord: {
+    sl: (n: number) => `${n} ${n === 1 ? "regija" : n === 2 ? "regiji" : n <= 4 ? "regije" : "regij"}`,
+    en: (n: number) => `${n} ${n === 1 ? "region" : "regions"}`,
+    it: (n: number) => `${n} ${n === 1 ? "regione" : "regioni"}`,
+    de: (n: number) => `${n} ${n === 1 ? "Region" : "Regionen"}`,
+    fr: (n: number) => `${n} ${n === 1 ? "région" : "régions"}`,
+    es: (n: number) => `${n} ${n === 1 ? "región" : "regiones"}`,
+  },
+  planTitle: {
+    sl: (names: string) => `Načrt: ${names || "—"}`,
+    en: (names: string) => `Plan: ${names || "—"}`,
+    it: (names: string) => `Piano: ${names || "—"}`,
+    de: (names: string) => `Plan: ${names || "—"}`,
+    fr: (names: string) => `Itinéraire : ${names || "—"}`,
+    es: (names: string) => `Plan: ${names || "—"}`,
+  },
+  summary: {
+    sl: (daysWord: string, stopsWord: string, regionsWord: string, cost: number, speed: number) => `Deterministični načrt za ${daysWord}: ${stopsWord} v ${regionsWord}, ocena ${cost} € na osebo. Časi so predlogi (09:00–19:00); vožnje so ocene (premočna ×1,3 pri ~${speed} km/h).`,
+    en: (daysWord: string, stopsWord: string, regionsWord: string, cost: number, speed: number) => `Deterministic ${daysWord} plan: ${stopsWord} across ${regionsWord}, estimated ${cost} € per person. Times are proposals (09:00–19:00); drives are straight-line ×1.3 estimates at ~${speed} km/h.`,
+    it: (daysWord: string, stopsWord: string, regionsWord: string, cost: number, speed: number) => `Piano deterministico di ${daysWord}: ${stopsWord} in ${regionsWord}, stima ${cost} € a persona. Gli orari sono proposte (09:00–19:00); i tragitti sono stime (linea d'aria ×1,3 a ~${speed} km/h).`,
+    de: (daysWord: string, stopsWord: string, regionsWord: string, cost: number, speed: number) => `Deterministischer Plan über ${daysWord}: ${stopsWord} in ${regionsWord}, geschätzt ${cost} € pro Person. Zeiten sind Vorschläge (09:00–19:00); Fahrten sind Schätzungen (Luftlinie ×1,3 bei ~${speed} km/h).`,
+    fr: (daysWord: string, stopsWord: string, regionsWord: string, cost: number, speed: number) => `Itinéraire déterministe de ${daysWord} : ${stopsWord} à travers ${regionsWord}, estimation ${cost} € par personne. Les horaires sont des propositions (09:00–19:00) ; les trajets sont des estimations (à vol d'oiseau ×1,3 à ~${speed} km/h).`,
+    es: (daysWord: string, stopsWord: string, regionsWord: string, cost: number, speed: number) => `Plan determinista de ${daysWord}: ${stopsWord} por ${regionsWord}, estimación ${cost} € por persona. Los horarios son propuestas (09:00–19:00); los trayectos son estimaciones (línea recta ×1,3 a ~${speed} km/h).`,
+  },
+  matchedInterests: {
+    sl: (m: string) => `Želje z zadetkom: ${m}.`,
+    en: (m: string) => `Interests matched: ${m}.`,
+    it: (m: string) => `Interessi trovati: ${m}.`,
+    de: (m: string) => `Getroffene Wünsche: ${m}.`,
+    fr: (m: string) => `Envies trouvées : ${m}.`,
+    es: (m: string) => `Intereses con coincidencia: ${m}.`,
+  },
+  noMatch: {
+    sl: (u: string) => `Brez neposrednega zadetka: ${u} — poskusi podobno besedo.`,
+    en: (u: string) => `No direct match for: ${u} — try a similar word.`,
+    it: (u: string) => `Nessuna corrispondenza diretta per: ${u} — prova una parola simile.`,
+    de: (u: string) => `Kein direkter Treffer für: ${u} — versuche ein ähnliches Wort.`,
+    fr: (u: string) => `Pas de correspondance directe pour : ${u} — essaie un mot similaire.`,
+    es: (u: string) => `Sin coincidencia directa para: ${u} — prueba una palabra similar.`,
+  },
+  selectedCount: {
+    sl: (sel: number, total: number) => `Izbranih ${sel} od ${total} destinacij.`,
+    en: (sel: number, total: number) => `${sel} of ${total} destinations selected.`,
+    it: (sel: number, total: number) => `Selezionate ${sel} di ${total} destinazioni.`,
+    de: (sel: number, total: number) => `${sel} von ${total} Zielen ausgewählt.`,
+    fr: (sel: number, total: number) => `${sel} destinations sur ${total} sélectionnées.`,
+    es: (sel: number, total: number) => `${sel} de ${total} destinos seleccionados.`,
+  },
+  regionFilter: {
+    sl: (label: string) => `Filter regije: ${label}.`,
+    en: (label: string) => `Region filter: ${label}.`,
+    it: (label: string) => `Filtro regione: ${label}.`,
+    de: (label: string) => `Regionsfilter: ${label}.`,
+    fr: (label: string) => `Filtre région : ${label}.`,
+    es: (label: string) => `Filtro de región: ${label}.`,
+  },
+  seasonPref: {
+    sl: (s: string, fit: number, total: number) => `Sezonska prednost (${s}): ${fit}/${total} postankov je takrat najboljših.`,
+    en: (s: string, fit: number, total: number) => `Season preference (${s}): ${fit}/${total} stops are at their best then.`,
+    it: (s: string, fit: number, total: number) => `Preferenza stagionale (${s}): ${fit}/${total} tappe sono al meglio in quel periodo.`,
+    de: (s: string, fit: number, total: number) => `Jahreszeitenpräferenz (${s}): ${fit}/${total} Stopps sind dann am besten.`,
+    fr: (s: string, fit: number, total: number) => `Préférence de saison (${s}) : ${fit}/${total} arrêts sont alors au meilleur.`,
+    es: (s: string, fit: number, total: number) => `Preferencia de temporada (${s}): ${fit}/${total} paradas están en su mejor momento entonces.`,
+  },
+  budgetFilter: {
+    sl: (b: string) => `Proračunski filter: do ${b}.`,
+    en: (b: string) => `Budget filter: up to ${b}.`,
+    it: (b: string) => `Filtro budget: fino a ${b}.`,
+    de: (b: string) => `Budgetfilter: bis ${b}.`,
+    fr: (b: string) => `Filtre budget : jusqu'à ${b}.`,
+    es: (b: string) => `Filtro de presupuesto: hasta ${b}.`,
+  },
+  budgetRelaxed: {
+    sl: () => `Proračunski filter je bil sproščen — premogo destinacij za vse filtre.`,
+    en: () => `The budget filter was relaxed — too few destinations matched all filters.`,
+    it: () => `Il filtro budget è stato allentato — troppo poche destinazioni corrispondono a tutti i filtri.`,
+    de: () => `Der Budgetfilter wurde gelockert — zu wenige Ziele entsprachen allen Filtern.`,
+    fr: () => `Le filtre budget a été assoupli — trop peu de destinations correspondaient à tous les filtres.`,
+    es: () => `El filtro de presupuesto se relajó — muy pocos destinos coincidían con todos los filtros.`,
+  },
+  onlyDays: {
+    sl: (filled: number, requested: number) => `Zapolniti je bilo mogoče le ${filled} ${filled === 1 ? "dan" : "dni"} (zahtevanih ${requested}).`,
+    en: (filled: number, requested: number) => `Only ${filled} day(s) could be filled (you asked for ${requested}).`,
+    it: (filled: number, requested: number) => `È stato possibile riempire solo ${filled} ${filled === 1 ? "giorno" : "giorni"} (richiesti ${requested}).`,
+    de: (filled: number, requested: number) => `Nur ${filled} Tag(e) konnten gefüllt werden (angefragt waren ${requested}).`,
+    fr: (filled: number, requested: number) => `Seulement ${filled} jour(s) ont pu être remplis (tu en avais demandé ${requested}).`,
+    es: (filled: number, requested: number) => `Solo se pudieron llenar ${filled} día(s) (pediste ${requested}).`,
+  },
+  singleStop: {
+    sl: (d: number) => `Dan ${d} ima le en postanek — nabor s filtri je ozek.`,
+    en: (d: number) => `Day ${d} has a single stop — the filtered set is narrow.`,
+    it: (d: number) => `Il giorno ${d} ha una sola tappa — l'insieme filtrato è ristretto.`,
+    de: (d: number) => `Tag ${d} hat nur einen Stopp — die gefilterte Auswahl ist eng.`,
+    fr: (d: number) => `Le jour ${d} n'a qu'un seul arrêt — l'ensemble filtré est restreint.`,
+    es: (d: number) => `El día ${d} tiene una sola parada — el conjunto filtrado es reducido.`,
+  },
+  datasetNote: {
+    sl: (total: number) => `Vseh destinacij v naboru: ${total}; motor je determinističen — isti vhod vedno da isti načrt.`,
+    en: (regionsCount: number) => `All ${regionsCount} regions available in the dataset; engine is deterministic — the same input always yields the same plan.`,
+    it: (total: number) => `Destinazioni totali nel dataset: ${total}; il motore è deterministico — lo stesso input dà sempre lo stesso piano.`,
+    de: (total: number) => `Alle Ziele im Datensatz: ${total}; die Engine ist deterministisch — dieselbe Eingabe ergibt immer denselben Plan.`,
+    fr: (total: number) => `Toutes les destinations du jeu de données : ${total} ; le moteur est déterministe — la même entrée donne toujours le même itinéraire.`,
+    es: (total: number) => `Todos los destinos del conjunto de datos: ${total}; el motor es determinista — la misma entrada da siempre el mismo plan.`,
+  },
+  draftTitle: {
+    sl: () => `Osnutek: Moja pot`,
+    en: () => `Draft: My trip`,
+    it: () => `Bozza: Il mio viaggio`,
+    de: () => `Entwurf: Meine Reise`,
+    fr: () => `Brouillon : Mon voyage`,
+    es: () => `Borrador: Mi viaje`,
+  },
+  draftSummary: {
+    sl: (n: number, cost: number, speed: number) => `Osnutek iz zbirke „Moja pot“ v tvojem vrstnem redu: ${n} ${n === 1 ? "postanek" : "postankov"}, ocena ${cost} € na osebo. Časi so predlogi (začetek 09:00, vožnje ocenjene pri ~${speed} km/h).`,
+    en: (n: number, cost: number, speed: number) => `Draft built from your “My trip” collection in your order: ${n} stop(s), estimated ${cost} € per person. Times are proposals (09:00 start, drives estimated at ~${speed} km/h).`,
+    it: (n: number, cost: number, speed: number) => `Bozza creata dalla collezione “Il mio viaggio” nel tuo ordine: ${n} ${n === 1 ? "tappa" : "tappe"}, stima ${cost} € a persona. Gli orari sono proposte (inizio 09:00, tragitti stimati a ~${speed} km/h).`,
+    de: (n: number, cost: number, speed: number) => `Entwurf aus deiner Sammlung „Meine Reise“ in deiner Reihenfolge: ${n} Stopp(s), geschätzt ${cost} € pro Person. Zeiten sind Vorschläge (Start 09:00, Fahrten geschätzt bei ~${speed} km/h).`,
+    fr: (n: number, cost: number, speed: number) => `Brouillon construit depuis ta collection « Mon voyage » dans ton ordre : ${n} ${n === 1 ? "arrêt" : "arrêts"}, estimation ${cost} € par personne. Les horaires sont des propositions (départ 09:00, trajets estimés à ~${speed} km/h).`,
+    es: (n: number, cost: number, speed: number) => `Borrador creado desde tu colección «Mi viaje» en tu orden: ${n} ${n === 1 ? "parada" : "paradas"}, estimación ${cost} € por persona. Los horarios son propuestas (inicio 09:00, trayectos estimados a ~${speed} km/h).`,
+  },
+  draftDayTitle: {
+    sl: () => `Dan 1 · Moja pot (osnutek)`,
+    en: () => `Day 1 · My trip (draft)`,
+    it: () => `Giorno 1 · Il mio viaggio (bozza)`,
+    de: () => `Tag 1 · Meine Reise (Entwurf)`,
+    fr: () => `Jour 1 · Mon voyage (brouillon)`,
+    es: () => `Día 1 · Mi viaje (borrador)`,
+  },
+  draftCoverage: {
+    sl: () => `Osnutek iz lokalne zbirke — pred odhodom preveri izvedljivost.`,
+    en: () => `Draft from your local collection — check feasibility before you go.`,
+    it: () => `Bozza dalla collezione locale — verifica la fattibilità prima di partire.`,
+    de: () => `Entwurf aus der lokalen Sammlung — prüfe vor der Abfahrt die Machbarkeit.`,
+    fr: () => `Brouillon depuis la collection locale — vérifie la faisabilité avant de partir.`,
+    es: () => `Borrador desde la colección local — comprueba la viabilidad antes de ir.`,
+  },
+} as const;
 
 // ---------------------------------------------------------------------------
 // Geometrija (isti kanon kot geo-validacija P0.2 izvirnika)
@@ -267,7 +441,7 @@ export function budgetTier(b: Budget): number {
 // ---------------------------------------------------------------------------
 
 export function buildItinerary(query: PlannerQuery): ItineraryPlan {
-  const lang: PlannerLang = query.locale === "en" ? "en" : "sl";
+  const lang: PlannerLang = asPickLocale(query.locale);
   const interests = query.interests.filter((i) => i.length > 0);
 
   // 1) OCENA kandidatov: ujemanje interesov + sezonska prednost + rating.
@@ -403,34 +577,19 @@ export function buildItinerary(query: PlannerQuery): ItineraryPlan {
     const r = stops[0]?.region;
     const regionTxt = r ? regionLabel(r, lang) : "";
     const head = regionTxt ? `${regionTxt} — ` : "";
-    return lang === "en"
-      ? `Day ${i + 1} · ${head}${stops[0]?.name ?? ""}`
-      : `Dan ${i + 1} · ${head}${stops[0]?.name ?? ""}`;
+    return PLANNER_MSG.dayTitle[lang](i + 1, head, stops[0]?.name ?? "");
   });
 
-  const daysWord =
-    lang === "en"
-      ? `${days.length} ${days.length === 1 ? "day" : "days"}`
-      : `${days.length} ${days.length === 1 ? "dan" : days.length === 2 ? "dni" : "dni"}`;
+  const daysWord = PLANNER_MSG.daysWord[lang](days.length);
 
   const titleNames = names.slice(0, 2).join(" · ") + (names.length > 2 ? ` +${names.length - 2}` : "");
-  const title =
-    lang === "en" ? `Plan: ${titleNames || "—"}` : `Načrt: ${titleNames || "—"}`;
+  const title = PLANNER_MSG.planTitle[lang](titleNames);
 
-  const stopsWord =
-    lang === "en"
-      ? `${allStops.length} ${allStops.length === 1 ? "stop" : "stops"}`
-      : `${allStops.length} ${allStops.length === 1 ? "postanek" : allStops.length === 2 ? "postanka" : "postankov"}`;
+  const stopsWord = PLANNER_MSG.stopsWord[lang](allStops.length);
 
-  const regionsWord =
-    lang === "en"
-      ? `${regionsUsed.length} ${regionsUsed.length === 1 ? "region" : "regions"}`
-      : `${regionsUsed.length} ${regionsUsed.length === 1 ? "regija" : regionsUsed.length === 2 ? "regiji" : regionsUsed.length <= 4 ? "regije" : "regij"}`;
+  const regionsWord = PLANNER_MSG.regionsWord[lang](regionsUsed.length);
 
-  const summary =
-    lang === "en"
-      ? `Deterministic ${daysWord} plan: ${stopsWord} across ${regionsWord}, estimated ${totalCost} € per person. Times are proposals (09:00–19:00); drives are straight-line ×1.3 estimates at ~${AVG_SPEED_KMH} km/h.`
-      : `Deterministični načrt za ${daysWord}: ${stopsWord} v ${regionsWord}, ocena ${totalCost} € na osebo. Časi so predlogi (09:00–19:00); vožnje so ocene (premočna ×1,3 pri ~${AVG_SPEED_KMH} km/h).`;
+  const summary = PLANNER_MSG.summary[lang](daysWord, stopsWord, regionsWord, totalCost, AVG_SPEED_KMH);
 
   return {
     days,
@@ -485,26 +644,14 @@ function buildCoverageNote(args: {
   );
   const unmatched = interests.filter((i) => !matchedInterests.includes(i));
 
-  if (lang === "en") {
-    if (matchedInterests.length)
-      parts.push(`Interests matched: ${matchedInterests.join(", ")}.`);
-    if (unmatched.length)
-      parts.push(`No direct match for: ${unmatched.join(", ")} — try a similar word.`);
-    parts.push(`${selected.length} of ${DESTINATIONS.length} destinations selected.`);
-  } else {
-    if (matchedInterests.length)
-      parts.push(`Želje z zadetkom: ${matchedInterests.join(", ")}.`);
-    if (unmatched.length)
-      parts.push(`Brez neposrednega zadetka: ${unmatched.join(", ")} — poskusi podobno besedo.`);
-    parts.push(`Izbranih ${selected.length} od ${DESTINATIONS.length} destinacij.`);
-  }
+  if (matchedInterests.length)
+    parts.push(PLANNER_MSG.matchedInterests[lang](matchedInterests.join(", ")));
+  if (unmatched.length)
+    parts.push(PLANNER_MSG.noMatch[lang](unmatched.join(", ")));
+  parts.push(PLANNER_MSG.selectedCount[lang](selected.length, DESTINATIONS.length));
 
   if (args.region) {
-    parts.push(
-      lang === "en"
-        ? `Region filter: ${regionLabel(args.region, "en")}.`
-        : `Filter regije: ${regionLabel(args.region, "sl")}.`
-    );
+    parts.push(PLANNER_MSG.regionFilter[lang](regionLabel(args.region, lang)));
   }
   if (args.season) {
     const seasonName: Record<Season, { sl: string; en: string; it: string; de: string; fr: string; es: string }> = {
@@ -518,44 +665,26 @@ function buildCoverageNote(args: {
       (c) => destIds.has(c.dest.id) && c.dest.bestSeason.includes(args.season!)
     ).length;
     parts.push(
-      lang === "en"
-        ? `Season preference (${seasonName[args.season].en}): ${fitCount}/${selected.length} stops are at their best then.`
-        : `Sezonska prednost (${seasonName[args.season].sl}): ${fitCount}/${selected.length} postankov je takrat najboljših.`
+      PLANNER_MSG.seasonPref[lang](seasonName[args.season][lang], fitCount, selected.length)
     );
   }
   if (args.budget) {
-    parts.push(
-      lang === "en"
-        ? `Budget filter: up to ${args.budget}.`
-        : `Proračunski filter: do ${args.budget}.`
-    );
+    parts.push(PLANNER_MSG.budgetFilter[lang](args.budget));
     if (args.budgetRelaxed)
-      parts.push(
-        lang === "en"
-          ? "The budget filter was relaxed — too few destinations matched all filters."
-          : "Proračunski filter je bil sproščen — premogo destinacij za vse filtre."
-      );
+      parts.push(PLANNER_MSG.budgetRelaxed[lang]());
   }
   if (days.length < requestedDays) {
-    parts.push(
-      lang === "en"
-        ? `Only ${days.length} day(s) could be filled (you asked for ${requestedDays}).`
-        : `Zapolniti je bilo mogoče le ${days.length} ${days.length === 1 ? "dan" : "dni"} (zahtevanih ${requestedDays}).`
-    );
+    parts.push(PLANNER_MSG.onlyDays[lang](days.length, requestedDays));
   }
   days.forEach((d, i) => {
     if (d.length === 1) {
-      parts.push(
-        lang === "en"
-          ? `Day ${i + 1} has a single stop — the filtered set is narrow.`
-          : `Dan ${i + 1} ima le en postanek — nabor s filtri je ozek.`
-      );
+      parts.push(PLANNER_MSG.singleStop[lang](i + 1));
     }
   });
   parts.push(
     lang === "en"
-      ? `All ${REGIONS ? Object.keys(REGIONS).length : 20} regions available in the dataset; engine is deterministic — the same input always yields the same plan.`
-      : `Vseh destinacij v naboru: ${DESTINATIONS.length}; motor je determinističen — isti vhod vedno da isti načrt.`
+      ? PLANNER_MSG.datasetNote[lang](REGIONS ? Object.keys(REGIONS).length : 20)
+      : PLANNER_MSG.datasetNote[lang](DESTINATIONS.length)
   );
   return parts.join(" ");
 }
@@ -571,7 +700,7 @@ export interface MyTripDraft {
 }
 
 export function buildPlanFromMyTrip(items: MyTripItem[], locale?: PlannerLang): MyTripDraft {
-  const lang: PlannerLang = locale === "en" ? "en" : "sl";
+  const lang: PlannerLang = asPickLocale(locale);
   const unmatched: MyTripItem[] = [];
   const dests: Destination[] = [];
   const seen = new Set<string>();
@@ -605,26 +734,18 @@ export function buildPlanFromMyTrip(items: MyTripItem[], locale?: PlannerLang): 
   });
 
   const totalCost = stops.reduce((s, x) => s + x.cost, 0);
-  const title = lang === "en" ? "Draft: My trip" : "Osnutek: Moja pot";
-  const summary =
-    lang === "en"
-      ? `Draft built from your “My trip” collection in your order: ${stops.length} stop(s), estimated ${totalCost} € per person. Times are proposals (09:00 start, drives estimated at ~${AVG_SPEED_KMH} km/h).`
-      : `Osnutek iz zbirke „Moja pot“ v tvojem vrstnem redu: ${stops.length} ${stops.length === 1 ? "postanek" : "postankov"}, ocena ${totalCost} € na osebo. Časi so predlogi (začetek 09:00, vožnje ocenjene pri ~${AVG_SPEED_KMH} km/h).`;
+  const title = PLANNER_MSG.draftTitle[lang]();
+  const summary = PLANNER_MSG.draftSummary[lang](stops.length, totalCost, AVG_SPEED_KMH);
 
   return {
     plan: {
       days: stops.length > 0 ? [stops] : [],
       dayTitles:
-        stops.length > 0
-          ? [lang === "en" ? "Day 1 · My trip (draft)" : "Dan 1 · Moja pot (osnutek)"]
-          : [],
+        stops.length > 0 ? [PLANNER_MSG.draftDayTitle[lang]()] : [],
       title,
       summary,
       totalCost,
-      coverageNote:
-        lang === "en"
-          ? "Draft from your local collection — check feasibility before you go."
-          : "Osnutek iz lokalne zbirke — pred odhodom preveri izvedljivost.",
+      coverageNote: PLANNER_MSG.draftCoverage[lang](),
       meta: { interests: [], days: 1, locale: lang },
     },
     unmatched,
@@ -694,7 +815,7 @@ const GEO_MSG = {
 } as const;
 
 export function validatePlanGeo(plan: ItineraryPlan, locale?: PlannerLang): GeoValidation {
-  const lang: PlannerLang = locale === "en" ? "en" : "sl";
+  const lang: PlannerLang = asPickLocale(locale);
   const issues: GeoValidationIssue[] = [];
   const metrics: DayGeoMetrics[] = [];
   let tripKm = 0;
@@ -823,11 +944,12 @@ export function interestChips(): InterestChip[] {
 }
 
 // ---------------------------------------------------------------------------
-// Oblikovanje (SL/EN)
+// Oblikovanje (6 jezikov — € pred številom samo v EN, ostali za njo)
 // ---------------------------------------------------------------------------
 
 export function formatMoney(amount: number, locale?: PlannerLang): string {
-  return locale === "en" ? `€${amount}` : `${amount} €`;
+  const lang = asPickLocale(locale);
+  return lang === "en" ? `€${amount}` : `${amount} €`;
 }
 
 export function formatDuration(min: number, locale?: PlannerLang): string {

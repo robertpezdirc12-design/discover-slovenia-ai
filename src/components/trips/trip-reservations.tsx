@@ -90,7 +90,7 @@ import {
 import { Link } from "@/i18n/navigation";
 import { osmDirectionsUrl } from "@/lib/itinerary-engine";
 import { getDestination } from "@/lib/slovenia-data";
-import { pick } from "@/lib/i18n-pick";
+import { asPickLocale, pick } from "@/lib/i18n-pick";
 import type { SharedPlan } from "@/lib/shared-plan";
 import {
   noteTextOf,
@@ -575,7 +575,10 @@ function errText(e: unknown): string {
 }
 
 /** Znesek v EUR (sl-SI / en-IE oblika) — izključno za prikaz atestacije. */
-function formatPriceEUR(value: number, lang: "sl" | "en"): string {
+function formatPriceEUR(
+  value: number,
+  lang: "sl" | "en" | "it" | "de" | "fr" | "es"
+): string {
   try {
     return new Intl.NumberFormat(lang === "en" ? "en-IE" : "sl-SI", {
       style: "currency",
@@ -596,7 +599,7 @@ export function TripReservations({
   canEdit: boolean;
 }) {
   const l = useLocale();
-  const lang: "sl" | "en" = l === "en" ? "en" : "sl";
+  const lang: "sl" | "en" | "it" | "de" | "fr" | "es" = asPickLocale(l);
 
   const [rows, setRows] = useState<ReservationRow[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);

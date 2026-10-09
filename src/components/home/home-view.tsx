@@ -82,7 +82,7 @@ const L = {
     en: "What do you want to experience in Slovenia?",
     it: "Cosa vuoi vivere in Slovenia?",
     de: "Was möchtest du in Slowenien erleben?",
-    fr: "Que souhaitez-vous vivre en Slovénie ?",
+    fr: "Que veux-tu vivre en Slovénie ?",
     es: "¿Qué quieres vivir en Eslovenia?",
   },
   heroLead: {
@@ -90,7 +90,7 @@ const L = {
     en: "Write what you enjoy — discover 38 curated destinations across Slovenia and the Western Balkans, build a plan, and go.",
     it: "Scrivi cosa ti piace — scopri 38 destinazioni selezionate tra Slovenia e Balcani occidentali, crea un itinerario e parti.",
     de: "Schreib, was dir Freude macht — entdecke 38 kuratierte Reiseziele in Slowenien und auf dem westlichen Balkan, plane deine Route und los geht’s.",
-    fr: "Écrivez ce que vous aimez — découvrez 38 destinations sélectionnées en Slovénie et dans les Balkans occidentaux, composez votre itinéraire et partez.",
+    fr: "Écris ce que tu aimes — découvre 38 destinations sélectionnées en Slovénie et dans les Balkans occidentaux, compose ton itinéraire et pars.",
     es: "Escribe lo que te gusta — descubre 38 destinos seleccionados de Eslovenia y los Balcanes occidentales, arma tu plan y sal.",
   },
   searchPlaceholder: {
@@ -234,7 +234,7 @@ const L = {
     en: "Check your plan",
     it: "Controlla il tuo itinerario",
     de: "Prüfe deinen Plan",
-    fr: "Vérifiez votre itinéraire",
+    fr: "Vérifie ton itinéraire",
     es: "Comprueba tu plan",
   },
   checkLead: {
@@ -242,7 +242,7 @@ const L = {
     en: "The planner catches overlaps, impossible distances and timing conflicts — before you leave.",
     it: "Il pianificatore individua sovrapposizioni, distanze impossibili e conflitti di orario — prima di partire.",
     de: "Der Planer findet Überschneidungen, unmögliche Distanzen und Zeitkonflikte — bevor du losfährst.",
-    fr: "Le planificateur détecte les chevauchements, les distances impossibles et les conflits d’horaire — avant votre départ.",
+    fr: "Le planificateur détecte les chevauchements, les distances impossibles et les conflits d’horaire — avant ton départ.",
     es: "El planificador detecta solapamientos, distancias imposibles y conflictos de horario — antes de salir.",
   },
   checkCta: {
@@ -250,7 +250,7 @@ const L = {
     en: "Check your plan",
     it: "Controlla il tuo itinerario",
     de: "Prüfe deinen Plan",
-    fr: "Vérifiez votre itinéraire",
+    fr: "Vérifie ton itinéraire",
     es: "Comprueba tu plan",
   },
   newsletterTitle: {
@@ -274,7 +274,7 @@ const L = {
     en: "you@email.com",
     it: "tua@email.it",
     de: "deine@email.de",
-    fr: "votre@email.fr",
+    fr: "ton@email.fr",
     es: "tu@email.es",
   },
   newsletterLabel: {
@@ -298,7 +298,7 @@ const L = {
     en: "Subscribed! Check your inbox for a welcome.",
     it: "Iscrizione fatta! Controlla la posta per il messaggio di benvenuto.",
     de: "Angemeldet! Schau in dein Postfach für die Begrüßung.",
-    fr: "Inscription réussie ! Vérifiez votre boîte mail pour le message d’accueil.",
+    fr: "Inscription réussie ! Vérifie ta boîte mail pour le message d’accueil.",
     es: "¡Suscrito! Revisa tu correo para el mensaje de bienvenida.",
   },
   newsletterErr: {
@@ -306,7 +306,7 @@ const L = {
     en: "Subscription failed — please check your email address.",
     it: "Iscrizione non riuscita — controlla l’indirizzo e-mail.",
     de: "Anmeldung fehlgeschlagen — bitte E-Mail-Adresse prüfen.",
-    fr: "Échec de l’inscription — vérifiez votre adresse e-mail.",
+    fr: "Échec de l’inscription — vérifie ton adresse e-mail.",
     es: "No se pudo suscribir — revisa tu correo electrónico.",
   },
   endlessTitle: {

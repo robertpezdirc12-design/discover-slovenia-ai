@@ -5,7 +5,7 @@
 > realnimi koordinatami in deterministični načrtovalnik poti (isti vhod → isti načrt,
 > 0 AI žetonov v jedru).
 
-**Verzija: 2.20.0 — P3: ŠTIRIJEZIČNA RAZŠIRITEV it/de/fr/es + hreflang (issue #2 §9).**
+**Verzija: 2.21.0 — 4-c: JEDRSKA I18N AKTIVACIJA (PlannerLang 6 jezikov, FR tu/vous, datum vrata) + sync varovalka (issue #2 §9).**
 Izdaje rekonstrukcije: 2.1.0 skupnostne funkcije → 2.2.0 aplikacijska lupina →
 2.3.0 issue #1 (živi GPS, booking, pomočnik) → 2.3.1 infra CI → 2.4.0 PWA
 offline → 2.5.0 rezervacijski sloj → 2.6.0 partner kanal booking verige →
@@ -347,6 +347,11 @@ migracijsko stanje) + build:meta (SHA iz platforme) + matrika 39 modelov
 RETIRE 25 z razlogi, RESTORE 0) + docs/PRODUCTION-CUTOVER.md runbook
 (10 korakov z ukazi: backup → preflight → dry-run → integrity → okno →
 migracija → deployment → health → E2E → rollback) →
+2.21.0 4-c jedrska i18n aktivacija (issue #2 §9): PlannerLang 6 jezikov
+  (itinerary-engine PLANNER_MSG, weather, statusLabel, trip-dates, go-gps
+  kardinali), FR register harmonizacija (vous → tu, 26 mest), 16 datumskih
+  vrat prek INTL_DATE_LOCALE, asPickLocale vrata; test i18n-core-activation
+  (18); sync.yml fail-fast varovalka GitLab žetona (kvota Actions)
 2.20.0 P3 i18n štirijezična razširitev (issue #2 §9): prevod ~7.400 nizov
 v 71 datotekah (it/de/fr/es v L-slovarjih po kanonu 48-b; iskrenostni
 kanon — sl ostaja resnica/fallback) + aktivacija ~73 klicnih mest

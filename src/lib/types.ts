@@ -52,7 +52,7 @@ export interface PlanMeta {
   region?: string;
   season?: string;
   budget?: string;
-  locale: "sl" | "en";
+  locale: "sl" | "en" | "it" | "de" | "fr" | "es";
 }
 
 /** Vrsta zbirke "Moja pot" (dodajanje destinacij, dogodkov, izkušenj …). */

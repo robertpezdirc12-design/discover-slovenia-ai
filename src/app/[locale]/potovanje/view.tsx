@@ -25,7 +25,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "@/i18n/navigation";
-import { pick } from "@/lib/i18n-pick";
+import { asPickLocale, pick } from "@/lib/i18n-pick";
+import { intlDateLocale } from "@/lib/intl-locale";
 import {
   buildPlanFromMyTrip,
   formatDuration,
@@ -163,7 +164,7 @@ interface JourneyData {
 
 export default function JourneyPage() {
   const l = useLocale();
-  const lang: PlannerLang = l === "en" ? "en" : "sl";
+  const lang: PlannerLang = asPickLocale(l);
   const myItems = useMyTripList();
   const [data, setData] = useState<JourneyData | null>(null);
   const [ready, setReady] = useState(false);
@@ -244,7 +245,7 @@ export default function JourneyPage() {
               {data.source === "planner" ? pick(l, L.sourcePlan) : pick(l, L.sourceDraft)}
               {data.savedAt && (
                 <span className="whitespace-nowrap">
-                  · {pick(l, L.savedAt)}: {new Date(data.savedAt).toLocaleString(lang === "en" ? "en-GB" : "sl-SI")}
+                  · {pick(l, L.savedAt)}: {new Date(data.savedAt).toLocaleString(intlDateLocale(l))}
                 </span>
               )}
             </p>

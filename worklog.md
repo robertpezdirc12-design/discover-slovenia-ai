@@ -2661,3 +2661,21 @@ Stage Summary:
 - Issue #2 P0 AUDIT izveden dokazljivo: iskrenostni kanon POTRDJEN (0 lažnih potrditev/provizij/povezav), 2 HIGH + ~18 varnih napak odpravljenih, vsi popravek zaklenjeni s 30 novimi testi (1249/1249), PRODUCT-AUDIT.md z izpolnjenim Definition of Done
 - Izkazane meje (iskreno): produkcija še ni prevezana (cutover = lastnikovo dejanje po runbooku), Lighthouse/CWV bodo izmerjeni na živi instanci, pomnilniški rate limit je NA PRIMER (serverless)
 - Sledi: rsync → vrata → commit → push → PR → komentar na issue #2
+
+---
+Task ID: cron-readiness
+Agent: Z.ai Code (glavni)
+Task: Operacionalizacija prod-cron cutoverja po potrditvi Neon povezave (issue #2) — skrivnosti + health-varovalka
+
+Work Log:
+- Preverjeno dejansko stanje: obe produkciji (Render primarna + Vercel sekundarna) še tečeta 1.190.0 z Neon Postgresom (health "hosted Postgres (Pot B)") — nova 2.x veja še NI deployana; prod-cron.yml na mainu aktiven, a 0 runov (Actions secreta manjkala)
+- GitHub Actions secrets nastavljeni prek API (write-only, šifrirano z repo public key): CRON_SECRET (generiran naključni niz, 64 hex ≥ 32 zahtevanih) + PROD_BASE_URL (https://i-feel-slovenia.vercel.app — Vercel "vedno topla"; Render brezplačna SPI po 15 min in ni primerna za vsako-2-urni cron)
+- prod-cron.yml: NOVA health-varovalka (korak id: gate) pred klicem endpointa — SAMO-BRALNO GET /api/health (brez žetona): verzija 2.x → armed=true, job se izvede; verzija 1.x → mirna preselitev (zelen izhod, samodejna aktivacija po §7 prevezavi); /api/health nedosegljiv → preskoči z iskrenim opozorilom NEZNANO. Klicni korak pogojen z if: steps.gate.outputs.armed == 'true'
+- Pogodbene zahteve ohranjene (cron-ops-contract ④b): urniki '15 */2 * * *' / '30 7 * * 2' / '30 7 * * 3', Authorization: Bearer ${CRON_SECRET} SAMO v glavi, nikoli CRON_SECRET= v URL-ju; YAML validiran
+- docs/PRODUCTION-CUTOVER.md §7: dodana opomba, da sta skrivnosti že nastavljeni v GitHubu + navodilo, da lastnik ob prevezavi vnesi ISTO CRON_SECRET vrednost v Vercel env (mirror)
+- Dokaz delovanja: workflow_dispatch run (watch-check) na novem workflowu — varovalka prepozna 1.190.0 na PROD_BASE_URL in job mirno preskoči (zelen izhod 0)
+
+Stage Summary:
+- Cron cutover je zdaj TURNKEY: ko lastnik izvede §1–§9 runbooka (Neon backup → preflight → migrate-deploy → prenos podatkov → deploy 2.x na i-feel-slovenia.vercel.app + mirror CRON_SECRET v Vercel env), se GitHub urniki SAMI aktivirajo (health-varovalka prepozna 2.x) — brez nadaljnjih ročnih korakov v GitHubu
+- CRON_SECRET vrednost izročena lastniku prek zasebnega kanala (NE v repo/issue) — potrebna za mirror v Vercel ob §7; skrivnosti so write-only, vrednosti ni mogoče prebrati nazaj
+- Iskrena meja: podatkovne faze §1–§6 (pg_dump, migrate deploy, prenos legacy) ostajajo lastnikova dejanja — zahtevajo Neon povezovalne nize, ki jih peskovnik nima

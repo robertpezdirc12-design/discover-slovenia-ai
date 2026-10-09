@@ -18,6 +18,10 @@ db/*.db-journal
 # CI poročila/artefakti (lokalna zagona)
 reports/
 
+# cutover dokazi (P0 AUDIT: pg_dump vsebuje e-pošte + hash-e gesel —
+# NIKOLI v git; živi samo na lastnikovem disku)
+cutover-evidence/
+
 # peskovnik orodja
 tool-results/
 agent-ctx/

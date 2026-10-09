@@ -209,8 +209,8 @@ export async function GET(request: Request) {
   }
 
   if (!payload) {
-    // FAIL-CLOSED: vremenski servis ni dosegljivo → NIKOLI izmišljenih podatkov.
-    return NextResponse.json({ error: "Vremenski servis trenutno ni dosegljivo." }, { status: 502 });
+    // FAIL-CLOSED: vremenski servis ni dosegljiv → NIKOLI izmišljenih podatkov.
+    return NextResponse.json({ error: "Vremenski servis trenutno ni dosegljiv." }, { status: 502 });
   }
 
   cacheSet(key, payload, now);

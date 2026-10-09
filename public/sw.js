@@ -104,7 +104,7 @@ const PRIVATE_API_PREFIXES = [
 ];
 
 /** Statične predpone NESPREMENLJIVIH datotek (cache-first). */
-const ASSET_PREFIXES = ["/content/", "/icons/"];
+const ASSET_PREFIXES = ["/content/"]; // P0 AUDIT: /icons/ odstranjen (mapa ne obstaja)
 
 /** Predpone gradnikov Next (network-first — glej strategijo asset-soft). */
 const SOFT_ASSET_PREFIXES = ["/_next/"];

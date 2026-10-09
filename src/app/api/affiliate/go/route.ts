@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getDestination } from "@/lib/slovenia-data";
 import { countryUrlName } from "@/lib/affiliate-providers";
 import { getSessionUserId } from "@/lib/trip-auth";
+import { allowRequest, clientKey } from "@/lib/rate-limit";
 import {
   buildRedirectFor,
   recordAffiliateClick,
@@ -24,7 +25,10 @@ export const dynamic = "force-dynamic";
  *    v telo, piškotek ali zapis;
  *  · dsa_aff piškotek je anonimni UUID (vezava klikov seje) — brez IP,
  *    brez razpoznavnih znakov naprave;
- *  · neveljaven provider → 400 s slovenskim sporočilom (nikoli tih padec).
+ *  · neveljaven provider → 400 s slovenskim sporočilom (nikoli tih padec);
+ *  · P0 AUDIT: meja zapisov 30/min na odjemalca — preusmeriteve NIKOLI
+ *    ne zavrnemo (rezervacija je pomembnejša od statistike), omejimo SAMO
+ *    zapis v bazo (ščiti AffiliateClick pred robotskim napihovanjem).
  */
 
 const AFF_COOKIE = "dsa_aff";
@@ -84,23 +88,30 @@ export async function GET(request: Request) {
     userId = null;
   }
 
-  // Zapis klika — najboljša mož (nez-uspeh NE blokira preusmeritve).
-  await recordAffiliateClick({
-    provider: built.provider,
-    destinationSlug: dest?.slug ?? null,
-    destinationName: destName,
-    destinationCountryName: destCountryName,
-    link: built.link,
-    userId,
-    sessionKey,
-    referrer: request.headers.get("referer"),
-  });
+  // Zapis klika — najboljša mož (neuspeh NE blokira preusmeritve).
+  // P0 AUDIT: zapis omejimo na 30/min na odjemalca (preusmeritve NIKOLI ne
+  // zavrnemo — rezervacija je pomembnejša od statistike); nad mejo klik še
+  // vedno pelje do partnerja, samo zapis v bazo ne raste (ščiti AffiliateClick).
+  const mayRecord = allowRequest(`aff-go:${clientKey(request)}`, 30);
+  if (mayRecord) {
+    await recordAffiliateClick({
+      provider: built.provider,
+      destinationSlug: dest?.slug ?? null,
+      destinationName: destName,
+      destinationCountryName: destCountryName,
+      link: built.link,
+      userId,
+      sessionKey,
+      referrer: request.headers.get("referer"),
+    });
+  }
 
   const res = NextResponse.redirect(built.link.url, 302);
   if (!existingKey) {
     res.cookies.set(AFF_COOKIE, sessionKey, {
       httpOnly: true,
       sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
       maxAge: AFF_COOKIE_MAX_AGE,
       path: "/",
     });

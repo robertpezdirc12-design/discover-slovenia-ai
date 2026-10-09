@@ -68,7 +68,16 @@ export function NotificationBell() {
 
   const aria =
     unread !== null && unread > 0
-      ? `${label}: ${unread} ${pick(l, { sl: "neprebranih", en: "unread" })}`
+      ? // P0 AUDIT (a11y): celoten slovar — prej sl/en mešanica v aria-label
+        // za it/de/fr/es uporabnike (bralnik zaslona je bral slovenščino).
+        `${label}: ${unread} ${pick(l, {
+          sl: "neprebranih",
+          en: "unread",
+          it: "non lette",
+          de: "ungelesen",
+          fr: "non lues",
+          es: "sin leer",
+        })}`
       : label;
 
   return (

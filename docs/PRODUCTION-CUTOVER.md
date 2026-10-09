@@ -210,6 +210,33 @@ v tem runbooku (dodaj datum + URL dokaza spodaj).
 
 ---
 
+## 10.5 RAZVOJ SHEME PO CUTOVERJU (re-baseline past — P0 AUDIT)
+
+> **Ključno pravilo:** ko je bil `0_init` ENKRAT apliciran na živo bazo,
+> ga **NIKOLI VEČ ne povozimo** z `bun run db:pg:baseline`. Povozitev spremeni
+> kontrolno vsoto migracije → `prisma migrate deploy` na produkciji **pade**
+> (fail-closed, brez izgube podatkov, a je to izpad).
+
+Kako se shema pravilno razvija PO cutoverju:
+
+```bash
+# 1. Spremeni prisma/schema.prisma (SQLite razvoj — kanon "samo dodajaj")
+# 2. Izpelji postgres varianto (mehansko, enako kot vedno):
+bun run db:pg:sync
+# 3. USTVARI NOVO migracijo (NIKOLI re-baseline):
+bun run db:pg:dev          # → prisma/postgres/migrations/1_<ime>/migration.sql
+# 4. CI vrata db:pg:check morajo ostati zelena:
+#    (baseline 0_init ≡ from-empty dif + nova migracija ≡ dif 0_init→shema)
+bun run db:pg:check
+# 5. Na produkciji:
+bun run db:pg:deploy
+```
+
+`scripts/pg-schema-sync.ts` ob povozitvi obstoječega, različnega `0_init`
+izpiše glasno opozorilo (⚠⚠⚠ RE-BASELINE) — to je zadnja obramba pred pastjo.
+
+---
+
 ## Dnevnik izvedbe (izpolni ob cutoverju)
 
 | Datum | Korak | Rezultat | Dokaz (URL/SHA) | Izvajalec |

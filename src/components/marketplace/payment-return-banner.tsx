@@ -22,8 +22,12 @@ import { pick } from "@/lib/i18n-pick";
 const L = {
   successTitle: { sl: "Hvala za nakup!", en: "Thank you for your purchase!" },
   successLead: {
-    sl: "Plačilo je bilo uspešno in naročilo je potrjeno.",
-    en: "The payment was successful and your order is confirmed.",
+    // P0 AUDIT (iskrenost): ta pasica izhaja iz URL parametra, ki ga je mogoče
+    // podtakniti — NE trdimo potrjenega naročila, ker potrditev pomeni
+    // preverjen webhook (podpis + znesek). Iskreno: plačilo oddano, stanje
+    // se osveži po potrditvi ponudnika plačil.
+    sl: "Plačilo je bilo uspešno oddano. Naročilo uradno potrdimo, ko prejmemo potrdilo plačila (običajno v nekaj trenutkih) — stanje vidiš v svojih naročilih.",
+    en: "Your payment was submitted successfully. We officially confirm the order once the payment confirmation arrives (usually within moments) — see your orders for the status.",
   },
   orderNo: { sl: "Številka naročila", en: "Order number" },
   cancelledTitle: { sl: "Plačilo je bilo preklicano", en: "Payment was cancelled" },

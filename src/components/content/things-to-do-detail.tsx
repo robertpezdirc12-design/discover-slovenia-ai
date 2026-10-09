@@ -322,7 +322,10 @@ export function ThingsToDoDetail({ d }: { d: Destination }) {
           {GUIDE_THEMES.map((theme) => (
             <Link
               key={theme.id}
-              href={`/destinacija/${d.slug}/guide/${theme.id}`}
+              // P0 AUDIT (BROKEN → popravljen): prej `/destinacija/${d.slug}/guide/${theme.id}`
+              // — ta rute NE obstaja (stran nikoli zgrajena) → vsak klik 404.
+              // Iskrena preusmeritev na hub vodnikov, ki obstaja.
+              href={`/vodici`}
               className="group rounded-xl border bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-green"
             >
               <p className="flex items-center gap-2 text-sm font-bold group-hover:text-primary">
@@ -333,7 +336,7 @@ export function ThingsToDoDetail({ d }: { d: Destination }) {
                 {theme.description}
               </p>
               <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary">
-                {pick(l, { sl: "Odpri vodnik", en: "Open the guide" })}
+                {pick(l, { sl: "Odpri vodnike", en: "Open the guides" })}
                 <ArrowRight className="size-3" aria-hidden="true" />
               </span>
             </Link>

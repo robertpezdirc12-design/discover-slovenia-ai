@@ -180,6 +180,24 @@ async function main(): Promise<number> {
           }
         }
       } else {
+        // P0 AUDIT (re-baseline past): če 0_init ŽE OBSTOJA in se od novega
+        // razlikuje, povišamo glas — po tem ko je bil 0_init apliciran na
+        // produkcijo, povozitev spremeni kontrolno vsoto in `migrate deploy`
+        // USTAVI (fail-closed, brez izgube — a presenetljivo). Po cutoverju
+        // se shema razvija z NOVIMI migracijami (bun run db:pg:dev → 1_xxx),
+        // nikoli več z re-baseline. Glej docs/PRODUCTION-CUTOVER.md §11.
+        if (existsSync(PG_BASELINE)) {
+          const existing = normalizeSql(await Bun.file(PG_BASELINE).text());
+          if (existing !== fresh) {
+            console.warn("");
+            console.warn("⚠⚠⚠  RE-BASELINE PREPIŠE OBSTOJEČI 0_init ⚠⚠⚠");
+            console.warn("  Če je bil 0_init KDARKOLI apliciran na živo bazo,");
+            console.warn("  bo `prisma migrate deploy` po tem padel na kontrolni");
+            console.warn("  vsoti (fail-closed). Po cutoverju shemo razvijaj z");
+            console.warn("  NOVIMI migracijami: bun run db:pg:dev (→ 1_xxx).");
+            console.warn("");
+          }
+        }
         await Bun.write(PG_BASELINE, fresh + "\n");
         console.log("✓ zapisan prisma/postgres/migrations/0_init/migration.sql (baseline)");
       }

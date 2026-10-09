@@ -1,3 +1,5 @@
+import { timingSafeEqual } from "crypto";
+
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -8,7 +10,10 @@ import { NextRequest, NextResponse } from "next/server";
  *  - CRON_SECRET MORA biti nastavljen v okolju — brez njega je cron ZAPRT
  *    (401 „fail-closed", nikoli „odprt za vse");
  *  - glava Authorization MORA biti natanko `Bearer <CRON_SECRET>`
- *    (konstantna primerjava — brez timing-pasteho pomankanja skrbi;
+ *    (timingSafeEqual primerjava po dolžini-izenačenih zapisov — brez
+ *    timing ortanske analize; P0 AUDIT M4: prejšnja !== primerjava je bila
+ *    NENAMERNO zgodnja prekinitvena past, komentar „konstantna primerjava"
+ *    je bil napačen — zdaj je trditev resnična);
  *    sporočilo napake NE razkrije, kateri del je bil napačen);
  *  - GET + POST sta podprta (Vercel cron pošilja GET z glavo).
  *
@@ -34,13 +39,29 @@ export function requireCronSecret(req: NextRequest): NextResponse | null {
     );
   }
   const auth = req.headers.get("authorization") ?? "";
-  if (auth !== `Bearer ${secret}`) {
+  if (!bearerMatches(auth, secret)) {
     return NextResponse.json(
       { ...DENIED_BODY, reason: "neveljaven žeton" },
       { status: 401 },
     );
   }
   return null;
+}
+
+/**
+ * Timing-safe primerjava `Bearer <token>` proti pričakovani skrivnosti.
+ * Dolžinska razlika se NE razkrije takoj — zapolnemo na skupno dolžino
+ * in primerjamo z timingSafeEqual (enako delovanje, enak čas).
+ */
+function bearerMatches(auth: string, secret: string): boolean {
+  const expected = Buffer.from(`Bearer ${secret}`, "utf8");
+  const provided = Buffer.from(auth, "utf8");
+  const len = Math.max(expected.length, provided.length);
+  const a = Buffer.alloc(len);
+  expected.copy(a);
+  const b = Buffer.alloc(len);
+  provided.copy(b);
+  return timingSafeEqual(a, b) && expected.length === provided.length;
 }
 
 /** Ali je CRON_SECRET nastavljen? (za health preverbo — brez razkritja vrednosti.) */

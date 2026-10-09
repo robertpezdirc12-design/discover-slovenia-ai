@@ -1,8 +1,11 @@
+import { randomBytes } from "crypto";
+
 import { NextResponse } from "next/server";
 
 import { db } from "@/lib/db";
 import { getSessionUserId, normalizePlanInput } from "@/lib/trip-auth";
 import { getDestination } from "@/lib/slovenia-data";
+import { rateLimited, tooManyRequests } from "@/lib/rate-limit";
 
 /**
  * /api/trips — poti prijavljenega uporabnika v oblaku (48-a).
@@ -18,9 +21,19 @@ import { getDestination } from "@/lib/slovenia-data";
 const SHARE_ID_RE = /^[a-z0-9][a-z0-9-]{0,31}$/;
 
 function randomShareId(): string {
-  return Array.from({ length: 10 }, () =>
-    "abcdefghijklmnopqrstuvwxyz0123456789".charAt(Math.floor(Math.random() * 36))
-  ).join("");
+  // P0 AUDIT H1: crypto-naključni vir (Math.random je napovedljiv PRNG —
+  // javni shareId mora biti neugibljiv). Enaka abeceda/dolžina kot prej.
+  const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
+  const bytes = randomBytes(16);
+  let out = "";
+  for (let i = 0; i < 10; i++) {
+    const b = bytes[i];
+    out +=
+      b >= 256 - (256 % alphabet.length)
+        ? alphabet[randomBytes(1)[0] % alphabet.length]
+        : alphabet[b % alphabet.length];
+  }
+  return out;
 }
 
 export async function GET() {
@@ -91,6 +104,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  // P0 AUDIT M8: meja 10/min — prijavljene pote je bilo mogoče ustvarjati neomejeno.
+  if (rateLimited(request, 10)) {
+    return tooManyRequests();
+  }
   const userId = await getSessionUserId();
   if (!userId) {
     return NextResponse.json(

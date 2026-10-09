@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { db } from "@/lib/db";
 import { getTripForWrite } from "@/lib/trip-auth";
+import { rateLimited, tooManyRequests } from "@/lib/rate-limit";
 
 /**
  * POST /api/trips/[shareId]/polls/[pollId]/vote — glas v anketi.
@@ -17,6 +18,10 @@ interface RouteParams {
 }
 
 export async function POST(request: Request, { params }: RouteParams) {
+  // P0 AUDIT M8: meja 30/min na glasovanje (transakcijsko brisanje+vpis).
+  if (rateLimited(request, 30)) {
+    return tooManyRequests();
+  }
   const { shareId, pollId } = await params;
   const guard = await getTripForWrite(shareId, "VIEWER");
   if (!guard.ok) {

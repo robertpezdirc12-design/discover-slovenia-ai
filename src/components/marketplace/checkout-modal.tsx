@@ -80,8 +80,12 @@ const L = {
   },
   cancelErr: { sl: "Zahtevek ni uspel. Poskusi znova.", en: "The request failed. Try again." },
   secureNote: {
-    sl: "Plačilo poganja Stripe — kartice ne vidimo mi.",
-    en: "Payments are powered by Stripe — your card never reaches us.",
+    // P0 AUDIT (iskrenost): pred oddajo še ne vemo, kateri kanal bo strežnik
+    // izbral (Stripe ali demo) — zato NE trdimo, da plačilo poganja Stripe,
+    // ampak dejstvo, ki drži v obeh primerih; demo veja svoje stanje razkrije
+    // iskreno po odgovoru (demoNote z DEMO znakom).
+    sl: "Plačilo obdela plačilni ponudnik — kartice ne vidimo mi.",
+    en: "Payment is handled by the payment provider — your card never reaches us.",
   },
 } as const;
 

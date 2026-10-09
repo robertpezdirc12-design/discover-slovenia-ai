@@ -18,6 +18,7 @@ import {
   sweepExpiredPendingOrders,
 } from "@/lib/marketplace-checkout-server";
 import { canRequestCancellation } from "@/lib/marketplace-types";
+import { rateLimited, tooManyRequests } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -59,8 +60,16 @@ class CheckoutError extends Error {
   }
 }
 
-/** Javni izvor za success/cancel URL (glava zahteve > notranji naslov). */
+/**
+ * Javni izvor za success/cancel URL.
+ * P0 AUDIT L2: prednost ima izrecni NEXT_PUBLIC_SITE_URL (znani izvor) —
+ * glave zahteve (Origin/X-Forwarded-Host) so nadzor odjemalca in bi omogočale
+ * lažni „uspešno plačano“ preusmeritveno past; uporabljene samo kot rezerva,
+ * ko env ni nastavljen (razvoj).
+ */
 function resolveOrigin(req: Request): string {
+  const envSite = process.env.NEXT_PUBLIC_SITE_URL;
+  if (envSite && /^https:\/\//.test(envSite)) return envSite.replace(/\/$/, "");
   const headerOrigin = req.headers.get("origin");
   if (headerOrigin) return headerOrigin;
   const host =
@@ -73,6 +82,12 @@ function resolveOrigin(req: Request): string {
 }
 
 export async function POST(req: Request) {
+  // 0 ── RATE LIMIT (P0 AUDIT M3): gost brez omejitve bi lahko z vrtenjem
+  // visitorKey zaklenil zalogo v 60-minutnih pending naročilih.
+  if (rateLimited(req, 10)) {
+    return tooManyRequests();
+  }
+
   // 1 ── FAIL-CLOSED: brez Stripe ključa in brez demo načina ne prodajamo.
   if (!isStripeConfigured() && !isStripeDemo()) {
     return NextResponse.json(

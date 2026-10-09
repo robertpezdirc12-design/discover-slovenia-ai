@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { db } from "@/lib/db";
 import { getTripForRead, getTripForWrite } from "@/lib/trip-auth";
+import { rateLimited, tooManyRequests } from "@/lib/rate-limit";
 import {
   buildAttestationNote,
   noteTextOf,
@@ -154,6 +155,10 @@ export async function GET(_request: Request, { params }: RouteParams) {
 }
 
 export async function POST(request: Request, { params }: RouteParams) {
+  // P0 AUDIT M8: meja 30/min na mutacije rezervacij (pisanje v bazo).
+  if (rateLimited(request, 30)) {
+    return tooManyRequests();
+  }
   const { shareId } = await params;
   const guard = await getTripForWrite(shareId, "EDITOR");
   if (!guard.ok) {

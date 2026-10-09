@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getTripForRead, getTripForWrite, parseJourneyPlan } from "@/lib/trip-auth";
 import { sanitizeUntrustedText } from "@/lib/system-data-guard";
+import { rateLimited, tooManyRequests } from "@/lib/rate-limit";
 import {
   AI_ADVISOR_NAME,
   answerAiQuestion,
@@ -55,6 +56,11 @@ export async function GET(_request: Request, { params }: RouteParams) {
 }
 
 export async function POST(request: Request, { params }: RouteParams) {
+  // P0 AUDIT M8: meja 30/min — sporočila so pisanje v bazo (role-gated,
+  // a neomejeno v oknu).
+  if (rateLimited(request, 30)) {
+    return tooManyRequests();
+  }
   const { shareId } = await params;
   const guard = await getTripForWrite(shareId, "VIEWER");
   if (!guard.ok) {

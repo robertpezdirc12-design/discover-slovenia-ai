@@ -64,6 +64,13 @@ describe("migrate-legacy-data — E2E (dve bazi, skripta, idempotenca)", () => {
     );
     expect(pushNew.exitCode).toBe(0);
 
+    // 2b) Prisma klient MORA biti generiran iz GLAVNE (SQLite) sheme pred
+    //     zagonom skripte — cutover faze (db:pg:generate) pustijo POSTGRES
+    //     klienta v node_modules, ki na file: URL pade (dokazano 2026-10-10;
+    //     CI to prikrije, ker generate teče pred testi — tu je eksplicitno).
+    const genMain = run(["bunx", "prisma", "generate"], {});
+    expect(genMain.exitCode).toBe(0);
+
     // 3) Fixture legacy vrstice (RAW INSERT — camelCase stolpci po shemi).
     const legacy = new Database(legacyDbUrl.slice("file:".length));
     const ins = (sql: string) => legacy.run(sql);
@@ -152,7 +159,7 @@ describe("migrate-legacy-data — E2E (dve bazi, skripta, idempotenca)", () => {
     expect(check("ProcessedStripeEvent")).toBe(1);
     expect(check("AuditLog")).toBe(1);
     expect(check("Listing")).toBe(1);
-    expect(check("UserPreference")).toBe(0); // preferences JSON se izroči, a ga skripta NE razčlenjuje (ročno/prihodnje)
+    expect(check("UserPreference")).toBe(2); // u1: budget €€ + interests ["gore"] → IMPORTED (matrika §1; u2 brez preferences)
     expect(check("WatchItem")).toBe(0);
     expect(check("Notification")).toBe(0);
 

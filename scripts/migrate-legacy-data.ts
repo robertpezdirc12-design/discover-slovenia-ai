@@ -30,6 +30,11 @@
 
 import { Database as SqliteDatabase } from "bun:sqlite";
 import { Client as PgClient } from "pg";
+import {
+  PREFERENCE_KEYS,
+  validatePreferenceValue,
+  type PreferenceKey,
+} from "../src/lib/user-preferences";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ČISTE PRESLIKAVE (brez I/O — testirane v tests/legacy-migration.test.ts)
@@ -95,6 +100,66 @@ export function mapUser(row: LegacyRow): {
     },
     legacyPreferencesJson: str(row.preferences),
   };
+}
+
+/**
+ * Legacy preferences JSON → kanonske UserPreference vrstice (matrika §1:
+ * "legacy preferences JSON → ločena plast UserPreference, source IMPORTED").
+ *
+ * ISKRENOSTNI KANON (dokazano na PostgreSQL 17, 2026-10-10):
+ *  - prenesijo se SAMO ključi iz kanonske množice PREFERENCE_KEYS, katerih
+ *    vrednost kanonsko VALIDIRA (validatePreferenceValue — isti varovalni
+ *    sloj kot /api/preferences PUT); NE ugibamo preslikav neznanih vrednosti;
+ *  - prazni seznami/besedila se ne prenesejo (ni vsebine = ni zapisa);
+ *  - vsak izpust ima razlog s števcem (arhiv živi v backupu — matrika).
+ */
+export function planUserPreferences(
+  prefsJson: string | null,
+): {
+  entries: { key: PreferenceKey; value: string }[];
+  skipped: SkipReason[];
+} {
+  const entries: { key: PreferenceKey; value: string }[] = [];
+  const skipped: SkipReason[] = [];
+  const bump = (reason: string) => {
+    const found = skipped.find((s) => s.reason === reason);
+    if (found) found.count += 1;
+    else skipped.push({ reason, count: 1 });
+  };
+  if (!prefsJson) return { entries, skipped };
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(prefsJson);
+  } catch {
+    bump("preferences JSON nerazčrljiv — arhiv: backup");
+    return { entries, skipped };
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    bump("preferences ni JSON objekt — arhiv: backup");
+    return { entries, skipped };
+  }
+  const src = parsed as Record<string, unknown>;
+  for (const [rawKey, rawValue] of Object.entries(src)) {
+    if (!(PREFERENCE_KEYS as readonly string[]).includes(rawKey)) {
+      bump(`neznan ključ „${rawKey}" (ni v kanonu PREFERENCE_KEYS) — arhiv: backup`);
+      continue;
+    }
+    const key = rawKey as PreferenceKey;
+    const validation = validatePreferenceValue(key, rawValue);
+    if (!validation.ok) {
+      bump(`neveljavna vrednost za „${key}" — arhiv: backup`);
+      continue;
+    }
+    if (validation.canonical === "[]" || validation.canonical === "\"\"") {
+      bump(`prazna vrednost „${key}" — nič za prenos`);
+      continue;
+    }
+    if (!entries.some((e) => e.key === key)) {
+      entries.push({ key, value: validation.canonical });
+    }
+  }
+  return { entries, skipped };
 }
 
 /**
@@ -707,32 +772,62 @@ async function main(): Promise<number> {
     else skipped.push({ reason, count: 1 });
   };
 
-  // Uporabniki
+  // Uporabniki (+ preferences JSON → UserPreference IMPORTED — matrika §1)
+  const prefSkipped: SkipReason[] = [];
+  let prefScanned = 0;
+  let prefToMigrate = 0;
+  /** preferences JSON → UserPreference (source IMPORTED) — SAMO kanonsko
+   *  validirane vrednosti (planUserPreferences); idempotenca po (userId, key).
+   *  Kliče se ŠELE ZA (obstoječim ali novim) uporabnikom — FK vrstni red. */
+  const transferLegacyPreferences = async (
+    userId: string,
+    prefsJson: string | null,
+  ): Promise<void> => {
+    if (!prefsJson) return;
+    prefScanned += 1;
+    const plan = planUserPreferences(prefsJson);
+    for (const s of plan.skipped) {
+      for (let i = 0; i < s.count; i++) bump(prefSkipped, s.reason);
+    }
+    for (const entry of plan.entries) {
+      const prefExists = await db.userPreference.findUnique({
+        where: { userId_key: { userId, key: entry.key } },
+      });
+      if (prefExists) {
+        bump(prefSkipped, "obstoječa preferenca (userId+key) — izpuščena");
+        continue;
+      }
+      if (!dryRun) {
+        await db.userPreference.create({
+          data: { userId, key: entry.key, value: entry.value, source: "IMPORTED" },
+        });
+      }
+      prefToMigrate += 1;
+    }
+  };
   {
     const skipped: SkipReason[] = [];
     const rows = await reader.rows("User");
     let toMigrate = 0;
     for (const row of rows) {
       const mapped = mapUser(row);
-      if (dryRun) {
-        const exists =
-          (await db.user.findUnique({ where: { id: mapped.user.id } })) ??
-          (await db.user.findUnique({ where: { email: mapped.user.email } }));
-        if (exists) bump(skipped, "obstoječi uporabnik (id/email) — novi zapis izpuščen");
-        else toMigrate += 1;
-      } else {
-        const exists =
-          (await db.user.findUnique({ where: { id: mapped.user.id } })) ??
-          (await db.user.findUnique({ where: { email: mapped.user.email } }));
-        if (exists) {
-          bump(skipped, "obstoječi uporabnik (id/email) — novi zapis izpuščen");
-          continue;
-        }
-        await db.user.create({ data: mapped.user });
-        toMigrate += 1;
+      const exists =
+        (await db.user.findUnique({ where: { id: mapped.user.id } })) ??
+        (await db.user.findUnique({ where: { email: mapped.user.email } }));
+      if (exists) {
+        bump(skipped, "obstoječi uporabnik (id/email) — novi zapis izpuščen");
+        // preferenze se pripnejo na OBSTOJEČEGA uporabnika (email zadetek z
+        // drugim id) — idempotenca po (userId, key) pokriva ponovne zagone:
+        await transferLegacyPreferences(exists.id, mapped.legacyPreferencesJson);
+        continue;
       }
+      if (!dryRun) await db.user.create({ data: mapped.user });
+      toMigrate += 1;
+      // preferenze ŠELE ZA uporabnikom (FK vrstni red — dokazano 2026-10-10):
+      await transferLegacyPreferences(mapped.user.id, mapped.legacyPreferencesJson);
     }
     report("User", rows.length, toMigrate, skipped);
+    report("User→UserPreference(IMPORTED)", prefScanned, prefToMigrate, prefSkipped);
   }
 
   // Poti (SavedItinerary → TravelJourney) + slo shareId → id

@@ -143,6 +143,18 @@ Pripravljena ukaza v `package.json`:
   env: `DATABASE_URL` (nova, Postgres), `NEXTAUTH_URL`, `NEXTAUTH_SECRET`,
   `CRON_SECRET`, ostalo po `docs/OPERATIONS.md`. Render (alternativa):
   Build = isti ukaz; Start = `bun run start` (standalone).
+
+> **CRON skrivnosti ŽE pripravljene v GitHubu (2026-10-10):** za
+> `.github/workflows/prod-cron.yml` sta kot GitHub Actions skrivnosti
+> (write-only) že nastavljeni `PROD_BASE_URL`
+> (= `https://i-feel-slovenia.vercel.app`) in `CRON_SECRET` (generiran
+> naključni niz; vrednost je bila izročena lastniku prek zasebnega kanala).
+> Ob TEM koraku vnesi **isto vrednost `CRON_SECRET`** tudi v Vercel env
+> (Settings → Environment Variables). Workflow ima health-varovalko: dokler
+> produkcija na `PROD_BASE_URL` poroča verzijo 1.x, se GitHub cron jobi
+> mirno preskočijo (zelen izhod); po prevezavi na 2.x se urniki **sami
+> aktivirajo** — nobenega ročnega koraka v GitHubu ni treba.
+
 - **Prevezava domene:** stara produkcija OSTANE prižgana do koraka 9
   (kanarčna faza: najprej nova URL brez domene, nato preslikava DNS).
 - **PWA/SW:** verzija se dviguje z vsakim releaseom (kanarček

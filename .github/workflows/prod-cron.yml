@@ -15,14 +15,27 @@
 # <CRON_SECRET> je OBVEZNA (requireCronSecret — 401 brez žetona); žeton
 # potuje SAMO v glavi, nikoli v URL-ju.
 #
+# SAMO-AKTIVACIJA PO PREVEZAVI (health-varovalka, 2026-10-10):
+#   Pred klicem joba workflow SAMO-BRALNO preveri GET /api/health na
+#   PROD_BASE_URL. Dokler produkcija poroča verzijo 1.x (stara veja —
+#   prevezava po docs/PRODUCTION-CUTOVER.md §7 še NI izvedena), se job
+#   MIRNO preskoči (zelen izhod — brez vsake-2-ure rdečih runov med
+#   pripravo cutoverja). Ko prevezava zadene (2.x na produkciji), se
+#   urniki sami aktivirajo — brez ročnih korakov v GitHubu.
+#
 # KVOTA (zasebni repo = 2.000 min/mes brezplačnih Actions):
 #   ~369 runov/mes ≈ 370 min ≈ 19 % kvote (keep-warm vzorec na 13 min bi
 #   porabil ~3.330 min — zato NE). Alternativi: javen repo (neomejeno) ali
 #   zunanja storitev (cron-job.org / UptimeRobot — 0 min kvote).
 #
-# Skrivnosti (Settings → Secrets and variables → Actions):
-#   PROD_BASE_URL = https://<nova-produkcija>   (brez zaključnega /)
-#   CRON_SECRET   = ista vrednost kot Vercel env (naključni niz ≥ 32 znakov)
+# Skrivnosti (Settings → Secrets and variables → Actions) — NASTAVLJENE 2026-10-10:
+#   PROD_BASE_URL = https://i-feel-slovenia.vercel.app (brez zaključnega /;
+#                   Vercel je »vedno topla« — Render brezplačna SPI po 15 min
+#                   in NI primerna za vsako-2-urni cron)
+#   CRON_SECRET   = generiran naključni niz (64 hex ≥ 32 zahtevanih); ob
+#                   prevezavi §7 vnesi ISTO vrednost tudi v Vercel env
+#                   (skrivnost je write-only — vrednost je izročena
+#                   lastniku prek zasebnega kanala, NE v repo/issue)
 #
 # OPOMBA: urniki `schedule` delujejo SAMO na privzeti veji (main) —
 # GitHub omejitev za zasebnih repozitorijev.
@@ -72,7 +85,37 @@ jobs:
           echo "job=$JOB" >> "$GITHUB_OUTPUT"
           echo "path=/api/cron/$JOB" >> "$GITHUB_OUTPUT"
 
+      - name: Varovalka prevezave (samo-bralni /api/health)
+        id: gate
+        env:
+          BASE_URL: ${{ secrets.PROD_BASE_URL }}
+        run: |
+          set -u
+          BASE_URL="${BASE_URL%/}"
+          : "${BASE_URL:?secrets.PROD_BASE_URL manjka}"
+          # NEZNANO (nedosegljivo) ali stara veja (1.x) → job se preskoči
+          # (zelen izhod); samodejno se aktivira po prevezavi §7:
+          for attempt in 1 2; do
+            if BODY=$(curl -sf --max-time 30 "$BASE_URL/api/health"); then break; fi
+            [ "$attempt" = "2" ] && {
+              echo "⚠️  /api/health nedosegljiv — stanje prevezave NEZNANO, job preskočen"
+              echo "armed=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            }
+            sleep 20
+          done
+          VER=$(printf '%s' "$BODY" | grep -o '"version": *"[^"]*"' | head -1 \
+                | sed 's/.*"\([0-9][^"]*\)"/\1/')
+          echo "produkcija na PROD_BASE_URL poroča verzijo: ${VER:-neznana}"
+          case "$VER" in
+            2.*) echo "✓ cutover izveden (2.x) — job se izvede"
+                 echo "armed=true" >> "$GITHUB_OUTPUT" ;;
+            *)   echo "ℹ️  produkcija še na stari veji (${VER:-?}) — job preskočen; aktivira se sam po §7 prevezavi"
+                 echo "armed=false" >> "$GITHUB_OUTPUT" ;;
+          esac
+
       - name: Pokliči produkcijski endpoint (1 ponovitev po 30 s)
+        if: steps.gate.outputs.armed == 'true'
         env:
           BASE_URL: ${{ secrets.PROD_BASE_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}

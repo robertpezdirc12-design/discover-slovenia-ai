@@ -29,3 +29,4 @@ agent-ctx/
 # sistem
 .DS_Store
 tsconfig.tsbuildinfo
+seed-legacy.sql

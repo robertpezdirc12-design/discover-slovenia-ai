@@ -14,6 +14,13 @@
 > **Status po popravkih tega pregleda:** 1249/1249 testov (+30 novih
 > pogodbene zaklenitve), tsc 0, lint 0, `db:pg:check` OK. Popravljeni
 > najdi so v razdelku »Popravki iz tega pregleda«.
+>
+> **P3 dodatek (2.20.0):** §9 točki 3 (prevod it/de/fr/es) in 4-del-1
+> (hreflang) zaključeni — ~7.400 prevodov v 71 datotekah, ~73 aktiviranih
+> klicnih mest, hreflang na 36 straneh; 1257/1257 testov (10293 expect),
+> tsc 0, lint 0, build OK. Preostali i18n sledilni nalogi: PlannerLang
+> vrata v jedru (itinerary-engine/booking statusLabel/weather izbor),
+> FR register harmonizacija (tu/vous), ~15 toLocaleDateString vrat.
 
 ## 1. Matrika tokov (UI → API → podatki → integracija → test)
 
@@ -212,9 +219,17 @@ meja peskovnika, ne izpuščen korak.
 **Priporočeni naslednji koraki v kodi (ni blokirano, prioriteta nizka/srednja):**
 1. Polni CSP z nonce (zahteva arhitekturno delo — Leaflet/Stripe).
 2. Skupna shramba rate limitov (Upstash/DB) ob rasti prometa.
-3. Prevod 59 sl/en datotek v it/de/fr/es (vsebinsko delo).
-4. hreflang razširitev po prevodu; Kobarid/Soča regija (potrebuje
-   preverbo proti produkciji — kanon datoteke prepoveduje ročni popravek).
+3. ~~Prevod 59 sl/en datotek v it/de/fr/es~~ ✅ **P3 (2.20.0) zaključeno:**
+   ~7.400 prevodov v 71 datotekah + aktivacija ~73 klicnih mest
+   (ternariji → `pick()`); ostanek (sledilna naloga 4-c): PlannerLang
+   vrata v jedru (itinerary-engine GEO_MSG/seasonName, booking.ts
+   statusLabel podpis, weather.ts izbor) in FR register harmonizacija
+   (tu/vous) + ~15 toLocaleDateString vrat na straneh lastnika.
+4. ~~hreflang razširitev po prevodu~~ ✅ **P3 (2.20.0) zaključeno:**
+   `alternatesFor()` na vseh 36 straneh (26 klientnih razdeljenih na
+   page.tsx + view.tsx po kanonu Next 16); Kobarid/Soča regija ŠE VEDNO
+   BLOKIRANA (potrebuje preverbo proti produkciji — kanon datoteke
+   prepoveduje ročni popravek).
 5. Odstranitev `ignoreBuildErrors` po stabilizaciji.
 
 ## 10. Definition of Done (issue #2)

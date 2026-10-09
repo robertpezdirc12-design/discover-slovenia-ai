@@ -25,7 +25,7 @@ const SCHEMA = "prisma/schema.prisma";
 const NAV = "src/components/layout/navigation.tsx";
 const NAV_GROUPS = "src/components/layout/nav-groups.ts";
 const BELL = "src/components/layout/notification-bell.tsx";
-const PAGE = "src/app/[locale]/notifikacije/page.tsx";
+const PAGE = "src/app/[locale]/notifikacije/view.tsx";
 const MARKET = "src/components/marketplace/own-marketplace-section.tsx";
 const TRIP_VIEW = "src/components/content/shared-trip-view.tsx";
 

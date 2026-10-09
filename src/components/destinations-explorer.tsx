@@ -191,7 +191,7 @@ export function DestinationsExplorer() {
               <SelectItem value="all">{pick(l, L.allRegions)}</SelectItem>
               {activeRegions.map((r) => (
                 <SelectItem key={r} value={r}>
-                  {REGIONS[r][l === "en" ? "en" : "sl"]}
+                  {pick(l, REGIONS[r])}
                 </SelectItem>
               ))}
             </SelectContent>

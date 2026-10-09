@@ -73,93 +73,137 @@ import { fetchDailyWeather, weatherLabel } from "@/lib/weather";
 // ── Slovar ──────────────────────────────────────────────────────────────────
 
 const L = {
-  kicker: { sl: "Tvoja plošča", en: "Your board" },
-  title: { sl: "Dobrodošel nazaj", en: "Welcome back" },
+  kicker: { sl: "Tvoja plošča", en: "Your board", it: "Il tuo pannello", de: "Deine Übersicht", fr: "Ton espace", es: "Tu panel" },
+  title: { sl: "Dobrodošel nazaj", en: "Welcome back", it: "Bentornato", de: "Willkommen zurück", fr: "Bon retour", es: "Bienvenido de nuevo" },
   lead: {
     sl: "Tvoje poti, obvestila, spremljanja in osebne ideje — vse na enem mestu (gostjev Discover ostaja spodaj nedotaknjen).",
     en: "Your trips, notifications, watches and personal ideas — all in one place (the public Discover continues below).",
+    it: "I tuoi viaggi, le notifiche, le osservazioni e le idee personali — tutto in un solo posto (il Discover pubblico continua qui sotto).",
+    de: "Deine Reisen, Benachrichtigungen, Beobachtungen und persönlichen Ideen — alles an einem Ort (der öffentliche Discover läuft unten weiter).",
+    fr: "Tes voyages, notifications, suivis et idées personnelles — tout au même endroit (le Discover public continue ci-dessous).",
+    es: "Tus viajes, notificaciones, seguimientos e ideas personales — todo en un solo lugar (el Discover público sigue abajo).",
   },
 
   // nadaljuj pot
-  continueTitle: { sl: "Nadaljuj pot", en: "Continue your trip" },
+  continueTitle: { sl: "Nadaljuj pot", en: "Continue your trip", it: "Continua il tuo viaggio", de: "Setze deine Reise fort", fr: "Continue ton voyage", es: "Continúa tu viaje" },
   continueNone: {
     sl: "Nimaš še poti v oblaku — sestavi prvo na načrtovalniku.",
     en: "No cloud trips yet — build your first one in the planner.",
+    it: "Non hai ancora viaggi nel cloud — crea il primo nel pianificatore.",
+    de: "Noch keine Reisen in der Cloud — baue deine erste im Planer.",
+    fr: "Tu n’as pas encore de voyage dans le cloud — crée le premier dans le planificateur.",
+    es: "Aún no tienes viajes en la nube — crea el primero en el planificador.",
   },
-  continueCta: { sl: "Odpri pot", en: "Open trip" },
-  planCta: { sl: "Načrtuj pot", en: "Plan a trip" },
-  days: { sl: (n: number) => `${n} ${n === 1 ? "dan" : n === 2 ? "dneva" : "dni"}`, en: (n: number) => `${n} ${n === 1 ? "day" : "days"}` },
-  stops: { sl: (n: number) => `${n} ${n === 1 ? "postanek" : n < 4 ? "postanki" : "postankov"}`, en: (n: number) => `${n} ${n === 1 ? "stop" : "stops"}` },
-  noDates: { sl: "brez datumov", en: "no dates" },
+  continueCta: { sl: "Odpri pot", en: "Open trip", it: "Apri viaggio", de: "Reise öffnen", fr: "Ouvrir le voyage", es: "Abrir viaje" },
+  planCta: { sl: "Načrtuj pot", en: "Plan a trip", it: "Pianifica un viaggio", de: "Reise planen", fr: "Planifier un voyage", es: "Planifica un viaje" },
+  days: { sl: (n: number) => `${n} ${n === 1 ? "dan" : n === 2 ? "dneva" : "dni"}`, en: (n: number) => `${n} ${n === 1 ? "day" : "days"}`, it: (n: number) => `${n} ${n === 1 ? "giorno" : "giorni"}`, de: (n: number) => `${n} ${n === 1 ? "Tag" : "Tage"}`, fr: (n: number) => `${n} ${n === 1 ? "jour" : "jours"}`, es: (n: number) => `${n} ${n === 1 ? "día" : "días"}` },
+  stops: { sl: (n: number) => `${n} ${n === 1 ? "postanek" : n < 4 ? "postanki" : "postankov"}`, en: (n: number) => `${n} ${n === 1 ? "stop" : "stops"}`, it: (n: number) => `${n} ${n === 1 ? "tappa" : "tappe"}`, de: (n: number) => `${n} ${n === 1 ? "Stopp" : "Stopps"}`, fr: (n: number) => `${n} ${n === 1 ? "étape" : "étapes"}`, es: (n: number) => `${n} ${n === 1 ? "parada" : "paradas"}` },
+  noDates: { sl: "brez datumov", en: "no dates", it: "senza date", de: "ohne Datum", fr: "sans dates", es: "sin fechas" },
 
   // obvestila
-  alertsTitle: { sl: "Obvestila", en: "Notifications" },
-  alertsNone: { sl: "Ni novih obvestil — vse prebrano.", en: "No new notifications — all read." },
-  alertsUnread: { sl: (n: number) => `${n} ${n === 1 ? "neprebrano" : n === 2 ? "neprebrani" : "neprebranih"}`, en: (n: number) => `${n} unread` },
-  alertsCta: { sl: "Odpri center", en: "Open center" },
+  alertsTitle: { sl: "Obvestila", en: "Notifications", it: "Notifiche", de: "Benachrichtigungen", fr: "Notifications", es: "Notificaciones" },
+  alertsNone: { sl: "Ni novih obvestil — vse prebrano.", en: "No new notifications — all read.", it: "Nessuna nuova notifica — tutto letto.", de: "Keine neuen Benachrichtigungen — alles gelesen.", fr: "Pas de nouvelles notifications — tout est lu.", es: "No hay notificaciones nuevas — todo leído." },
+  alertsUnread: { sl: (n: number) => `${n} ${n === 1 ? "neprebrano" : n === 2 ? "neprebrani" : "neprebranih"}`, en: (n: number) => `${n} unread`, it: (n: number) => `${n} da leggere`, de: (n: number) => `${n} ungelesen`, fr: (n: number) => `${n} non ${n === 1 ? "lu" : "lues"}`, es: (n: number) => `${n} sin leer` },
+  alertsCta: { sl: "Odpri center", en: "Open center", it: "Apri il centro", de: "Zentrum öffnen", fr: "Ouvrir le centre", es: "Abrir el centro" },
 
   // spremljanja
-  watchTitle: { sl: "Spremljanja", en: "Watches" },
+  watchTitle: { sl: "Spremljanja", en: "Watches", it: "Osservazioni", de: "Beobachtungen", fr: "Suivis", es: "Seguimientos" },
   watchNone: {
     sl: "Ni spremljanj — dodaj »Spremljaj ceno« na tržnici ali »Spremljaj« na svoji poti.",
     en: "No watches — add “Watch price” in the marketplace or “Watch” on your trip.",
+    it: "Nessuna osservazione — aggiungi «Osserva prezzo» nel mercato oppure «Osserva» sul tuo viaggio.",
+    de: "Keine Beobachtungen — füge „Preis beobachten“ auf dem Marktplatz oder „Beobachten“ auf deiner Reise hinzu.",
+    fr: "Aucun suivi — ajoute « Suivre le prix » sur le marché ou « Suivre » sur ton voyage.",
+    es: "Sin seguimientos — añade «Vigilar precio» en el mercado o «Vigilar» en tu viaje.",
   },
-  pausedLabel: { sl: "v pavzi", en: "paused" },
-  priceKind: { sl: "cena", en: "price" },
-  weatherKind: { sl: "vreme", en: "weather" },
-  tripDayKind: { sl: "dnevi", en: "countdown" },
-  bookingKind: { sl: "rezervacije", en: "bookings" },
+  pausedLabel: { sl: "v pavzi", en: "paused", it: "in pausa", de: "pausiert", fr: "en pause", es: "en pausa" },
+  priceKind: { sl: "cena", en: "price", it: "prezzo", de: "Preis", fr: "prix", es: "precio" },
+  weatherKind: { sl: "vreme", en: "weather", it: "meteo", de: "Wetter", fr: "météo", es: "tiempo" },
+  tripDayKind: { sl: "dnevi", en: "countdown", it: "conto alla rovescia", de: "Countdown", fr: "compte à rebours", es: "cuenta atrás" },
+  bookingKind: { sl: "rezervacije", en: "bookings", it: "prenotazioni", de: "Buchungen", fr: "réservations", es: "reservas" },
 
   // vreme
-  weatherTitle: { sl: "Vreme naslednje pote", en: "Next trip weather" },
+  weatherTitle: { sl: "Vreme naslednje pote", en: "Next trip weather", it: "Meteo del prossimo viaggio", de: "Wetter der nächsten Reise", fr: "Météo du prochain voyage", es: "Tiempo del próximo viaje" },
   weatherNoTrip: {
     sl: "Nimaš prihajajoče pote z datumi — določi datume na svoji poti.",
     en: "No upcoming trip with dates — set dates on your trip.",
+    it: "Non hai un viaggio in arrivo con date — imposta le date del tuo viaggio.",
+    de: "Keine anstehende Reise mit Daten — lege die Daten für deine Reise fest.",
+    fr: "Pas de voyage à venir avec des dates — définis les dates de ton voyage.",
+    es: "No hay viaje próximo con fechas — define las fechas de tu viaje.",
   },
   weatherFar: {
     sl: "Napoved še ne pokriva datumov pote (horizont 16 dni) — preveri bližje odhodu.",
     en: "The forecast does not cover your trip dates yet (16-day horizon) — check closer to departure.",
+    it: "Le previsioni non coprono ancora le date del viaggio (orizzonte 16 giorni) — controlla più vicino alla partenza.",
+    de: "Die Vorhersage deckt deine Reisedaten noch nicht ab (16-Tage-Horizont) — prüfe es kurz vor der Abreise.",
+    fr: "Les prévisions ne couvrent pas encore les dates de ton voyage (horizon 16 jours) — vérifie plus près du départ.",
+    es: "La predicción aún no cubre las fechas de tu viaje (horizonte de 16 días) — comprueba más cerca de la salida.",
   },
   weatherUnreachable: {
     sl: "Vremenski vir trenutno ni dosegljivo — napoved NE izmišljujemo.",
     en: "The weather source is unreachable — we do not invent forecasts.",
+    it: "La fonte meteo non è raggiungibile — non inventiamo previsioni.",
+    de: "Die Wetterquelle ist derzeit nicht erreichbar — wir erfinden keine Vorhersagen.",
+    fr: "La source météo est injoignable — nous n’inventons pas de prévisions.",
+    es: "La fuente del tiempo no está accesible — no inventamos predicciones.",
   },
 
   // ideje
-  ideasTitle: { sl: "Ideje zate", en: "Ideas for you" },
+  ideasTitle: { sl: "Ideje zate", en: "Ideas for you", it: "Idee per te", de: "Ideen für dich", fr: "Idées pour toi", es: "Ideas para ti" },
   ideasOff: {
     sl: "Personalizacija je izklopljena — ideje iz preferenc niso prikazane. Vklopi jo v profilu.",
     en: "Personalization is off — ideas from preferences are hidden. Enable it in your profile.",
+    it: "La personalizzazione è disattivata — le idee dalle preferenze non sono mostrate. Attivala nel profilo.",
+    de: "Die Personalisierung ist aus — Ideen aus Präferenzen werden nicht angezeigt. Aktiviere sie im Profil.",
+    fr: "La personnalisation est désactivée — les idées issues des préférences sont masquées. Active-la dans ton profil.",
+    es: "La personalización está desactivada — las ideas de las preferencias no se muestran. Actívala en tu perfil.",
   },
   ideasNoPrefs: {
     sl: "Dopolni profil (proračun, interesi) za osebne ideje.",
     en: "Complete your profile (budget, interests) for personal ideas.",
+    it: "Completa il profilo (budget, interessi) per idee personali.",
+    de: "Vervollständige dein Profil (Budget, Interessen) für persönliche Ideen.",
+    fr: "Complète ton profil (budget, centres d’intérêt) pour des idées personnelles.",
+    es: "Completa tu perfil (presupuesto, intereses) para ideas personales.",
   },
-  ideasWhy: { sl: "Zakaj:", en: "Why:" },
-  profileCta: { sl: "Moj profil", en: "My profile" },
+  ideasWhy: { sl: "Zakaj:", en: "Why:", it: "Perché:", de: "Warum:", fr: "Pourquoi :", es: "Por qué:" },
+  profileCta: { sl: "Moj profil", en: "My profile", it: "Il mio profilo", de: "Mein Profil", fr: "Mon profil", es: "Mi perfil" },
 
   // v bližini
-  nearbyTitle: { sl: "V bližini", en: "Nearby" },
-  nearbyCta: { sl: "Poišči blizu mene", en: "Find near me" },
+  nearbyTitle: { sl: "V bližini", en: "Nearby", it: "Nelle vicinanze", de: "In der Nähe", fr: "À proximité", es: "Cerca de ti" },
+  nearbyCta: { sl: "Poišči blizu mene", en: "Find near me", it: "Cerca vicino a me", de: "In der Nähe suchen", fr: "Chercher près de moi", es: "Buscar cerca de mí" },
   nearbyDenied: {
     sl: "Dovoljenje za lokacijo je zavrnjeno — najbližjih ne morem izračunati.",
     en: "Location permission denied — cannot compute nearest spots.",
+    it: "Permesso di localizzazione negato — impossibile calcolare i più vicini.",
+    de: "Standortberechtigung abgelehnt — die nächsten Orte lassen sich nicht berechnen.",
+    fr: "Autorisation de localisation refusée — impossible de calculer les plus proches.",
+    es: "Permiso de ubicación denegado — no se pueden calcular los más cercanos.",
   },
   nearbyUnsupported: {
     sl: "Naprava ali brskalnik ne podpira geolokacije.",
     en: "Device or browser does not support geolocation.",
+    it: "Dispositivo o browser non supporta la geolocalizzazione.",
+    de: "Gerät oder Browser unterstützt keine Geolokalisierung.",
+    fr: "L’appareil ou le navigateur ne prend pas en charge la géolocalisation.",
+    es: "El dispositivo o el navegador no admite la geolocalización.",
   },
   nearbyPrivacy: {
     sl: "Lokacija živi samo v tem pomnilniku — nikoli ne gre na strežnik.",
     en: "Your location lives only in this page’s memory — it never reaches the server.",
+    it: "La posizione vive solo nella memoria di questa pagina — non arriva mai al server.",
+    de: "Der Standort lebt nur im Speicher dieser Seite — er erreicht nie den Server.",
+    fr: "Ta position ne vit que dans la mémoire de cette page — elle n’atteint jamais le serveur.",
+    es: "Tu ubicación vive solo en la memoria de esta página — nunca llega al servidor.",
   },
 
   // naloge
-  tasksTitle: { sl: "Odprte naloge", en: "Open tasks" },
-  tasksNone: { sl: "Vse je urejeno — nimam odprtih nalog.", en: "All set — no open tasks." },
-  taskDates: { sl: (t: string) => `Določi datume poti „${t}“`, en: (t: string) => `Set dates for trip “${t}”` },
-  taskProfile: { sl: "Dopolni potovalni profil (proračun/interesi)", en: "Complete your travel profile (budget/interests)" },
-  taskWatch: { sl: "Dodaj prvo spremljanje (cena/vreme/dnevi)", en: "Add your first watch (price/weather/countdown)" },
+  tasksTitle: { sl: "Odprte naloge", en: "Open tasks", it: "Attività aperte", de: "Offene Aufgaben", fr: "Tâches en cours", es: "Tareas pendientes" },
+  tasksNone: { sl: "Vse je urejeno — nimam odprtih nalog.", en: "All set — no open tasks.", it: "Tutto a posto — nessuna attività aperta.", de: "Alles erledigt — keine offenen Aufgaben.", fr: "Tout est en ordre — aucune tâche en cours.", es: "Todo en orden — sin tareas pendientes." },
+  taskDates: { sl: (t: string) => `Določi datume poti „${t}“`, en: (t: string) => `Set dates for trip “${t}”`, it: (t: string) => `Imposta le date del viaggio «${t}»`, de: (t: string) => `Lege die Daten für die Reise „${t}“ fest`, fr: (t: string) => `Définis les dates du voyage « ${t} »`, es: (t: string) => `Define las fechas del viaje «${t}»` },
+  taskProfile: { sl: "Dopolni potovalni profil (proračun/interesi)", en: "Complete your travel profile (budget/interests)", it: "Completa il profilo di viaggio (budget/interessi)", de: "Vervollständige dein Reiseprofil (Budget/Interessen)", fr: "Complète ton profil de voyage (budget/centres d’intérêt)", es: "Completa tu perfil de viaje (presupuesto/intereses)" },
+  taskWatch: { sl: "Dodaj prvo spremljanje (cena/vreme/dnevi)", en: "Add your first watch (price/weather/countdown)", it: "Aggiungi la prima osservazione (prezzo/meteo/conto alla rovescia)", de: "Füge die erste Beobachtung hinzu (Preis/Wetter/Countdown)", fr: "Ajoute ton premier suivi (prix/météo/compte à rebours)", es: "Añade tu primer seguimiento (precio/tiempo/cuenta atrás)" },
 } as const;
 
 // ── Tipi (oblike odgovorov) ─────────────────────────────────────────────────
@@ -194,7 +238,7 @@ interface PreferencesDto {
 }
 
 // Samo ključi z objektnimi vrednostmi (sl/en) — funkcijske oznake
-// (days/stops/alertsUnread/taskDates) se kličejo neposredno prek L.x[lang].
+// (days/stops/alertsUnread/taskDates) se kličejo prek pick(l, L.x).
 type LabelKey = {
   [K in keyof typeof L]: (typeof L)[K] extends { sl: string; en: string } ? K : never;
 }[keyof typeof L];
@@ -345,11 +389,11 @@ function ContinueTripCard({
             <p className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-1">
                 <CalendarDays className="size-3.5" aria-hidden="true" />
-                {L.days[l === "en" ? "en" : "sl"](latestTrip.dayCount)}
+                {pick(l, L.days)(latestTrip.dayCount)}
               </span>
               <span className="inline-flex items-center gap-1">
                 <MapPin className="size-3.5" aria-hidden="true" />
-                {L.stops[l === "en" ? "en" : "sl"](latestTrip.stopCount)}
+                {pick(l, L.stops)(latestTrip.stopCount)}
               </span>
               {latestTrip.dateStart ? (
                 <span className="font-mono text-xs">
@@ -427,7 +471,7 @@ function AlertsCard({
             </ul>
             <Button asChild size="sm" variant="outline" className="h-10">
               <Link href="/notifikacije">
-                {t("alertsCta")} · {L.alertsUnread[l === "en" ? "en" : "sl"](unread.length)}
+                {t("alertsCta")} · {pick(l, L.alertsUnread)(unread.length)}
               </Link>
             </Button>
           </div>
@@ -686,6 +730,10 @@ function IdeasCard({
           {pick(l, {
             sl: "Deterministično iz tvojih preferenc (0-AI) — z razlogom.",
             en: "Deterministic from your preferences (0-AI) — with reasons.",
+            it: "Deterministico dalle tue preferenze (0-AI) — con i motivi.",
+            de: "Deterministisch aus deinen Präferenzen (0-AI) — mit Begründung.",
+            fr: "Déterministe à partir de tes préférences (0-AI) — avec les raisons.",
+            es: "Determinista a partir de tus preferencias (0-AI) — con los motivos.",
           })}
         </CardDescription>
       </CardHeader>
@@ -837,6 +885,10 @@ function NearbyCard({
             {pick(l, {
               sl: "Lokacije ni bilo mogoče dobiti — poskusi znova.",
               en: "Could not get your location — try again.",
+              it: "Impossibile ottenere la posizione — riprova.",
+              de: "Standort konnte nicht ermittelt werden — versuche es erneut.",
+              fr: "Impossible d’obtenir ta position — réessaie.",
+              es: "No se pudo obtener tu ubicación — inténtalo de nuevo.",
             })}
           </p>
         )}
@@ -882,7 +934,7 @@ function TasksCard({
     // 1. Poti brez datumov (max 2 — bounded, deterministično po vrstnem redu).
     for (const tr of trips.filter((x) => !x.dateStart).slice(0, 2)) {
       out.push({
-        label: L.taskDates[l === "en" ? "en" : "sl"](tr.title),
+        label: pick(l, L.taskDates)(tr.title),
         href: `/pot/${tr.shareId}`,
       });
     }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
 import { GuidesView } from "@/components/content/guides-view";
+import { alternatesFor } from "@/lib/hreflang";
 
 /**
  * /vodici — vodiči in nasveti (22 road-trip vodnikov + 16 člankov).
@@ -18,7 +19,7 @@ export async function generateMetadata({
     title: "Vodiči",
     description:
       "Vodiči in nasveti za Slovenijo — zimski vodniki, krožna potovanja, jadranski road tripovi in zgodbe urednikov.",
-    alternates: { canonical: "/vodici" },
+    alternates: alternatesFor(locale, "/vodici"),
     keywords: ["vodiči", "road trip", "Slovenija", "itinererji", t("title")],
   };
 }

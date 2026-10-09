@@ -10,6 +10,8 @@
  * /api/destinations, zemljevid, načrtovalnik, rss.xml in seed baze.
  */
 
+import { pick } from "./i18n-pick";
+
 export type CountryCode = "SI" | "HR" | "ME" | "AL";
 
 export type DestinationType =
@@ -913,57 +915,57 @@ export function getFeaturedDestinations(): Destination[] {
 }
 
 /** 20 regij s prikaznimi imeni (ključi so kanonski ID-ji iz dataseta). */
-export const REGIONS: Record<string, { sl: string; en: string }> = {
-  "gorenjska": { sl: "Gorenjska", en: "Upper Carniola" },
-  "osrednja": { sl: "Osrednja Slovenija", en: "Central Slovenia" },
-  "kras": { sl: "Kras in Brkin", en: "Karst and Brkini" },
-  "primorska": { sl: "Primorska", en: "Littoral" },
-  "stajerska": { sl: "Štajerska", en: "Styria" },
-  "koroska": { sl: "Koroška", en: "Carinthia" },
-  "prekmurje": { sl: "Prekmurje", en: "Prekmurje" },
-  "dolenjska": { sl: "Dolenjska", en: "Lower Carniola" },
-  "bela-krajina": { sl: "Bela krajina", en: "White Carniola" },
-  "kontinentalna-hrvaska": { sl: "Celinska Hrvaška", en: "Inland Croatia" },
-  "lika": { sl: "Lika", en: "Lika" },
-  "kvartner": { sl: "Kvarner", en: "Kvarner" },
-  "istra": { sl: "Istra", en: "Istria" },
-  "dalmacija": { sl: "Dalmacija", en: "Dalmatia" },
-  "boka-kotorska": { sl: "Boka Kotorska", en: "Bay of Kotor" },
-  "crnogorsko-primorje": { sl: "Črnogorsko primorje", en: "Montenegrin Coast" },
-  "osrednja-crna-gora": { sl: "Osrednja Črna gora", en: "Central Montenegro" },
-  "severna-crna-gora": { sl: "Severna Črna gora", en: "Northern Montenegro" },
-  "osrednja-albanija": { sl: "Osrednja Albanija", en: "Central Albania" },
-  "juana-albanija": { sl: "Južna Albanija", en: "Southern Albania" },
+export const REGIONS: Record<string, { sl: string; en: string; it: string; de: string; fr: string; es: string }> = {
+  "gorenjska": { sl: "Gorenjska", en: "Upper Carniola", it: "Alta Carniola", de: "Oberkrain", fr: "Haute-Carniole", es: "Alta Carniola" },
+  "osrednja": { sl: "Osrednja Slovenija", en: "Central Slovenia", it: "Slovenia centrale", de: "Zentralslowenien", fr: "Slovénie centrale", es: "Eslovenia central" },
+  "kras": { sl: "Kras in Brkin", en: "Karst and Brkini", it: "Carso e Brchini", de: "Karst und Brkini", fr: "Karst et Brkini", es: "Karst y Brkini" },
+  "primorska": { sl: "Primorska", en: "Littoral", it: "Litorale", de: "Küstenland", fr: "Littoral", es: "Litoral" },
+  "stajerska": { sl: "Štajerska", en: "Styria", it: "Stiria", de: "Untersteiermark", fr: "Styrie", es: "Estiria" },
+  "koroska": { sl: "Koroška", en: "Carinthia", it: "Carinzia", de: "Unterkärnten", fr: "Carinthie", es: "Carintia" },
+  "prekmurje": { sl: "Prekmurje", en: "Prekmurje", it: "Prekmurje", de: "Prekmurje", fr: "Prékmurje", es: "Prekmurje" },
+  "dolenjska": { sl: "Dolenjska", en: "Lower Carniola", it: "Bassa Carniola", de: "Unterkrain", fr: "Basse-Carniole", es: "Baja Carniola" },
+  "bela-krajina": { sl: "Bela krajina", en: "White Carniola", it: "Carniola Bianca", de: "Weißkrain", fr: "Carniole blanche", es: "Carniola Blanca" },
+  "kontinentalna-hrvaska": { sl: "Celinska Hrvaška", en: "Inland Croatia", it: "Croazia continentale", de: "Kontinentalkroatien", fr: "Croatie continentale", es: "Croacia continental" },
+  "lika": { sl: "Lika", en: "Lika", it: "Lika", de: "Lika", fr: "Lika", es: "Lika" },
+  "kvartner": { sl: "Kvarner", en: "Kvarner", it: "Quarnaro", de: "Kvarner", fr: "Kvarner", es: "Kvarner" },
+  "istra": { sl: "Istra", en: "Istria", it: "Istria", de: "Istrien", fr: "Istrie", es: "Istria" },
+  "dalmacija": { sl: "Dalmacija", en: "Dalmatia", it: "Dalmazia", de: "Dalmatien", fr: "Dalmatie", es: "Dalmacia" },
+  "boka-kotorska": { sl: "Boka Kotorska", en: "Bay of Kotor", it: "Bocche di Cattaro", de: "Bucht von Kotor", fr: "Baie de Kotor", es: "Bahía de Kotor" },
+  "crnogorsko-primorje": { sl: "Črnogorsko primorje", en: "Montenegrin Coast", it: "Costa montenegrina", de: "Montenegrinische Küste", fr: "Côte monténégrine", es: "Costa montenegrina" },
+  "osrednja-crna-gora": { sl: "Osrednja Črna gora", en: "Central Montenegro", it: "Montenegro centrale", de: "Zentralmontenegro", fr: "Monténégro central", es: "Montenegro central" },
+  "severna-crna-gora": { sl: "Severna Črna gora", en: "Northern Montenegro", it: "Montenegro settentrionale", de: "Nordmontenegro", fr: "Monténégro septentrional", es: "Montenegro septentrional" },
+  "osrednja-albanija": { sl: "Osrednja Albanija", en: "Central Albania", it: "Albania centrale", de: "Zentralalbanien", fr: "Albanie centrale", es: "Albania central" },
+  "juana-albanija": { sl: "Južna Albanija", en: "Southern Albania", it: "Albania meridionale", de: "Südalbanien", fr: "Albanie méridionale", es: "Albania meridional" },
 };
 
 /** Prikazno ime regije (po locale; fallback = ključ). */
 export function regionLabel(region: string, locale = "sl"): string {
   const r = REGIONS[region];
   if (!r) return region;
-  return locale === "en" ? r.en : r.sl;
+  return pick(locale, r);
 }
 
-/** 9 tipov destinacij z oznakami (SL/EN) — pogonski slovar filtrov. */
+/** 9 tipov destinacij z oznakami (SL/EN/IT/DE/FR/ES) — pogonski slovar filtrov. */
 export const DEST_TYPES: Record<
   DestinationType,
-  { sl: string; en: string }
+  { sl: string; en: string; it: string; de: string; fr: string; es: string }
 > = {
-  castle: { sl: "Grad", en: "Castle" },
-  cave: { sl: "Jama", en: "Cave" },
-  city: { sl: "Mesto", en: "City" },
-  coast: { sl: "Obala", en: "Coast" },
-  gorge: { sl: "Soteska", en: "Gorge" },
-  lake: { sl: "Jezero", en: "Lake" },
-  mountain: { sl: "Gorovje", en: "Mountains" },
-  river: { sl: "Reka", en: "River" },
-  spa: { sl: "Zdravilišče", en: "Spa" },
+  castle: { sl: "Grad", en: "Castle", it: "Castello", de: "Burg", fr: "Château", es: "Castillo" },
+  cave: { sl: "Jama", en: "Cave", it: "Grotta", de: "Höhle", fr: "Grotte", es: "Cueva" },
+  city: { sl: "Mesto", en: "City", it: "Città", de: "Stadt", fr: "Ville", es: "Ciudad" },
+  coast: { sl: "Obala", en: "Coast", it: "Costa", de: "Küste", fr: "Côte", es: "Costa" },
+  gorge: { sl: "Soteska", en: "Gorge", it: "Gola", de: "Schlucht", fr: "Gorges", es: "Garganta" },
+  lake: { sl: "Jezero", en: "Lake", it: "Lago", de: "See", fr: "Lac", es: "Lago" },
+  mountain: { sl: "Gorovje", en: "Mountains", it: "Montagne", de: "Gebirge", fr: "Montagnes", es: "Montañas" },
+  river: { sl: "Reka", en: "River", it: "Fiume", de: "Fluss", fr: "Rivière", es: "Río" },
+  spa: { sl: "Zdravilišče", en: "Spa", it: "Terme", de: "Kurort", fr: "Station thermale", es: "Balneario" },
 };
 
-/** Prikazna oznaka tipa (SL/EN po locale). */
+/** Prikazna oznaka tipa (po locale; fallback sl). */
 export function typeLabel(type: string, locale = "sl"): string {
   const t = DEST_TYPES[type as DestinationType];
   if (!t) return type;
-  return locale === "en" ? t.en : t.sl;
+  return pick(locale, t);
 }
 
 /**

@@ -28,37 +28,37 @@ export type EventCategory =
 
 export const EVENT_CATEGORIES: Record<
   EventCategory,
-  { sl: string; en: string; icon: "music" | "trophy" | "sparkles" | "utensils" | "landmark" | "tent" }
+  { sl: string; en: string; it: string; de: string; fr: string; es: string; icon: "music" | "trophy" | "sparkles" | "utensils" | "landmark" | "tent" }
 > = {
-  glasba: { sl: "Glasba", en: "Music", icon: "music" },
-  sport: { sl: "Šport", en: "Sport", icon: "trophy" },
-  tradicija: { sl: "Tradicija", en: "Tradition", icon: "sparkles" },
-  hrana: { sl: "Hrana & pijača", en: "Food & drink", icon: "utensils" },
-  kultura: { sl: "Kultura", en: "Culture", icon: "landmark" },
-  festival: { sl: "Festival", en: "Festival", icon: "tent" },
+  glasba: { sl: "Glasba", en: "Music", it: "Musica", de: "Musik", fr: "Musique", es: "Música", icon: "music" },
+  sport: { sl: "Šport", en: "Sport", it: "Sport", de: "Sport", fr: "Sport", es: "Deporte", icon: "trophy" },
+  tradicija: { sl: "Tradicija", en: "Tradition", it: "Tradizione", de: "Tradition", fr: "Tradition", es: "Tradición", icon: "sparkles" },
+  hrana: { sl: "Hrana & pijača", en: "Food & drink", it: "Cibo e bevande", de: "Essen & Trinken", fr: "Gastronomie et boissons", es: "Comida y bebida", icon: "utensils" },
+  kultura: { sl: "Kultura", en: "Culture", it: "Cultura", de: "Kultur", fr: "Culture", es: "Cultura", icon: "landmark" },
+  festival: { sl: "Festival", en: "Festival", it: "Festival", de: "Festival", fr: "Festival", es: "Festival", icon: "tent" },
 };
 
 export type EventPrice = "free" | "euro" | "euro2";
 
-export const EVENT_PRICE_LABEL: Record<EventPrice, { sl: string; en: string }> = {
-  free: { sl: "Brezplačno", en: "Free" },
-  euro: { sl: "€", en: "€" },
-  euro2: { sl: "€€", en: "€€" },
+export const EVENT_PRICE_LABEL: Record<EventPrice, { sl: string; en: string; it: string; de: string; fr: string; es: string }> = {
+  free: { sl: "Brezplačno", en: "Free", it: "Gratuito", de: "Kostenlos", fr: "Gratuit", es: "Gratis" },
+  euro: { sl: "€", en: "€", it: "€", de: "€", fr: "€", es: "€" },
+  euro2: { sl: "€€", en: "€€", it: "€€", de: "€€", fr: "€€", es: "€€" },
 };
 
-export const EVENT_MONTHS: { index: number; sl: string; en: string }[] = [
-  { index: 1, sl: "Januar", en: "January" },
-  { index: 2, sl: "Februar", en: "February" },
-  { index: 3, sl: "Marec", en: "March" },
-  { index: 4, sl: "April", en: "April" },
-  { index: 5, sl: "Maj", en: "May" },
-  { index: 6, sl: "Junij", en: "June" },
-  { index: 7, sl: "Julij", en: "July" },
-  { index: 8, sl: "Avgust", en: "August" },
-  { index: 9, sl: "September", en: "September" },
-  { index: 10, sl: "Oktober", en: "October" },
-  { index: 11, sl: "November", en: "November" },
-  { index: 12, sl: "December", en: "December" },
+export const EVENT_MONTHS: { index: number; sl: string; en: string; it: string; de: string; fr: string; es: string }[] = [
+  { index: 1, sl: "Januar", en: "January", it: "Gennaio", de: "Januar", fr: "Janvier", es: "Enero" },
+  { index: 2, sl: "Februar", en: "February", it: "Febbraio", de: "Februar", fr: "Février", es: "Febrero" },
+  { index: 3, sl: "Marec", en: "March", it: "Marzo", de: "März", fr: "Mars", es: "Marzo" },
+  { index: 4, sl: "April", en: "April", it: "Aprile", de: "April", fr: "Avril", es: "Abril" },
+  { index: 5, sl: "Maj", en: "May", it: "Maggio", de: "Mai", fr: "Mai", es: "Mayo" },
+  { index: 6, sl: "Junij", en: "June", it: "Giugno", de: "Juni", fr: "Juin", es: "Junio" },
+  { index: 7, sl: "Julij", en: "July", it: "Luglio", de: "Juli", fr: "Juillet", es: "Julio" },
+  { index: 8, sl: "Avgust", en: "August", it: "Agosto", de: "August", fr: "Août", es: "Agosto" },
+  { index: 9, sl: "September", en: "September", it: "Settembre", de: "September", fr: "Septembre", es: "Septiembre" },
+  { index: 10, sl: "Oktober", en: "October", it: "Ottobre", de: "Oktober", fr: "Octobre", es: "Octubre" },
+  { index: 11, sl: "November", en: "November", it: "Novembre", de: "November", fr: "Novembre", es: "Noviembre" },
+  { index: 12, sl: "December", en: "December", it: "Dicembre", de: "Dezember", fr: "Décembre", es: "Diciembre" },
 ];
 
 export interface CommunityEvent {
@@ -952,13 +952,13 @@ export type BlogCategory =
 
 export const BLOG_CATEGORIES: Record<
   Exclude<BlogCategory, "vsi">,
-  { sl: string; en: string }
+  { sl: string; en: string; it: string; de: string; fr: string; es: string }
 > = {
-  narava: { sl: "Narava", en: "Nature" },
-  kulinarika: { sl: "Kulinarika", en: "Food" },
-  kultura: { sl: "Kultura", en: "Culture" },
-  avantura: { sl: "Avantura", en: "Adventure" },
-  nasveti: { sl: "Nasveti", en: "Tips" },
+  narava: { sl: "Narava", en: "Nature", it: "Natura", de: "Natur", fr: "Nature", es: "Naturaleza" },
+  kulinarika: { sl: "Kulinarika", en: "Food", it: "Gastronomia", de: "Kulinarik", fr: "Gastronomie", es: "Gastronomía" },
+  kultura: { sl: "Kultura", en: "Culture", it: "Cultura", de: "Kultur", fr: "Culture", es: "Cultura" },
+  avantura: { sl: "Avantura", en: "Adventure", it: "Avventura", de: "Abenteuer", fr: "Aventure", es: "Aventura" },
+  nasveti: { sl: "Nasveti", en: "Tips", it: "Consigli", de: "Tipps", fr: "Conseils", es: "Consejos" },
 };
 
 export interface BlogArticle {
@@ -1156,7 +1156,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
 
 export interface ExperienceType {
   id: string;
-  title: { sl: string; en: string };
+  title: { sl: string; en: string; it: string; de: string; fr: string; es: string };
   description: string;
   /** Destinacije iz nabora 38, kjer je tip doživetja doma. */
   destSlugs: string[];
@@ -1165,37 +1165,37 @@ export interface ExperienceType {
 export const EXPERIENCE_TYPES: ExperienceType[] = [
   {
     id: "pohodnistvo",
-    title: { sl: "Pohodništvo", en: "Hiking" },
+    title: { sl: "Pohodništvo", en: "Hiking", it: "Escursionismo", de: "Wandern", fr: "Randonnée", es: "Senderismo" },
     description: "Triglav, Mangart, Storžič — od lahnih sprehodov do zahtevnih vzponov.",
     destSlugs: ["triglav", "bohinj", "bled", "vintgarska-soteska"],
   },
   {
     id: "vodne-avanture",
-    title: { sl: "Vodne avanture", en: "Water adventures" },
+    title: { sl: "Vodne avanture", en: "Water adventures", it: "Avventure acquatiche", de: "Wasserabenteuer", fr: "Aventures nautiques", es: "Aventuras acuáticas" },
     description: "Rafting na Soči, kajak na Kolpi, smučanje na vodi v Portorožu.",
     destSlugs: ["reka-soca", "portoroz", "crnomelj"],
   },
   {
     id: "zgodovina-kultura",
-    title: { sl: "Zgodovina & kultura", en: "History & culture" },
+    title: { sl: "Zgodovina & kultura", en: "History & culture", it: "Storia e cultura", de: "Geschichte & Kultur", fr: "Histoire et culture", es: "Historia y cultura" },
     description: "Srednjeveški gradovi, Predjama, Ljubljanski grad, muzeji Soške fronte.",
     destSlugs: ["ljubljana", "kobarid", "postojnska-jama", "ptuj", "celje"],
   },
   {
     id: "narava-parki",
-    title: { sl: "Narava & parki", en: "Nature & parks" },
+    title: { sl: "Narava & parki", en: "Nature & parks", it: "Natura e parchi", de: "Natur & Parks", fr: "Nature et parcs", es: "Naturaleza y parques" },
     description: "Triglavski narodni park, Cerkniško jezero, slovenski gozdovi.",
     destSlugs: ["triglav", "bohinj", "vintgarska-soteska"],
   },
   {
     id: "kulinarika",
-    title: { sl: "Kulinarika", en: "Gastronomy" },
+    title: { sl: "Kulinarika", en: "Gastronomy", it: "Gastronomia", de: "Gastronomie", fr: "Gastronomie", es: "Gastronomía" },
     description: "Od kremšnite do štrukljev, od Teranov do rebule — 24 gastronomskih regij.",
     destSlugs: ["bled", "piran", "kobarid", "novo-mesto", "murska-sobota"],
   },
   {
     id: "skrite-dragulje",
-    title: { sl: "Skrite dragulje", en: "Hidden gems" },
+    title: { sl: "Skrite dragulje", en: "Hidden gems", it: "Gioielli nascosti", de: "Verborgene Schätze", fr: "Pépites cachées", es: "Joyas ocultas" },
     description: "Vintgarska soteska, soline Sečovlje, Logarska dolina — izven utirjenih poti.",
     destSlugs: ["vintgarska-soteska", "piran", "portoroz"],
   },
@@ -1210,7 +1210,7 @@ export type GuideThemeId = "romanticni-pobeg" | "druzinski" | "budget" | "vikend
 export interface GuideTheme {
   id: GuideThemeId;
   emoji: string;
-  label: { sl: string; en: string };
+  label: { sl: string; en: string; it: string; de: string; fr: string; es: string };
   description: string;
 }
 
@@ -1218,28 +1218,28 @@ export const GUIDE_THEMES: GuideTheme[] = [
   {
     id: "romanticni-pobeg",
     emoji: "❤️",
-    label: { sl: "Romantični pobeg", en: "Romantic getaway" },
+    label: { sl: "Romantični pobeg", en: "Romantic getaway", it: "Fuga romantica", de: "Romantische Auszeit", fr: "Escapade romantique", es: "Escapada romántica" },
     description:
       "Pobeg za dva — romantične aktivnosti, večerje ob svečkah, zasebne izkušnje in nastanitve z razgledom.",
   },
   {
     id: "druzinski",
     emoji: "👨‍👩‍👧",
-    label: { sl: "Družinski izlet", en: "Family trip" },
+    label: { sl: "Družinski izlet", en: "Family trip", it: "Gita in famiglia", de: "Familienausflug", fr: "Sortie en famille", es: "Viaje en familia" },
     description:
       "Družinski prijazne aktivnosti za vse starosti — varne pohodne poti, zabavišča, otroški meniji in interaktivne izkušnje.",
   },
   {
     id: "budget",
     emoji: "💰",
-    label: { sl: "Cenovno ugoden obisk", en: "Budget visit" },
+    label: { sl: "Cenovno ugoden obisk", en: "Budget visit", it: "Visita economica", de: "Günstiger Besuch", fr: "Visite économique", es: "Visita económica" },
     description:
       "Maksimalna izkušnja z minimalnim proračunom — brezplačne atrakcije, lokalni piknik, poceni prenočišča in javni transport.",
   },
   {
     id: "vikend",
     emoji: "🗓️",
-    label: { sl: "Vikend pobeg", en: "Weekend escape" },
+    label: { sl: "Vikend pobeg", en: "Weekend escape", it: "Fuga nel weekend", de: "Wochenendtrip", fr: "Escapade week-end", es: "Escapada de fin de semana" },
     description:
       "Popoln 2-dnevni pobeg — petek zvečer do nedelje popoldan. Uravnotežen program z glavnimi znamenitostmi in lokalno kulinarike.",
   },

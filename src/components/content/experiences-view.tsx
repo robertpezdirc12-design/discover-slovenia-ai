@@ -22,40 +22,68 @@ export function ExperiencesView() {
   const l = useLocale();
 
   const L = {
-    kicker: { sl: "Doživetja", en: "Experiences" },
-    title: { sl: "Doživetja v Sloveniji", en: "Experiences in Slovenia" },
+    kicker: { sl: "Doživetja", en: "Experiences", it: "Esperienze", de: "Erlebnisse", fr: "Expériences", es: "Experiencias" },
+    title: { sl: "Doživetja v Sloveniji", en: "Experiences in Slovenia", it: "Esperienze in Slovenia", de: "Erlebnisse in Slowenien", fr: "Expériences en Slovénie", es: "Experiencias en Eslovenia" },
     lead: {
       sl: "Pohodništvo, vodne avanture, kultura in kulinarika — raziščite in rezervirajte doživetja neposredno pri preverjenih lokalnih ponudnikih.",
       en: "Hiking, water adventures, culture and gastronomy — explore and book experiences directly with verified local providers.",
+      it: "Escursioni, avventure acquatiche, cultura e gastronomia — esplora e prenota esperienze direttamente con fornitori locali verificati.",
+      de: "Wandern, Wasserabenteuer, Kultur und Gastronomie — entdecke und buche Erlebnisse direkt bei geprüften lokalen Anbietern.",
+      fr: "Randonnée, aventures nautiques, culture et gastronomie — explore et réserve des expériences directement auprès de prestataires locaux vérifiés.",
+      es: "Senderismo, aventuras acuáticas, cultura y gastronomía — explora y reserva experiencias directamente con proveedores locales verificados.",
     },
     metaNote: {
       sl: "Preverjeni lokalni ponudniki · Rezervacija brez posrednika",
       en: "Verified local providers · Booking without a middleman",
+      it: "Fornitori locali verificati · Prenotazione senza intermediari",
+      de: "Geprüfte lokale Anbieter · Buchung ohne Zwischenhändler",
+      fr: "Prestataires locaux vérifiés · Réservation sans intermédiaire",
+      es: "Proveedores locales verificados · Reserva sin intermediarios",
     },
     typesTitle: {
       sl: "Neskončne možnosti doživetij",
       en: "Endless possibilities of experiences",
+      it: "Infinite possibilità di esperienze",
+      de: "Unendliche Möglichkeiten für Erlebnisse",
+      fr: "Infinies possibilités d’expériences",
+      es: "Infinitas posibilidades de experiencias",
     },
     typesLead: {
       sl: "Slovenija ponuja vse od alpskih vrhov do jadranske obale — na površini manjši od Walesa.",
       en: "Slovenia offers everything from alpine peaks to the Adriatic coast — on an area smaller than Wales.",
+      it: "La Slovenia offre di tutto, dalle vette alpine alla costa adriatica — su una superficie più piccola del Galles.",
+      de: "Slowenien bietet alles, von Alpengipfeln bis zur Adriaküste — auf einer Fläche kleiner als Wales.",
+      fr: "La Slovénie offre tout, des sommets alpins à la côte adriatique — sur une superficie plus petite que le pays de Galles.",
+      es: "Eslovenia lo ofrece todo, de las cumbres alpinas a la costa del Adriático — en una superficie más pequeña que Gales.",
     },
-    destsTitle: { sl: "Kje ga doživeti", en: "Where to experience it" },
-    addTrip: { sl: "Dodaj v mojo pot", en: "Add to my trip" },
-    added: { sl: "V mojo pot ✓", en: "In my trip ✓" },
-    marketTitle: { sl: "Tržnica Slovenije", en: "Slovenian Marketplace" },
+    destsTitle: { sl: "Kje ga doživeti", en: "Where to experience it", it: "Dove viverlo", de: "Wo du es erlebst", fr: "Où le vivre", es: "Dónde vivirlo" },
+    addTrip: { sl: "Dodaj v mojo pot", en: "Add to my trip", it: "Aggiungi al mio viaggio", de: "Zu meiner Reise hinzufügen", fr: "Ajouter à mon voyage", es: "Añadir a mi viaje" },
+    added: { sl: "V mojo pot ✓", en: "In my trip ✓", it: "Nel mio viaggio ✓", de: "In meiner Reise ✓", fr: "Dans mon voyage ✓", es: "En mi viaje ✓" },
+    marketTitle: { sl: "Tržnica Slovenije", en: "Slovenian Marketplace", it: "Mercato sloveno", de: "Slowenischer Marktplatz", fr: "Marché slovène", es: "Mercado esloveno" },
     marketLead: {
       sl: "Lokalni izdelki in izkušnje — direktno od kmetov, vinogradnikov in vodnikov",
       en: "Local products and experiences — directly from farmers, winemakers and guides",
+      it: "Prodotti ed esperienze locali — direttamente da agricoltori, viticoltori e guide",
+      de: "Lokale Produkte und Erlebnisse — direkt von Bauern, Winzern und Guides",
+      fr: "Produits et expériences locaux — directement d’agriculteurs, de vignerons et de guides",
+      es: "Productos y experiencias locales — directamente de agricultores, viticultores y guías",
     },
     marketBody: {
       sl: "Žive ponudbe izkušenj tržnice (rezervacije pri lokalnih ponudnikih) se povezujejo v fazi rekonstrukcije tržnice — do takrat raziščite destinacije in dogodke.",
       en: "Live marketplace experience offers (bookings with local providers) connect in the marketplace reconstruction phase — until then, explore destinations and events.",
+      it: "Le offerte di esperienze dal vivo del mercato (prenotazioni con fornitori locali) si collegheranno nella fase di ricostruzione del mercato — nel frattempo esplora destinazioni ed eventi.",
+      de: "Live-Erlebnisangebote des Marktplatzes (Buchungen bei lokalen Anbietern) werden in der Rekonstruktionsphase des Marktplatzes angebunden — erkunde bis dahin Destinationen und Veranstaltungen.",
+      fr: "Les offres d’expériences en direct du marché (réservations auprès de prestataires locaux) se connecteront lors de la phase de reconstruction du marché — en attendant, explore les destinations et les événements.",
+      es: "Las ofertas de experiencias en vivo del mercado (reservas con proveedores locales) se conectarán en la fase de reconstrucción del mercado — mientras tanto, explora destinos y eventos.",
     },
-    marketCta: { sl: "Odpri tržnico", en: "Open the marketplace" },
+    marketCta: { sl: "Odpri tržnico", en: "Open the marketplace", it: "Apri il mercato", de: "Marktplatz öffnen", fr: "Ouvrir le marché", es: "Abrir el mercado" },
     enNote: {
       sl: "",
       en: "Content note: experience descriptions are canonically Slovenian (production source); an English content overlay is not yet available.",
+      it: "Nota sui contenuti: le descrizioni delle esperienze sono canonicamente in sloveno (fonte di produzione); un overlay dei contenuti in inglese non è ancora disponibile.",
+      de: "Inhaltshinweis: Erlebnisbeschreibungen sind kanonisch slowenisch (Produktionsquelle); ein englischer Inhalts-Overlay ist noch nicht verfügbar.",
+      fr: "Note de contenu : les descriptions des expériences sont canoniquement en slovène (source de production) ; une surcouche de contenu en anglais n’est pas encore disponible.",
+      es: "Nota de contenido: las descripciones de las experiencias son canónicamente en esloveno (fuente de producción); una superposición de contenido en inglés aún no está disponible.",
     },
   } as const;
 
@@ -70,7 +98,7 @@ export function ExperiencesView() {
         </p>
       </PageHeader>
 
-      {l === "en" && pick(l, L.enNote) && (
+      {l !== "sl" && pick(l, L.enNote) && (
         <p className="mt-6 rounded-md border border-dashed border-primary/30 bg-primary/5 px-4 py-2.5 text-xs text-muted-foreground">
           {pick(l, L.enNote)}
         </p>

@@ -38,36 +38,53 @@ export function GuidesView() {
   const [blogCat, setBlogCat] = React.useState<BlogCategory>("vsi");
 
   const L = {
-    kicker: { sl: "Vodiči", en: "Guides" },
-    title: { sl: "Vodiči in nasveti za Slovenijo", en: "Guides and tips for Slovenia" },
+    kicker: { sl: "Vodiči", en: "Guides", it: "Guide", de: "Guides", fr: "Guides", es: "Guías" },
+    title: { sl: "Vodiči in nasveti za Slovenijo", en: "Guides and tips for Slovenia", it: "Guide e consigli per la Slovenia", de: "Guides und Tipps für Slowenien", fr: "Guides et conseils pour la Slovénie", es: "Guías y consejos para Eslovenia" },
     lead: {
       sl: "Kaj početi na Bledu, kako preživeti 3 dni po Sloveniji, najlepši izleti in kje jesti lokalno — vodiči, nasveti in odgovori lokalcev.",
       en: "What to do at Bled, how to spend 3 days in Slovenia, the finest trips and where to eat locally — guides, tips and answers from locals.",
+      it: "Cosa fare a Bled, come trascorrere 3 giorni in Slovenia, i più bei viaggi e dove mangiare come un locale — guide, consigli e risposte dei locali.",
+      de: "Was du in Bled unternehmen kannst, wie du 3 Tage in Slowenien verbringst, die schönsten Ausflüge und wo du lokal isst — Guides, Tipps und Antworten von Einheimischen.",
+      fr: "Que faire à Bled, comment passer 3 jours en Slovénie, les plus belles excursions et où manger local — guides, conseils et réponses des locaux.",
+      es: "Qué hacer en Bled, cómo pasar 3 días en Eslovenia, los mejores viajes y dónde comer como un local — guías, consejos y respuestas de los locales.",
     },
-    metaNote: { sl: "Zgodbe in nasveti urednikov", en: "Editorial stories and tips" },
-    read: { sl: "Preberi", en: "Read" },
-    readMore: { sl: "Preberi več", en: "Read more" },
-    days: { sl: (n: number) => `${n} dni`, en: (n: number) => `${n} days` },
-    km: { sl: (n: number) => `${n} km`, en: (n: number) => `${n} km` },
-    addTrip: { sl: "Dodaj v mojo pot", en: "Add to my trip" },
-    added: { sl: "V mojo pot ✓", en: "In my trip ✓" },
-    blogTitle: { sl: "Zgodbe iz Slovenije", en: "Stories from Slovenia" },
+    metaNote: { sl: "Zgodbe in nasveti urednikov", en: "Editorial stories and tips", it: "Storie e consigli editoriali", de: "Redaktionelle Geschichten und Tipps", fr: "Histoires et conseils éditoriaux", es: "Historias y consejos editoriales" },
+    read: { sl: "Preberi", en: "Read", it: "Leggi", de: "Lesen", fr: "Lire", es: "Lee" },
+    readMore: { sl: "Preberi več", en: "Read more", it: "Leggi di più", de: "Weiterlesen", fr: "Lire la suite", es: "Lee más" },
+    days: { sl: (n: number) => `${n} dni`, en: (n: number) => `${n} days`, it: (n: number) => `${n} giorni`, de: (n: number) => `${n} Tage`, fr: (n: number) => `${n} jours`, es: (n: number) => `${n} días` },
+    km: { sl: (n: number) => `${n} km`, en: (n: number) => `${n} km`, it: (n: number) => `${n} km`, de: (n: number) => `${n} km`, fr: (n: number) => `${n} km`, es: (n: number) => `${n} km` },
+    addTrip: { sl: "Dodaj v mojo pot", en: "Add to my trip", it: "Aggiungi al mio viaggio", de: "Zu meiner Reise hinzufügen", fr: "Ajouter à mon voyage", es: "Añadir a mi viaje" },
+    added: { sl: "V mojo pot ✓", en: "In my trip ✓", it: "Nel mio viaggio ✓", de: "In meiner Reise ✓", fr: "Dans mon voyage ✓", es: "En mi viaje ✓" },
+    blogKicker: { sl: "Blog & vodičniki", en: "Blog & guides", it: "Blog e guide", de: "Blog & Guides", fr: "Blog et guides", es: "Blog y guías" },
+    blogTitle: { sl: "Zgodbe iz Slovenije", en: "Stories from Slovenia", it: "Storie dalla Slovenia", de: "Geschichten aus Slowenien", fr: "Histoires de Slovénie", es: "Historias de Eslovenia" },
     blogLead: {
       sl: "Vodičniki, nasveti in inspiracije za tvoje naslednje potovanje",
       en: "Guides, tips and inspiration for your next trip",
+      it: "Guide, consigli e ispirazioni per il tuo prossimo viaggio",
+      de: "Guides, Tipps und Inspirationen für deine nächste Reise",
+      fr: "Guides, conseils et inspirations pour ton prochain voyage",
+      es: "Guías, consejos e inspiración para tu próximo viaje",
     },
-    all: { sl: "Vsi", en: "All" },
-    askTitle: { sl: "Vprašaj lokalca", en: "Ask a local" },
+    all: { sl: "Vsi", en: "All", it: "Tutti", de: "Alle", fr: "Tous", es: "Todos" },
+    askTitle: { sl: "Vprašaj lokalca", en: "Ask a local", it: "Chiedi a un locale", de: "Frag einen Einheimischen", fr: "Demande à un habitant", es: "Pregunta a un local" },
     askBody: {
       sl: "Odgovori temeljijo na naši bazi realnih destinacij, lokalov in izkušenj — brez izmišljotin. Hitro vprašanje in globja osebna konzultacija sta brezplačna.",
       en: "Answers draw on our database of real destinations, venues and experiences — no make-believe. A quick question and a deeper personal consultation are free.",
+      it: "Le risposte si basano sul nostro database di destinazioni, locali ed esperienze reali — senza invenzioni. Una domanda rapida e una consulenza personale più approfondita sono gratuite.",
+      de: "Antworten stützen sich auf unsere Datenbank echter Destinationen, Orte und Erlebnisse — ohne Erfundenes. Eine schnelle Frage und eine tiefere persönliche Beratung sind kostenlos.",
+      fr: "Les réponses s’appuient sur notre base de destinations, de lieux et d’expériences réels — sans invention. Une question rapide et une consultation personnelle plus approfondie sont gratuites.",
+      es: "Las respuestas se basan en nuestra base de destinos, locales y experiencias reales — sin invenciones. Una pregunta rápida y una consulta personal más profunda son gratuitas.",
     },
-    askCta: { sl: "Postavi vprašanje prek kontakta", en: "Ask via the contact page" },
+    askCta: { sl: "Postavi vprašanje prek kontakta", en: "Ask via the contact page", it: "Chiedi tramite la pagina dei contatti", de: "Frag über die Kontaktseite", fr: "Pose ta question via la page de contact", es: "Pregunta a través de la página de contacto" },
     enNote: {
       sl: "",
       en: "Content note: guides are canonically Slovenian (production source); an English content overlay is not yet available.",
+      it: "Nota sui contenuti: le guide sono canonicamente in sloveno (fonte di produzione); un overlay dei contenuti in inglese non è ancora disponibile.",
+      de: "Inhaltshinweis: Guides sind kanonisch slowenisch (Produktionsquelle); ein englischer Inhalts-Overlay ist noch nicht verfügbar.",
+      fr: "Note de contenu : les guides sont canoniquement en slovène (source de production) ; une surcouche de contenu en anglais n’est pas encore disponible.",
+      es: "Nota de contenido: las guías son canónicamente en esloveno (fuente de producción); una superposición de contenido en inglés aún no está disponible.",
     },
-    destLabel: { sl: "Destinacije na poti", en: "Destinations on the route" },
+    destLabel: { sl: "Destinacije na poti", en: "Destinations on the route", it: "Destinazioni sul percorso", de: "Destinationen auf der Route", fr: "Destinations sur l’itinéraire", es: "Destinos en la ruta" },
   } as const;
 
   const blogTabs: { id: BlogCategory; label: string }[] = [
@@ -89,7 +106,7 @@ export function GuidesView() {
         <p className="mt-3 text-sm text-muted-foreground">{pick(l, L.metaNote)}</p>
       </PageHeader>
 
-      {l === "en" && pick(l, L.enNote) && (
+      {l !== "sl" && pick(l, L.enNote) && (
         <p className="mt-6 rounded-md border border-dashed border-primary/30 bg-primary/5 px-4 py-2.5 text-xs text-muted-foreground">
           {pick(l, L.enNote)}
         </p>
@@ -170,7 +187,7 @@ export function GuidesView() {
       {/* Blog & vodičniki */}
       <section aria-labelledby="blog-title" className="mt-16">
         <p className="text-xs font-bold tracking-[0.18em] text-primary uppercase">
-          Blog &amp; vodičniki
+          {pick(l, L.blogKicker)}
         </p>
         <h2 id="blog-title" className="mt-1.5 text-2xl font-bold tracking-tight sm:text-3xl">
           {pick(l, L.blogTitle)}

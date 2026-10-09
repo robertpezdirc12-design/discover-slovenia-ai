@@ -51,34 +51,49 @@ const MIN_QTY = 1;
 const MAX_QTY = 10;
 
 const L = {
-  title: { sl: "Zaključi nakup", en: "Complete purchase" },
+  title: { sl: "Zaključi nakup", en: "Complete purchase", it: "Completa l'acquisto", de: "Kauf abschließen", fr: "Finaliser l'achat", es: "Completar la compra" },
   description: {
     sl: "Preglejte naročilo in potrdite nakup.",
     en: "Review your order and confirm the purchase.",
+    it: "Controlla l'ordine e conferma l'acquisto.",
+    de: "Überprüfe deine Bestellung und bestätige den Kauf.",
+    fr: "Vérifie ta commande et confirme l'achat.",
+    es: "Revisa tu pedido y confirma la compra.",
   },
-  qty: { sl: "Količina", en: "Quantity" },
-  decreaseQty: { sl: "Zmanjšaj količino", en: "Decrease quantity" },
-  increaseQty: { sl: "Povečaj količino", en: "Increase quantity" },
-  unitPrice: { sl: "Cena na kos", en: "Price per unit" },
-  total: { sl: "Skupaj", en: "Total" },
-  stockNote: { sl: "Na zalogi", en: "In stock" },
-  confirm: { sl: "Zaključi nakup", en: "Complete purchase" },
-  processing: { sl: "Obdelava …", en: "Processing …" },
-  demoTitle: { sl: "Naročilo je bilo ustvarjeno", en: "Order created" },
-  demoBadge: { sl: "DEMO", en: "DEMO" },
+  qty: { sl: "Količina", en: "Quantity", it: "Quantità", de: "Menge", fr: "Quantité", es: "Cantidad" },
+  decreaseQty: { sl: "Zmanjšaj količino", en: "Decrease quantity", it: "Riduci la quantità", de: "Menge verringern", fr: "Diminuer la quantité", es: "Reducir cantidad" },
+  increaseQty: { sl: "Povečaj količino", en: "Increase quantity", it: "Aumenta la quantità", de: "Menge erhöhen", fr: "Augmenter la quantité", es: "Aumentar cantidad" },
+  unitPrice: { sl: "Cena na kos", en: "Price per unit", it: "Prezzo per unità", de: "Preis pro Stück", fr: "Prix à l'unité", es: "Precio por unidad" },
+  total: { sl: "Skupaj", en: "Total", it: "Totale", de: "Gesamt", fr: "Total", es: "Total" },
+  stockNote: { sl: "Na zalogi", en: "In stock", it: "In magazzino", de: "Auf Lager", fr: "En stock", es: "En stock" },
+  confirm: { sl: "Zaključi nakup", en: "Complete purchase", it: "Completa l'acquisto", de: "Kauf abschließen", fr: "Finaliser l'achat", es: "Completar la compra" },
+  processing: { sl: "Obdelava …", en: "Processing …", it: "Elaborazione …", de: "Verarbeitung …", fr: "Traitement …", es: "Procesando …" },
+  demoTitle: { sl: "Naročilo je bilo ustvarjeno", en: "Order created", it: "Ordine creato", de: "Bestellung erstellt", fr: "Commande créée", es: "Pedido creado" },
+  demoBadge: { sl: "DEMO", en: "DEMO", it: "DEMO", de: "DEMO", fr: "DEMO", es: "DEMO" },
   demoNote: {
     sl: "Demo plačilo — brez prave bremenitve. V peskovniku so prava plačila izklopljena.",
     en: "Demo payment — no real charge. Real payments are disabled in the sandbox.",
+    it: "Pagamento demo — nessun addebito reale. I pagamenti reali sono disattivati nella sandbox.",
+    de: "Demo-Zahlung — keine echte Belastung. Echte Zahlungen sind in der Sandbox deaktiviert.",
+    fr: "Paiement démo — aucun débit réel. Les paiements réels sont désactivés dans la sandbox.",
+    es: "Pago demo — sin cargo real. Los pagos reales están desactivados en el sandbox.",
   },
-  demoOrderNo: { sl: "Številka naročila", en: "Order number" },
-  close: { sl: "Zapri", en: "Close" },
-  buyAgain: { sl: "Nakupuj naprej", en: "Continue shopping" },
-  requestCancel: { sl: "Zahtevaj preklic", en: "Request cancellation" },
+  demoOrderNo: { sl: "Številka naročila", en: "Order number", it: "Numero d'ordine", de: "Bestellnummer", fr: "Numéro de commande", es: "Número de pedido" },
+  close: { sl: "Zapri", en: "Close", it: "Chiudi", de: "Schließen", fr: "Fermer", es: "Cerrar" },
+  buyAgain: { sl: "Nakupuj naprej", en: "Continue shopping", it: "Continua gli acquisti", de: "Weiter einkaufen", fr: "Continuer les achats", es: "Seguir comprando" },
+  requestCancel: { sl: "Zahtevaj preklic", en: "Request cancellation", it: "Richiedi l'annullamento", de: "Stornierung anfordern", fr: "Demander l'annulation", es: "Solicitar cancelación" },
   cancelRequested: {
     sl: "Zahtevek za preklic je podan — povratek NE steče samodejno; obravnava ga lastnik pri plačilnem ponudniku.",
     en: "Cancellation request submitted — the refund does NOT happen automatically; the owner handles it at the payment provider.",
+    it: "Richiesta di annullamento inviata — il rimborso NON avviene automaticamente; se ne occupa il titolare presso il fornitore di pagamenti.",
+    de: "Stornierungsanfrage eingereicht — die Rückerstattung erfolgt NICHT automatisch; der Inhaber bearbeitet sie beim Zahlungsdienstleister.",
+    fr: "Demande d'annulation envoyée — le remboursement ne se fait PAS automatiquement ; le propriétaire la traite auprès du prestataire de paiement.",
+    es: "Solicitud de cancelación enviada — el reembolso NO se realiza automáticamente; la gestiona el propietario en el proveedor de pagos.",
   },
-  cancelErr: { sl: "Zahtevek ni uspel. Poskusi znova.", en: "The request failed. Try again." },
+  cancelErr: { sl: "Zahtevek ni uspel. Poskusi znova.", en: "The request failed. Try again.", it: "La richiesta non è andata a buon fine. Riprova.", de: "Die Anfrage ist fehlgeschlagen. Versuche es erneut.", fr: "La demande a échoué. Réessaie.", es: "La solicitud falló. Inténtalo de nuevo." },
+  errPurchase: { sl: "Nakupa ni bilo mogoče zaključiti.", en: "The purchase could not be completed.", it: "Non è stato possibile completare l'acquisto.", de: "Der Kauf konnte nicht abgeschlossen werden.", fr: "L'achat n'a pas pu être finalisé.", es: "No se pudo completar la compra." },
+  errTitle: { sl: "Nakup ni uspel", en: "Purchase failed", it: "Acquisto non riuscito", de: "Kauf fehlgeschlagen", fr: "Échec de l'achat", es: "Error en la compra" },
+  errNetwork: { sl: "Omrežna napaka — poskusite znova.", en: "Network error — please try again.", it: "Errore di rete — riprova.", de: "Netzwerkfehler — bitte erneut versuchen.", fr: "Erreur réseau — veuillez réessayer.", es: "Error de red — inténtalo de nuevo." },
   secureNote: {
     // P0 AUDIT (iskrenost): pred oddajo še ne vemo, kateri kanal bo strežnik
     // izbral (Stripe ali demo) — zato NE trdimo, da plačilo poganja Stripe,
@@ -86,6 +101,10 @@ const L = {
     // iskreno po odgovoru (demoNote z DEMO znakom).
     sl: "Plačilo obdela plačilni ponudnik — kartice ne vidimo mi.",
     en: "Payment is handled by the payment provider — your card never reaches us.",
+    it: "Il pagamento è gestito dal fornitore di pagamenti — la tua carta non arriva mai a noi.",
+    de: "Die Zahlung wird vom Zahlungsdienstleister abgewickelt — deine Karte erreicht uns nie.",
+    fr: "Le paiement est traité par le prestataire de paiement — ta carte ne nous parvient jamais.",
+    es: "El pago lo gestiona el proveedor de pagos — tu tarjeta nunca llega a nosotros.",
   },
 } as const;
 
@@ -189,14 +208,11 @@ export function CheckoutModal({
 
       if (!res.ok || (!isCheckoutDemoResponse(body) && !isCheckoutUrlResponse(body))) {
         const message =
-          (body as CheckoutErrorResponse)?.error ??
-          (l === "en"
-            ? "The purchase could not be completed."
-            : "Nakupa ni bilo mogoče zaključiti.");
+          (body as CheckoutErrorResponse)?.error ?? t("errPurchase");
         setError(message);
         setState("idle");
         toast({
-          title: l === "en" ? "Purchase failed" : "Nakup ni uspel",
+          title: t("errTitle"),
           description: message,
           variant: "destructive",
         });
@@ -223,14 +239,11 @@ export function CheckoutModal({
       setCancelState("idle");
       setState("demo-done");
     } catch {
-      const message =
-        l === "en"
-          ? "Network error — please try again."
-          : "Omrežna napaka — poskusite znova.";
+      const message = t("errNetwork");
       setError(message);
       setState("idle");
       toast({
-        title: l === "en" ? "Purchase failed" : "Nakup ni uspel",
+        title: t("errTitle"),
         description: message,
         variant: "destructive",
       });

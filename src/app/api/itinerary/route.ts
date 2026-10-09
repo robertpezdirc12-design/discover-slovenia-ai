@@ -18,7 +18,10 @@ import type { Budget, Season } from "@/lib/slovenia-data";
  */
 
 /** Dvojezična helperka po vzorcu PL() izvirnika (sl privzeta). */
-function PL(lang: PlannerLang, texts: { sl: string; en: string }): string {
+function PL(
+  lang: PlannerLang,
+  texts: { sl: string; en: string; it: string; de: string; fr: string; es: string }
+): string {
   return lang === "en" ? texts.en : texts.sl;
 }
 
@@ -68,6 +71,10 @@ export async function POST(request: Request) {
         error: PL(lang, {
           sl: "Manjka obvezno polje: interests (vsaj ena želja)",
           en: "Missing required field: interests (at least one wish)",
+          it: "Manca il campo obbligatorio: interests (almeno un desiderio)",
+          de: "Pflichtfeld fehlt: interests (mindestens ein Wunsch)",
+          fr: "Champ obligatoire manquant : interests (au moins un souhait)",
+          es: "Falta el campo obligatorio: interests (al menos un deseo)",
         }),
       },
       { status: 400 }
@@ -87,6 +94,10 @@ export async function POST(request: Request) {
         error: PL(lang, {
           sl: "Število dni je neveljavno (celo število 1–5)",
           en: "Number of days is invalid (integer 1–5)",
+          it: "Il numero di giorni non è valido (intero 1–5)",
+          de: "Die Anzahl der Tage ist ungültig (ganze Zahl 1–5)",
+          fr: "Le nombre de jours est invalide (entier 1–5)",
+          es: "El número de días no es válido (entero 1–5)",
         }),
       },
       { status: 400 }
@@ -102,6 +113,10 @@ export async function POST(request: Request) {
           error: PL(lang, {
             sl: "Regija je neznana — uporabi ID iz /api/destinations ali pusti prazno",
             en: "Unknown region — use an ID from /api/destinations or leave empty",
+            it: "Regione sconosciuta — usa un ID da /api/destinations oppure lascia vuoto",
+            de: "Unbekannte Region — verwende eine ID aus /api/destinations oder lasse leer",
+            fr: "Région inconnue — utilise un identifiant de /api/destinations ou laisse vide",
+            es: "Región desconocida — usa un ID de /api/destinations o deja vacío",
           }),
         },
         { status: 400 }
@@ -119,6 +134,10 @@ export async function POST(request: Request) {
           error: PL(lang, {
             sl: "Sezona je neveljavna (spring, summer, autumn, winter)",
             en: "Season is invalid (spring, summer, autumn, winter)",
+            it: "La stagione non è valida (spring, summer, autumn, winter)",
+            de: "Die Saison ist ungültig (spring, summer, autumn, winter)",
+            fr: "La saison est invalide (spring, summer, autumn, winter)",
+            es: "La temporada no es válida (spring, summer, autumn, winter)",
           }),
         },
         { status: 400 }
@@ -138,6 +157,10 @@ export async function POST(request: Request) {
           error: PL(lang, {
             sl: "Proračun je neveljaven (€, €€ ali €€€)",
             en: "Budget is invalid (€, €€ or €€€)",
+            it: "Il budget non è valido (€, €€ oppure €€€)",
+            de: "Das Budget ist ungültig (€, €€ oder €€€)",
+            fr: "Le budget est invalide (€, €€ ou €€€)",
+            es: "El presupuesto no es válido (€, €€ o €€€)",
           }),
         },
         { status: 400 }

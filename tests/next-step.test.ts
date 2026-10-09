@@ -225,9 +225,13 @@ describe("next-step: SL/EN lokalizacija (L vzorec)", () => {
     expect(nextStepFor(ctx({}), "en")!.title).toBe("Explore Slovenia");
   });
 
-  test("neznan locale (it) → slovenska resnica (pick fallback)", () => {
-    expect(nextStepFor(ctx({ myTripCount: 1 }), "it")!.title).toBe("Dodaj še eno");
+  test("neznan locale (xx) → slovenska resnica (pick fallback); it ima pravi prevod (P3)", () => {
     expect(nextStepFor(ctx({ myTripCount: 1 }), "xx")!.title).toBe("Dodaj še eno");
+    // P3 (i18n štirijezična razširitev): "it" ni več neznan — next-step
+    // slovarji nosijo prave italijanske prevode (fallback ostane za xx/yy …).
+    expect(nextStepFor(ctx({ myTripCount: 1 }), "it")!.title).toBe(
+      "Aggiungine un’altra"
+    );
   });
 
   test("slovenščina: ednina/dvojina/množina v razlogu rezervacij (slUnit)", () => {

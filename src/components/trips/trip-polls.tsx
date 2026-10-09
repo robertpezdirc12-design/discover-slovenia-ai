@@ -23,7 +23,7 @@ import { slTimeAgo, slUnit, votesLabel } from "@/lib/sl-utils";
 // TASK 8 / F3-B: hydration placeholder v L-pattern (SL/EN — D8-A §13
 // „Nalagam…" uhodi so trdi predpogoj za F3-E EN razširitev).
 const L = {
-  loadingPolls: { sl: "Nalagam ankete …", en: "Loading polls …" },
+  loadingPolls: { sl: "Nalagam ankete …", en: "Loading polls …", it: "Caricamento dei sondaggi …", de: "Umfragen werden geladen …", fr: "Chargement des sondages …", es: "Cargando las encuestas …" },
 } as const;
 
 // ============================================================================

@@ -47,11 +47,11 @@ import {
   typeLabel,
 } from "@/lib/slovenia-data";
 
-const SEASONS: Record<Season, { sl: string; en: string }> = {
-  spring: { sl: "Pomlad", en: "Spring" },
-  summer: { sl: "Poletje", en: "Summer" },
-  autumn: { sl: "Jesen", en: "Autumn" },
-  winter: { sl: "Zima", en: "Winter" },
+const SEASONS: Record<Season, { sl: string; en: string; it: string; de: string; fr: string; es: string }> = {
+  spring: { sl: "Pomlad", en: "Spring", it: "Primavera", de: "Frühling", fr: "Printemps", es: "Primavera" },
+  summer: { sl: "Poletje", en: "Summer", it: "Estate", de: "Sommer", fr: "Été", es: "Verano" },
+  autumn: { sl: "Jesen", en: "Autumn", it: "Autunno", de: "Herbst", fr: "Automne", es: "Otoño" },
+  winter: { sl: "Zima", en: "Winter", it: "Inverno", de: "Winter", fr: "Hiver", es: "Invierno" },
 };
 
 /**
@@ -72,83 +72,131 @@ export function DestinationDetail({ d }: { d: Destination }) {
   }, [d.slug]);
 
   const L = {
-    back: { sl: "Vse destinacije", en: "All destinations" },
-    metaRegion: { sl: "Regija", en: "Region" },
-    metaType: { sl: "Tip", en: "Type" },
-    metaRating: { sl: "Ocena", en: "Rating" },
+    back: { sl: "Vse destinacije", en: "All destinations", it: "Tutte le destinazioni", de: "Alle Reiseziele", fr: "Toutes les destinations", es: "Todos los destinos" },
+    metaRegion: { sl: "Regija", en: "Region", it: "Regione", de: "Region", fr: "Région", es: "Región" },
+    metaType: { sl: "Tip", en: "Type", it: "Tipo", de: "Typ", fr: "Type", es: "Tipo" },
+    metaRating: { sl: "Ocena", en: "Rating", it: "Valutazione", de: "Bewertung", fr: "Note", es: "Valoración" },
     metaRatingAria: {
       sl: (n: number) => `Uredniška ocena ${n.toFixed(1)} od 5`,
       en: (n: number) => `Editorial rating ${n.toFixed(1)} of 5`,
+      it: (n: number) => `Valutazione editoriale ${n.toFixed(1)} su 5`,
+      de: (n: number) => `Redaktionelle Bewertung ${n.toFixed(1)} von 5`,
+      fr: (n: number) => `Note éditoriale ${n.toFixed(1)} sur 5`,
+      es: (n: number) => `Valoración editorial ${n.toFixed(1)} sobre 5`,
     },
     ratingNote: {
       sl: "Uredniška ocena, nikoli uporabniška recenzija.",
       en: "Editorial rating, never a user review.",
+      it: "Valutazione editoriale, mai una recensione utente.",
+      de: "Redaktionelle Bewertung, niemals eine Nutzerrezension.",
+      fr: "Note éditoriale, jamais un avis d’utilisateur.",
+      es: "Valoración editorial, nunca una reseña de usuarios.",
     },
-    metaBudget: { sl: "Proračun", en: "Budget" },
-    metaDuration: { sl: "Priporočen čas", en: "Recommended time" },
-    metaCost: { sl: "Strošek na osebo", en: "Cost per person" },
+    metaBudget: { sl: "Proračun", en: "Budget", it: "Budget", de: "Budget", fr: "Budget", es: "Presupuesto" },
+    metaDuration: { sl: "Priporočen čas", en: "Recommended time", it: "Tempo consigliato", de: "Empfohlene Zeit", fr: "Durée recommandée", es: "Tiempo recomendado" },
+    metaCost: { sl: "Strošek na osebo", en: "Cost per person", it: "Costo per persona", de: "Kosten pro Person", fr: "Coût par personne", es: "Coste por persona" },
     metaCostV: {
       sl: (n: number) => `≈ ${n} € (ocena)`,
       en: (n: number) => `≈ €${n} (estimate)`,
+      it: (n: number) => `≈ ${n} € (stima)`,
+      de: (n: number) => `≈ ${n} € (Schätzung)`,
+      fr: (n: number) => `≈ ${n} € (estimation)`,
+      es: (n: number) => `≈ ${n} € (estimación)`,
     },
-    coords: { sl: "Koordinate (WGS-84)", en: "Coordinates (WGS-84)" },
-    highlights: { sl: "Poudarki", en: "Highlights" },
-    activities: { sl: "Aktivnosti", en: "Activities" },
-    bestFor: { sl: "Najboljše za", en: "Best for" },
-    bestSeason: { sl: "Najboljši čas obiska", en: "Best season" },
-    provenance: { sl: "Izvor zapisa", en: "Record provenance" },
-    provOfficial: { sl: "Uradni vir", en: "Official source" },
-    provEditorial: { sl: "Uredniška kuracija", en: "Editorial curation" },
+    coords: { sl: "Koordinate (WGS-84)", en: "Coordinates (WGS-84)", it: "Coordinate (WGS-84)", de: "Koordinaten (WGS-84)", fr: "Coordonnées (WGS-84)", es: "Coordenadas (WGS-84)" },
+    highlights: { sl: "Poudarki", en: "Highlights", it: "Punti di forza", de: "Highlights", fr: "Points forts", es: "Destacados" },
+    activities: { sl: "Aktivnosti", en: "Activities", it: "Attività", de: "Aktivitäten", fr: "Activités", es: "Actividades" },
+    bestFor: { sl: "Najboljše za", en: "Best for", it: "Ideale per", de: "Ideal für", fr: "Idéal pour", es: "Ideal para" },
+    bestSeason: { sl: "Najboljši čas obiska", en: "Best season", it: "Stagione ideale", de: "Beste Reisezeit", fr: "Meilleure saison", es: "Mejor época" },
+    provenance: { sl: "Izvor zapisa", en: "Record provenance", it: "Provenienza della scheda", de: "Herkunft des Eintrags", fr: "Provenance de la fiche", es: "Procedencia del registro" },
+    provOfficial: { sl: "Uradni vir", en: "Official source", it: "Fonte ufficiale", de: "Offizielle Quelle", fr: "Source officielle", es: "Fuente oficial" },
+    provEditorial: { sl: "Uredniška kuracija", en: "Editorial curation", it: "Curatela editoriale", de: "Redaktionelle Kuratierung", fr: "Curation éditoriale", es: "Curaduría editorial" },
     provVerified: {
       sl: (at: string) => `Preverjeno: ${at}`,
       en: (at: string) => `Verified: ${at}`,
+      it: (at: string) => `Verificato: ${at}`,
+      de: (at: string) => `Geprüft: ${at}`,
+      fr: (at: string) => `Vérifié : ${at}`,
+      es: (at: string) => `Verificado: ${at}`,
     },
-    provSourceLink: { sl: "Odpri vir", en: "Open source" },
-    addTrip: { sl: "Dodaj v mojo pot", en: "Add to my trip" },
-    added: { sl: "V mojo pot ✓", en: "In my trip ✓" },
-    planWith: { sl: "Načrtuj s to destinacijo", en: "Plan with this destination" },
-    goWith: { sl: "Pojdi — partnerji", en: "Go — partners" },
-    myTrip: { sl: "Moja pot", en: "My trip" },
+    provSourceLink: { sl: "Odpri vir", en: "Open source", it: "Apri la fonte", de: "Quelle öffnen", fr: "Ouvrir la source", es: "Abrir la fuente" },
+    addTrip: { sl: "Dodaj v mojo pot", en: "Add to my trip", it: "Aggiungi al mio viaggio", de: "Zu meiner Reise hinzufügen", fr: "Ajouter à mon voyage", es: "Añadir a mi viaje" },
+    added: { sl: "V mojo pot ✓", en: "In my trip ✓", it: "Nel mio viaggio ✓", de: "In meiner Reise ✓", fr: "Dans mon voyage ✓", es: "En mi viaje ✓" },
+    planWith: { sl: "Načrtuj s to destinacijo", en: "Plan with this destination", it: "Pianifica con questa destinazione", de: "Mit diesem Reiseziel planen", fr: "Planifier avec cette destination", es: "Planificar con este destino" },
+    goWith: { sl: "Pojdi — partnerji", en: "Go — partners", it: "Vai — partner", de: "Los — Partner", fr: "Partir — partenaires", es: "Ir — socios" },
+    myTrip: { sl: "Moja pot", en: "My trip", it: "Il mio viaggio", de: "Meine Reise", fr: "Mon voyage", es: "Mi viaje" },
     enNote: {
       sl: "",
       en: "Content note: the destination dataset is canonically Slovenian; an English content overlay is not yet available.",
+      it: "Nota sui contenuti: il dataset delle destinazioni è in sloveno (lingua originale); una versione italiana non è ancora disponibile.",
+      de: "Hinweis zu den Inhalten: der Datensatz der Reiseziele ist im Original slowenisch; eine deutsche Fassung ist noch nicht verfügbar.",
+      fr: "Note de contenu : les données des destinations sont en slovène (langue d’origine) ; une version française n’est pas encore disponible.",
+      es: "Nota de contenido: los datos de los destinos están en esloveno (idioma original); una versión en español aún no está disponible.",
     },
     // Rezervacijska kartica (v2.5.0) — DELNI slovar {sl, en} (kanon 48-b):
     // provizijsko razkritje je obvezno in vidno, partnerji pa iz čistega
     // registra (affiliate-providers) — nič hardkodiranih imen.
-    bookTitle: { sl: "Načrtuj bivanje", en: "Book nearby" },
+    bookTitle: { sl: "Načrtuj bivanje", en: "Book nearby", it: "Prenota in zona", de: "In der Nähe buchen", fr: "Réserver à proximité", es: "Reservar cerca" },
     bookLead: {
       sl: "Rezerviraj v okolici — povezave odprejo pri partnerjih.",
       en: "Book in the area — links open with our partners.",
+      it: "Prenota nei dintorni — i link si aprono presso i nostri partner.",
+      de: "Buche in der Umgebung — die Links öffnen sich bei unseren Partnern.",
+      fr: "Réserve dans les environs — les liens s’ouvrent chez nos partenaires.",
+      es: "Reserva en la zona — los enlaces se abren con nuestros socios.",
     },
-    bookStays: { sl: "Nastanitve", en: "Stays" },
-    bookExperiences: { sl: "Doživetja", en: "Experiences" },
-    bookFlights: { sl: "Letalske karte", en: "Flights" },
-    bookCar: { sl: "Rent-a-car", en: "Car rental" },
+    bookStays: { sl: "Nastanitve", en: "Stays", it: "Pernottamenti", de: "Unterkünfte", fr: "Hébergements", es: "Alojamientos" },
+    bookExperiences: { sl: "Doživetja", en: "Experiences", it: "Esperienze", de: "Erlebnisse", fr: "Expériences", es: "Experiencias" },
+    bookFlights: { sl: "Letalske karte", en: "Flights", it: "Voli", de: "Flüge", fr: "Vols", es: "Vuelos" },
+    bookCar: { sl: "Rent-a-car", en: "Car rental", it: "Autonoleggio", de: "Mietwagen", fr: "Location de voiture", es: "Alquiler de coches" },
     bookTransfers: {
       sl: "Prevozi (vlaki/avtobusi)",
       en: "Transfers (trains/buses)",
+      it: "Trasferimenti (treni/autobus)",
+      de: "Transfers (Züge/Busse)",
+      fr: "Transferts (trains/bus)",
+      es: "Traslados (trenes/autobuses)",
     },
     bookOpenAt: {
       sl: (name: string) => `Odpri pri ${name}`,
       en: (name: string) => `Open at ${name}`,
+      it: (name: string) => `Apri su ${name}`,
+      de: (name: string) => `Bei ${name} öffnen`,
+      fr: (name: string) => `Ouvrir sur ${name}`,
+      es: (name: string) => `Abrir en ${name}`,
     },
     bookFlyTo: {
       sl: (name: string) => `Leti do ${name}`,
       en: (name: string) => `Fly to ${name}`,
+      it: (name: string) => `Vola a ${name}`,
+      de: (name: string) => `Nach ${name} fliegen`,
+      fr: (name: string) => `Voler vers ${name}`,
+      es: (name: string) => `Volar a ${name}`,
     },
     fuelNearby: {
       sl: "Najbližja bencinska črpalka",
       en: "Nearest fuel station",
+      it: "Benzinaio più vicino",
+      de: "Nächstgelegene Tankstelle",
+      fr: "Station-service la plus proche",
+      es: "Gasolinera más cercana",
     },
-    fuelStraight: { sl: "naravnost", en: "as the crow flies" },
+    fuelStraight: { sl: "naravnost", en: "as the crow flies", it: "in linea d’aria", de: "Luftlinie", fr: "à vol d’oiseau", es: "en línea recta" },
     fuelNote: {
       sl: "Približna lega (odprti podatki); razdalja naravnost, ne po cesti.",
       en: "Approximate location (open data); straight-line distance, not by road.",
+      it: "Posizione approssimativa (dati aperti); distanza in linea d’aria, non per strada.",
+      de: "Ungefähre Lage (offene Daten); Entfernung in Luftlinie, nicht auf der Straße.",
+      fr: "Position approximative (données ouvertes) ; distance à vol d’oiseau, pas par la route.",
+      es: "Ubicación aproximada (datos abiertos); distancia en línea recta, no por carretera.",
     },
     bookDisclosure: {
       sl: "Ko rezerviraš prek povezav naših partnerjev, partner nama izplača provizijo — cena zate ostaja enaka.",
       en: "When you book through our partner links, the partner pays us a commission — your price stays the same.",
+      it: "Quando prenoti tramite i link dei nostri partner, il partner ci paga una commissione — il tuo prezzo resta invariato.",
+      de: "Wenn du über unsere Partnerlinks buchst, zahlt der Partner uns eine Provision — dein Preis bleibt gleich.",
+      fr: "Quand tu réserves via les liens de nos partenaires, le partenaire nous verse une commission — ton prix reste le même.",
+      es: "Cuando reservas a través de los enlaces de nuestros socios, el socio nos paga una comisión — tu precio no cambia.",
     },
   } as const;
 
@@ -228,13 +276,13 @@ export function DestinationDetail({ d }: { d: Destination }) {
         </div>
         {d.featured && (
           <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground shadow">
-            {pick(l, { sl: "Izpostavljeno", en: "Featured" })}
+            {pick(l, { sl: "Izpostavljeno", en: "Featured", it: "In evidenza", de: "Empfohlen", fr: "À la une", es: "Destacado" })}
           </Badge>
         )}
       </div>
 
       <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
-        {l === "en" && pick(l, L.enNote) && (
+        {l !== "sl" && pick(l, L.enNote) && (
           <p className="mb-6 rounded-md border border-dashed border-primary/30 bg-primary/5 px-4 py-2.5 text-xs text-muted-foreground">
             {pick(l, L.enNote)}
           </p>

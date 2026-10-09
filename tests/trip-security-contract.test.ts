@@ -130,7 +130,7 @@ describe("trip-security [source-contract]: ankete — vezanost na pot + glasovan
 
 describe("trip-p0g [source-contract]: Go Mode geo: URI + geofence v UI", () => {
   test("na-poti stran ponudi geo: (sistemski zemljevidi) zraven OSM povezave", async () => {
-    const s = await src("src/app/[locale]/na-poti/page.tsx");
+    const s = await src("src/app/[locale]/na-poti/view.tsx");
     expect(s).toContain("geoUri(current.coords)");
     expect(s).toContain("geoUri(next.coords)");
     expect(s).toContain("arrivedNow"); // geofence prihoda uporabljen v UI

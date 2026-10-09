@@ -37,11 +37,11 @@ export const SEGMENT_START_HOUR: Record<DaySegment, number> = {
 
 export const DAY_SEGMENT_LABELS: Record<
   DaySegment,
-  { sl: string; en: string }
+  { sl: string; en: string; it: string; de: string; fr: string; es: string }
 > = {
-  morning: { sl: "Jutro", en: "Morning" },
-  afternoon: { sl: "Popoldan", en: "Afternoon" },
-  evening: { sl: "Večer", en: "Evening" },
+  morning: { sl: "Jutro", en: "Morning", it: "Mattina", de: "Vormittag", fr: "Matin", es: "Mañana" },
+  afternoon: { sl: "Popoldan", en: "Afternoon", it: "Pomeriggio", de: "Nachmittag", fr: "Après-midi", es: "Tarde" },
+  evening: { sl: "Večer", en: "Evening", it: "Sera", de: "Abend", fr: "Soir", es: "Noche" },
 };
 
 /** Vrstni red segmentov v dnevu (za sortiranje/prikaz). */

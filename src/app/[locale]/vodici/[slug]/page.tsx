@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { GuideDetail } from "@/components/content/guide-detail";
 import { GUIDES, getGuide } from "@/lib/content-data";
+import { alternatesFor } from "@/lib/hreflang";
 
 /**
  * /vodici/[slug] — podrobnost road-trip vodnika (SSG po 22 slugih).
@@ -25,13 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: g.title,
     description: g.rssDescription.slice(0, 155),
-    alternates: {
-      canonical: `/vodici/${g.slug}`,
-      languages: {
-        sl: `/vodici/${g.slug}`,
-        en: `/en/vodici/${g.slug}`,
-      },
-    },
+    alternates: alternatesFor(locale, `/vodici/${g.slug}`),
     openGraph: {
       title: `${g.title} · Discover Slovenia AI`,
       description: g.rssDescription.slice(0, 155),

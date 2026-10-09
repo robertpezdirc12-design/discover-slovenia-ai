@@ -73,10 +73,10 @@ export function isBookingChannel(s: string): s is BookingChannel {
 }
 
 /** Oznake kanalov za UI (SL kanon + EN prevod). */
-export const CHANNEL_LABELS: Record<BookingChannel, { sl: string; en: string }> = {
-  real: { sl: "Realni ponudnik", en: "Real provider" },
-  demo: { sl: "Demo simulator", en: "Demo simulator" },
-  partner: { sl: "Partner (provizijsko)", en: "Partner (affiliate)" },
+export const CHANNEL_LABELS: Record<BookingChannel, { sl: string; en: string; it: string; de: string; fr: string; es: string }> = {
+  real: { sl: "Realni ponudnik", en: "Real provider", it: "Fornitore reale", de: "Echter Anbieter", fr: "Prestataire réel", es: "Proveedor real" },
+  demo: { sl: "Demo simulator", en: "Demo simulator", it: "Simulatore demo", de: "Demo-Simulator", fr: "Simulateur démo", es: "Simulador demo" },
+  partner: { sl: "Partner (provizijsko)", en: "Partner (affiliate)", it: "Partner (affiliazione)", de: "Partner (Provision)", fr: "Partenaire (affiliation)", es: "Socio (afiliación)" },
 };
 
 // ─── REAL kanal — izvirniški fail-closed kanon ──────────────────────────────
@@ -1393,11 +1393,11 @@ export function validatePartnerPatchBody(body: unknown): PartnerPatchValidation 
 export type ReservationChannel = "demo" | "user" | "real" | "partner";
 
 /** Oznake kanalov rezervacij za UI. */
-export const RESERVATION_CHANNEL_LABELS: Record<ReservationChannel, { sl: string; en: string }> = {
-  demo: { sl: "Demo", en: "Demo" },
-  user: { sl: "Uporabniška", en: "User" },
-  real: { sl: "Realna", en: "Real" },
-  partner: { sl: "Partner", en: "Partner" },
+export const RESERVATION_CHANNEL_LABELS: Record<ReservationChannel, { sl: string; en: string; it: string; de: string; fr: string; es: string }> = {
+  demo: { sl: "Demo", en: "Demo", it: "Demo", de: "Demo", fr: "Démo", es: "Demo" },
+  user: { sl: "Uporabniška", en: "User", it: "Utente", de: "Benutzer", fr: "Utilisateur", es: "Usuario" },
+  real: { sl: "Realna", en: "Real", it: "Reale", de: "Echt", fr: "Réelle", es: "Real" },
+  partner: { sl: "Partner", en: "Partner", it: "Partner", de: "Partner", fr: "Partenaire", es: "Socio" },
 };
 
 /**

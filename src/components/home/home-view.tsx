@@ -330,22 +330,42 @@ const L = {
   bookingTitle: {
     sl: "Rezerviraj potovanje",
     en: "Book your trip",
+    it: "Prenota il tuo viaggio",
+    de: "Reise buchen",
+    fr: "Réserve ton voyage",
+    es: "Reserva tu viaje",
   },
   bookingLead: {
     sl: "Nastanitve, doživetja, leti, avto in prevozi — povezave odprejo pri preverjenih partnerjih, bencinske črpalke pa najdeš na našem zemljevidu.",
     en: "Stays, experiences, flights, cars and transfers — links open with verified partners; fuel stations live on our map.",
+    it: "Soggiorni, esperienze, voli, auto e trasferimenti — i link si aprono con partner verificati; le stazioni di servizio le trovi sulla nostra mappa.",
+    de: "Unterkünfte, Erlebnisse, Flüge, Autos und Transfers — Links öffnen sich bei überprüften Partnern; Tankstellen findest du auf unserer Karte.",
+    fr: "Hébergements, expériences, vols, voitures et transferts — les liens s’ouvrent chez des partenaires vérifiés ; les stations-service se trouvent sur notre carte.",
+    es: "Alojamientos, experiencias, vuelos, coches y traslados — los enlaces se abren con socios verificados; las gasolineras las encuentras en nuestro mapa.",
   },
   bookingOpenAt: {
     sl: (name: string) => `Odpri pri ${name}`,
     en: (name: string) => `Open at ${name}`,
+    it: (name: string) => `Apri presso ${name}`,
+    de: (name: string) => `Öffnen bei ${name}`,
+    fr: (name: string) => `Ouvrir chez ${name}`,
+    es: (name: string) => `Abrir en ${name}`,
   },
   bookingMapCta: {
     sl: "Poglej na zemljevidu",
     en: "View on the map",
+    it: "Guarda sulla mappa",
+    de: "Auf der Karte ansehen",
+    fr: "Voir sur la carte",
+    es: "Ver en el mapa",
   },
   bookingDisclosure: {
     sl: "Ko rezerviraš prek povezav naših partnerjev, partner nama izplača provizijo — cena zate ostaja enaka.",
     en: "When you book through our partner links, the partner pays us a commission — your price stays the same.",
+    it: "Quando prenoti tramite i link dei nostri partner, il partner ci paga una commissione — il prezzo per te resta invariato.",
+    de: "Wenn du über die Links unserer Partner buchst, zahlt uns der Partner eine Provision — dein Preis bleibt gleich.",
+    fr: "Quand tu réserves via les liens de nos partenaires, le partenaire nous verse une commission — ton prix reste le même.",
+    es: "Cuando reservas a través de los enlaces de nuestros socios, el socio nos paga una comisión — tu precio sigue igual.",
   },
 } as const;
 

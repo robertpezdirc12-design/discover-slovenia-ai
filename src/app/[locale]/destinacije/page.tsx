@@ -1,13 +1,24 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { DestinationsExplorer } from "@/components/destinations-explorer";
 import { Skeleton } from "@/components/ui/skeleton";
+import { alternatesFor } from "@/lib/hreflang";
 
 /**
  * /destinacije — raziskovalka vseh 38 destinacij.
  * Explorer je odjemalec (useSearchParams za ?q/?region/?type) — zato
  * Suspense ovoj (kanon App Routerja za iskalne parametre).
  */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return { alternates: alternatesFor(locale, "/destinacije") };
+}
+
 export default function DestinationsPage() {
   return (
     <Suspense

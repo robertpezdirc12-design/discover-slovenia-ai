@@ -73,6 +73,16 @@ interface DbTrip {
   tripDates: TripDates | null;
 }
 
+/** Locale → Intl koda za datume (sl-SI/en-GB kanon; it/de/fr/es razširitev 4-b). */
+const INTL_DATE_LOCALE: Record<string, string> = {
+  sl: "sl-SI",
+  en: "en-GB",
+  it: "it-IT",
+  de: "de-DE",
+  fr: "fr-FR",
+  es: "es-ES",
+};
+
 export function SharedTripView({ shareId }: { shareId: string }) {
   const l = useLocale();
   const { data: session, status: sessionStatus } = useSession();
@@ -117,61 +127,85 @@ export function SharedTripView({ shareId }: { shareId: string }) {
   }, [shareId, loadDb]);
 
   const L = {
-    kicker: { sl: "Deljena pot", en: "Shared trip" },
-    nameFallback: { sl: "AI načrt potovanja po Sloveniji", en: "AI travel plan around Slovenia" },
-    dayLabel: { sl: (n: number) => `Dan ${n}`, en: (n: number) => `Day ${n}` },
-    budget: { sl: (n: number) => `Skupni proračun ≈ ${n} €`, en: (n: number) => `Total budget ≈ €${n}` },
-    daysCount: { sl: (n: number) => (n === 1 ? "1 dan" : `${n} dni`), en: (n: number) => (n === 1 ? "1 day" : `${n} days`) },
-    stops: { sl: (n: number) => (n === 1 ? "1 postanek" : `${n} postankov`), en: (n: number) => (n === 1 ? "1 stop" : `${n} stops`) },
-    addTrip: { sl: "Dodaj v mojo pot", en: "Add to my trip" },
-    added: { sl: "Dodano ✓", en: "Added ✓" },
-    addAll: { sl: "Dodaj celo pot v mojo pot", en: "Add the whole trip to my trip" },
-    print: { sl: "Natisni / shrani PDF", en: "Print / save PDF" },
-    printFooter: { sl: "Izvoženo z Discover Slovenia AI", en: "Exported with Discover Slovenia AI" },
-    qrTitle: { sl: "QR koda te povezave", en: "QR code of this link" },
+    kicker: { sl: "Deljena pot", en: "Shared trip", it: "Viaggio condiviso", de: "Geteilte Reise", fr: "Voyage partagé", es: "Viaje compartido" },
+    nameFallback: { sl: "AI načrt potovanja po Sloveniji", en: "AI travel plan around Slovenia", it: "Piano di viaggio AI per la Slovenia", de: "KI-Reiseplan durch Slowenien", fr: "Plan de voyage IA à travers la Slovénie", es: "Plan de viaje IA por Eslovenia" },
+    dayLabel: { sl: (n: number) => `Dan ${n}`, en: (n: number) => `Day ${n}`, it: (n: number) => `Giorno ${n}`, de: (n: number) => `Tag ${n}`, fr: (n: number) => `Jour ${n}`, es: (n: number) => `Día ${n}` },
+    budget: { sl: (n: number) => `Skupni proračun ≈ ${n} €`, en: (n: number) => `Total budget ≈ €${n}`, it: (n: number) => `Budget totale ≈ ${n} €`, de: (n: number) => `Gesamtbudget ≈ ${n} €`, fr: (n: number) => `Budget total ≈ ${n} €`, es: (n: number) => `Presupuesto total ≈ ${n} €` },
+    daysCount: { sl: (n: number) => (n === 1 ? "1 dan" : `${n} dni`), en: (n: number) => (n === 1 ? "1 day" : `${n} days`), it: (n: number) => (n === 1 ? "1 giorno" : `${n} giorni`), de: (n: number) => (n === 1 ? "1 Tag" : `${n} Tage`), fr: (n: number) => (n === 1 ? "1 jour" : `${n} jours`), es: (n: number) => (n === 1 ? "1 día" : `${n} días`) },
+    stops: { sl: (n: number) => (n === 1 ? "1 postanek" : `${n} postankov`), en: (n: number) => (n === 1 ? "1 stop" : `${n} stops`), it: (n: number) => (n === 1 ? "1 fermata" : `${n} fermate`), de: (n: number) => (n === 1 ? "1 Stopp" : `${n} Stopps`), fr: (n: number) => (n === 1 ? "1 arrêt" : `${n} arrêts`), es: (n: number) => (n === 1 ? "1 parada" : `${n} paradas`) },
+    addTrip: { sl: "Dodaj v mojo pot", en: "Add to my trip", it: "Aggiungi al mio viaggio", de: "Zu meiner Reise hinzufügen", fr: "Ajouter à mon voyage", es: "Añadir a mi viaje" },
+    added: { sl: "Dodano ✓", en: "Added ✓", it: "Aggiunto ✓", de: "Hinzugefügt ✓", fr: "Ajouté ✓", es: "Añadido ✓" },
+    addAll: { sl: "Dodaj celo pot v mojo pot", en: "Add the whole trip to my trip", it: "Aggiungi l’intero viaggio al mio viaggio", de: "Ganze Reise zu meiner Reise hinzufügen", fr: "Ajouter tout le voyage à mon voyage", es: "Añadir todo el viaje a mi viaje" },
+    print: { sl: "Natisni / shrani PDF", en: "Print / save PDF", it: "Stampa / salva PDF", de: "Drucken / als PDF speichern", fr: "Imprimer / enregistrer en PDF", es: "Imprimir / guardar PDF" },
+    printFooter: { sl: "Izvoženo z Discover Slovenia AI", en: "Exported with Discover Slovenia AI", it: "Esportato con Discover Slovenia AI", de: "Exportiert mit Discover Slovenia AI", fr: "Exporté avec Discover Slovenia AI", es: "Exportado con Discover Slovenia AI" },
+    qrTitle: { sl: "QR koda te povezave", en: "QR code of this link", it: "Codice QR di questo link", de: "QR-Code dieses Links", fr: "Code QR de ce lien", es: "Código QR de este enlace" },
     qrNote: {
       sl: "Skeniraj s telefonom in odpri to pot — koda vsebuje samo javno povezavo.",
       en: "Scan with your phone to open this trip — the code contains only the public link.",
+      it: "Scansiona con il telefono per aprire questo viaggio — il codice contiene solo il link pubblico.",
+      de: "Scanne mit deinem Handy, um diese Reise zu öffnen — der Code enthält nur den öffentlichen Link.",
+      fr: "Scanne avec ton téléphone pour ouvrir ce voyage — le code ne contient que le lien public.",
+      es: "Escanea con tu móvil para abrir este viaje — el código contiene solo el enlace público.",
     },
-    copy: { sl: "Kopiraj povezavo", en: "Copy link" },
-    copied: { sl: "Povezava skopirana!", en: "Link copied!" },
+    copy: { sl: "Kopiraj povezavo", en: "Copy link", it: "Copia link", de: "Link kopieren", fr: "Copier le lien", es: "Copiar enlace" },
+    copied: { sl: "Povezava skopirana!", en: "Link copied!", it: "Link copiato!", de: "Link kopiert!", fr: "Lien copié !", es: "¡Enlace copiado!" },
     // P0-G (issue §17): ICS izvoz v koledar
-    icsBtn: { sl: "Dodaj v koledar (.ics)", en: "Add to calendar (.ics)" },
+    icsBtn: { sl: "Dodaj v koledar (.ics)", en: "Add to calendar (.ics)", it: "Aggiungi al calendario (.ics)", de: "Zum Kalender hinzufügen (.ics)", fr: "Ajouter au calendrier (.ics)", es: "Añadir al calendario (.ics)" },
     icsNoDates: {
       sl: "Najprej določi realne datume poti — izvoz v koledar potrebuje dneve.",
       en: "Set the real trip dates first — the calendar export needs the days.",
+      it: "Imposta prima le date reali del viaggio — l’esportazione nel calendario richiede i giorni.",
+      de: "Lege zuerst die echten Reisedaten fest — der Kalenderexport braucht die Tage.",
+      fr: "Définis d’abord les vraies dates du voyage — l’export vers le calendrier a besoin des jours.",
+      es: "Establece primero las fechas reales del viaje — la exportación al calendario necesita los días.",
     },
-    loading: { sl: "Nalagam deljeno pot …", en: "Loading the shared trip …" },
-    notFoundTitle: { sl: "Ta pot ni (več) na tej napravi", en: "This trip is not (anymore) on this device" },
+    loading: { sl: "Nalagam deljeno pot …", en: "Loading the shared trip …", it: "Caricamento del viaggio condiviso …", de: "Geteilte Reise wird geladen …", fr: "Chargement du voyage partagé …", es: "Cargando el viaje compartido …" },
+    notFoundTitle: { sl: "Ta pot ni (več) na tej napravi", en: "This trip is not (anymore) on this device", it: "Questo viaggio non è (più) su questo dispositivo", de: "Diese Reise ist nicht (mehr) auf diesem Gerät", fr: "Ce voyage n’est pas (plus) sur cet appareil", es: "Este viaje no está (ya) en este dispositivo" },
     notFoundBody: {
       sl: "Te pote ni niti v oblaku (ali ni javna in nisi sodelujoči) niti v lokalni shrambi tega brskalnika. Če ti je nekdo poslal povezavo, prosi za vabilo (sodelovanje) ali nov izvoz (natis ali besedilni načrt).",
       en: "This trip is neither in the cloud (or it is private and you are not a collaborator) nor in this browser's local storage. If someone sent you the link, ask for an invite (collaboration) or a new export (print or a text plan).",
+      it: "Questo viaggio non è né nel cloud (oppure è privato e non sei un collaboratore) né nella memoria locale di questo browser. Se qualcuno ti ha inviato il link, chiedi un invito (collaborazione) o una nuova esportazione (stampa o piano testuale).",
+      de: "Diese Reise ist weder in der Cloud (oder sie ist privat und du bist kein Mitwirkender) noch im lokalen Speicher dieses Browsers. Wenn dir jemand den Link geschickt hat, bitte um eine Einladung (Kollaboration) oder einen neuen Export (Ausdruck oder Textplan).",
+      fr: "Ce voyage n’est ni dans le cloud (ou il est privé et tu n’es pas collaborateur) ni dans le stockage local de ce navigateur. Si quelqu’un t’a envoyé le lien, demande une invitation (collaboration) ou un nouvel export (impression ou plan texte).",
+      es: "Este viaje no está ni en la nube (o es privado y no eres colaborador) ni en el almacenamiento local de este navegador. Si alguien te envió el enlace, pide una invitación (colaboración) o una nueva exportación (impresión o plan de texto).",
     },
-    planCta: { sl: "Sestavi svoj načrt", en: "Build your own plan" },
+    planCta: { sl: "Sestavi svoj načrt", en: "Build your own plan", it: "Crea il tuo piano", de: "Baue deinen eigenen Plan", fr: "Crée ton propre plan", es: "Crea tu propio plan" },
     localNote: {
       sl: "Rekonstrukcija: izvirnik hrani deljene pote v bazi z javnimi povezavami; tukaj je vir lokalna shramba (iskrenost — brez baze v tej fazi).",
       en: "Reconstruction: the original stores shared trips in a database with public links; here the source is local storage (honest — no database in this phase).",
+      it: "Ricostruzione: l’originale salva i viaggi condivisi in un database con link pubblici; qui la fonte è la memoria locale (onestà — nessun database in questa fase).",
+      de: "Rekonstruktion: das Original speichert geteilte Reisen in einer Datenbank mit öffentlichen Links; hier ist die Quelle der lokale Speicher (Ehrlichkeit — keine Datenbank in dieser Phase).",
+      fr: "Reconstruction : l’original stocke les voyages partagés dans une base de données avec des liens publics ; ici, la source est le stockage local (honnêteté — pas de base de données dans cette phase).",
+      es: "Reconstrucción: el original guarda los viajes compartidos en una base de datos con enlaces públicos; aquí la fuente es el almacenamiento local (honestidad — sin base de datos en esta fase).",
     },
-    exploreDest: { sl: "Odpri destinacijo", en: "Open destination" },
-    createdAt: { sl: "Ustvarjeno", en: "Created" },
+    exploreDest: { sl: "Odpri destinacijo", en: "Open destination", it: "Apri la destinazione", de: "Destination öffnen", fr: "Ouvrir la destination", es: "Abrir el destino" },
+    createdAt: { sl: "Ustvarjeno", en: "Created", it: "Creato", de: "Erstellt", fr: "Créé", es: "Creado" },
     // 48-a: zavihki skupnostnih funkcij
-    tabTrip: { sl: "Pot", en: "Trip" },
-    tabCollab: { sl: "Sodelovanje", en: "Collaboration" },
-    tabReservations: { sl: "Rezervacije", en: "Reservations" },
-    tabPolls: { sl: "Ankete", en: "Polls" },
-    tabChat: { sl: "Klepet", en: "Chat" },
+    tabTrip: { sl: "Pot", en: "Trip", it: "Viaggio", de: "Reise", fr: "Voyage", es: "Viaje" },
+    tabCollab: { sl: "Sodelovanje", en: "Collaboration", it: "Collaborazione", de: "Kollaboration", fr: "Collaboration", es: "Colaboración" },
+    tabReservations: { sl: "Rezervacije", en: "Reservations", it: "Prenotazioni", de: "Reservierungen", fr: "Réservations", es: "Reservas" },
+    tabPolls: { sl: "Ankete", en: "Polls", it: "Sondaggi", de: "Umfragen", fr: "Sondages", es: "Encuestas" },
+    tabChat: { sl: "Klepet", en: "Chat", it: "Chat", de: "Chat", fr: "Chat", es: "Chat" },
     // 48-a: pasica uvoza v oblak
-    cloudTitle: { sl: "Sodelovanje v živo — shrani pot v oblak", en: "Live collaboration — save this trip to the cloud" },
+    cloudTitle: { sl: "Sodelovanje v živo — shrani pot v oblak", en: "Live collaboration — save this trip to the cloud", it: "Collaborazione in tempo reale — salva il viaggio nel cloud", de: "Live-Kollaboration — speichere diese Reise in der Cloud", fr: "Collaboration en direct — enregistre ce voyage dans le cloud", es: "Colaboración en vivo — guarda este viaje en la nube" },
     cloudBody: {
       sl: "Ta pot živi samo na tej napravi (lokalna shramba). S shranitvijo v oblak odkleneš vabila, skupinske ankete, rezervacije in klepet z @AI — poti se sinhronizirajo z računom.",
       en: "This trip lives only on this device (local storage). Saving it to the cloud unlocks invites, group polls, reservations and the @AI chat — trips sync with your account.",
+      it: "Questo viaggio vive solo su questo dispositivo (memoria locale). Salvarlo nel cloud sblocca inviti, sondaggi di gruppo, prenotazioni e la chat con @AI — i viaggi si sincronizzano con l’account.",
+      de: "Diese Reise lebt nur auf diesem Gerät (lokaler Speicher). Wenn du sie in der Cloud speicherst, schaltest du Einladungen, Gruppenumfragen, Reservierungen und den @AI-Chat frei — Reisen synchronisieren sich mit dem Konto.",
+      fr: "Ce voyage ne vit que sur cet appareil (stockage local). L’enregistrer dans le cloud déverrouille les invitations, les sondages de groupe, les réservations et le chat avec @AI — les voyages se synchronisent avec le compte.",
+      es: "Este viaje vive solo en este dispositivo (almacenamiento local). Guardarlo en la nube desbloquea invitaciones, encuestas de grupo, reservas y el chat con @AI — los viajes se sincronizan con la cuenta.",
     },
-    cloudCta: { sl: "Shrani v oblak", en: "Save to the cloud" },
-    cloudSaving: { sl: "Shranjujem …", en: "Saving …" },
-    cloudLogin: { sl: "Prijavi se za shranjevanje", en: "Sign in to save" },
+    cloudCta: { sl: "Shrani v oblak", en: "Save to the cloud", it: "Salva nel cloud", de: "In der Cloud speichern", fr: "Enregistrer dans le cloud", es: "Guardar en la nube" },
+    cloudSaving: { sl: "Shranjujem …", en: "Saving …", it: "Salvataggio …", de: "Speichern …", fr: "Enregistrement …", es: "Guardando …" },
+    cloudLogin: { sl: "Prijavi se za shranjevanje", en: "Sign in to save", it: "Accedi per salvare", de: "Zum Speichern anmelden", fr: "Connecte-toi pour enregistrer", es: "Inicia sesión para guardar" },
     cloudNote: {
       sl: "Vir: baza (oblak) — sodelovanje urejeno po vlogah (lastnik/urednik/gledalec).",
       en: "Source: database (cloud) — collaboration managed by roles (owner/editor/viewer).",
+      it: "Fonte: database (cloud) — collaborazione gestita per ruoli (proprietario/editor/visualizzatore).",
+      de: "Quelle: Datenbank (Cloud) — Kollaboration rollenbasiert verwaltet (Besitzer/Bearbeiter/Betrachter).",
+      fr: "Source : base de données (cloud) — collaboration gérée par rôles (propriétaire/éditeur/lecteur).",
+      es: "Fuente: base de datos (nube) — colaboración gestionada por roles (propietario/editor/lector).",
     },
   } as const;
 
@@ -216,16 +250,17 @@ export function SharedTripView({ shareId }: { shareId: string }) {
         const stops = (planDay?.locations ?? [])
           .map((loc) => loc.name)
           .join(" → ");
+        const dayLabel = pick(l, L.dayLabel);
         return {
           date: d.iso,
           summary: stops
-            ? `Dan ${d.dayIndex} — ${stops}`
-            : `Dan ${d.dayIndex}`,
+            ? `${dayLabel(d.dayIndex)} — ${stops}`
+            : dayLabel(d.dayIndex),
         };
       }),
     });
     if (ics) downloadTripIcs(ics, shareId);
-  }, [db, shareId, pageUrl]);
+  }, [db, shareId, pageUrl, l]);
 
   const saveToCloud = React.useCallback(async () => {
     if (!localPlan || savingCloud) return;
@@ -311,20 +346,20 @@ export function SharedTripView({ shareId }: { shareId: string }) {
             <span className="inline-flex items-center gap-1.5">
               <Users className="size-4 text-primary" aria-hidden="true" />
               {db.role === "NONE" ? (
-                pick(l, { sl: "javna povezava", en: "public link" })
+                pick(l, { sl: "javna povezava", en: "public link", it: "link pubblico", de: "öffentlicher Link", fr: "lien public", es: "enlace público" })
               ) : (
                 <strong className="text-foreground">
                   {db.role === "OWNER"
-                    ? pick(l, { sl: "ti si lastnik", en: "you are the owner" })
+                    ? pick(l, { sl: "ti si lastnik", en: "you are the owner", it: "sei il proprietario", de: "du bist der Besitzer", fr: "tu es le propriétaire", es: "eres el propietario" })
                     : db.role === "EDITOR"
-                      ? pick(l, { sl: "ti si urednik", en: "you are an editor" })
-                      : pick(l, { sl: "ti si gledalec", en: "you are a viewer" })}
+                      ? pick(l, { sl: "ti si urednik", en: "you are an editor", it: "sei un editor", de: "du bist ein Bearbeiter", fr: "tu es un éditeur", es: "eres un editor" })
+                      : pick(l, { sl: "ti si gledalec", en: "you are a viewer", it: "sei un visualizzatore", de: "du bist ein Betrachter", fr: "tu es un lecteur", es: "eres un lector" })}
                 </strong>
               )}
             </span>
             <span className="font-mono text-xs">
               /pot/{shareId} · {pick(l, L.createdAt)}{" "}
-              {new Date(db.createdAt).toLocaleDateString(l === "en" ? "en-GB" : "sl-SI")}
+              {new Date(db.createdAt).toLocaleDateString(INTL_DATE_LOCALE[l] ?? "sl-SI")}
             </span>
           </div>
         </PageHeader>
@@ -400,7 +435,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
               onSaved={() => void loadDb()}
             />
 
-            <PlanDays plan={plan} shareId={shareId} l={l} addLabel={pick(l, L.addTrip)} addedLabel={pick(l, L.added)} exploreLabel={pick(l, L.exploreDest)} />
+            <PlanDays plan={plan} shareId={shareId} dayLabel={pick(l, L.dayLabel)} addLabel={pick(l, L.addTrip)} addedLabel={pick(l, L.added)} exploreLabel={pick(l, L.exploreDest)} />
 
             <div className="grid gap-4 sm:grid-cols-2 print:hidden">
               <Card>
@@ -424,7 +459,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
                 <CardContent className="flex flex-col justify-start p-5">
                   <h3 className="flex items-center gap-2 text-sm font-bold">
                     <CloudUpload className="size-4 text-primary" aria-hidden="true" />
-                    {pick(l, { sl: "Vir: baza (oblak)", en: "Source: database (cloud)" })}
+                    {pick(l, { sl: "Vir: baza (oblak)", en: "Source: database (cloud)", it: "Fonte: database (cloud)", de: "Quelle: Datenbank (Cloud)", fr: "Source : base de données (cloud)", es: "Fuente: base de datos (nube)" })}
                   </h3>
                   <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
                     {pick(l, L.cloudNote)}
@@ -432,8 +467,8 @@ export function SharedTripView({ shareId }: { shareId: string }) {
                   <p className="mt-2 text-xs text-muted-foreground">
                     {db.ownerName ? `Lastnik: ${db.ownerName} · ` : ""}
                     {db.isPublic
-                      ? pick(l, { sl: "javna povezava", en: "public link" })
-                      : pick(l, { sl: "zasebna povezava (samo sodelujoči)", en: "private link (collaborators only)" })}
+                      ? pick(l, { sl: "javna povezava", en: "public link", it: "link pubblico", de: "öffentlicher Link", fr: "lien public", es: "enlace público" })
+                      : pick(l, { sl: "zasebna povezava (samo sodelujoči)", en: "private link (collaborators only)", it: "link privato (solo collaboratori)", de: "privater Link (nur Mitwirkende)", fr: "lien privé (collaborateurs uniquement)", es: "enlace privado (solo colaboradores)" })}
                   </p>
                 </CardContent>
               </Card>
@@ -532,7 +567,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
               </Link>
             </Button>
             <Button asChild variant="outline" className="tap-target font-semibold">
-              <Link href="/moja-potovanja">{pick(l, { sl: "Moja potovanja", en: "My trips" })}</Link>
+              <Link href="/moja-potovanja">{pick(l, { sl: "Moja potovanja", en: "My trips", it: "I miei viaggi", de: "Meine Reisen", fr: "Mes voyages", es: "Mis viajes" })}</Link>
             </Button>
           </div>
         </>
@@ -556,7 +591,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
               )}
               <span className="font-mono text-xs">
                 /pot/{shareId} · {pick(l, L.createdAt)}{" "}
-                {new Date(localPlan.createdAt).toLocaleDateString(l === "en" ? "en-GB" : "sl-SI")}
+                {new Date(localPlan.createdAt).toLocaleDateString(INTL_DATE_LOCALE[l] ?? "sl-SI")}
               </span>
             </div>
           </PageHeader>
@@ -626,7 +661,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
             </Button>
           </div>
 
-          <PlanDays plan={localPlan} shareId={shareId} l={l} addLabel={pick(l, L.addTrip)} addedLabel={pick(l, L.added)} exploreLabel={pick(l, L.exploreDest)} />
+          <PlanDays plan={localPlan} shareId={shareId} dayLabel={pick(l, L.dayLabel)} addLabel={pick(l, L.addTrip)} addedLabel={pick(l, L.added)} exploreLabel={pick(l, L.exploreDest)} />
 
           {/* QR izris + opomba (ne tiska) — P0-G: pravi izris */}
           <div className="mt-10 grid gap-4 sm:grid-cols-2 print:hidden">
@@ -649,7 +684,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
               <CardContent className="flex flex-col justify-start p-5">
                 <h3 className="flex items-center gap-2 text-sm font-bold">
                   <HardDrive className="size-4 text-primary" aria-hidden="true" />
-                  {pick(l, { sl: "Vir: lokalna shramba", en: "Source: local storage" })}
+                  {pick(l, { sl: "Vir: lokalna shramba", en: "Source: local storage", it: "Fonte: memoria locale", de: "Quelle: lokaler Speicher", fr: "Source : stockage local", es: "Fuente: almacenamiento local" })}
                 </h3>
                 <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
                   {pick(l, L.localNote)}
@@ -710,14 +745,14 @@ function QrCanvas({ url, label }: { url: string; label: string }) {
 function PlanDays({
   plan,
   shareId,
-  l,
+  dayLabel,
   addLabel,
   addedLabel,
   exploreLabel,
 }: {
   plan: SharedPlan;
   shareId: string;
-  l: string;
+  dayLabel: (n: number) => string;
   addLabel: string;
   addedLabel: string;
   exploreLabel: string;
@@ -729,7 +764,7 @@ function PlanDays({
           <Card>
             <CardContent className="p-5">
               <h2 className="text-lg font-bold tracking-tight">
-                {l === "en" ? `Day ${day.day}` : `Dan ${day.day}`}
+                {dayLabel(day.day)}
                 {day.title ? ` — ${day.title}` : ""}
               </h2>
               {day.locations.length === 0 ? (

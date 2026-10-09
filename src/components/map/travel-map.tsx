@@ -218,6 +218,50 @@ const POI_KIND_LABELS_EN: Record<string, string> = {
   "natural=beach": "beach",
   "amenity=fuel": "fuel station",
 };
+const POI_KIND_LABELS_IT: Record<string, string> = {
+  tourism: "attrazione",
+  "amenity=restaurant": "ristorante",
+  "amenity=cafe": "caffè",
+  "amenity=bar": "bar",
+  "amenity=fast_food": "fast food",
+  historic: "sito storico",
+  "leisure=park": "parco",
+  "natural=beach": "spiaggia",
+  "amenity=fuel": "benzinaio",
+};
+const POI_KIND_LABELS_DE: Record<string, string> = {
+  tourism: "Sehenswürdigkeit",
+  "amenity=restaurant": "Restaurant",
+  "amenity=cafe": "Café",
+  "amenity=bar": "Bar",
+  "amenity=fast_food": "Fastfood",
+  historic: "historische Stätte",
+  "leisure=park": "Park",
+  "natural=beach": "Strand",
+  "amenity=fuel": "Tankstelle",
+};
+const POI_KIND_LABELS_FR: Record<string, string> = {
+  tourism: "attraction",
+  "amenity=restaurant": "restaurant",
+  "amenity=cafe": "café",
+  "amenity=bar": "bar",
+  "amenity=fast_food": "restauration rapide",
+  historic: "site historique",
+  "leisure=park": "parc",
+  "natural=beach": "plage",
+  "amenity=fuel": "station-service",
+};
+const POI_KIND_LABELS_ES: Record<string, string> = {
+  tourism: "atracción",
+  "amenity=restaurant": "restaurante",
+  "amenity=cafe": "cafetería",
+  "amenity=bar": "bar",
+  "amenity=fast_food": "comida rápida",
+  historic: "sitio histórico",
+  "leisure=park": "parque",
+  "natural=beach": "playa",
+  "amenity=fuel": "gasolinera",
+};
 
 /** divIcon marker živega OSM POI — majhen krogec po kind (P0-C). */
 function poiIcon(kind: string): L.DivIcon {
@@ -716,6 +760,10 @@ function LokalPinPopup({
   const catLabel = pick(locale, {
     sl: cat?.sl ?? LOKAL_CATEGORIES.other.sl,
     en: cat?.en ?? LOKAL_CATEGORIES.other.en,
+    it: cat?.it ?? LOKAL_CATEGORIES.other.it,
+    de: cat?.de ?? LOKAL_CATEGORIES.other.de,
+    fr: cat?.fr ?? LOKAL_CATEGORIES.other.fr,
+    es: cat?.es ?? LOKAL_CATEGORIES.other.es,
   });
   return (
     <div className="w-[190px]">
@@ -1067,7 +1115,7 @@ export default function TravelMap() {
     fuelLoading: { sl: "Nalagam črpalke …", en: "Loading stations …", it: "Caricamento stazioni …", de: "Tankstellen werden geladen …", fr: "Chargement des stations …", es: "Cargando gasolineras …" },
     fuelEmpty: { sl: "V tem območju ni črpalk", en: "No stations in this area", it: "Nessuna stazione in quest'area", de: "Keine Tankstellen in diesem Bereich", fr: "Aucune station dans cette zone", es: "No hay gasolineras en esta zona" },
     fuelUnavailable: { sl: "Bencinske trenutno niso dosegljive", en: "Stations currently unavailable", it: "Stazioni attualmente non disponibili", de: "Tankstellen derzeit nicht verfügbar", fr: "Stations actuellement indisponibles", es: "Gasolineras no disponibles actualmente" },
-    fuelApproximate: { sl: "približna lokacija (odprti podatki OSM)", en: "approximate location (OSM open data)", it: "posizione approssimativa (dati OSM)", de: "ungefähre Lage (OSM offene Daten)", fr: "position approximative (données OSM)", es: "ubicación aproximada (datos ODM abiertos)" },
+    fuelApproximate: { sl: "približna lokacija (odprti podatki OSM)", en: "approximate location (OSM open data)", it: "posizione approssimativa (dati OSM)", de: "ungefähre Lage (OSM offene Daten)", fr: "position approximative (données OSM)", es: "ubicación aproximada (datos OSM abiertos)" },
     fuelHighway: { sl: "ob avtocesti", en: "near motorway", it: "vicino all'autostrada", de: "an der Autobahn", fr: "près de l'autoroute", es: "junto a la autopista" },
     fuelFuels: { sl: "Goriva", en: "Fuels", it: "Carburanti", de: "Kraftstoffe", fr: "Carburants", es: "Combustibles" },
     fuelSource: { sl: "Vir: kurirani odprti podatki (ODbL)", en: "Source: curated open data (ODbL)", it: "Fonte: dati aperti curati (ODbL)", de: "Quelle: kuratierte offene Daten (ODbL)", fr: "Source : données ouvertes curatorisées (ODbL)", es: "Fuente: datos abiertos curados (ODbL)" },
@@ -1077,30 +1125,49 @@ export default function TravelMap() {
     bookFlights: { sl: "Leti", en: "Flights", it: "Voli", de: "Flüge", fr: "Vols", es: "Vuelos" },
     bookCar: { sl: "Rent-a-car", en: "Car rental", it: "Autonoleggio", de: "Mietwagen", fr: "Location de voiture", es: "Alquiler de coches" },
     bookingLinksNote: { sl: "Povezave partnerjev — provizija, cena zate nespremenjena", en: "Partner links — commission, your price unchanged", it: "Link partner — commissione, prezzo invariato", de: "Partnerlinks — Provision, Preis unverändert", fr: "Liens partenaires — commission, prix inchangé", es: "Enlaces de socios — comisión, precio sin cambios" },
-    // ── Plast POI (OSM živo) — P0-C. Slovar sl+en; it/de/fr/es padejo
-    //    nazaj na slovenščino (kanon delnih slovarjev, i18n-pick 48-b). ──
-    poiLabel: { sl: "POI (OSM živo)", en: "POI (OSM live)" },
-    poiLoading: { sl: "Nalagam POI …", en: "Loading POIs …" },
-    poiEmpty: { sl: "V tem območju ni POI", en: "No POIs in this area" },
+    // ── Plast POI (OSM živo) — P0-C. Slovar vseh 6 jezikov (i18n-pick 48-b). ──
+    poiLabel: { sl: "POI (OSM živo)", en: "POI (OSM live)", it: "POI (OSM in tempo reale)", de: "POI (OSM live)", fr: "POI (OSM en temps réel)", es: "POI (OSM en tiempo real)" },
+    poiLoading: { sl: "Nalagam POI …", en: "Loading POIs …", it: "Caricamento POI …", de: "POIs werden geladen …", fr: "Chargement des POI …", es: "Cargando POI …" },
+    poiEmpty: { sl: "V tem območju ni POI", en: "No POIs in this area", it: "Nessun POI in quest'area", de: "Keine POIs in diesem Bereich", fr: "Aucun POI dans cette zone", es: "No hay POI en esta zona" },
     poiTooBig: {
       sl: "Pogled prevelik za POI sloj — približajte zemljevid",
       en: "Viewport too large for the POI layer — zoom in",
+      it: "Vista troppo ampia per il livello POI — ingrandisci la mappa",
+      de: "Ausschnitt zu groß für die POI-Ebene — vergrößere die Karte",
+      fr: "Vue trop étendue pour la couche POI — zoome la carte",
+      es: "Vista demasiado amplia para la capa de POI — amplía el mapa",
     },
     poiUnavailable: {
       sl: "POI sloj trenutno nedosegljiv (javni Overpass vir) — podatki © OpenStreetMap avtorji",
       en: "POI layer currently unreachable (public Overpass source) — data © OpenStreetMap contributors",
+      it: "Livello POI attualmente non raggiungibile (fonte pubblica Overpass) — dati © Contributori OpenStreetMap",
+      de: "POI-Ebene derzeit nicht erreichbar (öffentliche Overpass-Quelle) — Daten © OpenStreetMap-Mitwirkende",
+      fr: "Couche POI actuellement injoignable (source Overpass publique) — données © Contributeurs OpenStreetMap",
+      es: "Capa de POI actualmente inaccesible (fuente pública Overpass) — datos © Colaboradores de OpenStreetMap",
     },
     poiAttributionLegend: {
       sl: "POI (OSM živo): podatki © OpenStreetMap avtorji (ODbL)",
       en: "POI (OSM live): data © OpenStreetMap contributors (ODbL)",
+      it: "POI (OSM in tempo reale): dati © Contributori OpenStreetMap (ODbL)",
+      de: "POI (OSM live): Daten © OpenStreetMap-Mitwirkende (ODbL)",
+      fr: "POI (OSM en temps réel) : données © Contributeurs OpenStreetMap (ODbL)",
+      es: "POI (OSM en tiempo real): datos © Colaboradores de OpenStreetMap (ODbL)",
     },
     poiPopupAttribution: {
       sl: "© OpenStreetMap avtorji (ODbL)",
       en: "© OpenStreetMap contributors (ODbL)",
+      it: "© Contributori OpenStreetMap (ODbL)",
+      de: "© OpenStreetMap-Mitwirkende (ODbL)",
+      fr: "© Contributeurs OpenStreetMap (ODbL)",
+      es: "© Colaboradores de OpenStreetMap (ODbL)",
     },
     poiKind: {
       sl: (k: string) => POI_KIND_LABELS_SL[k] ?? "točka interesa",
       en: (k: string) => POI_KIND_LABELS_EN[k] ?? "point of interest",
+      it: (k: string) => POI_KIND_LABELS_IT[k] ?? "punto di interesse",
+      de: (k: string) => POI_KIND_LABELS_DE[k] ?? "interessanter Ort",
+      fr: (k: string) => POI_KIND_LABELS_FR[k] ?? "point d'intérêt",
+      es: (k: string) => POI_KIND_LABELS_ES[k] ?? "punto de interés",
     },
   } as const;
   const t = <K extends keyof typeof L10n>(k: K) => pick(l, L10n[k]);

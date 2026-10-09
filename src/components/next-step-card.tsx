@@ -84,16 +84,20 @@ const ICONS: Record<NextStepIcon, ComponentType<{ className?: string }>> = {
 
 const L = {
   kicker: {
-    home: { sl: "Tvoj naslednji korak", en: "Your next step" },
-    plan: { sl: "Naslednji korak", en: "Next step" },
-    market: { sl: "Naslednji korak", en: "Next step" },
+    home: { sl: "Tvoj naslednji korak", en: "Your next step", it: "Il tuo prossimo passo", de: "Dein nächster Schritt", fr: "Ta prochaine étape", es: "Tu próximo paso" },
+    plan: { sl: "Naslednji korak", en: "Next step", it: "Prossimo passo", de: "Nächster Schritt", fr: "Prochaine étape", es: "Próximo paso" },
+    market: { sl: "Naslednji korak", en: "Next step", it: "Prossimo passo", de: "Nächster Schritt", fr: "Prochaine étape", es: "Próximo paso" },
   },
-  cardLabel: { sl: "Predlog naslednjega koraka", en: "Next step suggestion" },
-  reasonPrefix: { sl: "Zakaj to predlagam: ", en: "Why we suggest this: " },
-  secondaryLead: { sl: "Ali pa: ", en: "Or: " },
+  cardLabel: { sl: "Predlog naslednjega koraka", en: "Next step suggestion", it: "Suggerimento del prossimo passo", de: "Vorschlag für den nächsten Schritt", fr: "Suggestion de prochaine étape", es: "Sugerencia del próximo paso" },
+  reasonPrefix: { sl: "Zakaj to predlagam: ", en: "Why we suggest this: ", it: "Perché lo suggeriamo: ", de: "Warum wir das vorschlagen: ", fr: "Pourquoi nous le suggérons : ", es: "Por qué lo sugerimos: " },
+  secondaryLead: { sl: "Ali pa: ", en: "Or: ", it: "Oppure: ", de: "Oder: ", fr: "Ou : ", es: "O: " },
   dismissLabel: {
     sl: "Skrij predlog do konca seje",
     en: "Hide the suggestion for this session",
+    it: "Nascondi il suggerimento per questa sessione",
+    de: "Den Vorschlag für diese Sitzung ausblenden",
+    fr: "Masquer la suggestion pour cette session",
+    es: "Oculta la sugerencia por esta sesión",
   },
 } as const;
 

@@ -22,6 +22,10 @@ export async function GET() {
     disclosure: {
       sl: "Ko rezerviraš prek povezav naših partnerjev, partner nama izplača provizijo — cena zate ostane enaka.",
       en: "When you book through our partner links, the partner pays us a commission — your price stays the same.",
+      it: "Quando prenoti tramite i link dei nostri partner, il partner ci paga una commissione — per te il prezzo resta invariato.",
+      de: "Wenn du über die Links unserer Partner buchst, zahlt uns der Partner eine Provision — für dich bleibt der Preis gleich.",
+      fr: "Quand tu réserves via les liens de nos partenaires, le partenaire nous verse une commission — ton prix reste le même.",
+      es: "Cuando reservas a través de los enlaces de nuestros socios, el socio nos paga una comisión — tu precio sigue siendo el mismo.",
     },
   });
 }

@@ -103,14 +103,25 @@ describe("partner-booking: kanali (real | demo | partner — trije, strogo loče
     expect(isBookingChannel("")).toBe(false);
   });
 
-  test("oznaki partner kanala za UI obstajata (SL kanon + EN prevod)", () => {
+  test("oznake partner kanala za UI obstajajo (vseh 6 jezikov)", () => {
     expect(CHANNEL_LABELS.partner.sl.length).toBeGreaterThan(0);
     expect(CHANNEL_LABELS.partner.en.length).toBeGreaterThan(0);
-    expect(RESERVATION_CHANNEL_LABELS.partner).toEqual({ sl: "Partner", en: "Partner" });
+    expect(RESERVATION_CHANNEL_LABELS.partner).toEqual({
+      sl: "Partner",
+      en: "Partner",
+      it: "Partner",
+      de: "Partner",
+      fr: "Partenaire",
+      es: "Socio",
+    });
     // Vseh štirih kanalov rezervacij oznake so popolne (nikoli undefined).
     for (const ch of ["demo", "user", "real", "partner"] as const) {
       expect(RESERVATION_CHANNEL_LABELS[ch].sl.length).toBeGreaterThan(0);
       expect(RESERVATION_CHANNEL_LABELS[ch].en.length).toBeGreaterThan(0);
+      expect(RESERVATION_CHANNEL_LABELS[ch].it.length).toBeGreaterThan(0);
+      expect(RESERVATION_CHANNEL_LABELS[ch].de.length).toBeGreaterThan(0);
+      expect(RESERVATION_CHANNEL_LABELS[ch].fr.length).toBeGreaterThan(0);
+      expect(RESERVATION_CHANNEL_LABELS[ch].es.length).toBeGreaterThan(0);
     }
   });
 });

@@ -27,7 +27,7 @@ export type ReasonKind =
 
 export interface ReasonItem {
   kind: ReasonKind;
-  /** SL/EN oznaka razloga (lokalizirana). */
+  /** Lokalizirana oznaka razloga (izbor sl/en po PlannerLang). */
   label: string;
 }
 
@@ -68,12 +68,93 @@ function stripDia(s: string): string {
     .replace(/ž/g, "z");
 }
 
-const SEASON_LABELS: Record<string, { sl: string; en: string }> = {
-  spring: { sl: "pomlad", en: "spring" },
-  summer: { sl: "poletje", en: "summer" },
-  autumn: { sl: "jesen", en: "autumn" },
-  winter: { sl: "zima", en: "winter" },
+const SEASON_LABELS: Record<string, { sl: string; en: string; it: string; de: string; fr: string; es: string }> = {
+  spring: { sl: "pomlad", en: "spring", it: "primavera", de: "Frühling", fr: "printemps", es: "primavera" },
+  summer: { sl: "poletje", en: "summer", it: "estate", de: "Sommer", fr: "été", es: "verano" },
+  autumn: { sl: "jesen", en: "autumn", it: "autunno", de: "Herbst", fr: "automne", es: "otoño" },
+  winter: { sl: "zima", en: "winter", it: "inverno", de: "Winter", fr: "hiver", es: "invierno" },
 };
+
+/**
+ * Slovarji nizov razlogov (6 jezikov, isti vzorec kot GEO_MSG v
+ * itinerary-engine). IZBORA jezika NE spreminjamo — buildCandidateReasons
+ * ostaja vezan na PlannerLang ("sl" | "en"), razširitev izbire na
+ * it/de/fr/es je sledilna naloga ob razširitvi PlannerLang.
+ */
+const REASON_MSG = {
+  distance: {
+    sl: (km: number, name: string, min: number) => `${km} km od ${name} (vožnja ~${min} min, ocena)`,
+    en: (km: number, name: string, min: number) => `${km} km from ${name} (drive ~${min} min est.)`,
+    it: (km: number, name: string, min: number) => `${km} km da ${name} (guida ~${min} min, stima)`,
+    de: (km: number, name: string, min: number) => `${km} km von ${name} (Fahrt ~${min} Min., Schätzung)`,
+    fr: (km: number, name: string, min: number) => `${km} km de ${name} (trajet ~${min} min, estimation)`,
+    es: (km: number, name: string, min: number) => `${km} km de ${name} (conducción ~${min} min, estimación)`,
+  },
+  price: {
+    sl: (n: number) => `~${n} € na osebo`,
+    en: (n: number) => `~${n} € per person`,
+    it: (n: number) => `~${n} € a persona`,
+    de: (n: number) => `~${n} € pro Person`,
+    fr: (n: number) => `~${n} € par personne`,
+    es: (n: number) => `~${n} € por persona`,
+  },
+  budgetFit: {
+    sl: (b: string) => `ustreza proračunu (${b})`,
+    en: (b: string) => `fits your budget (${b})`,
+    it: (b: string) => `rientra nel tuo budget (${b})`,
+    de: (b: string) => `passt zu deinem Budget (${b})`,
+    fr: (b: string) => `entre dans ton budget (${b})`,
+    es: (b: string) => `encaja con tu presupuesto (${b})`,
+  },
+  budgetOver: {
+    sl: (c: string, b: string) => `NAD proračunom (${c} pri cilju ${b})`,
+    en: (c: string, b: string) => `above your budget (${c} vs ${b})`,
+    it: (c: string, b: string) => `SOPRA il budget (${c} rispetto a ${b})`,
+    de: (c: string, b: string) => `ÜBER dem Budget (${c} gegenüber ${b})`,
+    fr: (c: string, b: string) => `AU-DESSUS du budget (${c} contre ${b})`,
+    es: (c: string, b: string) => `POR ENCIMA del presupuesto (${c} frente a ${b})`,
+  },
+  seasonIn: {
+    sl: (s: string) => `v sezoni (${s})`,
+    en: (s: string) => `in season (${s})`,
+    it: (s: string) => `in stagione (${s})`,
+    de: (s: string) => `in der Saison (${s})`,
+    fr: (s: string) => `en saison (${s})`,
+    es: (s: string) => `en temporada (${s})`,
+  },
+  seasonOut: {
+    sl: (s: string, best: string) => `izven sezone (${s}; najlepše: ${best || "neznano"})`,
+    en: (s: string, best: string) => `out of season (${s}; best: ${best || "unknown"})`,
+    it: (s: string, best: string) => `fuori stagione (${s}; migliore: ${best || "sconosciuto"})`,
+    de: (s: string, best: string) => `außerhalb der Saison (${s}; am schönsten: ${best || "unbekannt"})`,
+    fr: (s: string, best: string) => `hors saison (${s} ; au mieux : ${best || "inconnu"})`,
+    es: (s: string, best: string) => `fuera de temporada (${s}; lo mejor: ${best || "desconocido"})`,
+  },
+  interestMatch: {
+    sl: (list: string) => `ujema se z interesi: ${list}`,
+    en: (list: string) => `matches interests: ${list}`,
+    it: (list: string) => `corrisponde agli interessi: ${list}`,
+    de: (list: string) => `passt zu deinen Interessen: ${list}`,
+    fr: (list: string) => `correspond à tes intérêts : ${list}`,
+    es: (list: string) => `coincide con tus intereses: ${list}`,
+  },
+  rating: {
+    sl: (r: number) => `ocena obiskovalcev ${r}/10`,
+    en: (r: number) => `rated ${r}/10`,
+    it: (r: number) => `voto ${r}/10`,
+    de: (r: number) => `Bewertung ${r}/10`,
+    fr: (r: number) => `note ${r}/10`,
+    es: (r: number) => `valoración ${r}/10`,
+  },
+  bestFor: {
+    sl: (list: string) => `primerno za: ${list}`,
+    en: (list: string) => `good for: ${list}`,
+    it: (list: string) => `adatto per: ${list}`,
+    de: (list: string) => `gut geeignet für: ${list}`,
+    fr: (list: string) => `bien pour : ${list}`,
+    es: (list: string) => `bueno para: ${list}`,
+  },
+} as const;
 
 /**
  * Zgradi strukturirane razloge za kandidata (deterministično).
@@ -95,8 +176,8 @@ export function buildCandidateReasons(
       kind: "distance",
       label:
         lang === "en"
-          ? `${Math.round(km)} km from ${ctx.anchor.name} (drive ~${driveMin} min est.)`
-          : `${Math.round(km)} km od ${ctx.anchor.name} (vožnja ~${driveMin} min, ocena)`,
+          ? REASON_MSG.distance.en(Math.round(km), ctx.anchor.name, driveMin)
+          : REASON_MSG.distance.sl(Math.round(km), ctx.anchor.name, driveMin),
     });
   }
 
@@ -104,8 +185,8 @@ export function buildCandidateReasons(
     kind: "price",
     label:
       lang === "en"
-        ? `~${candidate.costPerPerson} € per person`
-        : `~${candidate.costPerPerson} € na osebo`,
+        ? REASON_MSG.price.en(candidate.costPerPerson)
+        : REASON_MSG.price.sl(candidate.costPerPerson),
   });
 
   if (ctx.budget) {
@@ -115,27 +196,28 @@ export function buildCandidateReasons(
       label:
         lang === "en"
           ? fits
-            ? `fits your budget (${ctx.budget})`
-            : `above your budget (${candidate.budget} vs ${ctx.budget})`
+            ? REASON_MSG.budgetFit.en(ctx.budget)
+            : REASON_MSG.budgetOver.en(candidate.budget, ctx.budget)
           : fits
-            ? `ustreza proračunu (${ctx.budget})`
-            : `NAD proračunom (${candidate.budget} pri cilju ${ctx.budget})`,
+            ? REASON_MSG.budgetFit.sl(ctx.budget)
+            : REASON_MSG.budgetOver.sl(candidate.budget, ctx.budget),
     });
   }
 
   if (ctx.season) {
     const fits = candidate.bestSeason.includes(ctx.season);
     const s = SEASON_LABELS[ctx.season];
+    const bestJoined = candidate.bestSeason.join(", ");
     reasons.push({
       kind: "seasonFit",
       label:
         lang === "en"
           ? fits
-            ? `in season (${s.en})`
-            : `out of season (${s.en}; best: ${candidate.bestSeason.join(", ") || "unknown"})`
+            ? REASON_MSG.seasonIn.en(s.en)
+            : REASON_MSG.seasonOut.en(s.en, bestJoined)
           : fits
-            ? `v sezoni (${s.sl})`
-            : `izven sezone (${s.sl}; najlepše: ${candidate.bestSeason.join(", ") || "neznano"})`,
+            ? REASON_MSG.seasonIn.sl(s.sl)
+            : REASON_MSG.seasonOut.sl(s.sl, bestJoined),
     });
   }
 
@@ -161,8 +243,8 @@ export function buildCandidateReasons(
         kind: "interestMatch",
         label:
           lang === "en"
-            ? `matches interests: ${matched.join(", ")}`
-            : `ujema se z interesi: ${matched.join(", ")}`,
+            ? REASON_MSG.interestMatch.en(matched.join(", "))
+            : REASON_MSG.interestMatch.sl(matched.join(", ")),
       });
     }
   }
@@ -171,8 +253,8 @@ export function buildCandidateReasons(
     kind: "rating",
     label:
       lang === "en"
-        ? `rated ${candidate.rating}/10`
-        : `ocena obiskovalcev ${candidate.rating}/10`,
+        ? REASON_MSG.rating.en(candidate.rating)
+        : REASON_MSG.rating.sl(candidate.rating),
   });
 
   const bestFor = (candidate.bestFor ?? []).slice(0, 2);
@@ -181,8 +263,8 @@ export function buildCandidateReasons(
       kind: "bestFor",
       label:
         lang === "en"
-          ? `good for: ${bestFor.join(", ")}`
-          : `primerno za: ${bestFor.join(", ")}`,
+          ? REASON_MSG.bestFor.en(bestFor.join(", "))
+          : REASON_MSG.bestFor.sl(bestFor.join(", ")),
     });
   }
 

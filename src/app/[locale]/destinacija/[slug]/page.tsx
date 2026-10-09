@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { DestinationDetail } from "@/components/destination-detail";
 import { DESTINATIONS, getDestination } from "@/lib/slovenia-data";
+import { alternatesFor } from "@/lib/hreflang";
 
 /**
  * /destinacija/[slug] — podrobnost destinacije (SSG po slug-u).
@@ -32,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: [{ url: d.image }],
       type: "article",
     },
-    alternates: { canonical: `/destinacija/${d.slug}` },
+    alternates: alternatesFor(locale, `/destinacija/${d.slug}`),
     other: { "format-detection": "telephone=no" },
     keywords: [d.name, d.tagline, t("title")],
   };

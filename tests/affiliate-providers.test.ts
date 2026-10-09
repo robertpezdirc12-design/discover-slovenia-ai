@@ -430,7 +430,7 @@ describe("affiliate-providers: providersPublicDTO (javni DTO — varnostni kanon
 });
 
 describe("affiliate-providers: AFFILIATE_CATEGORIES (ključi kategorij)", () => {
-  test("9 ključev (P0-F: + tickets/esim/insurance), vsak z oznakama sl + en", () => {
+  test("9 ključev (P0-F: + tickets/esim/insurance), vsak z oznakami vseh 6 jezikov", () => {
     expect(Object.keys(AFFILIATE_CATEGORIES).sort()).toEqual([
       "car",
       "esim",
@@ -445,12 +445,51 @@ describe("affiliate-providers: AFFILIATE_CATEGORIES (ključi kategorij)", () => 
     for (const lbl of Object.values(AFFILIATE_CATEGORIES)) {
       expect(lbl.sl.length).toBeGreaterThan(0);
       expect(lbl.en.length).toBeGreaterThan(0);
+      expect(lbl.it.length).toBeGreaterThan(0);
+      expect(lbl.de.length).toBeGreaterThan(0);
+      expect(lbl.fr.length).toBeGreaterThan(0);
+      expect(lbl.es.length).toBeGreaterThan(0);
     }
-    // kanon predstavniških oznak
-    expect(AFFILIATE_CATEGORIES.stays).toEqual({ sl: "Nastanitve", en: "Stays" });
-    expect(AFFILIATE_CATEGORIES.fuel).toEqual({ sl: "Bencinske", en: "Fuel" });
-    expect(AFFILIATE_CATEGORIES.tickets).toEqual({ sl: "Vstopnice", en: "Tickets" });
-    expect(AFFILIATE_CATEGORIES.esim).toEqual({ sl: "eSIM podatki", en: "eSIM data" });
-    expect(AFFILIATE_CATEGORIES.insurance).toEqual({ sl: "Zavarovanje", en: "Insurance" });
+    // kanon predstavniških oznak (P3: vseh 6 jezikov)
+    expect(AFFILIATE_CATEGORIES.stays).toEqual({
+      sl: "Nastanitve",
+      en: "Stays",
+      it: "Soggiorni",
+      de: "Unterkünfte",
+      fr: "Séjours",
+      es: "Alojamientos",
+    });
+    expect(AFFILIATE_CATEGORIES.fuel).toEqual({
+      sl: "Bencinske",
+      en: "Fuel",
+      it: "Carburante",
+      de: "Tankstellen",
+      fr: "Carburant",
+      es: "Combustible",
+    });
+    expect(AFFILIATE_CATEGORIES.tickets).toEqual({
+      sl: "Vstopnice",
+      en: "Tickets",
+      it: "Biglietti",
+      de: "Tickets",
+      fr: "Billets",
+      es: "Entradas",
+    });
+    expect(AFFILIATE_CATEGORIES.esim).toEqual({
+      sl: "eSIM podatki",
+      en: "eSIM data",
+      it: "Dati eSIM",
+      de: "eSIM-Daten",
+      fr: "Données eSIM",
+      es: "Datos eSIM",
+    });
+    expect(AFFILIATE_CATEGORIES.insurance).toEqual({
+      sl: "Zavarovanje",
+      en: "Insurance",
+      it: "Assicurazione",
+      de: "Versicherung",
+      fr: "Assurance",
+      es: "Seguro",
+    });
   });
 });

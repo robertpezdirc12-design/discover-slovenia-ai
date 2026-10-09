@@ -12,7 +12,17 @@ Vsi jobi delijo enak vhodni varovalni seznam `requireCronSecret`
 obvezna**. Brez skrivnosti v okolju ali z napačnim žetonom je odgovor **401
 (fail-closed)** — jobi so ZAPRTI, nikoli odprti „za silo".
 
-Urnik je registriran v `vercel.json` (Vercel Cron pošilja GET z glavo):
+Urnik je registriran na DVA nosilca (iskrena meja Vercel Hobby: največ 2
+cron joba na račun, največ 1 zagon/dan — več jih deploy zavrne):
+
+- **`vercel.json`** — 2 DNEVNA joba (`recalculate-status`, `draft-reminders`);
+  Vercel Cron pošilja GET z glavo.
+- **`.github/workflows/prod-cron.yml`** — 3 preostali (spodaj v tabeli):
+  `watch-check`, `sto-reingest`, `kiwitaxi-reingest`. Actions jobi kličejo
+  ISTE poti z glavo `Authorization: Bearer $CRON_SECRET` (repo skrivnosti
+  `PROD_BASE_URL` + `CRON_SECRET`) — isti fail-closed kanon kot Vercel.
+  Kvota zasebnega repa: ~369 runov/mes ≈ 19 % od 2.000 brezplačnih min
+  Actions (nadgradnja na Pro vrne vseh 5 v `vercel.json`).
 
 | Pot | Urnik (UTC) | Namen | Idempotenca | AuditLog dejanje |
 |---|---|---|---|---|

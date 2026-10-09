@@ -1,0 +1,101 @@
+# =============================================================================
+# PROD-CRON — Discover-Slovenia-AI: 3 cron jobi, ki jih Vercel Hobby NE more
+# poganjati (meja Hobby plana: največ 2 cron joba na račun, največ 1 zagon
+# na dan — več jih deploy zavrne).
+#
+# Razdelitev urnikov (issue #2 — production cutover priprava):
+#   · vercel.json        → 2 DNEVNA joba: recalculate-status (6:30),
+#                          draft-reminders (8:00) — Vercel Cron;
+#   · TA workflow        → 3 preostali:
+#       watch-check        vsaki 2 uri (:15)  — P1-C (issue #3 §4)
+#       sto-reingest       torek 7:30 UTC     — P0-C STO llms.txt
+#       kiwitaxi-reingest  sreda 7:30 UTC     — P0-C KiwiTaxi feed
+#
+# ISTI fail-closed kanon kot Vercel cron: glava Authorization: Bearer
+# <CRON_SECRET> je OBVEZNA (requireCronSecret — 401 brez žetona); žeton
+# potuje SAMO v glavi, nikoli v URL-ju.
+#
+# KVOTA (zasebni repo = 2.000 min/mes brezplačnih Actions):
+#   ~369 runov/mes ≈ 370 min ≈ 19 % kvote (keep-warm vzorec na 13 min bi
+#   porabil ~3.330 min — zato NE). Alternativi: javen repo (neomejeno) ali
+#   zunanja storitev (cron-job.org / UptimeRobot — 0 min kvote).
+#
+# Skrivnosti (Settings → Secrets and variables → Actions):
+#   PROD_BASE_URL = https://<nova-produkcija>   (brez zaključnega /)
+#   CRON_SECRET   = ista vrednost kot Vercel env (naključni niz ≥ 32 znakov)
+#
+# OPOMBA: urniki `schedule` delujejo SAMO na privzeti veji (main) —
+# GitHub omejitev za zasebnih repozitorijev.
+# =============================================================================
+
+name: Produkcijski cron (Hobby workaround)
+
+on:
+  schedule:
+    - cron: '15 */2 * * *'   # watch-check (P1-C)
+    - cron: '30 7 * * 2'     # sto-reingest (P0-C)
+    - cron: '30 7 * * 3'     # kiwitaxi-reingest (P0-C)
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'Job za ročni zagon'
+        required: true
+        default: 'watch-check'
+        type: choice
+        options: [watch-check, sto-reingest, kiwitaxi-reingest]
+
+permissions: {}
+
+concurrency:
+  group: prod-cron
+  cancel-in-progress: false
+
+jobs:
+  cron:
+    name: Cron ${{ github.event.inputs.job || 'po urniku' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Izpelji job iz sprožilca
+        id: pick
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            JOB="${{ github.event.inputs.job }}"
+          else
+            case "${{ github.event.schedule }}" in
+              '15 */2 * * *') JOB="watch-check" ;;
+              '30 7 * * 2')   JOB="sto-reingest" ;;
+              '30 7 * * 3')   JOB="kiwitaxi-reingest" ;;
+              *) echo "✗ neznan urnik: ${{ github.event.schedule }}" >&2; exit 1 ;;
+            esac
+          fi
+          echo "job=$JOB" >> "$GITHUB_OUTPUT"
+          echo "path=/api/cron/$JOB" >> "$GITHUB_OUTPUT"
+
+      - name: Pokliči produkcijski endpoint (1 ponovitev po 30 s)
+        env:
+          BASE_URL: ${{ secrets.PROD_BASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          JOB: ${{ steps.pick.outputs.job }}
+          EP: ${{ steps.pick.outputs.path }}
+        run: |
+          set -u
+          BASE_URL="${BASE_URL%/}"
+          : "${BASE_URL:?secrets.PROD_BASE_URL manjka}"
+          : "${CRON_SECRET:?secrets.CRON_SECRET manjka}"
+          URL="${BASE_URL}${EP}"
+          echo "── GET $EP (job: $JOB)"
+          for attempt in 1 2; do
+            START=$(date +%s)
+            if BODY=$(curl -sf --max-time 90 \
+                 -H "Authorization: Bearer ${CRON_SECRET}" "$URL"); then
+              DUR=$(( $(date +%s) - START ))
+              echo "✓ HTTP 200 v ${DUR} s (poskus $attempt)"
+              printf '%s\n' "$BODY" | head -c 2000
+              echo
+              exit 0
+            fi
+            echo "✗ poskus $attempt neuspešen — čakam 30 s"
+            [ "$attempt" = "2" ] && exit 1
+            sleep 30
+          done

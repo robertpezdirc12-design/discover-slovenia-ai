@@ -3,24 +3,12 @@
   "framework": "nextjs",
   "crons": [
     {
-      "path": "/api/cron/sto-reingest",
-      "schedule": "30 7 * * 2"
-    },
-    {
-      "path": "/api/cron/kiwitaxi-reingest",
-      "schedule": "30 7 * * 3"
-    },
-    {
       "path": "/api/cron/recalculate-status",
       "schedule": "30 6 * * *"
     },
     {
       "path": "/api/cron/draft-reminders",
       "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/cron/watch-check",
-      "schedule": "15 */2 * * *"
     }
   ]
 }

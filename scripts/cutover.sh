@@ -25,6 +25,12 @@
 #  - vsaka faza ima VRATA — rdeče ustavi izvajanje (exit ≠ 0);
 #  - `transfer` je NEPIŠOČ (dry-run); pisanje je IZRECNO v `transfer-apply`.
 #
+# PG-CLIENT VAROVALKA (2026-10-10): preflight/transfer/transfer-apply/
+#  idempotenca zgenerirajo Prisma klienta iz POSTGRES sheme
+#  (`bun run db:pg:generate`) — privzeti klient (SQLite razvojna shema) bi
+#  padel na postgres DATABASE_URL. Dokazano na PostgreSQL 17 (issue #2).
+#  PO cutover delu vrni razvojni klient z `bunx prisma generate`.
+#
 # ROČNI KORAKI (jih ta skripta NE more namesto tebe — iskrena meja):
 #  - §5  izbira cutover okna (najnižji promet) + komunikacija;
 #  - §7  Vercel/Render: git povezava repa, Build Command
@@ -81,7 +87,19 @@ preflight() {
     || die "VRATA: db:pg:check (postgres shema ≡ glavna; baseline ≡ from-empty)"
   bun run db:pg:validate \
     || die "VRATA: db:pg:validate (provider postgresql)"
-  ok "obe suhi preverbi zeleni"
+  pg_client 
+  ok "obe suhi preverbi zeleni + postgres Prisma klient generiran"
+}
+
+# PG-CLIENT VAROVALKA (2026-10-10, dokazano na PostgreSQL 17 — issue #2):
+# @prisma/client je privzeto generiran iz RAZVOJNE (SQLite) sheme; brez te
+# koraka bi transfer/apply/idempotenca padli na postgres DATABASE_URL z
+# napako gonilnika (P1012/P1001 — protokol file:// vs postgres://).
+# Vsi prenosi ciljajo postgres — klient MORA biti postgres flavoured.
+pg_client() {
+  bun run db:pg:generate \
+    || die "VRATA: prisma generate (postgres) ni uspel — NE nadaljuj"
+  ok "Prisma klient (re)generiran iz prisma/postgres/schema.prisma"
 }
 
 migrate_deploy() {
@@ -107,6 +125,7 @@ integrity_before() {
 transfer() {
   require_env LEGACY_DATABASE_URL DATABASE_URL
   log "§6.1 TRANSFER — DRY-RUN (brez pisanja!)"
+  pg_client
   LEGACY_DATABASE_URL="$LEGACY_DATABASE_URL" DATABASE_URL="$DATABASE_URL" \
     bun run migrate:legacy --dry-run \
     || die "VRATA: dry-run ni uspel — NE poženi transfer-apply"
@@ -116,6 +135,7 @@ transfer() {
 transfer_apply() {
   require_env LEGACY_DATABASE_URL DATABASE_URL
   log "§6.2 TRANSFER — APPLY (pisanje po NOVI bazi)"
+  pg_client
   LEGACY_DATABASE_URL="$LEGACY_DATABASE_URL" DATABASE_URL="$DATABASE_URL" \
     bun run migrate:legacy --apply \
     || die "VRATA: apply ni uspel"
@@ -126,6 +146,7 @@ idempotence() {
   require_env LEGACY_DATABASE_URL DATABASE_URL
   mkdir -p "$BACKUP_DIR"
   log "§6.3 IDEMPOTENCA — ponoven apply MORA prenesti 0"
+  pg_client
   OUT=$(LEGACY_DATABASE_URL="$LEGACY_DATABASE_URL" DATABASE_URL="$DATABASE_URL" \
     bun run migrate:legacy --apply 2>&1) \
     || { printf '%s\n' "$OUT"; die "VRATA: ponoven apply ni uspel"; }
@@ -136,19 +157,28 @@ idempotence() {
 }
 
 integrity_after() {
-  require_env DATABASE_URL
+  require_env LEGACY_DATABASE_URL DATABASE_URL
   mkdir -p "$BACKUP_DIR"
-  log "§6.5 INTEGRITY AFTER + VRATA --expect-zero (kritične tabele delta 0)"
+  log "§6.5 INTEGRITY AFTER + VRATA (stroga + z razlogom — matrika §1)"
   DATABASE_URL="$DATABASE_URL" bun run db:integrity \
     > "$BACKUP_DIR/integrity-after.json" \
     || die "VRATA: integrity AFTER ni uspel"
   [ -f "$BACKUP_DIR/integrity-before.json" ] \
-    || die "manjka $BACKUP_DIR/integrity-before.json — poženi najprej fazo `before`"
+    || die "manjka $BACKUP_DIR/integrity-before.json — poženi najprej fazo \`before\`"
+  # STROGA vrata: tabele BREZ dokumentirane izpustne poti (matrika) — delta MORA biti 0:
   DATABASE_URL="$DATABASE_URL" bun run db:integrity \
     --compare "$BACKUP_DIR/integrity-before.json" \
-    --expect-zero "User,NewsletterSubscriber,Consultation,Lead,ProcessedStripeEvent,AuditLog" \
+    --expect-zero "User,NewsletterSubscriber,Consultation,ProcessedStripeEvent" \
     || die "VRATA: --expect-zero NI zelena — preveri ročno pred nadaljevanjem"
-  ok "delta 0 na kritičnih tabelah — podatkovna stran cutoverja DOKAZANA"
+  # VRATA Z RAZLOGOM (dokazano na PostgreSQL 17, 2026-10-10): Lead (status ∉
+  # nov/kontaktiran → arhiv) in AuditLog (brez resourceType/Id → arhiv) imata
+  # DOKUMENTIRANO izpustno pot — slepa vrata bi padla na produkcijskih
+  # podatkih. cutover-gate.ts mehansko preveri, da delta NATANČNO ustreza
+  # številu arhiviranih vrstic (zrcalo mapLead/mapAuditLog pogojev):
+  LEGACY_DATABASE_URL="$LEGACY_DATABASE_URL" DATABASE_URL="$DATABASE_URL" \
+    bun scripts/cutover-gate.ts \
+    || die "VRATA Z RAZLOGOM RDEČA: izpusti NE ustrezajo matriki — preveri ročno"
+  ok "stroga vrata (delta 0) + vrata z razlogom (arhiv po matriki) ZELENA — podatkovna stran cutoverja DOKAZANA"
 }
 
 health() {

@@ -119,16 +119,30 @@ DATABASE_URL="$NOVA_DATABASE_URL" \
 #    - SavedItinerary anonimne/nerazčrljive poti (števec v poročilu skripte):
 #      ostanejo v backupu — odloči, ali jih arhiviraš javno (/pot ostane 404).
 
-# 6.5 AFTER + primerjava z vrati (kritične tabele morajo imeti delta 0):
+# 6.5 AFTER + primerjava z vrati (dokazano na PostgreSQL 17, 2026-10-10):
 DATABASE_URL="$NOVA_DATABASE_URL" bun run db:integrity > integrity-after.json
+# STROGA vrata — tabele BREZ dokumentirane izpustne poti (delta MORA biti 0):
 DATABASE_URL="$NOVA_DATABASE_URL" bun run db:integrity \
   --compare integrity-before.json \
-  --expect-zero "User,NewsletterSubscriber,Consultation,Lead,ProcessedStripeEvent,AuditLog"
+  --expect-zero "User,NewsletterSubscriber,Consultation,ProcessedStripeEvent"
+# VRATA Z RAZLOGOM — Lead (status ∉ nov/kontaktiran → arhiv) in AuditLog
+# (brez resourceType/Id → arhiv) imata DOKUMENTIRANO izpustno pot (matrika
+# §1); slepa vrata bi padla na produkcijskih podatkih. Skripta mehansko
+# preveri, da delta NATANČNO ustreza številu arhiviranih vrstic:
+LEGACY_DATABASE_URL="$STARA_DATABASE_URL" \
+DATABASE_URL="$NOVA_DATABASE_URL" bun scripts/cutover-gate.ts
 ```
 
-**Vrata:** `--expect-zero` izpiše ✓ ZELENA; vsak izpust ima števec in razlog
-(dokumentiran v `docs/RECOVERY-MODEL-MATRIX.md`); dry-run poročilo shranjeno
-kot dokaz.
+**Vrata:** `--expect-zero` izpiše ✓ ZELENA + `cutover-gate.ts` izpiše ✓ vrata
+z razlogom (stara − arhivirani = pričakovana = nova); vsak izpust ima števec
+in razlog (dokumentiran v `docs/RECOVERY-MODEL-MATRIX.md`); dry-run poročilo
+shranjeno kot dokaz.
+
+**User preferences (matrika §1, dodano 2026-10-10):** legacy `preferences`
+JSON se prenese v `UserPreference` (source `IMPORTED`) — SAMO kanonsko
+validirane vrednosti (isti varovalni sloj kot `/api/preferences` PUT); neznan
+ključ (npr. `groupSize`) ali nekanonska vrednost se iskreno arhivira z
+razlogom (NE ugibamo preslikav).
 
 ## 7. DEPLOYMENT (Vercel/Render na GitLab main)
 

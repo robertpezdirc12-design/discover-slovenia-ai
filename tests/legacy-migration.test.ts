@@ -12,6 +12,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   mapUser,
+  planUserPreferences,
   mapItinerary,
   mapCollaborator,
   mapPoll,
@@ -43,6 +44,43 @@ describe("mapUser — uporabniki", () => {
   test("preferences JSON se izroči ločeno (razčlenjuje UserPreference plast)", () => {
     const r = mapUser({ id: "u1", email: "a@b.si", name: "Ana", passwordHash: "x", preferences: '{"budget":"€€"}', createdAt: T, updatedAt: T });
     expect(r.legacyPreferencesJson).toBe('{"budget":"€€"}');
+  });
+});
+
+describe("planUserPreferences — preferences JSON → UserPreference IMPORTED (matrika §1)", () => {
+  test("kanonske vrednosti se prenesejo (budget €€, interests seznam)", () => {
+    const r = planUserPreferences('{"budget":"€€","interests":["gore","vino"]}');
+    expect(r.entries).toEqual([
+      { key: "budget", value: "\"€€\"" },
+      { key: "interests", value: '["gore","vino"]' },
+    ]);
+    expect(r.skipped).toEqual([]);
+  });
+
+  test("neznan ključ (groupSize …) in nekanonska vrednost se arhivirata z razlogom — NE ugibamo", () => {
+    const r = planUserPreferences('{"groupSize":2,"budget":"mid","season":"poletje"}');
+    expect(r.entries).toEqual([]);
+    const reasons = r.skipped.map((s) => s.reason).sort();
+    expect(reasons).toContain('neznan ključ „groupSize" (ni v kanonu PREFERENCE_KEYS) — arhiv: backup');
+    expect(reasons).toContain('neveljavna vrednost za „budget" — arhiv: backup');
+    expect(reasons).toContain('neveljavna vrednost za „season" — arhiv: backup');
+  });
+
+  test("prazni seznami/besedila se ne prenesejo (ni vsebine = ni zapisa)", () => {
+    const r = planUserPreferences('{"interests":[],"food":""}');
+    expect(r.entries).toEqual([]);
+    expect(r.skipped.some((s) => s.reason.includes("prazna vrednost"))).toBe(true);
+  });
+
+  test("nerazčrljiv JSON / ne-objekt / null → arhiv z razlogom (brez padca)", () => {
+    expect(planUserPreferences("{pokvarjeno").skipped[0]?.reason).toContain("nerazčrljiv");
+    expect(planUserPreferences('["tabela"]').skipped[0]?.reason).toContain("ni JSON objekt");
+    expect(planUserPreferences(null).entries).toEqual([]);
+  });
+
+  test("duplikat ključa v JSON objektu → en zapis (JSON.parse: zadnji zmaga, deterministično)", () => {
+    const r = planUserPreferences('{"budget":"€","budget":"€€€"}');
+    expect(r.entries).toEqual([{ key: "budget", value: "\"€€€\"" }]);
   });
 });
 

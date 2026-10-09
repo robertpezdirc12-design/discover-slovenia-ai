@@ -1,0 +1,155 @@
+# =============================================================================
+# CUTOVER-DATA — Discover-Slovenia-AI: podatkovne faze produkcijskega cutoverja
+# (docs/PRODUCTION-CUTOVER.md §1–§9) kot GitHub Actions — brez potrebe po
+# lokalni namestitvi bun/pg_dump pri lastniku.
+#
+# NAMEN (issue #2): lastniku ostanejo SAMO zunanja dejanja, ki jih peskovnik
+# ne more izvesti: dodajte 2 skrivnosti iz Neon konzole in klikajte faze PO
+# VRSTNEM REDU runbooka (vsaka faza ima vrata — rdeče ustavi nadaljevanje):
+#
+#   Skrivnosti (Settings → Secrets and variables → Actions):
+#     LEGACY_DATABASE_URL = Neon povezovalni niz STARE produkcije (1.163.4)
+#     DATABASE_URL        = Neon povezovalni niz NOVE baze 2.x (PRAZNA!)
+#     PROD_BASE_URL       = že nastavljena (https://i-feel-slovenia.vercel.app)
+#
+#   Vrstni red (vsako fazo pognaj ločeno — runbook §1–§9):
+#     1. backup          §1  pg_dump + sha256 (artefakt + OPOZORILO PII spodaj)
+#     2. preflight       §2  db:pg:check + db:pg:validate + pg-klient varovalka
+#     3. migrate-deploy  §3  prisma migrate deploy (0_init) na novo bazo
+#     4. before          §4  integrity BEFORE (artefakt cutover-integrity-before)
+#     5. transfer        §6.1 DRY-RUN (brez pisanja!) — preglej poročilo izpustov
+#     6. transfer-apply  §6.2 APPLY — zahteva potrditev PRENESI (input confirm)
+#     7. idempotence     §6.3 ponoven apply MORA prenesti 0
+#     8. after           §6.5 stroga vrata + vrata z razlogom (cutover-gate)
+#     9. health          §8   GET /api/health (PO deployju 2.x na PROD_BASE_URL)
+#    10. smoke           §9   samo-bralni dim ( isti suite kot CI)
+#
+#   Nato še §7 deployment (Vercel: Build Command + env + CRON_SECRET mirror)
+#   in §9.5 PWA preverba — ročno po runbooku.
+#
+# VARNOST:
+#   - povezovalni nizi se NIKOLI ne izpišejo (cutover.sh kanon: samo protokol;
+#     GitHub maskeira skrivnosti v logih samodejno);
+#   - NODE_ENV=production izklopi Prisma query-dnevnik (PIJ varnost — P0 AUDIT M6);
+#   - transfer-apply ima OSEBNO potrditev (input confirm = PRENESI) — fail-closed;
+#   - rollback (§10) ostaja ročen (DNS + dump) — namenoma NI avtomatiziran.
+#
+# ⚠️  ARTEFAKTI VSEBUJEJO PII (uporabniški podatki): zadrževanje 7 dni;
+#     naloži dump LOKALNO (3-2-1 načelo) in artefakt izbriši v UI.
+#
+# KVOTA: 10 faz ≈ 30 min skupaj (zasebni repo = 2.000 min/mes) — zanemarljivo.
+# =============================================================================
+
+name: Cutover podatkovne faze (Neon)
+
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: "Faza runbooka (docs/PRODUCTION-CUTOVER.md)"
+        required: true
+        type: choice
+        options:
+          - backup
+          - preflight
+          - migrate-deploy
+          - before
+          - transfer
+          - transfer-apply
+          - idempotence
+          - after
+          - health
+          - smoke
+      confirm:
+        description: 'Za transfer-apply vnesi: PRENESI'
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+  actions: read # prenos artefakta integrity-before (faza after)
+
+concurrency:
+  group: cutover-data
+  cancel-in-progress: false # podatkovna faza se NIKOLI ne prekine
+
+jobs:
+  faza:
+    name: "Faza: ${{ inputs.phase }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CUTOVER_BACKUP_DIR: ./cutover-evidence
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Namestitev odvisnosti
+        run: bun install --frozen-lockfile
+
+      # pg_dump MORA biti ≥ verzija strežnika (Neon PG16/17); ubuntu-latest
+      # prinaša klienta 16 — zato PGDG klient 17 (dela za oba):
+      - name: Namesti postgresql-client-17 (samo faza backup)
+        if: inputs.phase == 'backup'
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
+          pg_dump --version
+
+      # Faza after potrebuje integrity-before.json iz faze before (artefakt
+      # zadnjega uspešnega runa):
+      - name: Prenesi integrity-before artefakt (samo faza after)
+        if: inputs.phase == 'after'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p cutover-evidence
+          RUN_ID=$(gh api \
+            "repos/${{ github.repository }}/actions/artifacts?name=cutover-integrity-before&per_page=20" \
+            --jq '[.artifacts[] | select(.expired == false)][0].workflow_run.id' || true)
+          if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
+            echo "✗ artefakt cutover-integrity-before ni najden — najprej poženi fazo before" >&2
+            exit 1
+          fi
+          echo "integrity-before iz runa: $RUN_ID"
+          gh run download "$RUN_ID" --name cutover-integrity-before --dir cutover-evidence
+
+      - name: Izvedi fazo (scripts/cutover.sh — en vir resnice)
+        env:
+          LEGACY_DATABASE_URL: ${{ secrets.LEGACY_DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SMOKE_BASE_URL: ${{ secrets.PROD_BASE_URL }}
+          NODE_ENV: production
+        run: |
+          if [ "${{ inputs.phase }}" = "transfer-apply" ] && [ "${{ inputs.confirm }}" != "PRENESI" ]; then
+            echo "✗ VRATA: transfer-apply zahteva izrecno potrditev — v input »confirm« vnesi PRENESI" >&2
+            exit 1
+          fi
+          ./scripts/cutover.sh "${{ inputs.phase }}"
+
+      - name: Naloži integrity-before (artefakt za fazo after)
+        if: inputs.phase == 'before'
+        uses: actions/upload-artifact@v4
+        with:
+          name: cutover-integrity-before
+          path: cutover-evidence/integrity-before.json
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Naloži dokaze faze (backup dump / poročila — ⚠ PII, 7 dni)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cutover-${{ inputs.phase }}-${{ github.run_number }}
+          path: cutover-evidence/
+          retention-days: 7
+          if-no-files-found: ignore

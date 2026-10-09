@@ -2679,3 +2679,23 @@ Stage Summary:
 - Cron cutover je zdaj TURNKEY: ko lastnik izvede §1–§9 runbooka (Neon backup → preflight → migrate-deploy → prenos podatkov → deploy 2.x na i-feel-slovenia.vercel.app + mirror CRON_SECRET v Vercel env), se GitHub urniki SAMI aktivirajo (health-varovalka prepozna 2.x) — brez nadaljnjih ročnih korakov v GitHubu
 - CRON_SECRET vrednost izročena lastniku prek zasebnega kanala (NE v repo/issue) — potrebna za mirror v Vercel ob §7; skrivnosti so write-only, vrednosti ni mogoče prebrati nazaj
 - Iskrena meja: podatkovne faze §1–§6 (pg_dump, migrate deploy, prenos legacy) ostajajo lastnikova dejanja — zahtevajo Neon povezovalne nize, ki jih peskovnik nima
+
+---
+Task ID: cutover-pipeline-proof
+Agent: Z.ai Code (glavni)
+Task: Dokaz celotnega podatkovnega cutover pipeline-a na pravem PostgreSQL 17 (issue #2) + popravili ujetih pasti + one-click workflow
+
+Work Log:
+- Postavitev: PostgreSQL 17.11 (micromamba, port 5433) + klon repa; dsa_legacy (39 tabel iz docs/recovery/schema-1.163.4.prisma, NATIVNO postgres — prejšnji E2E je tekel samo na SQLite s prepisanim providerjem!) + seed 14 modelov z avtentičnimi legacy vrednostmi (Lead statusi nov/kontaktiran/zakljucen, TripCollaborator ACTIVE/PENDING, bcrypt passwordHash)
+- PAST 1 UJETA IN POPRAVLJENA (blokirala bi lastnika na §6.1): @prisma/client privzeto generiran iz SQLite razvojne sheme → cutover.sh transfer/apply/idempotenca bi padli na postgres DATABASE_URL (dokazano: padec z gonilnikovo napako). Popravek: pg_client() varovalka (bun run db:pg:generate) v preflight/transfer/transfer-apply/idempotence
+- PAST 2 UJETA IN POPRAVLJENA (blokirala bi vrata §6.5): slepa --expect-zero "…,Lead,…,AuditLog" bi padla na produkcijskih podatkih (zaključeni leadi + AuditLog brez resourceType so DOKUMENTIRANI arhiv po matriki §1 — dokazano: vrata so pošteno postala rdeča na mojem seedu). Popravek: stroga vrata (User,NewsletterSubscriber,Consultation,ProcessedStripeEvent) + NOV scripts/cutover-gate.ts (vrata z razlogom: mehansko preveri, da delta NATANČNO ustreza številu arhiviranih vrstic — zrcalo mapLead/mapAuditLog pogojev, samo protokol v izpisu)
+- PAST 3 UJETA IN POPRAVLJENA (tiha izguba podatkov proti matriki §1): legacy preferences JSON se NI prenašal v UserPreference (matrika obljublja source IMPORTED; E2E test je to izrecno dokumentiral kot "ročno/prihodnje"). Popravek: planUserPreferences (čista funkcija — SAMO kanonsko validirane vrednosti prek validatePreferenceValue, isti sloj kot /api/preferences PUT; neznan ključ groupSize/nekanonska vrednost → iskren arhiv z razlogom, NE ugibamo) + transferLegacyPreferences helper (FK vrstni red: preference ŠLE ZA uporabnikom — P2003 dokazan; obstoječi uporabnik po email → preference na obstoječi id; idempotenca po userId+key) + poročilo User→UserPreference(IMPORTED)
+- FK napaka med razvojem ujeta in popravljena (preference pred uporabnikom → P2003); E2E test narejen samozadostnega (ekspliciten bunx prisma generate pred skripto — prej je skrito zaupal CI vrstnemu redu)
+- NOV .github/workflows/cutover-data.yml: 10 runbook faz (backup→smoke) kot workflow_dispatch choice; transfer-apply zahteva osebno potrditev "PRENESI"; NODE_ENV=production (PIJ — brez Prisma query dnevnika); pg_dump≥17 prek PGDG (Neon PG16/17); artefakti integrity-before (14 dni) + dokazi faz (7 dni, ⚠ PII opozorilo); concurrency brez prekinitve; pokliče scripts/cutover.sh (en vir resnice)
+- DEJANSKI DOKAZ NA POSTGRESQL 17 (vsi izpisi shranjeni v peskovniku): §1 backup (104K dump, 39 TABLE DATA, sha256) → §2 preflight (shema≡baseline≡from-empty + pg klient) → §3 migrate-deploy (27 tabel, _prisma_migrations:1) → §4 before (39 tabel) → §6.1 dry-run (23 za prenos; UserPreference 3, groupSize arhiviran ×1) → §6.2 apply (31 zapisov) → §6.3 idempotenca (0) → §6.5 after (stroga vrata ZELENA + vrata z razlogom ZELENA: Lead 3−1=2=2, AuditLog 3−0=3=3) + BCRYPT PRIJAVA prenesene uporabnice USPEŠNA z obstoječim geslom (in napačno geslo pravilno zavrnjeno)
+- Vrata: bun test 1274/1274 (+12 novih cutover-pipeline-contract, +5 planUserPreferences; prej 1257), tsc 0, eslint 0; pogodbene zahteve cron-ops-contract ④b nedotaknjene
+
+Stage Summary:
+- Celoten podatkovni cutover pipeline §1–§6.5 PRVIČ dokazan na pravem PostgreSQL (ne SQLite preslikavi) — vključno z 3 pastmi, ki bi vse tri zadlele lastnika na pravih Neon podatkih (vse fail-closed, vse popravljene in zaklenjene s testi)
+- Lastniku za cutover zdaj ostane SAMO: dodaj LEGACY_DATABASE_URL + DATABASE_URL skrivnosti (Neon konzola) → poganjaj faze cutover-data.yml po vrsti (backup ima PII artefakt — naloži lokalno, 3-2-1) → deploy 2.x na Vercel (§7 + CRON_SECRET mirror) → health/smoke fazi workflowa
+- PR: chore/cutover-pipeline-proof

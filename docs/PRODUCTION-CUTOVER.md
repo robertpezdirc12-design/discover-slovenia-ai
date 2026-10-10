@@ -161,13 +161,25 @@ Pripravljena ukaza v `package.json`:
 > **CRON skrivnosti ŽE pripravljene v GitHubu (2026-10-10):** za
 > `.github/workflows/prod-cron.yml` sta kot GitHub Actions skrivnosti
 > (write-only) že nastavljeni `PROD_BASE_URL`
-> (= `https://i-feel-slovenia.vercel.app`) in `CRON_SECRET` (generiran
-> naključni niz; vrednost je bila izročena lastniku prek zasebnega kanala).
-> Ob TEM koraku vnesi **isto vrednost `CRON_SECRET`** tudi v Vercel env
-> (Settings → Environment Variables). Workflow ima health-varovalko: dokler
-> produkcija na `PROD_BASE_URL` poroča verzijo 1.x, se GitHub cron jobi
-> mirno preskočijo (zelen izhod); po prevezavi na 2.x se urniki **sami
-> aktivirajo** — nobenega ročnega koraka v GitHubu ni treba.
+> (= `https://i-feel-slovenia.vercel.app`) in `CRON_SECRET`.
+>
+> **POSODOBITEV (10.10. 14:40 UTC): prvotna vrednost `CRON_SECRET` je ZASTARALA**
+> (izgubljena ob ponastavitvi peskovnika; ne jej iskati). Nov postopek ob
+> TEM koraku — dve enakovredni poti:
+>
+> - **POT A (priporočena, agentska):** agent z dostopom do Vercela
+>   (žeton) ob prevezavi ROTIRA `CRON_SECRET` prek API na OBEH straneh
+>   hkrati — GitHub secret (sealed box) + Vercel env v istem koraku;
+>   vrednost ne potuje skozi klepet. Nič za iskati, nič za tipkati.
+> - **POT B (ročna):** lastnik vpiše KATERIKOLI nov naključni niz
+>   (≥ 32 znakov) v Vercel env (Settings → Environment Variables) in
+>   sporoči vrednost agentu za posodobitev GitHub skrivnosti.
+>
+> Rotacija je varna KADARKOLI pred aktivacijo 2.x cronov: dokler produkcija
+> na `PROD_BASE_URL` poroča verzijo 1.x, se GitHub cron jobi mirno
+> preskočijo (zelen izhod — health varovalka), stare/nove vrednosti nimajo
+> učinka. Po prevezavi na 2.x se urniki **sami aktivirajo** — nobenega
+> ročnega koraka v GitHubu ni treba.
 
 - **Prevezava domene:** stara produkcija OSTANE prižgana do koraka 9
   (kanarčna faza: najprej nova URL brez domene, nato preslikava DNS).

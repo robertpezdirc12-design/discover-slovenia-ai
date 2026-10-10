@@ -5,7 +5,9 @@ import {
   CalendarDays,
   Clock,
   CloudUpload,
+  FileDown,
   HardDrive,
+  Loader2,
   MapPin,
   Plus,
   Printer,
@@ -44,6 +46,8 @@ import { intlDateLocale } from "@/lib/intl-locale";
 import { myTrip } from "@/lib/my-trip";
 import { getDestination } from "@/lib/slovenia-data";
 import { type SharedPlan, sharedPlans } from "@/lib/shared-plan";
+import { buildTripPdf, fromSharedPlan } from "@/lib/pdf/trip-pdf-doc";
+import { downloadTripPdf } from "@/lib/pdf/trip-pdf-render";
 import { addDaysIso, eachTripDay, type TripDates } from "@/lib/trip-dates";
 import { buildTripIcs, downloadTripIcs } from "@/lib/trip-ics";
 
@@ -88,6 +92,8 @@ export function SharedTripView({ shareId }: { shareId: string }) {
   const [reservationsVersion, setReservationsVersion] = React.useState(0);
   const [savingCloud, setSavingCloud] = React.useState(false);
   const [cloudError, setCloudError] = React.useState<string | null>(null);
+  const [pdfBusy, setPdfBusy] = React.useState(false);
+  const [pdfError, setPdfError] = React.useState<string | null>(null);
 
   const loadDb = React.useCallback(async () => {
     const agg = await fetchTripAggregate(shareId);
@@ -129,6 +135,9 @@ export function SharedTripView({ shareId }: { shareId: string }) {
     added: { sl: "Dodano ✓", en: "Added ✓", it: "Aggiunto ✓", de: "Hinzugefügt ✓", fr: "Ajouté ✓", es: "Añadido ✓" },
     addAll: { sl: "Dodaj celo pot v mojo pot", en: "Add the whole trip to my trip", it: "Aggiungi l’intero viaggio al mio viaggio", de: "Ganze Reise zu meiner Reise hinzufügen", fr: "Ajouter tout le voyage à mon voyage", es: "Añadir todo el viaje a mi viaje" },
     print: { sl: "Natisni / shrani PDF", en: "Print / save PDF", it: "Stampa / salva PDF", de: "Drucken / als PDF speichern", fr: "Imprimer / enregistrer en PDF", es: "Imprimir / guardar PDF" },
+    pdfBtn: { sl: "Izvozi PDF", en: "Export PDF", it: "Esporta PDF", de: "PDF exportieren", fr: "Exporter en PDF", es: "Exportar PDF" },
+    pdfBusy: { sl: "Pripravljam PDF …", en: "Preparing PDF …", it: "Preparo il PDF …", de: "PDF wird vorbereitet …", fr: "Préparation du PDF …", es: "Preparando PDF …" },
+    pdfErr: { sl: "PDF izvoz ni uspel — poskusi znova.", en: "PDF export failed — try again.", it: "Esportazione PDF non riuscita — riprova.", de: "PDF-Export fehlgeschlagen — bitte erneut versuchen.", fr: "Échec de l'export PDF — réessaie.", es: "Fallo al exportar PDF — reinténtalo." },
     printFooter: { sl: "Izvoženo z Discover Slovenia AI", en: "Exported with Discover Slovenia AI", it: "Esportato con Discover Slovenia AI", de: "Exportiert mit Discover Slovenia AI", fr: "Exporté avec Discover Slovenia AI", es: "Exportado con Discover Slovenia AI" },
     qrTitle: { sl: "QR koda te povezave", en: "QR code of this link", it: "Codice QR di questo link", de: "QR-Code dieses Links", fr: "Code QR de ce lien", es: "Código QR de este enlace" },
     qrNote: {
@@ -253,6 +262,28 @@ export function SharedTripView({ shareId }: { shareId: string }) {
     });
     if (ics) downloadTripIcs(ics, shareId);
   }, [db, shareId, pageUrl, l]);
+
+  /**
+   * P5 — IZVOZI PDF: deterministični izpis pote (baza ali lokalna kopija)
+   * prek jsPDF + podnaboranega Liberation Sans. Leni chunk (~50 KB) se
+   * naloži šele ob kliku; isti načrt + issuedAt → bitno isti PDF.
+   */
+  const onPdfExport = React.useCallback(async () => {
+    const plan = db?.plan ?? localPlan ?? null;
+    if (!plan || pdfBusy) return;
+    setPdfBusy(true);
+    setPdfError(null);
+    try {
+      const input = db?.plan
+        ? fromSharedPlan(db.plan, db.tripDates ?? null, "cloud")
+        : fromSharedPlan(localPlan as SharedPlan, null, "local");
+      await downloadTripPdf(buildTripPdf(input, l));
+    } catch {
+      setPdfError(pick(l, L.pdfErr));
+    } finally {
+      setPdfBusy(false);
+    }
+  }, [db, localPlan, pdfBusy, l]);
 
   const saveToCloud = React.useCallback(async () => {
     if (!localPlan || savingCloud) return;
@@ -397,6 +428,19 @@ export function SharedTripView({ shareId }: { shareId: string }) {
                 <Printer className="size-4" aria-hidden="true" />
                 {pick(l, L.print)}
               </Button>
+              <Button
+                onClick={() => void onPdfExport()}
+                variant="outline"
+                className="tap-target font-semibold"
+                disabled={pdfBusy}
+              >
+                {pdfBusy ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <FileDown className="size-4" aria-hidden="true" />
+                )}
+                {pdfBusy ? pick(l, L.pdfBusy) : pick(l, L.pdfBtn)}
+              </Button>
               {/* P0-G (issue §17): ICS izvoz — ŽIV samo ob realnih datumih
                   (sicer iskrena odsotnost; datume določa plošča spodaj). */}
               {db.tripDates && (
@@ -409,6 +453,11 @@ export function SharedTripView({ shareId }: { shareId: string }) {
                 <Share2 className="size-4" aria-hidden="true" />
                 {pick(l, L.copy)}
               </Button>
+              {pdfError && (
+                <p role="alert" className="w-full text-sm text-red-600 dark:text-red-400">
+                  {pdfError}
+                </p>
+              )}
               {/* P1-C (issue #3 §4): spremljanje pote — samo za udeležence
                   (lastnik/urednik/gledalec; javni obiskovalci brez). */}
               {canParticipate && (
@@ -647,10 +696,28 @@ export function SharedTripView({ shareId }: { shareId: string }) {
               <Printer className="size-4" aria-hidden="true" />
               {pick(l, L.print)}
             </Button>
+            <Button
+              onClick={() => void onPdfExport()}
+              variant="outline"
+              className="tap-target font-semibold"
+              disabled={pdfBusy}
+            >
+              {pdfBusy ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <FileDown className="size-4" aria-hidden="true" />
+              )}
+              {pdfBusy ? pick(l, L.pdfBusy) : pick(l, L.pdfBtn)}
+            </Button>
             <Button onClick={onCopy} variant="ghost" className="tap-target font-semibold">
               <Share2 className="size-4" aria-hidden="true" />
               {pick(l, L.copy)}
             </Button>
+            {pdfError && (
+              <p role="alert" className="w-full text-sm text-red-600 dark:text-red-400">
+                {pdfError}
+              </p>
+            )}
           </div>
 
           <PlanDays plan={localPlan} shareId={shareId} dayLabel={pick(l, L.dayLabel)} addLabel={pick(l, L.addTrip)} addedLabel={pick(l, L.added)} exploreLabel={pick(l, L.exploreDest)} />

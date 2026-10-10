@@ -7,6 +7,7 @@ import {
   CircleCheck,
   CloudUpload,
   ExternalLink,
+  FileDown,
   Footprints,
   Info,
   Loader2,
@@ -45,6 +46,8 @@ import {
 } from "@/lib/itinerary-engine";
 import { useMyTripList } from "@/lib/my-trip";
 import { loadLastPlan, type SavedPlan } from "@/lib/plan-store";
+import { buildTripPdf, fromItineraryPlan } from "@/lib/pdf/trip-pdf-doc";
+import { downloadTripPdf } from "@/lib/pdf/trip-pdf-render";
 import { sharedPlans, type SharedPlan } from "@/lib/shared-plan";
 import { randomShareIdClient } from "@/lib/share-id";
 import { buildDaySegments } from "@/lib/day-segments";
@@ -153,6 +156,9 @@ const L = {
     es: "Crea un plan determinista en /nacrtuj o añade destinos a Mi viaje — el viaje se ensamblará solo.",
   },
   ctaPlan: { sl: "Načrtuj novo", en: "Plan a new one", it: "Pianifica uno nuovo", de: "Einen neuen planen", fr: "En planifier un nouveau", es: "Planifica uno nuevo" },
+  pdfBtn: { sl: "Izvozi PDF", en: "Export PDF", it: "Esporta PDF", de: "PDF exportieren", fr: "Exporter en PDF", es: "Exportar PDF" },
+  pdfBusy: { sl: "Pripravljam PDF …", en: "Preparing PDF …", it: "Preparo il PDF …", de: "PDF wird vorbereitet …", fr: "Préparation du PDF …", es: "Preparando PDF …" },
+  pdfErr: { sl: "PDF izvoz ni uspel — poskusi znova.", en: "PDF export failed — try again.", it: "Esportazione PDF non riuscita — riprova.", de: "PDF-Export fehlgeschlagen — bitte erneut versuchen.", fr: "Échec de l'export PDF — réessaie.", es: "Fallo al exportar PDF — reinténtalo." },
   ctaGo: { sl: "Zaženi na poti", en: "Start on the road", it: "Parti per la strada", de: "Los geht's auf der Straße", fr: "Prends la route", es: "Sal a la carretera" },
   cloudSave: {
     sl: "Shrani kot skupinsko pot",
@@ -212,6 +218,8 @@ export default function JourneyPage() {
   const [dayIndex, setDayIndex] = useState(0);
   const [cloudBusy, setCloudBusy] = useState(false);
   const [cloudError, setCloudError] = useState<string | null>(null);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   // Hidracija: localStorage se bere TEKOM mounta (SSR/klient se strinjata).
   useEffect(() => {
@@ -307,6 +315,25 @@ export default function JourneyPage() {
       setCloudError(e instanceof Error ? e.message : pick(l, L.cloudErr));
     } finally {
       setCloudBusy(false);
+    }
+  };
+
+  /**
+   * IZVOZI PDF (P5): deterministični izvoz trenutnega načrta — jsPDF +
+   * podnaboran Liberation Sans (č/š/ž) se naložita ŠELE ob kliku (leni
+   * chunk). Isti načrt + isti issuedAt → bitno isti PDF (dokazano s testi).
+   */
+  const exportPdf = async () => {
+    if (!data || pdfBusy) return;
+    setPdfBusy(true);
+    setPdfError(null);
+    try {
+      const doc = buildTripPdf(fromItineraryPlan(data.plan, null), l);
+      await downloadTripPdf(doc);
+    } catch {
+      setPdfError(pick(l, L.pdfErr));
+    } finally {
+      setPdfBusy(false);
     }
   };
 
@@ -470,6 +497,20 @@ export default function JourneyPage() {
                 {pick(l, L.ctaPlan)}
               </Link>
             </Button>
+            <Button
+              size="lg"
+              variant="secondary"
+              className="min-h-12"
+              onClick={() => void exportPdf()}
+              disabled={pdfBusy}
+            >
+              {pdfBusy ? (
+                <Loader2 className="size-5 animate-spin" aria-hidden="true" />
+              ) : (
+                <FileDown className="size-5" aria-hidden="true" />
+              )}
+              {pdfBusy ? pick(l, L.pdfBusy) : pick(l, L.pdfBtn)}
+            </Button>
           </div>
           <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">
             <CloudUpload className="mr-1 inline size-3.5 align-[-2px]" aria-hidden="true" />
@@ -478,6 +519,11 @@ export default function JourneyPage() {
           {cloudError && (
             <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">
               {pick(l, L.cloudErr)}: {cloudError}
+            </p>
+          )}
+          {pdfError && (
+            <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">
+              {pdfError}
             </p>
           )}
         </div>

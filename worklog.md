@@ -2762,3 +2762,27 @@ Stage Summary:
 - Zadnja odprta programska naloga issue #2 §9 je ZAKLJUČENA: Kobarid/Soča regija rešena po kanonu (preverba proti produkciji izvedena, popravek zaklenjen s testi)
 - Od §9 priporočil ostanejo samo še: CSP nonce (srednja), skupna shramba rate limitov (nizka, ob rasti), ignoreBuildErrors (po stabilizaciji) — vsa tri so opcijske izboljšave, ne blokade
 - Vsi lastnikovi zunanji koraki (GITLAB_TOKEN rotacija, Neon skrivnosti, Vercel deploy §7, PAT rotacija) NEspremenjeni
+
+---
+Task ID: csp-nonce
+Agent: Z.ai Code (glavni)
+Task: "odlicno nadaljuj" — zadnje srednje-prioritetno priporočilo PRODUCT-AUDIT §9: CSP nonce (2.23.0)
+
+Work Log:
+- STANJE OB ZAČETKU: main e07788c9 (2.22.0), CI zelen; Neon skrivnosti še manjkajo, GitLab zrcalo nedejavno (403), produkcija 1.190.0 — vse lastnikova zunanja dejanja nespremenjena; prod-cron schedule runi zeleni (varovalka preskočila na 1.x)
+- INVENTURA ZUNANJIH VIROV (rg po src/): edini brskalniški zunanji vir = OSM ploščice https://tile.openstreetmap.org (Leaflet TileLayer); 0 absolutnih klientnih fetch (vreme/OSRM/STO/FSQ vsi strežniško); fonte = next/font samogostujoče; Stripe brez klientnega js; QR = canvas; ni iframe; chart.tsx <style> + Leaflet inline → style-src 'unsafe-inline' zavestno
+- src/lib/csp.ts (NOV): buildCspHeader čista funkcija — nonce + strict-dynamic (script-src, BREZ unsafe-inline), object-src 'none', frame-ancestors 'none', base-uri/form-action 'self', 'unsafe-eval' samo dev, upgrade-insecure-requests samo prod; fail-closed na slab nonce
+- src/middleware.ts: kompozicija z next-intl — btoa(crypto.randomUUID()) → x-nonce + content-security-policy na ZAHTVEVKO (dokazano: next-intl interno new Headers(request.headers) prenese v next/rewrite → Next sam pripne nonce skriptam) + CSP na ODZIV
+- [locale]/layout.tsx: force-dynamic (SSG HTML bi vseboval ZASTAREL nonce → blokirane skripte; kanon Next.js CSP) + headers() → nonce prop na ThemeProvider (next-themes 0.4.6 podpira, dokazano v dist)
+- Korenska 404: ostaja statična ○ — mila degradacija (čista server komponenta, <a> brez JS); PRAVILNO pa next-intl vse neznane poti preusmeri v [locale] catch-all (dinamičen, nonce-zaščiten) — dokazano z agent-browser
+- tests/csp-contract.test.ts (NOV, 14): enote (direktive/determinizem/dev-prod/fail-closed) + source-contract (middleware mehanizem, force-dynamic, next-themes prop, matcher, korenska 404, inventura zaklenjena — nov zunanji fetch/tile pade na testu)
+- Verzija 2.22.0 → 2.23.0 (package.json, health, sw.js, footer, README glava+vrstica, kanarčka pwa-sw + p2)
+- PRODUCT-AUDIT.md: obe CSP točki prečrtani z dokazi; next.config.ts komentar posodobljen (CSP ni več izpuščen)
+- VRATA: tsc 0, lint 0, bun test 1315/1315 (+14), build uspešen (VSE [locale] ƒ dinamične)
+- LOKALNA VERIFIKACIJA (next start -p 3100, produkcijski build): CSP glava s svežim nonce; nonce glave ≡ nonce vseh 24 skript (zunanjih + inline next-themes) v istem odzivu; agent-browser: domov/zemljevid/nacrtuj@390/404 vsi 0 CSP kršitev 0 napak; 12 OSM ploščic + 38 markerjev; tema preklop dark deluje (hidracija!); smoke 19/19 PASS (health 2.23.0, cron fail-closed 401); dokazi v docs/evidence/csp/
+
+Stage Summary:
+- Zadnje srednje-prioritetno priporočilo PRODUCT-AUDIT §9 DOKONČANO: aplikacija ima polni CSP z nonce (XSS zaščita skript), inventura zunanjih virov zaklenjena s testi (regresijska mreža: nov zunanji vir brez posodobitve csp.ts pade)
+- Zavestne odločitve dokumentirane: style-src 'unsafe-inline' (Tailwind/Leaflet/chart), [locale] dinamično izrisovanje (zahteva nonce — SSG nemogoč), korenska 404 mila degradacija
+- Od §9 ostajata SAMO opcijski nizki: skupna shramba rate limitov (ob rasti) + ignoreBuildErrors (po stabilizaciji)
+- Sledi: PR → CI → merge → komentar na issue #2

@@ -18,9 +18,10 @@ const nextConfig: NextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   // P0 AUDIT M5: osnovne varnostne glave na VSEH odzivih. Polni CSP je
-  // zavestno izpuščen (Leaflet/Stripe/Next inline zahtevajo natančno
-  // nonce-arhitekturo — dokumentirano v docs/PRODUCT-AUDIT.md kot naslednji
-  // korak). HSTS samo prek HTTPS (Vercel) — lokalni http dev ni prizadet.
+  // 2.23.0 implementiran v src/middleware.ts (nonce + strict-dynamic —
+  // zahteva per-zahtevni žeton, zato ne more biti statična glava tukaj;
+  // glave tu pokrivajo tudi poti izven middleware matcherja). HSTS samo
+  // prek HTTPS (Vercel) — lokalni http dev ni prizadet.
   async headers() {
     return [
       {

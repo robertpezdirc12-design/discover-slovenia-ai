@@ -5,7 +5,7 @@
 > realnimi koordinatami in deterministični načrtovalnik poti (isti vhod → isti načrt,
 > 0 AI žetonov v jedru).
 
-**Verzija: 2.22.0 — POSOČJE: preverjeni popravek regije (kobarid + reka-soca iz „gorenjska“ v „posocje“ po preverbi proti produkciji 1.190.0; nova regija v 6 jezikih; TRS letališče; 21 regij).**
+**Verzija: 2.23.0 — CSP NONCE: Content-Security-Policy z nonce + strict-dynamic (middleware → Next skripte + next-themes), inventura zunanjih virov dokazana (edini zunanji vir: OSM ploščice), strani dinamično izrisane (zahteva nonce).**
 Izdaje rekonstrukcije: 2.1.0 skupnostne funkcije → 2.2.0 aplikacijska lupina →
 2.3.0 issue #1 (živi GPS, booking, pomočnik) → 2.3.1 infra CI → 2.4.0 PWA
 offline → 2.5.0 rezervacijski sloj → 2.6.0 partner kanal booking verige →
@@ -351,6 +351,12 @@ migracija → deployment → health → E2E → rollback) →
   iz „gorenjska“ v novo regijo „posocje“ (preverba proti produkciji 1.190.0:
   API+stran+sitemap 2026-10-10; STO „Soča Valley“; eksonimi Isonzo), 21 regij,
   letališče TRS, značke/slovarji usklajeni
+2.23.0 CSP nonce (issue #2 §9 priporočilo): Content-Security-Policy z
+  'nonce-<random>' + 'strict-dynamic' (script-src), object-src 'none',
+  frame-ancestors 'none', form-action/base-uri 'self'; edini zunanji
+  brskalniški vir = OSM ploščice (img-src); connect-src 'self' (0 absolutnih
+  klientnih fetch, rg dokaz); [locale] force-dynamic (nonce zahteva svež
+  izris); next-themes nonce prop; korenska 404 = mila degradacija (dokumentirano)
 2.21.0 4-c jedrska i18n aktivacija (issue #2 §9): PlannerLang 6 jezikov
   (itinerary-engine PLANNER_MSG, weather, statusLabel, trip-dates, go-gps
   kardinali), FR register harmonizacija (vous → tu, 26 mest), 16 datumskih

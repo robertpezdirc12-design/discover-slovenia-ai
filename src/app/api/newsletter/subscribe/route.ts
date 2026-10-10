@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+import { newsletterWelcomeEmail, sendEmail } from "@/lib/email";
 import { z } from "zod";
 
 import { db } from "@/lib/db";
@@ -55,10 +57,19 @@ export async function POST(request: Request) {
           data: { email },
           select: { id: true },
         });
+    // P3 (kanon 2.26.0) — pozdravni e-pošti SAMO novim naročnikom (obstoječi
+    // ne dobijo ponovnega pozdrava — brez neželene pošte). Neuspeh pošiljanja
+    // NE pomeni neuspešne prijave (prijava živi v bazi) — iskreno poročamo.
+    let welcomeSent = false;
+    if (!existing) {
+      const res = await sendEmail({ to: email, ...newsletterWelcomeEmail() });
+      welcomeSent = res.sent;
+    }
     return NextResponse.json({
       ok: true,
       already: Boolean(existing),
       id: record.id,
+      welcomeSent,
     });
   } catch {
     // P0 AUDIT L1: podrobnost napake NE gre k odjemalcu — dnevnik na strežniku.

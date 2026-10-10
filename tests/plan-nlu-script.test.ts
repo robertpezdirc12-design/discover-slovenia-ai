@@ -50,8 +50,8 @@ const BLOBS = DESTINATIONS.map((d) => {
 
 describe("nlu — POGODBA SLOVARJA (žetoni morajo zadeti podatke)", () => {
   const TOKENS = [
-    "druzina", "gora", "pohodnistvo", "jezero", "morje", "mesto",
-    "kulinarika", "vino", "kultura", "zdravje", "smucanje", "kolo",
+    "družina", "gora", "pohodništvo", "jezero", "morje", "mesto",
+    "kulinarika", "vino", "kultura", "zdravje", "smučanje", "kolo",
     "narava", "avantura", "jame", "soteska", "plavanje",
   ];
 
@@ -81,7 +81,7 @@ describe("nlu — interesi (slovenski skloni + tujì jeziki)", () => {
   test("„3 dni v gorah z družino“ → gora + druzina", () => {
     const i = parsePlannerIntent("3 dni v gorah z družino, srednji proračun");
     expect(i).not.toBeNull();
-    expect(i!.interests).toEqual(["gora", "druzina"]);
+    expect(i!.interests).toEqual(["gora", "družina"]);
   });
 
   test("slovenski skloni: jezeru / morju / vina / smučam", () => {
@@ -91,12 +91,12 @@ describe("nlu — interesi (slovenski skloni + tujì jeziki)", () => {
       "vino",
       "kulinarika",
     ]);
-    expect(parsePlannerIntent("rad smučam pozimi")!.interests).toEqual(["smucanje"]);
+    expect(parsePlannerIntent("rad smučam pozimi")!.interests).toEqual(["smučanje"]);
   });
 
   test("EN: mountains with family, mid budget → gora + druzina + €€", () => {
     const i = parsePlannerIntent("3 days in the mountains with family, mid budget");
-    expect(i!.interests).toEqual(["gora", "druzina"]);
+    expect(i!.interests).toEqual(["gora", "družina"]);
     expect(i!.days).toBe(3);
     expect(i!.budget).toBe("€€");
   });
@@ -157,7 +157,7 @@ describe("nlu — regija", () => {
   test("eksplicitna: „po Gorenjskem“ → gorenjska (in NE interesa gora)", () => {
     const i = parsePlannerIntent("družinska počitnica po Gorenjskem");
     expect(i!.region).toBe("gorenjska");
-    expect(i!.interests).toEqual(["druzina"]); // beseda regije se porabi
+    expect(i!.interests).toEqual(["družina"]); // beseda regije se porabi
   });
 
   test("namig kraja: „na Bledu“ → gorenjska + jezero", () => {

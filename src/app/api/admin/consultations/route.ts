@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server";
 
+import {
+  consultationAnswerEmail,
+  isEmailConfigured,
+  publicOrigin,
+  sendEmail,
+} from "@/lib/email";
+
 import { db } from "@/lib/db";
 import { isAdminSession } from "@/lib/affiliate-server";
 import { getSessionContext } from "@/lib/partner-session";
@@ -110,7 +117,32 @@ export async function POST(request: Request) {
         },
       }),
     ]);
-    return NextResponse.json({ ok: true, answerSource: "manual" });
+    // P3 (kanon 2.26.0) — e-pošta ob odgovoru (Resend, env-vrata): pošlje
+    // SAMO če je RESEND_API_KEY nastavljen; neuspeh NE razveljavi odgovora
+    // (odgovor živi na zasebni povezavi neodvisno od e-pošte) — iskreno
+    // poročamo emailSent/emailNote.
+    let emailSent = false;
+    let emailNote = "e-pošta ni konfigurirana (RESEND_API_KEY)";
+    if (isEmailConfigured()) {
+      const origin = publicOrigin(request);
+      const res = await sendEmail({
+        to: existing.email.toLowerCase(),
+        ...consultationAnswerEmail({
+          question: existing.question,
+          answerUrl: `${origin}/konzultacija/${existing.accessToken}`,
+        }),
+      });
+      emailSent = res.sent;
+      emailNote = res.sent
+        ? "odgovor poslan na e-pošto prosilca"
+        : `pošiljanje ni uspelo (${res.reason}) — odgovor je vseeno dostopen na zasebni povezavi`;
+    }
+    return NextResponse.json({
+      ok: true,
+      answerSource: "manual",
+      emailSent,
+      emailNote,
+    });
   } catch (err) {
     console.error("[api/admin/consultations] POST napaka:", err);
     return NextResponse.json({ error: "Shranjevanje odgovora ni uspelo." }, { status: 500 });

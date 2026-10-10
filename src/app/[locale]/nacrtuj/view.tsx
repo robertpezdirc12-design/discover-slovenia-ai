@@ -7,6 +7,7 @@ import {
   ChevronUp,
   CircleCheck,
   Footprints,
+  Info,
   Link2,
   Loader2,
   Plus,
@@ -160,6 +161,14 @@ const L = {
   saDaysKept: { sl: "dni niso navedeni — ohranjena izbira", en: "days not stated — your choice kept", it: "giorni non indicati — resta la tua scelta", de: "Tage nicht angegeben — deine Wahl bleibt", fr: "jours non précisés — ton choix est conservé", es: "días no indicados — se mantiene tu elección" },
   saApply: { sl: "Uporabi kot izhodišče", en: "Use as the starting point", it: "Usa come punto di partenza", de: "Als Ausgangspunkt verwenden", fr: "Utiliser comme point de départ", es: "Usar como punto de partida" },
   saApplied: { sl: "✓ Uporabljeno — načrt se gradi", en: "✓ Applied — building the plan", it: "✓ Applicato — creo il piano", de: "✓ Übernommen — Plan wird erstellt", fr: "✓ Appliqué — création du plan", es: "✓ Aplicado — creando el plan" },
+  fewerDaysNote: {
+    sl: (requested: number, filled: number) => `Zahteval si ${requested} ${requested === 1 ? "dan" : "dni"}, sestavljenih pa je bilo mogoče le ${filled}. Za preostale dni ni bilo več ustreznih destinacij za izbrane interese in regijo — razširi interese, spremeni regijo ali zmanjšaj število dni. Iskreno povejamo, namesto da bi izmišljevali postanke.`,
+    en: (requested: number, filled: number) => `You asked for ${requested} ${requested === 1 ? "day" : "days"}, but only ${filled} ${filled === 1 ? "was" : "were"} possible to fill. There were no more matching destinations for the chosen interests and region — broaden the interests, change the region or reduce the number of days. We tell you honestly instead of inventing stops.`,
+    it: (requested: number, filled: number) => `Hai chiesto ${requested} ${requested === 1 ? "giorno" : "giorni"}, ma è stato possibile compilarne solo ${filled}. Non ci sono più destinazioni corrispondenti agli interessi e alla regione scelti — amplia gli interessi, cambia regione o riduci i giorni. Te lo diciamo onestamente invece di inventare tappe.`,
+    de: (requested: number, filled: number) => `Du hast ${requested} ${requested === 1 ? "Tag" : "Tage"} angefragt, aber nur ${filled} ${filled === 1 ? "konnte" : "konnten"} gefüllt werden. Es gab keine passenden Ziele mehr für die gewählten Interessen und die Region — erweitere die Interessen, wechsle die Region oder reduziere die Tage. Wir sagen es ehrlich, statt Halte zu erfinden.`,
+    fr: (requested: number, filled: number) => `Tu as demandé ${requested} ${requested === 1 ? "jour" : "jours"}, mais seulement ${filled} ${filled === 1 ? "a pu être rempli" : "ont pu être remplis"}. Il n'y a plus de destinations correspondant aux intérêts et à la région choisis — élargis les intérêts, change de région ou réduis le nombre de jours. Nous te le disons honnêtement au lieu d'inventer des étapes.`,
+    es: (requested: number, filled: number) => `Pediste ${requested} ${requested === 1 ? "día" : "días"}, pero solo se pudieron completar ${filled}. Ya no quedan destinos que coincidan con los intereses y la región elegidos — amplía los intereses, cambia la región o reduce los días. Te lo decimos con honestidad en lugar de inventar paradas.`,
+  },
   saHint: {
     sl: "Skripta teče na strežniku: povezavo prebere z varovalkami (samo javni naslovi, ≤ 256 KiB, ≤ 8 s) in išče kraje po korenu — slovenski skloni vključeni („na Bledu“ → Bled, „po Ljubljani“ → Ljubljana). Isti vhod vedno da isti predlog; prepoznano vedno pokažemo z dokazom. 0 AI žetonov.",
     en: "The script runs server-side: the link is fetched with guardrails (public hosts only, ≤ 256 KiB, ≤ 8 s) and places are matched by word stems — Slovenian declensions included (“na Bledu” → Bled). Same input always gives the same suggestion; every match is shown with its evidence. 0 AI tokens.",
@@ -1147,6 +1156,7 @@ function PlannerApp() {
           <PlanResult
             plan={plan}
             lang={lang}
+            requestedDays={form.days}
             saved={savedMsg}
             onSave={saveToMyTrip}
             onGo={startGo}
@@ -1164,12 +1174,15 @@ function PlannerApp() {
 function PlanResult({
   plan,
   lang,
+  requestedDays,
   saved,
   onSave,
   onGo,
 }: {
   plan: ItineraryPlan;
   lang: PlannerLang;
+  /** Zahtevano št. dni (iz obrazca) — za iskreno opombo o manjkajočih dneh. */
+  requestedDays: number;
   saved: boolean;
   onSave: () => void;
   onGo: () => void;
@@ -1214,6 +1227,21 @@ function PlanResult({
           </p>
         </CardContent>
       </Card>
+
+      {/* ISKRENA OPOZORILNA PLOŠČICA: manjkajoči dnevi (kanon 2.26.0) —
+          coverageNote vsebuje podrobnost, a je v drobnem besedilu;
+          uporabnik ki skenira dneve mora takoj videti zakaj manjka dan. */}
+      {plan.days.length < requestedDays && (
+        <div
+          role="note"
+          className="mt-4 flex items-start gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm"
+        >
+          <Info className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+          <p className="leading-relaxed text-amber-900 dark:text-amber-200">
+            {pick(l, L.fewerDaysNote)(requestedDays, plan.days.length)}
+          </p>
+        </div>
+      )}
 
       {/* Dnevi s časovnico */}
       <div className="mt-6 space-y-6">

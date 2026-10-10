@@ -5,15 +5,19 @@ import {
   CalendarCheck,
   Check,
   CircleCheck,
+  CloudUpload,
   ExternalLink,
   Footprints,
   Info,
+  Loader2,
   MapPin,
   Route as RouteIcon,
   ShieldCheck,
   Wand2,
 } from "lucide-react";
 import { useLocale } from "next-intl";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import React, { useEffect, useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
@@ -41,6 +45,8 @@ import {
 } from "@/lib/itinerary-engine";
 import { useMyTripList } from "@/lib/my-trip";
 import { loadLastPlan, type SavedPlan } from "@/lib/plan-store";
+import { sharedPlans, type SharedPlan } from "@/lib/shared-plan";
+import { randomShareIdClient } from "@/lib/share-id";
 import { buildDaySegments } from "@/lib/day-segments";
 import { regionLabel, typeLabel } from "@/lib/slovenia-data";
 import type { ItineraryPlan, MyTripItem, TripStop } from "@/lib/types";
@@ -148,6 +154,39 @@ const L = {
   },
   ctaPlan: { sl: "Načrtuj novo", en: "Plan a new one", it: "Pianifica uno nuovo", de: "Einen neuen planen", fr: "En planifier un nouveau", es: "Planifica uno nuevo" },
   ctaGo: { sl: "Zaženi na poti", en: "Start on the road", it: "Parti per la strada", de: "Los geht's auf der Straße", fr: "Prends la route", es: "Sal a la carretera" },
+  cloudSave: {
+    sl: "Shrani kot skupinsko pot",
+    en: "Save as a shared trip",
+    it: "Salva come viaggio condiviso",
+    de: "Als geteilte Reise speichern",
+    fr: "Enregistrer comme voyage partagé",
+    es: "Guardar como viaje compartido",
+  },
+  cloudSaveLogin: {
+    sl: "Prijavi se in shrani v oblak",
+    en: "Sign in and save to the cloud",
+    it: "Accedi e salva nel cloud",
+    de: "Melde dich an und speichere in der Cloud",
+    fr: "Connecte-toi et enregistre dans le cloud",
+    es: "Inicia sesión y guarda en la nube",
+  },
+  cloudSaving: { sl: "Shranjujem …", en: "Saving …", it: "Salvataggio …", de: "Speichern …", fr: "Enregistrement …", es: "Guardando …" },
+  cloudPerks: {
+    sl: "Oblak odklene: vabila sotopotnikom, skupne ankete, rezervacije in klepet z @AI svetovalcem.",
+    en: "The cloud unlocks: invitations for companions, shared polls, reservations and the @AI advisor chat.",
+    it: "Il cloud sblocca: inviti ai compagni, sondaggi condivisi, prenotazioni e chat con il consulente @AI.",
+    de: "Die Cloud schaltet frei: Einladungen an Mitreisende, gemeinsame Umfragen, Reservierungen und der Chat mit dem @AI-Berater.",
+    fr: "Le cloud déverrouille : invitations aux compagnons, sondages partagés, réservations et le chat avec le conseiller @AI.",
+    es: "La nube desbloquea: invitaciones para acompañantes, encuestas compartidas, reservas y el chat con el asesor @AI.",
+  },
+  cloudErr: {
+    sl: "Shranjevanje v oblak ni uspelo",
+    en: "Saving to the cloud failed",
+    it: "Salvataggio nel cloud non riuscito",
+    de: "Speichern in der Cloud fehlgeschlagen",
+    fr: "Échec de l'enregistrement dans le cloud",
+    es: "No se pudo guardar en la nube",
+  },
   savedAt: { sl: "Shranjeno", en: "Saved", it: "Salvato", de: "Gespeichert", fr: "Enregistré", es: "Guardado" },
   totalTrip: { sl: "Celotno potovanje", en: "Whole trip", it: "Viaggio completo", de: "Ganze Reise", fr: "Voyage complet", es: "Viaje completo" },
   perPerson: { sl: "na osebo", en: "per person", it: "a persona", de: "pro Person", fr: "par personne", es: "por persona" },
@@ -165,10 +204,14 @@ interface JourneyData {
 export default function JourneyPage() {
   const l = useLocale();
   const lang: PlannerLang = asPickLocale(l);
+  const router = useRouter();
+  const { status: sessionStatus } = useSession();
   const myItems = useMyTripList();
   const [data, setData] = useState<JourneyData | null>(null);
   const [ready, setReady] = useState(false);
   const [dayIndex, setDayIndex] = useState(0);
+  const [cloudBusy, setCloudBusy] = useState(false);
+  const [cloudError, setCloudError] = useState<string | null>(null);
 
   // Hidracija: localStorage se bere TEKOM mounta (SSR/klient se strinjata).
   useEffect(() => {
@@ -208,6 +251,64 @@ export default function JourneyPage() {
     () => (data ? validatePlanGeo(data.plan, lang) : null),
     [data, lang]
   );
+
+  /**
+   * SHRANI KOT SKUPINSKO POT (kanon 2.26.0 — popravek P0 iz uporabniškega
+   * audita): doslej NI bilo nobene UI poti do oblačne poti (dai:shared-plans
+   * se nikoli ni zapisal) — sodelovanje, vabila, ankete, rezervacije in
+   * klepet z @AI so bili iz UIja NEDOSEGLJIVI. Zdaj:
+   *  1) načrt shrani LOKALNO kot deljeno pot (dai:shared-plans — /pot/[id]
+   *     deluje tudi brez prijave, enaka naprava);
+   *  2) prijavljenim takoj sinhronizira v oblak (POST /api/trips) — odklene
+   *     sodelovanje v živo;
+   *  3) preusmeri na /pot/[shareId].
+   * Napake so iskrene (besedilo napake iz strežnika, nikoli tiho).
+   */
+  const saveTripToCloud = async () => {
+    if (!data || cloudBusy) return;
+    setCloudBusy(true);
+    setCloudError(null);
+    try {
+      const shareId = randomShareIdClient();
+      const plan = data.plan;
+      const shared: SharedPlan = {
+        shareId,
+        name: plan.title,
+        createdAt: new Date().toISOString(),
+        days: plan.days.map((stops, dayIdx) => ({
+          day: dayIdx + 1,
+          locations: stops.map((s) => ({
+            name: s.name,
+            ...(s.slug ? { destSlug: s.slug } : {}),
+            time: s.time,
+          })),
+        })),
+        totalBudget: plan.totalCost,
+      };
+      // 1) Lokalno (deljena pot na tej napravi — tudi brez prijave/signala).
+      sharedPlans.save(shared);
+      // 2) Oblak — samo prijavljenim (sodelovanje, @AI, ankete, rezervacije).
+      if (sessionStatus === "authenticated") {
+        const r = await fetch("/api/trips", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ plan: shared, shareId, title: shared.name }),
+        });
+        if (!r.ok) {
+          const body = (await r.json().catch(() => null)) as {
+            error?: string;
+          } | null;
+          throw new Error(body?.error ?? `HTTP ${r.status}`);
+        }
+      }
+      // 3) Pot je zdaj deljena — odpri pogled s sodelovanjem.
+      router.push(`/pot/${shareId}`);
+    } catch (e) {
+      setCloudError(e instanceof Error ? e.message : pick(l, L.cloudErr));
+    } finally {
+      setCloudBusy(false);
+    }
+  };
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
@@ -340,6 +441,29 @@ export default function JourneyPage() {
                 {pick(l, L.ctaGo)}
               </Link>
             </Button>
+            {sessionStatus === "authenticated" ? (
+              <Button
+                size="lg"
+                variant="secondary"
+                className="min-h-12"
+                onClick={() => void saveTripToCloud()}
+                disabled={cloudBusy}
+              >
+                {cloudBusy ? (
+                  <Loader2 className="size-5 animate-spin" aria-hidden="true" />
+                ) : (
+                  <CloudUpload className="size-5" aria-hidden="true" />
+                )}
+                {cloudBusy ? pick(l, L.cloudSaving) : pick(l, L.cloudSave)}
+              </Button>
+            ) : (
+              <Button asChild size="lg" variant="secondary" className="min-h-12">
+                <Link href="/prijava?next=/potovanje">
+                  <CloudUpload className="size-5" aria-hidden="true" />
+                  {pick(l, L.cloudSaveLogin)}
+                </Link>
+              </Button>
+            )}
             <Button asChild size="lg" variant="secondary" className="min-h-12">
               <Link href="/nacrtuj">
                 <Wand2 className="size-5" aria-hidden="true" />
@@ -347,6 +471,15 @@ export default function JourneyPage() {
               </Link>
             </Button>
           </div>
+          <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">
+            <CloudUpload className="mr-1 inline size-3.5 align-[-2px]" aria-hidden="true" />
+            {pick(l, L.cloudPerks)}
+          </p>
+          {cloudError && (
+            <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">
+              {pick(l, L.cloudErr)}: {cloudError}
+            </p>
+          )}
         </div>
       )}
     </div>

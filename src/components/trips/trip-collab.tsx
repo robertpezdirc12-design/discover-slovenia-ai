@@ -257,8 +257,10 @@ export function TripCollaboration({
 
   // Upravljanje (lastnik)
   const [inviteRole, setInviteRole] = useState<string>("EDITOR");
+  const [inviteEmail, setInviteEmail] = useState<string>("");
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [inviteNote, setInviteNote] = useState<string | null>(null);
+  const [inviteSent, setInviteSent] = useState(false);
   const [copied, setCopied] = useState(false);
 
   // Preimenovanje (CAS)
@@ -300,12 +302,17 @@ export function TripCollaboration({
         {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ role: inviteRole }),
+          // P3 (2.26.0): e-pošta je NEOBVEZNA — prazna = samo povezava.
+          body: JSON.stringify({
+            role: inviteRole,
+            ...(inviteEmail.trim() ? { email: inviteEmail.trim() } : {}),
+          }),
         }
       );
       const data = (await r.json().catch(() => null)) as {
         success?: boolean;
         inviteUrl?: string;
+        emailSent?: boolean;
         emailHint?: string;
         error?: string;
       } | null;
@@ -315,13 +322,15 @@ export function TripCollaboration({
       }
       setInviteUrl(data.inviteUrl ?? null);
       setInviteNote(data.emailHint ?? null);
+      setInviteSent(Boolean(data.emailSent));
+      if (data.emailSent) setInviteEmail("");
       void load();
     } catch (e) {
       setActionError(errText(e));
     } finally {
       setBusy(false);
     }
-  }, [shareId, inviteRole, load]);
+  }, [shareId, inviteRole, inviteEmail, load]);
 
   // ── SPREMENBA VLOGE / ODVZEM / OŽIVITEV (lastnik) ─────────────────────
   const patchCollaborator = useCallback(
@@ -598,6 +607,20 @@ export function TripCollaboration({
                   </SelectContent>
                 </Select>
               </div>
+              <div className="flex-1 space-y-1.5">
+                <Label htmlFor="invite-email" className="text-xs text-muted-foreground">
+                  E-pošta povabljenega (neobvezno — pošlje vabilo)
+                </Label>
+                <Input
+                  id="invite-email"
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="ime@primer.si"
+                  maxLength={160}
+                  autoComplete="off"
+                />
+              </div>
               <Button
                 onClick={() => void issueInvite()}
                 disabled={busy}
@@ -610,15 +633,16 @@ export function TripCollaboration({
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              E-poštna vabila še niso na voljo — povezavo izdaš tu in deli
-              ročno (iskrena meja rekonstrukcije).
+              Z e-pošto: vabilo prejme povabljeni naslov. Brez e-pošte (ali
+              kadar pošiljanje ni konfigurirano) povezavo izdaš tu in deli
+              ročno — iskreno povejemo, kaj je bilo poslano.
             </p>
 
             {inviteUrl && (
               <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
                 <p className="flex flex-wrap items-center gap-2 text-xs font-medium">
                   <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
-                  Povezava vabila (ročno deli):
+                  {inviteSent ? "Vabilo poslano — povezava (tudi za ročno deljenje):" : "Povezava vabila (ročno deli):"}
                 </p>
                 <code className="block break-all rounded bg-background px-2 py-1 text-xs">
                   {inviteUrl}

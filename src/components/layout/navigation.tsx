@@ -141,25 +141,28 @@ export function Navigation() {
           href="/"
           aria-label={t("home")}
           className={cn(
-            "group flex items-center gap-2.5 transition-colors",
+            // min-w-0 (kanon 2.26.0): omogoči skrčenje na ozkih zaslonih —
+            // brez tega flex-item zadrži širino polnega besedila in glava
+            // povzroči horizontalni overflow (412px > 390px na iPhone).
+            "group flex min-w-0 items-center gap-2 transition-colors sm:gap-2.5",
             overHero
               ? "text-white drop-shadow-md hover:text-white"
               : "text-foreground hover:text-primary"
           )}
         >
-          <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary shadow-md transition-transform group-hover:scale-105">
+          <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary shadow-md transition-transform group-hover:scale-105 sm:size-9">
             {/* logo.svg — znak gore iz produkcije (30×30) */}
             <img
               src="/logo.svg"
               alt=""
               width={22}
               height={22}
-              className="size-[22px]"
+              className="size-[20px] sm:size-[22px]"
               aria-hidden="true"
             />
           </span>
           <span className="flex min-w-0 flex-col leading-none">
-            <span className="truncate text-sm font-bold tracking-tight sm:text-base">
+            <span className="truncate text-[13px] font-bold tracking-tight sm:text-base">
               {t("brand")}
             </span>
             <span
@@ -230,13 +233,17 @@ export function Navigation() {
           </DropdownMenu>
         </nav>
 
-        {/* Desna skupina: iskanje, obvestila, jezik, tema + mobilni meni */}
-        <div className="flex items-center gap-1 sm:gap-1.5">
+        {/* Desna skupina: iskanje, obvestila, jezik, tema + mobilni meni.
+            Iskanje je na <sm skrito (dostopno ostane: iskalno polje na
+            domači strani, stran Destinacije, meni) — 4 ikone × 44px in
+            logotip drugače ne gresta skupaj na 390px brez horizontalnega
+            scrolla (kanon 2.26.0). shrink-0: ikone nikoli ne stisnemo. */}
+        <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
           <Button
             variant="ghost"
             size="icon"
             asChild
-            className="tap-target rounded-full"
+            className="tap-target hidden rounded-full sm:inline-flex"
           >
             <Link href="/destinacije" aria-label={t("search")} title={t("search")}>
               <Search className="size-5" aria-hidden="true" />

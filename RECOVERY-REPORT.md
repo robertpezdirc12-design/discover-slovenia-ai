@@ -190,12 +190,13 @@ Stanje rekonstrukcije 2.1.0:
 
 Kako dokončati push (lastnikova izbira):
 1. **Nov žeton** (GitLab → Preferences → Access Tokens, scope `write_repository`,
-   skupina markec-group) → pošlji v pogovor → push izvedem (kot doslej).
+   skupina markec-group1 — novi račun, glej §14) → pošlji v pogovor → push izvedem (kot doslej).
 2. **Samostojno**: prejmi bundle `discover-slovenia-ai-2.1.0.bundle`, potem:
-   `git clone discover-slovenia-ai-2.1.0.bundle dsa && cd dsa && git remote set-url origin https://gitlab.com/markec-group/discover-slovenia-ai.git && git push origin main`
+   `git clone discover-slovenia-ai-2.1.0.bundle dsa && cd dsa && git remote set-url origin https://gitlab.com/markec-group1/discover-slovenia-ai.git && git push origin main`
 3. **SSH**: dodaj svoj javni ključ na GitLab in potisni prek SSH.
 
-Po pushu: GitLab CI (.gitlab-ci.yml) se samodejno zagona (lint + 86 testov).
+Po pushu: CI poteče na GitHub Actions (ci.yml — 6 vrat; GitLab CI na zrcalu
+je izklopujen na projektni ravni, glej §10.2 in §14).
 
 ### 10.2 CI pipeline failed z 0 jobi — vzrok: ni runnerjev (7. 10. 2026 ~07:45 UTC)
 
@@ -341,3 +342,29 @@ dokumentirano čakanje GitLab CI na runnerje (§10.2, lastnikovo dejanje).
 **Preverjanje po pushu:** sync dispatch (API) → CI run na GitHubu zelen →
 keep-warm dispatch → Render odziv < 45 s (topel) — dokazi v komentarju
 gitovske zgodovine tega commita.
+
+### 14. Selitev zrcala na novi račun markec-group1 (10. 10. 2026 ~13:00 UTC)
+
+Račun/skupina `markec-group` (projekt id 87315476) je UMRL — API vrne
+404 Group Not Found. Vzrok je NEODVISEN od žetona: rotacija GITLAB_TOKEN
+sama ni zadoščala, ker ciljni projekt ni več obstajal (tretji izgubljeni
+račun v zgodovini projekta).
+
+Novo stanje (dokazano z runi 38053506635 + 38053638919):
+- Novi račun `robertpezdirc8`, skupina `markec-group1` (id 144207225)
+- Zrcalo: **`markec-group1/discover-slovenia-ai`** (id 87464605, zasebni),
+  main = GitHub main, 11/11 branchov, cela zgodovina
+- Skrivnosti `GITLAB_TOKEN` + `GITLAB_PROJECT_PATH` rotirani (12:51 UTC,
+  sealed box prek API)
+- sync.yml BOOTSTRAP varovalka (PR #11, commit d01e6ff3): PRAZNO zrcalo
+  ni več obravnavano kot napaka fetcha (kura-jajce iz runa 38053506635)
+  — novo zrcalo se SAMO napolni ob prvem prožilcu
+- Builds IZKLOPJENI na projektni ravni zrcala: GitLab CI nikoli ni tekel
+  (§10.2 — 0 runnerjev, brez billing verifikacije), vsak sync push bi
+  sicer ustvarjal rdeče failed pipeine (6 takšnih ob bootstrapu) in
+  kuril kvoto. CI zadnje besede = GitHub Actions (ci.yml, 6 vrat).
+
+**Če to zrcalo umre (enak vzorec)**: ustvari nov zasebni projekt v novi
+skupini → posodobi skrivnosti `GITLAB_TOKEN` + `GITLAB_PROJECT_PATH` →
+dispatch `sync.yml`. Bootstrap (PR #11) poskrbi, da se prazno zrcalo
+samo napolni — ROČNI PUSH NI VEČ POTREBEN.

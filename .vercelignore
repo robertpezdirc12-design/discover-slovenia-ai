@@ -1,0 +1,21 @@
+# LOKALNA datoteka (ni v gitu) — ekskluzivno za CLI upload:
+# ko .vercelignore obstaja, .gitignore NE velja več → vse eksplicitno.
+.git
+.github
+.next
+.vercel
+node_modules
+.env.local
+.env*.local
+*.log
+# ne-runtime mape (build/cron jih ne potrebuje):
+skills
+docs
+tests
+tool-results
+snapshots
+cutover-evidence
+download
+mini-services
+examples
+db

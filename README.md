@@ -5,10 +5,14 @@
 > realnimi koordinatami in deterministični načrtovalnik poti (isti vhod → isti načrt,
 > 0 AI žetonov). Od 2.24.0: SKRIPTE NAMESTO AI MODELOV — prosti opis potovanja
 > razume deterministična NLU skripta (/api/plan-intent), @AI svetovalec pa odgovarja
-> z živim vremenom (Open-Meteo) in citati STO slovenia.info nad istim kanonom;
-> z-ai-web-dev-sdk odstranjen — kanon P1: 100 % deterministično, 0 AI modelov.
+> z živim vremenom (Open-Meteo) in citati STO slovenia.info nad istim kanonom.
+> Od 2.25.0: SKRIPTNI START ANYWHERE — prilepi povezavo (YouTube/članek/TikTok)
+> ali besedilo → SSRF-varovano strežniško branje + ujemanje krajev po korenu
+> (slovenski skloni) z registrom 38 destinacij + predlog izhodišča za isti
+> deterministični motor (/api/start-anywhere); z-ai-web-dev-sdk odstranjen —
+> kanon P1: 100 % deterministično, 0 AI modelov.
 
-**Verzija: 2.24.0 — SKRIPTE NAMESTO AI MODELA: skriptni @AI svetovalec (src/lib/advisor/answer.ts — živo vreme Open-Meteo + citati STO nad jedrom trip-chat-engine, fail-quiet) + skriptni NLU prostega opisa (src/lib/advisor/nlu.ts → /api/plan-intent → /api/itinerary); z-ai-web-dev-sdk izbran iz odvisnosti; skills/ referenčni material odstranjen (1076 datotek). Prej 2.23.0 — CSP NONCE: Content-Security-Policy z nonce + strict-dynamic (middleware → Next skripte + next-themes), inventura zunanjih virov dokazana (edini zunanji vir: OSM ploščice), strani dinamično izrisane (zahteva nonce).**
+**Verzija: 2.25.0 — SKRIPTNI START ANYWHERE: povezava ali besedilo → prepoznani kraji iz registra (dokaz z zadetkom), NLU namen in predlog izhodišča → isti deterministični načrtovalnik; SSRF varovalke (javni naslovi, ≤ 256 KiB, ≤ 8 s, ≤ 3 preusmeritve). Prej 2.24.0 — SKRIPTE NAMESTO AI MODELA: skriptni @AI svetovalec (živo vreme Open-Meteo + citati STO nad jedrom trip-chat-engine, fail-quiet) + skriptni NLU prostega opisa (src/lib/advisor/nlu.ts → /api/plan-intent → /api/itinerary). Prej 2.23.0 — CSP NONCE: Content-Security-Policy z nonce + strict-dynamic (middleware → Next skripte + next-themes), inventura zunanjih virov dokazana (edini zunanji vir: OSM ploščice), strani dinamično izrisane (zahteva nonce).**
 Izdaje rekonstrukcije: 2.1.0 skupnostne funkcije → 2.2.0 aplikacijska lupina →
 2.3.0 issue #1 (živi GPS, booking, pomočnik) → 2.3.1 infra CI → 2.4.0 PWA
 offline → 2.5.0 rezervacijski sloj → 2.6.0 partner kanal booking verige →

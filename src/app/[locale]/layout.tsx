@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { headers } from "next/headers";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -26,11 +27,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-/** Statične locale poti (sl brez predpone, /en/*).
- *  generateStaticParams omogoča statično izrisovanje obeh jezikovnih vej. */
+/** Locale poti (sl brez predpone, /en/*) — generateStaticParams ostaja
+ *  (dokumentira kanon locale veje), a je izrisovanje DINAMIČNO (glej
+ *  force-dynamic spodaj). */
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
+
+/** CSP nonce zahteva dinamično izrisovanje: middleware postavi svež nonce
+ *  na vsako zahtevo, SSG HTML pa bi vseboval zastarelega (blokirane
+ *  skripte). Kanon Next.js CSP vodic (issue #2 §9, PRODUCT-AUDIT). */
+export const dynamic = "force-dynamic";
 
 /** OG locale koda (html lang → Open Graph). */
 const OG_LOCALES: Record<string, string> = {
@@ -110,8 +117,12 @@ export default async function LocaleLayout({
   if (!hasLocale(routing.locales, locale)) {
     notFound();
   }
-  // Statično izrisovanje: instanca zahteve pozna locale brez dinamičnih API-jev.
+  // setRequestLocale ostaja (locale znana brez dinamičnega API-ja);
+  // dinamičnost zdaj narekuje CSP nonce (glej export const dynamic zgoraj).
   setRequestLocale(locale);
+
+  // CSP nonce z zahteve (middleware) → next-themes inline skripta.
+  const nonce = (await headers()).get("x-nonce") ?? "";
 
   return (
     <html lang={locale} suppressHydrationWarning className="scroll-smooth">
@@ -125,6 +136,7 @@ export default async function LocaleLayout({
               defaultTheme="system"
               enableSystem
               disableTransitionOnChange
+              nonce={nonce}
             >
               <div className="flex min-h-screen flex-col">
                 <Navigation />

@@ -134,8 +134,14 @@ sestavljene poizvedbe povsod ({id, userId} / {id, ownerId}); zasebne pote
 **Ostaja (lastnikova odločitev, iskreno):**
 - V pomnilniku rate limit je NA PRIMER (per serverless instanca) — nadgradnja
   v skupno shrambo (Upstash) ob večjem prometu.
-- Polni CSP zahteva nonce-arhitekturo (Leaflet/Stripe/Next) — naslednji korak,
-  glave so zdaj osnovne.
+- ~~Polji CSP zahteva nonce-arhitekturo~~ ✅ **2.23.0 DOKONČANO:**
+  `Content-Security-Policy` z `nonce-<random>` + `strict-dynamic`
+  (script-src; brez `unsafe-inline` v skriptah), `object-src 'none'`,
+  `frame-ancestors 'none'`, `form-action`/`base-uri 'self'` — edini zunanji
+  brskalniški vir = OSM ploščice (img-src); connect-src 'self' (0 absolutnih
+  klientnih fetch). [locale] strani dinamično izrisane (zahteva nonce);
+  korenska 404 = mila degradacija (čista server komponenta, brez JS).
+  Zaklenjeno s `tests/csp-contract.test.ts` (14 testov).
 - `DSA_DEMO_PAYMENTS=1` privzeto v `.env.example` — pri produkciji izklopiti.
 - Caddyfile `XTransformPort` proxy je RAZVOJNA izključno datoteka peskovnika —
   ne sme iti v produkcijo (dokumentirano tukaj).
@@ -225,7 +231,12 @@ meja peskovnika, ne izpuščen korak.
 6. `DSA_ADMIN_EMAILS` za skrbniške pulta.
 
 **Priporočeni naslednji koraki v kodi (ni blokirano, prioriteta nizka/srednja):**
-1. Polni CSP z nonce (zahteva arhitekturno delo — Leaflet/Stripe).
+1. ~~Polji CSP z nonce (zahteva arhitekturno delo — Leaflet/Stripe)~~
+   ✅ **2.23.0 DOKONČANO:** middleware nonce → Next skripte + next-themes
+   (prop), inventura zunanjih virov zaklenjena s testi, [locale]
+   force-dynamic (SSG = zastarel nonce), style-src 'unsafe-inline' zavestno
+   (Tailwind/Leaflet/chart `<style>`), 'unsafe-eval' samo dev,
+   `upgrade-insecure-requests` samo produkcija.
 2. Skupna shramba rate limitov (Upstash/DB) ob rasti prometa.
 3. ~~Prevod 59 sl/en datotek v it/de/fr/es~~ ✅ **P3 (2.20.0) zaključeno:**
    ~7.400 prevodov v 71 datotekah + aktivacija ~73 klicnih mest

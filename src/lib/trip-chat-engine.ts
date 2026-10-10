@@ -22,7 +22,7 @@ import {
  * TRIP-CHAT-ENGINE — DETERMINISTIČNI odgovarjalč @AI za skupinski klepet
  * na poti (mostovna rekonstrukcija izvirnika 1.131.0, W2 / Issue #15).
  *
- * Kanon iskrenosti:
+ * Kanon iskrenosti (2.23.0 — DETERMINISTIČNA PLAST, nespremenjena):
  *  - 0 AI žetonov, 0 zunanjih klicev — IZKLJUČNO podatki poti (plan) +
  *    statično znanje o destinacijah iz src/lib/slovenia-data.ts;
  *  - vreme je vedno NEZNANO (žive napovedi ni — povedano izrecno, svetuje
@@ -30,6 +30,12 @@ import {
  *  - razdalje so naravnost (haversine) + cestna ocena po kanonu
  *    načrtovalnika (×1,3, ~60 km/h) — ocena je vidna kot ocena;
  *  - isti vhod → isti izhod (determinizem).
+ *
+ * 2.24.0 (P1/AI): ta stroj je zdaj FAIL-CLOSED PLAST pod utemeljenim LLM
+ * svetovalcem (src/lib/ai/advisor.ts — odgovori izključno iz kanonskih
+ * podatkov + viri). Ko LLM ni na voljo (DSA_AI_LLM izklopljen, timeout,
+ * injekcija, napaka), messages route pade TUKAJ — obnašanje identično
+ * 2.23.0. Ta modul ostane 0-žetonski in brez omrežja.
  */
 
 export const AI_ADVISOR_NAME = "AI svetovalec";

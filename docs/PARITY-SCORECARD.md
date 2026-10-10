@@ -7,8 +7,13 @@
 > **Cilj NI 100 % kopija.** Cilj je: MINDTRIP PARITY na generični travel-agent UX
 > + DISCOVERY SUPERIORITY na slovenskih/lokalnih podatkih, transparentnosti,
 > determinističnem načrtovanju, provenance, offline in realnem izvajanju pote.
-> Po lastnikovi odločitvi (P1): **100 % deterministično — 0 AI modelov** — vse
-> zmožnosti so skripte/pravila, aplikacija deluje brez kakršnegakoli AI žetona.
+> Po lastnikovi odločitvi (P1, 2.23.0): **100 % deterministično — 0 AI modelov**.
+> Nadgradnja (2.24.0, po odobreni konkurenčni analizi P1): **deterministično
+> jedro + UTEMELJENI LLM sloj** — načrtovanje ostaja 100 % deterministično
+> ( isti vhod → isti načrt, cene samo iz registra), LLM pa poganja NLU
+> (prosti opis → parametri motorja) in @AI svetovalec z odgovori IZKLJUČNO
+> iz kanonskih podatkov (register + STO + vreme) z obvezno vrstico virov.
+> Fail-closed: brez DSA_AI_LLM env je obnašanje identično 0-žetonskemu.
 
 ## Zmogljivostna matrika
 

@@ -130,6 +130,14 @@ const L = {
     es: "Elige o escribe al menos un interés.",
   },
   networkError: { sl: "Omrežna napaka — poskusi znova.", en: "Network error — please try again.", it: "Errore di rete — riprova.", de: "Netzwerkfehler — bitte erneut versuchen.", fr: "Erreur réseau — veuillez réessayer.", es: "Error de red — inténtalo de nuevo." },
+  nlTitle: { sl: "Opiši potovanje s svojimi besedami", en: "Describe your trip in your own words", it: "Descrivi il tuo viaggio con parole tue", de: "Beschreibe deine Reise mit eigenen Worten", fr: "Décris ton voyage avec tes propres mots", es: "Describe tu viaje con tus propias palabras" },
+  nlPlaceholder: { sl: "npr. 3 dni v gorah z družino, srednji proračun", en: "e.g. 3 days in the mountains with family, mid budget", it: "es. 3 giorni in montagna con la famiglia, budget medio", de: "z. B. 3 Tage in den Bergen mit der Familie, mittleres Budget", fr: "ex. 3 jours à la montagne en famille, budget moyen", es: "p. ej. 3 días en la montaña con la familia, presupuesto medio" },
+  nlButton: { sl: "Razumej in sestavi načrt", en: "Understand and build the plan", it: "Capisci e crea il piano", de: "Verstehen und Plan erstellen", fr: "Comprendre et créer le plan", es: "Entender y crear el plan" },
+  nlBusy: { sl: "Razumevam …", en: "Understanding …", it: "Sto capendo …", de: "Verstehe …", fr: "Je comprends …", es: "Entendiendo …" },
+  nlHint: { sl: "AI razume namen (interesi, dnevi, regija, proračun) — načrt pa še vedno sestavi deterministični motor: isti vhod vedno da isti načrt.", en: "AI understands your intent (interests, days, region, budget) — the plan itself is still built by the deterministic engine: same input always gives the same plan.", it: "L’AI capisce l’intenzione (interessi, giorni, regione, budget) — ma il piano lo crea comunque il motore deterministico: stesso input, stesso piano.", de: "Die KI versteht die Absicht (Interessen, Tage, Region, Budget) — den Plan erstellt aber weiterhin die deterministische Engine: gleiche Eingabe, gleicher Plan.", fr: "L’IA comprend l’intention (centres d’intérêt, jours, région, budget) — mais le plan reste créé par le moteur déterministe : même entrée, même plan.", es: "La IA entiende la intención (intereses, días, región, presupuesto) — pero el plan lo sigue creando el motor determinista: misma entrada, mismo plan." },
+  nlTooShort: { sl: "Napiši vsaj nekaj besed (npr. \"3 dni ob morju\").", en: "Write at least a few words (e.g. \"3 days by the sea\").", it: "Scrivi almeno qualche parola (es. \"3 giorni al mare\").", de: "Schreibe mindestens ein paar Wörter (z. B. \"3 Tage am Meer\").", fr: "Écris au moins quelques mots (ex. « 3 jours au bord de la mer »).", es: "Escribe al menos unas palabras (p. ej. \"3 días junto al mar\")." },
+  nlUnavailable: { sl: "Prosti opis trenutno ni na voljo — uporabi prednastavitve, čipe in izbire spodaj (enak rezultat).", en: "Free-text planning is currently unavailable — use the presets, chips and options below (same result).", it: "La pianificazione a testo libero non è al momento disponibile — usa i preset, le chip e le opzioni sotto (stesso risultato).", de: "Die Freitext-Planung ist derzeit nicht verfügbar — nutze die Vorlagen, Chips und Optionen unten (gleiches Ergebnis).", fr: "La planification en texte libre n’est pas disponible pour le moment — utilise les préréglages, puces et options ci-dessous (même résultat).", es: "La planificación por texto libre no está disponible ahora mismo — usa los preajustes, fichas y opciones de abajo (mismo resultado)." },
+  nlNotUnderstood: { sl: "Opisa ni bilo mogoče razumeti dovolj natančno — izberi interese in dneve spodaj.", en: "The description could not be understood precisely enough — pick interests and days below.", it: "La descrizione non è stata capita con sufficiente precisione — scegli interessi e giorni sotto.", de: "Die Beschreibung konnte nicht genau genug verstanden werden — wähle unten Interessen und Tage.", fr: "La description n’a pas pu être comprise assez précisément — choisis les centres d’intérêt et les jours ci-dessous.", es: "No se pudo entender la descripción con suficiente precisión — elige intereses y días abajo." },
   presetsTitle: { sl: "Hitre prednastavitve", en: "Quick presets", it: "Preset rapidi", de: "Schnelle Voreinstellungen", fr: "Préréglages rapides", es: "Ajustes rápidos" },
   presetsLead: {
     sl: "Trije preizkušeni izhodi — en klik in načrt je tu.",
@@ -368,6 +376,10 @@ function PlannerApp() {
   const [customInput, setCustomInput] = useState("");
   const [chipSearch, setChipSearch] = useState("");
   const [showAllChips, setShowAllChips] = useState(false);
+  // P1/AI (2.24.0): prosti opis potovanja → NLU → obstoječi deterministični motor.
+  const [nlInput, setNlInput] = useState("");
+  const [nlBusy, setNlBusy] = useState(false);
+  const [nlError, setNlError] = useState<string | null>(null);
   const [plan, setPlan] = useState<ItineraryPlan | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -460,6 +472,56 @@ function PlannerApp() {
     void generate(next);
   };
 
+  // P1/AI (2.24.0): prosti opis → /api/ai/plan-intent (NLU) → isti
+  // deterministični tok kot prednastavitve (setForm + generate). Fail-closed:
+  // 503/422/napaka → iskreno sporočilo, uporabnik obdrži čipe in izbire.
+  const understandNl = useCallback(async () => {
+    const t = nlInput.trim();
+    if (t.length < 4) {
+      setNlError(pick(l, L.nlTooShort));
+      return;
+    }
+    setNlBusy(true);
+    setNlError(null);
+    try {
+      const res = await fetch("/api/ai/plan-intent", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text: t, locale: lang }),
+      });
+      const data: unknown = await res.json().catch(() => null);
+      const intent =
+        data && typeof data === "object" && "intent" in data
+          ? (data as { intent?: Record<string, unknown> }).intent
+          : null;
+      if (!res.ok || !intent) {
+        setNlError(
+          res.status === 503 ? pick(l, L.nlUnavailable) : pick(l, L.nlNotUnderstood)
+        );
+        return;
+      }
+      const next: FormState = {
+        interests:
+          Array.isArray(intent.interests) && intent.interests.length > 0
+            ? (intent.interests as string[])
+            : form.interests,
+        days:
+          typeof intent.days === "number" && intent.days >= 1 && intent.days <= 5
+            ? intent.days
+            : form.days,
+        region: typeof intent.region === "string" && intent.region !== "" ? intent.region : "all",
+        season: typeof intent.season === "string" && intent.season !== "" ? intent.season : "any",
+        budget: typeof intent.budget === "string" && intent.budget !== "" ? intent.budget : "any",
+      };
+      setForm(next);
+      void generate(next);
+    } catch {
+      setNlError(pick(l, L.networkError));
+    } finally {
+      setNlBusy(false);
+    }
+  }, [nlInput, form, lang, l, generate]);
+
   const visibleChips = useMemo(() => {
     const q = chipSearch.trim().toLowerCase();
     const filtered = q ? chips.filter((c) => c.label.toLowerCase().includes(q)) : chips;
@@ -524,6 +586,44 @@ function PlannerApp() {
           <p className="mt-1 text-sm text-muted-foreground">{pick(l, L.formLead)}</p>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* P1/AI (2.24.0): prosti opis → NLU → deterministični motor */}
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+            <Label htmlFor="nl-input">{pick(l, L.nlTitle)}</Label>
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+              <Input
+                id="nl-input"
+                value={nlInput}
+                onChange={(e) => setNlInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void understandNl();
+                  }
+                }}
+                placeholder={pick(l, L.nlPlaceholder)}
+                maxLength={400}
+                className="min-h-11 flex-1"
+                disabled={nlBusy || loading}
+              />
+              <Button
+                type="button"
+                onClick={() => void understandNl()}
+                disabled={nlBusy || loading || nlInput.trim().length < 4}
+                className="min-h-11"
+              >
+                {nlBusy ? pick(l, L.nlBusy) : pick(l, L.nlButton)}
+              </Button>
+            </div>
+            {nlError && (
+              <p className="mt-2 text-sm text-destructive" role="alert">
+                {nlError}
+              </p>
+            )}
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              {pick(l, L.nlHint)}
+            </p>
+          </div>
+
           {/* Izbrani interesi */}
           {form.interests.length > 0 && (
             <div>

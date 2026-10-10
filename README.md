@@ -3,7 +3,9 @@
 > **AI potovalni concierge za Slovenijo in jadransko regijo (SI · HR · ME · AL).**
 > Načrtovanje večdnevnih potovanj, odkrivanje 38 kuriranih destinacij, zemljevid z
 > realnimi koordinatami in deterministični načrtovalnik poti (isti vhod → isti načrt,
-> 0 AI žetonov v jedru).
+> 0 AI žetonov v jedru). Od 2.24.0: utemeljeni LLM sloj NAD kanonskimi podatki
+> (NLU prostega opisa + @AI svetovalec z viri) — fail-closed na deterministično
+> jedro, načrtovanje ostaja 100 % deterministično.
 
 **Verzija: 2.23.0 — CSP NONCE: Content-Security-Policy z nonce + strict-dynamic (middleware → Next skripte + next-themes), inventura zunanjih virov dokazana (edini zunanji vir: OSM ploščice), strani dinamično izrisane (zahteva nonce).**
 Izdaje rekonstrukcije: 2.1.0 skupnostne funkcije → 2.2.0 aplikacijska lupina →

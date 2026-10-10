@@ -97,7 +97,10 @@ describe("trip-security [source-contract]: collaborators — VSA dejanja OWNER-o
 
   test("vabilo je enkratni žeton v URL-ju (invite=?token)", async () => {
     const s = await src("src/app/api/trips/[shareId]/collaborators/route.ts");
-    expect(s).toContain("inviteUrl: `/pot/${shareId}?invite=${token}`");
+    // P3 (2.26.0): inviteUrl je zgrajen kot spremenljivka (e-pošta ga
+    // potrebuje kot absolutno povezavo) — žeton ostaja v ?invite=.
+    expect(s).toContain("const inviteUrl = `/pot/${shareId}?invite=${token}`");
+    expect(s).toContain("inviteUrl,");
   });
 });
 

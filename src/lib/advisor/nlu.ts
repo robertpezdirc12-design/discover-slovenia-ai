@@ -54,7 +54,10 @@ const INTEREST_RULES: ReadonlyArray<{
   prefixes: readonly string[];
 }> = [
   {
-    interest: "druzina",
+    // Prikazna oblika s diakritiki (kanon 2.26.0): načrtovalnik žetone
+    // normalizira z normText (č→c), zato je prikaz uporabniku pravilen
+    // („družina“ in ne „druzina“), ujemanje z registrom pa nespremenjeno.
+    interest: "družina",
     prefixes: ["druzin", "otrok", "otroc", "famil", "kids", "kinder"],
   },
   {
@@ -65,7 +68,7 @@ const INTEREST_RULES: ReadonlyArray<{
     ],
   },
   {
-    interest: "pohodnistvo",
+    interest: "pohodništvo",
     prefixes: ["pohod", "sprehod", "hik", "trek", "wandern", "walking"],
   },
   {
@@ -106,7 +109,7 @@ const INTEREST_RULES: ReadonlyArray<{
     prefixes: ["term", "toplic", "zdrav", "sprostit", "wellness", "spa"],
   },
   {
-    interest: "smucanje",
+    interest: "smučanje",
     prefixes: ["smuc", "skiin", "skifahr", "schnee"],
   },
   {
@@ -368,13 +371,13 @@ function exactWordInterest(w: string): string | null {
   switch (w) {
     case "ski":
     case "skis":
-      return "smucanje";
+      return "smučanje";
     case "sea":
       return "morje";
     case "bike":
       return "kolo";
     case "hike":
-      return "pohodnistvo";
+      return "pohodništvo";
     default:
       return null;
   }

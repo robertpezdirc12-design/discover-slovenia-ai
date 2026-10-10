@@ -8,6 +8,16 @@
  *
  * NE UREJAJ ROČNO BREZ preverbe proti produkciji — ta datoteka poganja
  * /api/destinations, zemljevid, načrtovalnik, rss.xml in seed baze.
+ *
+ * PREVERJENI POPRAVEK REGIJE (2.22.0, 2026-10-10): produkcija 1.190.0
+ * (API /api/destinations + stran + sitemap — vse preverjeno 2026-10-10)
+ * razvršča kobarid in reka-soca v „gorenjska“, kar je geografska napaka
+ * izvirnika: Kobarid in korita Soče ležita v Posočju (goriška statistična
+ * regija), STO pa destinacijo uradno trži kot „Soča Valley“ (glej
+ * provenance sourceUrl zapisa reka-soca). Popravek po preverbi proti
+ * produkciji (kanon zgoraj dovoljuje): nov ključ REGIONS „posocje“ +
+ * prestavitev obeh destinacij; eksonimska imena po vzorcu izvirnika
+ * (it: Isonzo/Caporetto/Plezzo, de/fr/es: Isonzo).
  */
 
 import { pick } from "./i18n-pick";
@@ -64,7 +74,7 @@ export interface Destination {
   provenance: DestinationProvenance;
 }
 
-/** Vseh 38 destinacij (SI 22 · HR 8 · ME 4 · AL 4 · 20 regij · 9 tipov). */
+/** Vseh 38 destinacij (SI 22 · HR 8 · ME 4 · AL 4 · 21 regij · 9 tipov). */
 export const DESTINATIONS: Destination[] = [
   {
     id: "bled",
@@ -182,7 +192,9 @@ export const DESTINATIONS: Destination[] = [
     slug: "reka-soca",
     name: "Reka Soča",
     tagline: "Smaragdna reka med Julijci za adrenalinske avanture",
-    region: "gorenjska",
+    // PREVERJENI POPRAVEK 2.22.0: prej „gorenjska“ (1:1 iz produkcije 1.190.0)
+    // — geografsko napaka izvirnika, glej glavo datoteke (Posočje/goriška).
+    region: "posocje",
     type: "river",
     description: "Soča je ena redkih rek, ki ohranja svojo smaragdno barvo skozi vse leto. Vije se skozi Tolmin in Bovec, kjer ponuja vrhunsko rafting, kajakaštvo in canyoning. Vmes so korita Soče — naravni bazeni, vrezani v apnenec, idealni za poletno osvežitev.",
     highlights: ["Korita Soče", "Bovec", "Tolmin", "Trdnjava Kluže"],
@@ -226,7 +238,9 @@ export const DESTINATIONS: Destination[] = [
     slug: "kobarid",
     name: "Kobarid",
     tagline: "Zgodovina, Soška fronta in kulinarika v eni vasi",
-    region: "gorenjska",
+    // PREVERJENI POPRAVEK 2.22.0: prej „gorenjska“ (1:1 iz produkcije 1.190.0)
+    // — geografsko napaka izvirnika, glej glavo datoteke (Posočje/goriška).
+    region: "posocje",
     type: "city",
     description: "Kobarid je vasica ob Soči, znana po Kobaridskem muzeju, ki dokumentira krvavo Soško fronto prve svetovne vojne. Napoleonov most čez Sočo in Kolovrat ponujata panoramske poglede. Hiša Franko, ena najboljših restavrac v regiji, prinaša sodobno tolminsko kuhinjo.",
     highlights: ["Kobaridski muzej", "Napoleonov most", "Kolovrat", "Hiša Franko"],
@@ -914,12 +928,16 @@ export function getFeaturedDestinations(): Destination[] {
   return DESTINATIONS.filter((d) => d.featured);
 }
 
-/** 20 regij s prikaznimi imeni (ključi so kanonski ID-ji iz dataseta). */
+/** 21 regij s prikaznimi imeni (ključi so kanonski ID-ji iz dataseta). */
 export const REGIONS: Record<string, { sl: string; en: string; it: string; de: string; fr: string; es: string }> = {
   "gorenjska": { sl: "Gorenjska", en: "Upper Carniola", it: "Alta Carniola", de: "Oberkrain", fr: "Haute-Carniole", es: "Alta Carniola" },
   "osrednja": { sl: "Osrednja Slovenija", en: "Central Slovenia", it: "Slovenia centrale", de: "Zentralslowenien", fr: "Slovénie centrale", es: "Eslovenia central" },
   "kras": { sl: "Kras in Brkin", en: "Karst and Brkini", it: "Carso e Brchini", de: "Karst und Brkini", fr: "Karst et Brkini", es: "Karst y Brkini" },
   "primorska": { sl: "Primorska", en: "Littoral", it: "Litorale", de: "Küstenland", fr: "Littoral", es: "Litoral" },
+  // Posočje — DODANO 2.22.0 (preverjeni popravek regije, glej glavo datoteke):
+  // geografska resnica (goriška regija) + uradno STO poimenovanje „Soča Valley“;
+  // eksonimi po vzorcu izvirnika (it/de/fr/es: Isonzo, kot Caporetto/Plezzo).
+  "posocje": { sl: "Posočje", en: "Soča Valley", it: "Valle dell'Isonzo", de: "Isonzotal", fr: "Vallée de l'Isonzo", es: "Valle del Isonzo" },
   "stajerska": { sl: "Štajerska", en: "Styria", it: "Stiria", de: "Untersteiermark", fr: "Styrie", es: "Estiria" },
   "koroska": { sl: "Koroška", en: "Carinthia", it: "Carinzia", de: "Unterkärnten", fr: "Carinthie", es: "Carintia" },
   "prekmurje": { sl: "Prekmurje", en: "Prekmurje", it: "Prekmurje", de: "Prekmurje", fr: "Prékmurje", es: "Prekmurje" },

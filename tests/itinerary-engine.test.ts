@@ -56,7 +56,10 @@ describe("itinerary-engine: determinizem (0 žetonov, 0 ure)", () => {
 describe("itinerary-engine: struktura načrta", () => {
   test("število dni sledi poizvedbi (1–3)", () => {
     for (const days of [1, 2, 3]) {
-      const plan = buildItinerary({ ...baseQuery, days });
+      // Brez regijskega filtra: po 2.22.0 ima gorenjska samo 4 destinacije
+      // (posočje od 2.22.0 ločeno) — za 3 dni × ≥2 postanka je potreben
+      // širši nabor. Regijski filter je trdo preverjen v lastnem testu spodaj.
+      const plan = buildItinerary({ ...baseQuery, days, region: undefined });
       expect(plan.days.length).toBe(days);
     }
   });
@@ -90,6 +93,18 @@ describe("itinerary-engine: struktura načrta", () => {
         if (stop.region) expect(stop.region).toBe("gorenjska");
       }
     }
+  });
+
+  test("regija je trdi filter tudi za posočje (2.22.0) — kobarid/reka-soca skupaj, brez gorenjskih", () => {
+    const plan = buildItinerary({ ...baseQuery, region: "posocje", interests: ["narava", "adrenalin"] });
+    expect(plan.days.length).toBeGreaterThan(0);
+    // slug je neobvezen (custom postanki) — ogradimo za toContain.
+    const slugs = plan.days.flat().map((s) => s.slug).filter((x): x is string => typeof x === "string");
+    for (const s of slugs) {
+      expect(["kobarid", "reka-soca"]).toContain(s);
+    }
+    expect(slugs).toContain("kobarid");
+    expect(slugs).toContain("reka-soca");
   });
 
   test("skupna cena je vsota cen postankov (sestavljena iz costPerPerson)", () => {

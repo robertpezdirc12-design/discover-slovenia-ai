@@ -16,7 +16,7 @@ import { REGIONS, DATA_STATS } from "@/lib/slovenia-data";
  * /slovenia-pass — predstavitev pasa 1:1 po produkciji (hero „zbiraj
  * značke" + „Zbiraj svoje slovenske doživetja"). Koristi so iz besedila
  * produkcije (brezplačno, točke za vsak AI načrt); regije značk so
- * kanonskih 20 regij dataseta. Igrifikacija v pripravi — iskreno označeno.
+ * kanonskih 21 regij dataseta (2.22.0: preverjeni popravek — Posočje). Igrifikacija v pripravi — iskreno označeno.
  */
 export default function SloveniaPassPage() {
   const l = useLocale();
@@ -124,12 +124,12 @@ export default function SloveniaPassPage() {
     },
     regionsTitle: { sl: "Regije značk", en: "Badge regions", it: "Regioni dei badge", de: "Abzeichen-Regionen", fr: "Régions des badges", es: "Regiones de insignias" },
     regionsLead: {
-      sl: "Značke pokrivajo vseh 20 regij nabora (Slovenija in sosednje jadranske dežele).",
-      en: "Badges cover all 20 regions of the dataset (Slovenia and the neighbouring Adriatic countries).",
-      it: "I badge coprono tutte le 20 regioni del dataset (la Slovenia e i paesi adriatici limitrofi).",
-      de: "Abzeichen decken alle 20 Regionen des Datensatzes ab (Slowenien und die angrenzenden Adriastaaten).",
-      fr: "Les badges couvrent les 20 régions du jeu de données (la Slovénie et les pays adriatiques voisins).",
-      es: "Las insignias cubren las 20 regiones del conjunto de datos (Eslovenia y los países adriáticos vecinos).",
+      sl: "Značke pokrivajo vseh 21 regij nabora (Slovenija in sosednje jadranske dežele).",
+      en: "Badges cover all 21 regions of the dataset (Slovenia and the neighbouring Adriatic countries).",
+      it: "I badge coprono tutte le 21 regioni del dataset (la Slovenia e i paesi adriatici limitrofi).",
+      de: "Abzeichen decken alle 21 Regionen des Datensatzes ab (Slowenien und die angrenzenden Adriastaaten).",
+      fr: "Les badges couvrent les 21 régions du jeu de données (la Slovénie et les pays adriatiques voisins).",
+      es: "Las insignias cubren las 21 regiones del conjunto de datos (Eslovenia y los países adriáticos vecinos).",
     },
     statusTitle: { sl: "Stanje v tej rekonstrukciji", en: "Status in this reconstruction", it: "Stato in questa ricostruzione", de: "Status in dieser Rekonstruktion", fr: "Statut dans cette reconstruction", es: "Estado en esta reconstrucción" },
     statusBody: {

@@ -2742,3 +2742,23 @@ Stage Summary:
 - Jedro aplikacije (načrtovalnik, vreme, statusi, datumi, smeri) zdaj govori vseh 6 jezikov lupine — prej so it/de/fr/es uporabniki dobivali slovenščino
 - FR uporabniški vmesnik v enotnem tu registru; datumski formati po Intl tagih vseh 6 jezikov
 - PR: feat/i18n-core-activation (issue #2 §9 točka 3 ostanek + 4-c)
+
+---
+Task ID: posoce-regija
+Agent: Z.ai Code (glavni)
+Task: "nadaljuj" — zadnji ostanek issue #2 §9 točke 4: preverba Kobarid/Soča regije proti produkciji + popravek (2.22.0)
+
+Work Log:
+- PREVERBA PROTI PRODUKCIJI (pogoj kanona slovenia-data.ts izveden 2026-10-10): API /api/destinations, stran /destinacija/kobarid in sitemap.xml na i-feel-slovenia.vercel.app (1.190.0) — VSI trije potrjujejo: kobarid + reka-soca = „gorenjska", regije Posočje v taksonomiji izvirnika NI (20 regij). Napaka je torej v izvirniku, ne v zrcalu rekonstrukcije.
+- Geografska resnica: Kobarid in korita Soče ležita v Posočju (goriška statistična regija); STO destinacijo uradno trži kot „Soča Valley" (provenance sourceUrl zapisa reka-soca); eksonimi po vzorcu izvirnika (it: Isonzo/Caporetto/Plezzo).
+- POPRAVEK (dovoljen po kanonu — urejanje po preverbi): nova regija REGIONS „posocje" (sl Posočje / en Soča Valley / it Valle dell'Isonzo / de Isonzotal / fr Vallée de l'Isonzo / es Valle del Isonzo) + prestavitev kobarid + reka-soca iz „gorenjska"; gorenjska obdrži bled/bohinj/triglav/vintgarska-soteska (vsi geografsko pravilni).
+- Letališče: nearestAirportForRegion — posocje → TRS (Trst; Kobarid ~80 km od Trsta vs ~120 km od Ljubljane), primorska/kras nespremenjeni.
+- Besedila 20 → 21 regij: home-view endlessLead (6 jezikov), slovenia-pass regionsLead (6 jezikov) + glava; DATA_STATS/badge mreža/health dinamični (sami).
+- TESTI (+4 = 1301/1301): slovenia-data zaklep popravka (6 jezikov, gorenjska nespremenjena za 4 prave, 21 regij); booking-provider gorenjska nabor posodobljen (bled → bohinj/triglav) + nov posočje test (kobarid → reka-soca region match); affiliate-providers posocje → TRS; itinerary-engine posočje trdi filter + popravek dnevnega testa (brez regijskega filtra za 3 dni — gorenjska zdaj 4 destinacije).
+- VRATA: tsc 0, lint 0, 1301/1301 testov (10.479 expect), build USPEŠEN; dim-test na živem strežniku: API ?region=posocje → obe destinaciji, stran kobarid 1× „Posočje" 0× „gorenjska", health 2.22.0, slovenia-pass „21 regij" + značka Posočje, RSS kategorije posocje/gorenjska pravilne.
+- Verzija 2.21.0 → 2.22.0 (package.json, health, sw.js, footer, kanarčka pwa-sw + p2 pogodbi, README glava + vrstica izdaj); PRODUCT-AUDIT.md §9 točka 4 dokončno zaključena z dokazi.
+
+Stage Summary:
+- Zadnja odprta programska naloga issue #2 §9 je ZAKLJUČENA: Kobarid/Soča regija rešena po kanonu (preverba proti produkciji izvedena, popravek zaklenjen s testi)
+- Od §9 priporočil ostanejo samo še: CSP nonce (srednja), skupna shramba rate limitov (nizka, ob rasti), ignoreBuildErrors (po stabilizaciji) — vsa tri so opcijske izboljšave, ne blokade
+- Vsi lastnikovi zunanji koraki (GITLAB_TOKEN rotacija, Neon skrivnosti, Vercel deploy §7, PAT rotacija) NEspremenjeni

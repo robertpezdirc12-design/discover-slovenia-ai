@@ -362,6 +362,12 @@ describe("affiliate-providers: nearestAirportForRegion (heuristika po regiji)", 
     expect(nearestAirportForRegion("prekmurje").code).toBe("BUD");
   });
 
+  test("posočje → letališče Trst (TRS) — preverjeni popravek 2.22.0 (Kobarid/Soča bližje Trstu kot Ljubljani)", () => {
+    const a = nearestAirportForRegion("posocje");
+    expect(a.code).toBe("TRS");
+    expect(a.city).toBe("Trst");
+  });
+
   test("gorenjska in neznane regije → Ljubljana (LJU, privzeto)", () => {
     for (const regija of ["gorenjska", "dolenjska", "zeptelinka", ""]) {
       expect(nearestAirportForRegion(regija).code).toBe("LJU");

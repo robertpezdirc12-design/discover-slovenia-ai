@@ -96,6 +96,32 @@ describe("slovenia-data: veljavnost polj", () => {
     }
   });
 
+  test("PREVERJENI POPRAVEK 2.22.0: posočje (kobarid + reka-soca) — ne gorenjska (geografska napaka izvirnika 1.190.0)", () => {
+    // Preverba proti produkciji izvedena 2026-10-10 (API /api/destinations,
+    // stran /destinacija/kobarid, sitemap.xml — vse „gorenjska“ = napaka
+    // izvirnika). Glej glavo src/lib/slovenia-data.ts za dokaze.
+    const soca = getDestination("reka-soca");
+    const kob = getDestination("kobarid");
+    expect(soca?.region).toBe("posocje");
+    expect(kob?.region).toBe("posocje");
+    // Regija ima vseh 6 jezikovnih oznak (kanon P3 paritete).
+    const p = REGIONS["posocje"];
+    expect(p).toBeDefined();
+    for (const loc of ["sl", "en", "it", "de", "fr", "es"] as const) {
+      expect(p[loc].length).toBeGreaterThan(0);
+    }
+    expect(p.sl).toBe("Posočje");
+    expect(p.en).toBe("Soča Valley"); // uradno STO poimenovanje
+    // Gorenjska obdrži svoje (bled, bohinj, triglav, vintgar) — popravek
+    // ne sme prenesti drugih destinacij.
+    for (const slug of ["bled", "bohinj", "triglav", "vintgarska-soteska"]) {
+      const d = getDestination(slug);
+      expect(d?.region).toBe("gorenjska");
+    }
+    // 21 regij (20 izvirnih + posocje).
+    expect(Object.keys(REGIONS).length).toBe(21);
+  });
+
   test("slike obstajajo na disku (public/content)", () => {
     for (const d of all) {
       const p = join(process.cwd(), "public", d.image.replace(/^\//, ""));

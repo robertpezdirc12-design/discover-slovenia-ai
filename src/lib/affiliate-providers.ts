@@ -559,6 +559,9 @@ export function nearestAirportForRegion(region: string): NearestAirport {
   switch (region) {
     case "primorska":
     case "kras":
+    // Posočje (2.22.0): Kobarid/korita Soče so bližje Trstu (~80 km) kot
+    // Ljubljani (~120 km) — poštena bližina po regiji, glej slovenia-data.ts.
+    case "posocje":
       return {
         code: "TRS",
         nameSl: "Letališče Trst (Ronchi)",

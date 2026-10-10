@@ -42,6 +42,7 @@ import {
   validateConfirmationRecord,
 } from "../src/lib/journey/booking";
 import { OWN_PRODUCTS } from "../src/lib/trznica-data";
+import { getDestination } from "../src/lib/slovenia-data";
 
 const OWN_IDS = new Set(OWN_PRODUCTS.map((p) => p.id));
 
@@ -129,14 +130,29 @@ describe("booking-provider: searchDemoOffers (obstoječi izdelki, iskrena poveza
     }
   });
 
-  test("gorenjska regija dopolni nabor (bled → bohinj/triglav/soca/kobarid), cap 4", () => {
+  test("gorenjska regija dopolni nabor (bled → bohinj/triglav; posočje je od 2.22.0 ločeno)", () => {
     const offers = searchDemoOffers("bled");
-    expect(offers.length).toBe(4);
+    expect(offers.length).toBe(3); // 1 natančna + 2 regiji (bohinj, triglav)
     // Vse dopolnilne so „region" in iz gorenjske regije nabora.
     for (const o of offers.slice(1)) {
       expect(o.match).toBe("region");
-      expect(["bohinj", "triglav", "reka-soca", "kobarid"]).toContain(o.destinationSlug);
+      expect(["bohinj", "triglav"]).toContain(o.destinationSlug);
     }
+  });
+
+  test("posočje regija (kobarid → reka-soca) — preverjeni popravek 2.22.0 (ne gorenjska)", () => {
+    const offers = searchDemoOffers("kobarid");
+    expect(offers.length).toBe(2); // 1 natančna (izk-kobarid-kulinarika) + 1 regija
+    expect(offers[0].offerId).toBe("izk-kobarid-kulinarika");
+    expect(offers[0].match).toBe("exact");
+    expect(offers[1].match).toBe("region");
+    expect(offers[1].destinationSlug).toBe("reka-soca");
+    // Zaklep popravka: obe posočki destinaciji imata regijo „posocje“ (prej
+    // „gorenjska“ — geografska napaka izvirnika 1.190.0, preverjeno 2026-10-10).
+    const soca = getDestination("reka-soca");
+    const kob = getDestination("kobarid");
+    expect(soca?.region).toBe("posocje");
+    expect(kob?.region).toBe("posocje");
   });
 
   test("ljubljana (sama v regiji): ≥ 2 ponudbi — natančna + iskreno predlagana", () => {

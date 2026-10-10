@@ -236,9 +236,14 @@ meja peskovnika, ne izpuščen korak.
    + 16 datumskih vrat (`INTL_DATE_LOCALE`).
 4. ~~hreflang razširitev po prevodu~~ ✅ **P3 (2.20.0) zaključeno:**
    `alternatesFor()` na vseh 36 straneh (26 klientnih razdeljenih na
-   page.tsx + view.tsx po kanonu Next 16); Kobarid/Soča regija ŠE VEDNO
-   BLOKIRANA (potrebuje preverbo proti produkciji — kanon datoteke
-   prepoveduje ročni popravek).
+   page.tsx + view.tsx po kanonu Next 16).
+   ~~Kobarid/Soča regija~~ ✅ **2.22.0 REŠENO (preverba proti produkciji
+   izvedena 2026-10-10):** produkcija 1.190.0 (API + stran + sitemap)
+   razvršča `kobarid` + `reka-soca` v „gorenjska“ — geografska napaka
+   izvirnika (Kobarid/korita Soče = Posočje/goriška; STO trži „Soča
+   Valley“). Popravek po kanonu (urejanje DOVOLJENO po preverbi): nova
+   regija „posocje“ (6 jezikov, eksonimi Isonzo), letališče TRS, 21
+   regij; zaklep v tests/slovenia-data.test.ts.
 5. Odstranitev `ignoreBuildErrors` po stabilizaciji.
 
 ## 10. Definition of Done (issue #2)

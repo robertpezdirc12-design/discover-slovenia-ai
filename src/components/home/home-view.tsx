@@ -318,12 +318,12 @@ const L = {
     es: "Infinitas posibilidades de experiencias",
   },
   endlessLead: {
-    sl: "Vsi vklopi istega kanonskega nabora destinacij — 38 krajev, 20 regij, 4 države.",
-    en: "All paths draw from the same canonical set of destinations — 38 places, 20 regions, 4 countries.",
-    it: "Tutti i percorsi attingono dallo stesso insieme canonico di destinazioni — 38 luoghi, 20 regioni, 4 paesi.",
-    de: "Alle Wege speisen sich aus demselben kanonischen Bestand an Reisezielen — 38 Orte, 20 Regionen, 4 Länder.",
-    fr: "Tous les parcours puisent dans le même ensemble canonique de destinations — 38 lieux, 20 régions, 4 pays.",
-    es: "Todos los caminos surgen del mismo conjunto canónico de destinos — 38 lugares, 20 regiones, 4 países.",
+    sl: "Vsi vklopi istega kanonskega nabora destinacij — 38 krajev, 21 regij, 4 države.",
+    en: "All paths draw from the same canonical set of destinations — 38 places, 21 regions, 4 countries.",
+    it: "Tutti i percorsi attingono dallo stesso insieme canonico di destinazioni — 38 luoghi, 21 regioni, 4 paesi.",
+    de: "Alle Wege speisen sich aus demselben kanonischen Bestand an Reisezielen — 38 Orte, 21 Regionen, 4 Länder.",
+    fr: "Tous les parcours puisent dans le même ensemble canonique de destinations — 38 lieux, 21 régions, 4 pays.",
+    es: "Todos los caminos surgen del mismo conjunto canónico de destinos — 38 lugares, 21 regiones, 4 países.",
   },
   // Booking hub (v2.5.0) — DELNI slovar {sl, en}: ostali jeziki padajo na
   // slovenščino (kanon 48-b); provizijska razkritja so poštena in vidna.

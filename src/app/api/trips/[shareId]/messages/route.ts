@@ -6,25 +6,22 @@ import { sanitizeUntrustedText } from "@/lib/system-data-guard";
 import { rateLimited, tooManyRequests } from "@/lib/rate-limit";
 import {
   AI_ADVISOR_NAME,
-  answerAiQuestion,
   isAiMention,
 } from "@/lib/trip-chat-engine";
-import { answerAiGrounded } from "@/lib/ai/advisor";
+import { answerAdvisorScript } from "@/lib/advisor/answer";
 
 /**
  * /api/trips/[shareId]/messages — skupinski klepet na poti z @AI svetovalcem
- * (mostovna rekonstrukcija W2 / Issue #15 / 1.131.0; AI sloj 2.24.0).
+ * (mostovna rekonstrukcija W2 / Issue #15 / 1.131.0; skriptni svetovalec 2.24.0).
  *
  *  GET  → zgodovina (kronološko, zadnjih 200) — javna pot ali sodelujoči
  *  POST → { body } objavi sporočilo (sodelujoči: VIEWER+); značka AI je
  *         STREŽNIŠKA — klient NIKOLI ne pošlje isAiBot (polje se ignorira);
- *         če telo vsebuje omembo @AI, strežnik odgovori:
- *         1. UTEMELJENI LLM (src/lib/ai/advisor.ts — odgovor SAMO iz
- *            kanonskih podatkov: register + STO + vreme + pot; viri v
- *            besedilu) — kadar je DSA_AI_LLM vklopljen;
- *         2. DETERMINISTIČNI stroj (src/lib/trip-chat-engine.ts) kot
- *            FAIL-CLOSED padec (izklopljeno/timeout/napaka/injekcija) —
- *            obnašanje identično 2.23.0.
+ *         če telo vsebuje omembo @AI, strežnik odgovori s SKRIPTNIM
+ *         svetovalcem (src/lib/advisor/answer.ts — 0 AI žetonov, 0 AI
+ *         modelov): živo vreme (Open-Meteo, podatkovni API) in citati STO
+ *         (lokalna datoteka) NAD jedrom trip-chat-engine; ob napaki vira
+ *         fail-quiet na čisto jedro (0 omrežja). Isti vhod → isti izhod.
  *
  * Iskrenost: uporabnikovo sporočilo ostane objavljeno tudi, če AI odpove;
  * napake se izpišejo (brez tihih padcev).
@@ -146,12 +143,10 @@ export async function POST(request: Request, { params }: RouteParams) {
         note: true,
       },
     });
-    // P1/AI (2.24.0): najprej utemeljeni LLM odgovor (kanonski kontekst +
-    // pravila "samo iz podatkov"); ob KATERI koli napadi/injekciji/izklopu
-    // vrne null → DETERMINISTIČNI stroj (nespremenjen od 2.23.0).
-    const grounded = await answerAiGrounded(text, plan, { reservations });
-    const answer =
-      grounded?.body ?? answerAiQuestion(text, plan, { reservations });
+    // P1 (2.24.0): SKRIPTNI svetovalec — deterministična sestava iz
+    // kanonskih virov (register + STO + živo vreme), ob napaki vira pa
+    // fail-quiet padec na čisto jedro (answerAiQuestion, 0 omrežja).
+    const answer = await answerAdvisorScript(text, plan, { reservations });
     const aiMessage = await db.tripMessage.create({
       data: {
         journeyId: journey.id,

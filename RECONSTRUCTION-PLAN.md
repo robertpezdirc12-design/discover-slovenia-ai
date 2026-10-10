@@ -66,7 +66,7 @@
 
 ## Pravila
 1. Next.js 16 App Router + TS strict; shadcn/ui obstaja v `src/components/ui` (NE spreminjaj)
-2. `z-ai-web-dev-sdk` SAMO strežniško (za AI funkcije kasneje)
+2. `z-ai-web-dev-sdk` ODSTRANJEN (2.24.0 — kanon P1: 0 AI modelov; kje bi bil AI, so skripte: src/lib/advisor/)
 3. Lepljivi footer (`min-h-screen flex flex-col` + `mt-auto`); mobile-first; a11y; 44px dotiki
 4. Brez testov; lint čist (`bun run lint`); dev strežnik ŽE teče (port 3000, NE ponovno zaganjaj; glej `dev.log`)
 5. Vsak agent: pred delom preberita worklog.md + ta načrt; po delu DODAJ zapis v worklog.md

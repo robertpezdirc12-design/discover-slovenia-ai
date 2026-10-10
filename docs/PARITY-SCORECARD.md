@@ -1,19 +1,21 @@
 # MINDTRIP PARITY SCORECARD — Discover Slovenia AI
 
-> **Velja za:** 2.18.0 (P1-D zaključek issue #3) · Sestavljeno: 2026-10-08.
+> **Velja za:** 2.24.0 (skriptni svetovalec + skriptni NLU) · Sestavljeno: 2026-10-08, dopolnjeno 2026-10-10.
 > Vir za Mindtrip: javni produkt, personalization/FAQ/creator gradivo (raziskava 7. 10. 2026).
 > Vir za Discovery: repozitorij `main` (CI zeleni), testi, E2E dokazi v `docs/evidence/`.
 >
 > **Cilj NI 100 % kopija.** Cilj je: MINDTRIP PARITY na generični travel-agent UX
 > + DISCOVERY SUPERIORITY na slovenskih/lokalnih podatkih, transparentnosti,
 > determinističnem načrtovanju, provenance, offline in realnem izvajanju pote.
-> Po lastnikovi odločitvi (P1, 2.23.0): **100 % deterministično — 0 AI modelov**.
-> Nadgradnja (2.24.0, po odobreni konkurenčni analizi P1): **deterministično
-> jedro + UTEMELJENI LLM sloj** — načrtovanje ostaja 100 % deterministično
-> ( isti vhod → isti načrt, cene samo iz registra), LLM pa poganja NLU
-> (prosti opis → parametri motorja) in @AI svetovalec z odgovori IZKLJUČNO
-> iz kanonskih podatkov (register + STO + vreme) z obvezno vrstico virov.
-> Fail-closed: brez DSA_AI_LLM env je obnašanje identično 0-žetonskemu.
+> Po lastnikovi odločitvi (P1, PONOVNO POTRJENA 2026-10-10): **100 %
+> deterministično — 0 AI modelov** — vse zmožnosti so skripte/pravila,
+> aplikacija deluje brez kakršnegakoli AI žetona. Od 2.24.0 je to izvedeno
+> DO KONCA: tam, kjer ima Mindtrip LLM, imamo mi SKRIPTE — prosti opis
+> potovanja razume deterministična NLU skripta (src/lib/advisor/nlu.ts),
+> @AI svetovalec pa sestavlja odgovore iz kanonskih virov (register + STO
+> slovenia.info + živo vreme Open-Meteo — podatkovni API, ne AI) z
+> fail-quiet padcem na čisto jedro; z-ai-web-dev-sdk je ODSTRANJEN iz
+> odvisnosti (0 AI klicev v celotnem repozitoriju).
 
 ## Zmogljivostna matrika
 
@@ -21,7 +23,7 @@
 |---|---|---|---|---|---|
 | 1 | **Personalization** (osebni profil preferenc) | ✅ nastavitve personalization | ✅ PARITY — 9 preferenc s source/provenance (USER_STATED), validacija proti kanonskemu besednjaku, upravljanje na /moj-profil | ✅ doseženo | `src/lib/user-preferences.ts`, `/api/preferences` (GET/PUT/DELETE), `docs/evidence/p1-a/`, testi `user-preferences.test.ts` (41) |
 | 2 | **Long-term memory** | ✅ spomin o uporabniku | ✅ PARITY — „Kaj si zapomnim o tebi": CRUD + pozabi-vse + retention 90 dni + confidence + opt-out fail-closed (izklop = spomin se sploh ne bere) | ✅ doseženo | `MemoryItem` model, `/api/memory*`, `docs/evidence/p1-a/`, testi `p1a-security-contract.test.ts` |
-| 3 | **Conversational planning** (pogovorno načrtovanje) | ✅ klepet gradi pot | ✅ PARITY — SL ukazni razčlenjevalnik (dodaj/odstrani/premakni/zamenjaj/skrajšaj/podaljšaj/optimiziraj, toleranca sklonov) nad KANONSKIM planom z diff + undo; brezstanjska ruta (plan ostaja resnica) | ✅ doseženo | `plan-edit-engine.ts`, `/api/plan-edit`, plošča na /nacrtuj, `docs/evidence/p1-b/`, testi (razčlenjevalnik + mutacije + diff) |
+| 3 | **Conversational planning** (pogovorno načrtovanje) | ✅ klepet gradi pot | ✅ PARITY — SL ukazni razčlenjevalnik (dodaj/odstrani/premakni/zamenjaj/skrajšaj/podaljšaj/optimiziraj, toleranca sklonov) nad KANONSKIM planom z diff + undo; brezstanjska ruta (plan ostaja resnica); od 2.24.0 tudi PROSTI OPIS („3 dni v gorah z družino") → skriptni NLU → isti motor (0 AI) | ✅ doseženo | `plan-edit-engine.ts`, `/api/plan-edit`, `src/lib/advisor/nlu.ts` + `/api/plan-intent`, plošča na /nacrtuj, `docs/evidence/p1-b/`, testi (razčlenjevalnik + mutacije + diff + NLU) |
 | 4 | **Reasoning / decision support** (razlogi) | ✅ „zakaj ta predlog" | ✅ PARITY + SUPERIOR — strukturirani razlogi IZKLJUČNO iz kanonskih podatkov (razdalja/cena/proračun/sezona/interesi/ocena); delovni čas iskreno izpuščen (v registru ne obstaja) | ✅ doseženo | `recommendation-reasons.ts` (ISTI slovar interesov kot engine), @AI „zakaj:" vrstice, testi |
 | 5 | **Proactive assistant** (naslednji korak) | ✅ proaktivni predlogi | ✅ PARITY — NextStep (7 pravil, localStorage kontekst) + osebna plošča domov (nadaljuj pot, obvestila, naloge) | ✅ doseženo | `next-step.ts`, `personal-home-section.tsx`, `docs/evidence/p1-d/` |
 | 6 | **Watch / alerts** (spremljanje + opozorila) | ✅ spremljanje stvari | ✅ PARITY — 4 vrste (cena/vreme/dnevi/rezervacije) z lastništvom, pogoji, pavzo, zadnjim opažanjem; zavrnjene vrste (razpoložljivost/leti) odklonjene z razlogom | ✅ doseženo | `WatchItem` model, `watch-engine.ts`, `/api/watch*`, `docs/evidence/p1-c/`, testi `watch-engine.test.ts` (44) |

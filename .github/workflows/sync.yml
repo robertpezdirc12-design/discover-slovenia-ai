@@ -12,6 +12,12 @@
 #
 # Žeton potuje SAMO v glavi (PRIVATE-TOKEN / oauth2 basic auth), nikoli v
 # URL-ju ali logu (github actions maskira skrivnosti).
+#
+# BOOTSTRAP FIX (2026-10-10, run 38053506635): PRAZNO zrcalo (nov GitLab
+# projekt) fetch uspešno pridobi, a refs/remotes/gitlab/* je prazen — stara
+# preverba je to obravnavala kot napako fetcha in zrcalo NI MOGLO nikoli
+# prvič polniti (kura-jajce). FETCH_OK zdaj ločuje „ukaz je uspel" od
+# „GitLab nima še refsov"; bootstrap zrcalo se napolni v prvem runu.
 
 name: Dvosmerna sinhronizacija GitLab <-> GitHub
 
@@ -85,12 +91,17 @@ jobs:
           git config user.name "sync-bot"
           git config user.email "sync-bot@users.noreply.github.com"
           git remote add gitlab "https://oauth2:${GITLAB_TOKEN}@gitlab.com/${GITLAB_PROJECT_PATH}.git"
+          # FETCH_OK ločuje „fetch UKAZ je uspel" od „GitLab nima refsov".
+          # (bug iz runa 38053506635: prazno zrcalo = legitimno začetno
+          # stanje, ne napaka fetcha — sicer se zrcalo nikoli ne napolni.)
+          FETCH_OK=0
           for i in 1 2 3; do
             if git fetch origin '+refs/heads/*:refs/remotes/origin/*' --prune --force \
             && git fetch gitlab '+refs/heads/*:refs/remotes/gitlab/*' --prune --force \
             && git fetch origin '+refs/tags/*:refs/tags/*' --force \
             && git fetch gitlab '+refs/tags/*:refs/tags/*' --force; then
-              echo "fetch OK"
+              FETCH_OK=1
+              echo "fetch OK (poskus $i)"
               break
             fi
             echo "fetch poskus $i ni uspel, cakam..."
@@ -100,10 +111,16 @@ jobs:
           # neuspešnih poskusih NE pade — brez te preverbe bi bil
           # refs/remotes/gitlab/* prazen, vsi branchi bi napačno šli v smer
           # „samo na GitHub" in pushi bi 5 min kurili retryje.
-          if ! git for-each-ref --format='%(refname)' refs/remotes/gitlab/ | grep -q .; then
+          if [ "$FETCH_OK" != "1" ]; then
             echo "fetch_ok=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::git fetch iz GitLaba ni uspel po 3 poskusih — zrcalo preskočeno (prejšnja različica bi stekla naprej in kurila kvoto)."
+            echo "::warning::git fetch ni uspel po 3 poskusih — zrcalo preskočeno (prejšnja različica bi stekla naprej in kurila kvoto)."
             exit 0
+          fi
+          # PRAZNO zrcalo (bootstrap): fetch je uspel, GitLab pa še nima
+          # nobenega brancha → vsi branchi gredo smer GitLab (korak „Zdruzi"
+          # jih obravnava kot „samo na GitHub -> push na GitLab").
+          if ! git for-each-ref --format='%(refname)' refs/remotes/gitlab/ | grep -q .; then
+            echo "GitLab zrcalo PRAZNO (bootstrap) — vsi branchi se potiskajo nanj."
           fi
           echo "fetch_ok=true" >> "$GITHUB_OUTPUT"
 

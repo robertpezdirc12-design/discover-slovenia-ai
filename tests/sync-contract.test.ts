@@ -47,6 +47,16 @@ describe("sync [source-contract]: varovalka žetona varčuje s kvoto", () => {
     expect(wf).toContain("fetch_ok=true");
   });
 
+  test("③b prazno zrcalo (bootstrap) NI napaka fetcha — FETCH_OK loči ukaz od refsov (run 38053506635)", async () => {
+    const wf = await src(".github/workflows/sync.yml");
+    // bug iz runa 38053506635 (2026-10-10): nov PRAZEN GitLab projekt je fetch
+    // uspel, a refs/remotes/gitlab/* prazen → stara preverba je preskočila
+    // vse push korake in zrcalo se NIKOLI ni moglo prvič napolniti.
+    expect(wf).toContain("FETCH_OK=1");
+    expect(wf).toContain('if [ "$FETCH_OK" != "1" ]; then');
+    expect(wf).toContain("GitLab zrcalo PRAZNO (bootstrap)");
+  });
+
   test("④ lint-test teče SAMO ko je zrcalo dejansko obravnavano (mirror_ok izhod)", async () => {
     const wf = await src(".github/workflows/sync.yml");
     expect(wf).toContain("mirror_ok: ${{ steps.sklep.outputs.mirror_ok }}");

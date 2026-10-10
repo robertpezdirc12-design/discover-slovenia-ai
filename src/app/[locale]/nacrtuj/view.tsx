@@ -7,6 +7,7 @@ import {
   ChevronUp,
   CircleCheck,
   Footprints,
+  Link2,
   Loader2,
   Plus,
   Printer,
@@ -135,6 +136,38 @@ const L = {
   nlButton: { sl: "Razumej in sestavi načrt", en: "Understand and build the plan", it: "Capisci e crea il piano", de: "Verstehen und Plan erstellen", fr: "Comprendre et créer le plan", es: "Entender y crear el plan" },
   nlBusy: { sl: "Razumevam …", en: "Understanding …", it: "Sto capendo …", de: "Verstehe …", fr: "Je comprends …", es: "Entendiendo …" },
   nlHint: { sl: "Besedilo razume deterministična skripta (interesi, dnevi, regija, proračun) — brez AI modelov, brez ugibanj. Načrt sestavi deterministični motor: isti vhod vedno da isti načrt.", en: "Your words are understood by a deterministic script (interests, days, region, budget) — no AI models, no guessing. The plan itself is built by the deterministic engine: same input always gives the same plan.", it: "Il testo viene capito da uno script deterministico (interessi, giorni, regione, budget) — nessun modello di IA, nessuna ipotesi azzardata. Il piano lo crea il motore deterministico: stesso input, stesso piano.", de: "Der Text wird von einem deterministischen Skript verstanden (Interessen, Tage, Region, Budget) — keine KI-Modelle, kein Rätselraten. Den Plan erstellt die deterministische Engine: gleiche Eingabe, gleicher Plan.", fr: "Le texte est compris par un script déterministe (centres d'intérêt, jours, région, budget) — sans modèle d'IA, sans devinettes. Le plan reste créé par le moteur déterministe : même entrée, même plan.", es: "El texto lo entiende un script determinista (intereses, días, región, presupuesto) — sin modelos de IA, sin suposiciones. El plan lo sigue creando el motor determinista: misma entrada, mismo plan." },
+  // P2 (2.25.0): START ANYWHERE — prilepi povezavo ali besedilo → skripta
+  // prepozna kraje iz registra (0 AI) in predlaga izhodišče.
+  saTitle: { sl: "Začni kjerkoli — povezava ali besedilo", en: "Start anywhere — a link or text", it: "Inizia da qualsiasi punto — un link o un testo", de: "Irgendwo anfangen — Link oder Text", fr: "Commence n'importe où — un lien ou du texte", es: "Empieza desde cualquier punto — un enlace o texto" },
+  saLead: {
+    sl: "Prilepi povezavo (YouTube, članek, TikTok) ali besedilo o potovanju — skripta prepozna kraje iz registra 38 destinacij in predlaga izhodišče za načrtovalnika. 0 AI, 0 ugibanj.",
+    en: "Paste a link (YouTube, an article, TikTok) or text about a trip — a script recognizes places from the register of 38 destinations and proposes a starting point for the planner. 0 AI, no guessing.",
+    it: "Incolla un link (YouTube, un articolo, TikTok) o un testo sul viaggio — uno script riconosce i luoghi dal registro di 38 destinazioni e propone un punto di partenza. 0 IA, nessuna ipotesi.",
+    de: "Füge einen Link (YouTube, ein Artikel, TikTok) oder einen Text über eine Reise ein — ein Skript erkennt Orte aus dem Register von 38 Reisezielen und schlägt einen Ausgangspunkt vor. 0 KI, kein Rätselraten.",
+    fr: "Colle un lien (YouTube, un article, TikTok) ou un texte sur un voyage — un script reconnaît les lieux du registre de 38 destinations et propose un point de départ. 0 IA, aucune devinette.",
+    es: "Pega un enlace (YouTube, un artículo, TikTok) o un texto sobre un viaje — un script reconoce los lugares del registro de 38 destinos y propone un punto de partida. 0 IA, sin suposiciones.",
+  },
+  saPlaceholder: { sl: "https://… ali prilepi besedilo (npr. 3 dni: Bled, Bohinj in Soča)", en: "https://… or paste text (e.g. 3 days: Bled, Bohinj and the Soča)", it: "https://… o incolla un testo (es. 3 giorni: Bled, Bohinj e la Soča)", de: "https://… oder Text einfügen (z. B. 3 Tage: Bled, Bohinj und die Soča)", fr: "https://… ou colle du texte (ex. 3 jours : Bled, Bohinj et la Soča)", es: "https://… o pega texto (p. ej. 3 días: Bled, Bohinj y el Soča)" },
+  saButton: { sl: "Prepoznaj kraje", en: "Recognize places", it: "Riconosci i luoghi", de: "Orte erkennen", fr: "Reconnaître les lieux", es: "Reconocer los lugares" },
+  saBusy: { sl: "Prepoznavam …", en: "Recognizing …", it: "Sto riconoscendo …", de: "Erkenne …", fr: "Reconnaissance …", es: "Reconociendo …" },
+  saSource: { sl: "vir", en: "source", it: "fonte", de: "Quelle", fr: "source", es: "fuente" },
+  saMatchesTitle: { sl: "Prepoznani kraji", en: "Recognized places", it: "Luoghi riconosciuti", de: "Erkannte Orte", fr: "Lieux reconnus", es: "Lugares reconocidos" },
+  saEvidence: { sl: "zadetek", en: "match", it: "corrispondenza", de: "Treffer", fr: "correspondance", es: "coincidencia" },
+  saSuggestionTitle: { sl: "Predlagano izhodišče", en: "Suggested starting point", it: "Punto di partenza suggerito", de: "Vorgeschlagener Ausgangspunkt", fr: "Point de départ suggéré", es: "Punto de partida sugerido" },
+  saInterestsLabel: { sl: "interesi", en: "interests", it: "interessi", de: "Interessen", fr: "centres d'intérêt", es: "intereses" },
+  saRegionLabel: { sl: "regija", en: "region", it: "regione", de: "Region", fr: "région", es: "región" },
+  saDaysLabel: { sl: "dnevi", en: "days", it: "giorni", de: "Tage", fr: "jours", es: "días" },
+  saDaysKept: { sl: "dni niso navedeni — ohranjena izbira", en: "days not stated — your choice kept", it: "giorni non indicati — resta la tua scelta", de: "Tage nicht angegeben — deine Wahl bleibt", fr: "jours non précisés — ton choix est conservé", es: "días no indicados — se mantiene tu elección" },
+  saApply: { sl: "Uporabi kot izhodišče", en: "Use as the starting point", it: "Usa come punto di partenza", de: "Als Ausgangspunkt verwenden", fr: "Utiliser comme point de départ", es: "Usar como punto de partida" },
+  saApplied: { sl: "✓ Uporabljeno — načrt se gradi", en: "✓ Applied — building the plan", it: "✓ Applicato — creo il piano", de: "✓ Übernommen — Plan wird erstellt", fr: "✓ Appliqué — création du plan", es: "✓ Aplicado — creando el plan" },
+  saHint: {
+    sl: "Skripta teče na strežniku: povezavo prebere z varovalkami (samo javni naslovi, ≤ 256 KiB, ≤ 8 s) in išče kraje po korenu — slovenski skloni vključeni („na Bledu“ → Bled, „po Ljubljani“ → Ljubljana). Isti vhod vedno da isti predlog; prepoznano vedno pokažemo z dokazom. 0 AI žetonov.",
+    en: "The script runs server-side: the link is fetched with guardrails (public hosts only, ≤ 256 KiB, ≤ 8 s) and places are matched by word stems — Slovenian declensions included (“na Bledu” → Bled). Same input always gives the same suggestion; every match is shown with its evidence. 0 AI tokens.",
+    it: "Lo script gira sul server: il link viene letto con protezioni (solo host pubblici, ≤ 256 KiB, ≤ 8 s) e i luoghi vengono riconosciuti per radice — declinazioni slovene incluse («na Bledu» → Bled). Stesso input, stesso suggerimento; ogni riconoscimento è mostrato con la prova. 0 token IA.",
+    de: "Das Skript läuft serverseitig: Der Link wird mit Schutzvorrichtungen gelesen (nur öffentliche Hosts, ≤ 256 KiB, ≤ 8 s) und Orte werden über Wortstämme erkannt — slowenische Beugungen inklusive („na Bledu“ → Bled). Gleiche Eingabe, gleicher Vorschlag; jeder Treffer wird mit Beleg gezeigt. 0 KI-Tokens.",
+    fr: "Le script tourne côté serveur : le lien est lu avec des garde-fous (hôtes publics uniquement, ≤ 256 KiB, ≤ 8 s) et les lieux sont reconnus par radical — déclinaisons slovènes incluses (« na Bledu » → Bled). Même entrée, même suggestion ; chaque reconnaissance est affichée avec sa preuve. 0 jeton d'IA.",
+    es: "El script corre en el servidor: el enlace se lee con salvaguardas (solo hosts públicos, ≤ 256 KiB, ≤ 8 s) y los lugares se reconocen por raíces — declinaciones eslovenas incluidas («na Bledu» → Bled). Misma entrada, misma sugerencia; cada reconocimiento se muestra con su prueba. 0 fichas de IA.",
+  },
   nlTooShort: { sl: "Napiši vsaj nekaj besed (npr. \"3 dni ob morju\").", en: "Write at least a few words (e.g. \"3 days by the sea\").", it: "Scrivi almeno qualche parola (es. \"3 giorni al mare\").", de: "Schreibe mindestens ein paar Wörter (z. B. \"3 Tage am Meer\").", fr: "Écris au moins quelques mots (ex. « 3 jours au bord de la mer »).", es: "Escribe al menos unas palabras (p. ej. \"3 días junto al mar\")." },
   nlNotUnderstood: { sl: "Opisa ni bilo mogoče razumeti dovolj natančno — izberi interese in dneve spodaj.", en: "The description could not be understood precisely enough — pick interests and days below.", it: "La descrizione non è stata capita con sufficiente precisione — scegli interessi e giorni sotto.", de: "Die Beschreibung konnte nicht genau genug verstanden werden — wähle unten Interessen und Tage.", fr: "La description n'a pas pu être comprise assez précisément — choisis les centres d'intérêt et les jours ci-dessous.", es: "No se pudo entender la descripción con suficiente precisión — elige intereses y días abajo." },
   presetsTitle: { sl: "Hitre prednastavitve", en: "Quick presets", it: "Preset rapidi", de: "Schnelle Voreinstellungen", fr: "Préréglages rapides", es: "Ajustes rápidos" },
@@ -356,6 +389,32 @@ interface FormState {
   budget: string;
 }
 
+/** P2 (2.25.0): odgovor /api/start-anywhere (skriptni Start Anywhere). */
+interface SaResult {
+  engine: string;
+  source:
+    | { kind: "url"; host: string; title: string | null }
+    | { kind: "text"; chars: number };
+  matches: {
+    slug: string;
+    name: string;
+    type: string;
+    region: string;
+    evidence: string;
+    needle: string;
+    kind: "stem" | "exact";
+  }[];
+  intent: {
+    interests?: string[];
+    days?: number;
+    region?: string;
+    season?: string;
+    budget?: string;
+  } | null;
+  suggestion: { interests: string[]; region?: string };
+  hint?: string;
+}
+
 function PlannerApp() {
   const l = useLocale();
   const router = useRouter();
@@ -380,6 +439,12 @@ function PlannerApp() {
   const [nlInput, setNlInput] = useState("");
   const [nlBusy, setNlBusy] = useState(false);
   const [nlError, setNlError] = useState<string | null>(null);
+  // P2 (2.25.0): START ANYWHERE — povezava/besedilo → skripta → izhodišče.
+  const [saInput, setSaInput] = useState("");
+  const [saBusy, setSaBusy] = useState(false);
+  const [saError, setSaError] = useState<string | null>(null);
+  const [saResult, setSaResult] = useState<SaResult | null>(null);
+  const [saApplied, setSaApplied] = useState(false);
   const [plan, setPlan] = useState<ItineraryPlan | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -493,6 +558,79 @@ function PlannerApp() {
     }
   }, [nlInput, form, l, generate]);
 
+  // P2 (2.25.0): START ANYWHERE — povezava ALI besedilo → /api/start-anywhere
+  // (SKRIPTA: SSRF-varovano branje + ujemanje krajev po korenu + NLU namen).
+  // Prepoznano (422) → iskreno sporočilo; uporabnik obdrži obrazec — NIKOLI
+  // ne ugibamo. Uspeh → rezultat s predlogom; gumb „Uporabi kot izhodišče"
+  // zliti predlog v obstoječi deterministični tok (setForm + generate).
+  const runStartAnywhere = useCallback(async () => {
+    const t = saInput.trim();
+    if (t.length < 4) {
+      setSaError(pick(l, L.nlTooShort));
+      return;
+    }
+    setSaBusy(true);
+    setSaError(null);
+    setSaResult(null);
+    setSaApplied(false);
+    try {
+      const isUrl = /^https?:\/\//i.test(t);
+      const res = await fetch("/api/start-anywhere", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(isUrl ? { url: t } : { text: t.slice(0, 2000) }),
+      });
+      const data: unknown = await res.json().catch(() => null);
+      const msg =
+        data && typeof data === "object" && "error" in data && typeof (data as { error?: unknown }).error === "string"
+          ? (data as { error: string }).error
+          : null;
+      if (!res.ok) {
+        setSaError(msg ?? `HTTP ${res.status}`);
+        return;
+      }
+      const parsed = data as SaResult | null;
+      if (!parsed || !Array.isArray(parsed.matches) || parsed.matches.length === 0) {
+        setSaError(pick(l, L.nlNotUnderstood));
+        return;
+      }
+      setSaResult(parsed);
+    } catch {
+      setSaError(pick(l, L.networkError));
+    } finally {
+      setSaBusy(false);
+    }
+  }, [saInput, l]);
+
+  // Zlivanje predloga v obrazec + generiranje (isti tok kot prednastavitve).
+  const applyStartAnywhere = useCallback(() => {
+    if (!saResult) return;
+    const intent = saResult.intent;
+    const sug = saResult.suggestion;
+    const next: FormState = {
+      interests:
+        Array.isArray(sug?.interests) && sug.interests.length > 0
+          ? sug.interests
+          : form.interests,
+      days:
+        typeof intent?.days === "number" && intent.days >= 1 && intent.days <= 5
+          ? intent.days
+          : form.days,
+      region:
+        typeof sug?.region === "string" && sug.region !== "" ? sug.region : form.region,
+      season:
+        typeof intent?.season === "string" && intent.season !== "" ? intent.season : form.season,
+      budget:
+        typeof intent?.budget === "string" && intent.budget !== "" ? intent.budget : form.budget,
+    };
+    setSaApplied(true);
+    setForm(next);
+    void generate(next);
+    requestAnimationFrame(() => {
+      document.getElementById("nacrt-rezultat")?.scrollIntoView({ behavior: "smooth" });
+    });
+  }, [saResult, form, generate]);
+
   const toggleInterest = (label: string) => {
     setForm((f) => ({
       ...f,
@@ -574,6 +712,116 @@ function PlannerApp() {
           ))}
         </div>
       </section>
+
+      {/* P2 (2.25.0): START ANYWHERE — prilepi povezavo ali besedilo →
+          skripta prepozna kraje (0 AI) in predlaga izhodišče. */}
+      <Card className="mt-8" id="zacni-kjerkoli">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Link2 className="size-5 text-primary" aria-hidden="true" />
+            {pick(l, L.saTitle)}
+          </CardTitle>
+          <p className="mt-1 text-sm text-muted-foreground">{pick(l, L.saLead)}</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              id="sa-input"
+              value={saInput}
+              onChange={(e) => {
+                setSaInput(e.target.value);
+                if (saApplied) setSaApplied(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void runStartAnywhere();
+                }
+              }}
+              placeholder={pick(l, L.saPlaceholder)}
+              maxLength={2100}
+              className="min-h-11 flex-1"
+              disabled={saBusy || loading}
+            />
+            <Button
+              type="button"
+              onClick={() => void runStartAnywhere()}
+              disabled={saBusy || loading || saInput.trim().length < 4}
+              className="min-h-11"
+            >
+              {saBusy ? pick(l, L.saBusy) : pick(l, L.saButton)}
+            </Button>
+          </div>
+          {saError && (
+            <p className="text-sm text-destructive" role="alert">
+              {saError}
+            </p>
+          )}
+
+          {saResult && !saBusy && (
+            <div className="space-y-3 rounded-xl border bg-muted/40 p-4">
+              <p className="text-xs text-muted-foreground">
+                {pick(l, L.saSource)}: {" "}
+                {saResult.source.kind === "url"
+                  ? saResult.source.title ?? saResult.source.host
+                  : `${saResult.source.chars} zn.`}
+              </p>
+              <div>
+                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  {pick(l, L.saMatchesTitle)} ({saResult.matches.length})
+                </p>
+                <ul className="mt-2 flex flex-wrap gap-2">
+                  {saResult.matches.map((m) => (
+                    <li
+                      key={m.slug}
+                      className="inline-flex min-h-9 items-center gap-1.5 rounded-full border bg-card px-3 text-sm"
+                    >
+                      <span className="font-medium">{m.name}</span>
+                      <span className="text-muted-foreground">
+                        · {regionLabel(m.region, lang)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        — {pick(l, L.saEvidence)}: „{m.evidence}“
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+                <p className="font-semibold">{pick(l, L.saSuggestionTitle)}</p>
+                <p className="mt-1 text-muted-foreground">
+                  {pick(l, L.saInterestsLabel)}:{" "}
+                  {saResult.suggestion.interests.length > 0
+                    ? saResult.suggestion.interests.join(", ")
+                    : "—"}{" "}
+                  · {pick(l, L.saRegionLabel)}:{" "}
+                  {saResult.suggestion.region
+                    ? regionLabel(saResult.suggestion.region, lang)
+                    : "—"}{" "}
+                  · {pick(l, L.saDaysLabel)}:{" "}
+                  {typeof saResult.intent?.days === "number"
+                    ? saResult.intent.days
+                    : pick(l, L.saDaysKept)}
+                </p>
+                <div className="mt-3">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={applyStartAnywhere}
+                    disabled={saApplied || loading}
+                  >
+                    <CircleCheck className="size-4" aria-hidden="true" />
+                    {saApplied ? pick(l, L.saApplied) : pick(l, L.saApply)}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            {pick(l, L.saHint)}
+          </p>
+        </CardContent>
+      </Card>
 
       {/* OBRAZEC */}
       <Card className="mt-8" id="nacrtuj-obrazec">

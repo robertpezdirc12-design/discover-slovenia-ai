@@ -19,23 +19,23 @@ import {
 } from "@/lib/booking-summary";
 
 /**
- * TRIP-CHAT-ENGINE — DETERMINISTIČNI odgovarjalč @AI za skupinski klepet
- * na poti (mostovna rekonstrukcija izvirnika 1.131.0, W2 / Issue #15).
+ * TRIP-CHAT-ENGINE — DETERMINISTIČNO jedro odgovarjalča @AI za skupinski
+ * klepet na poti (mostovna rekonstrukcija izvirnika 1.131.0, W2 / Issue #15).
  *
- * Kanon iskrenosti (2.23.0 — DETERMINISTIČNA PLAST, nespremenjena):
- *  - 0 AI žetonov, 0 zunanjih klicev — IZKLJUČNO podatki poti (plan) +
- *    statično znanje o destinacijah iz src/lib/slovenia-data.ts;
- *  - vreme je vedno NEZNANO (žive napovedi ni — povedano izrecno, svetuje
- *    le sezone iz baze);
+ * Kanon iskrenosti (jedro, semantika nespremenjena od 2.23.0):
+ *  - 0 AI žetonov, 0 AI modelov, 0 zunanjih klicev — IZKLJUČNO podatki
+ *    poti (plan) + statično znanje o destinacijah iz src/lib/slovenia-data.ts;
+ *  - vreme je v tem jedru vedno NEZNANO (žive napovedi ni — povedano
+ *    izrecno, svetuje le sezone iz baze);
  *  - razdalje so naravnost (haversine) + cestna ocena po kanonu
  *    načrtovalnika (×1,3, ~60 km/h) — ocena je vidna kot ocena;
  *  - isti vhod → isti izhod (determinizem).
  *
- * 2.24.0 (P1/AI): ta stroj je zdaj FAIL-CLOSED PLAST pod utemeljenim LLM
- * svetovalcem (src/lib/ai/advisor.ts — odgovori izključno iz kanonskih
- * podatkov + viri). Ko LLM ni na voljo (DSA_AI_LLM izklopljen, timeout,
- * injekcija, napaka), messages route pade TUKAJ — obnašanje identično
- * 2.23.0. Ta modul ostane 0-žetonski in brez omrežja.
+ * 2.24.0 (P1 — SKRIPTE NAMESTO AI MODELA): jedro je OMEGA sloj skriptnega
+ * svetovalca (src/lib/advisor/answer.ts — answerAdvisorScript), ki nad istim
+ * kanonom doda živo vreme (Open-Meteo, podatkovni API, ne AI) in citate STO
+ * (lokalna datoteka slovenia.info). Ob napaki vira svetovalec pade TUKAJ —
+ * na čisto 0-omrežno jedro. Ta modul ostane 0-žetonski in brez omrežja.
  */
 
 export const AI_ADVISOR_NAME = "AI svetovalec";
@@ -327,32 +327,63 @@ export interface AdvisorContext {
   reservations?: readonly ReservationRowLike[];
 }
 
+/** Klasifikacija namena sporočila @AI (deterministična kaskada). */
+export type ChatIntent =
+  | "bookings"
+  | "weather"
+  | "distance"
+  | "food"
+  | "suggest"
+  | "destination"
+  | "budget"
+  | "fallback";
+
+/**
+ * Namena sporočila NE odgovarja — samo GA RAZPOZNA (2.24.0: izvoženo za
+ * skriptnega svetovalca, ki po namenu odloči, ali doda enrichment).
+ * ISTA kascada kot answerAiQuestion, vrstni red pravil je kanon:
+ * rezervacije > vreme > razdalje > hrana > predlogi > destinacija >
+ * proračun > fallback. Deterministično, brez stanja.
+ */
+export function detectChatIntent(body: string): ChatIntent {
+  const nb = stripDiacritics(body);
+  // P1-B §7: namen rezervacij (samo-bralno, iz kanonskega modela).
+  if (hasAny(nb, KW.bookings)) return "bookings";
+  if (hasAny(nb, KW.weather)) return "weather";
+  if (hasAny(nb, KW.distance)) return "distance";
+  if (hasAny(nb, KW.food)) return "food";
+  // P1-B §5: „zakaj" vodi v predloge Z razlogi (isti jedrni klic).
+  if (hasAny(nb, KW.suggest) || hasAny(nb, KW.why)) return "suggest";
+  if (findMentionedDestinations(body).length > 0) return "destination";
+  if (hasAny(nb, KW.budget)) return "budget";
+  return "fallback";
+}
+
 export function answerAiQuestion(body: string, plan: SharedPlan, ctx?: AdvisorContext): string {
   // SYSTEM_DATA_GUARD (P0-I §23): poskus navodil se izvede kot VARNOSTNI
   // odgovor — nikoli kot ukaz in nikoli z odmevom vsebine napadalca.
   const injection = detectPromptInjection(body);
   if (injection.hit) return AI_GUARD_ANSWER;
 
-  const nb = stripDiacritics(body);
   const stops = planStops(plan);
 
-  // P1-B §7: namen rezervacij (samo-bralno, iz kanonskega modela).
-  if (hasAny(nb, KW.bookings)) {
-    return formatBookingSummary(summarizeReservations(ctx?.reservations ?? []));
+  switch (detectChatIntent(body)) {
+    case "bookings":
+      return formatBookingSummary(summarizeReservations(ctx?.reservations ?? []));
+    case "weather":
+      return answerWeather(body, stops);
+    case "distance":
+      return answerDistance(body, stops);
+    case "food":
+      return answerFood(body, stops);
+    case "suggest":
+      // P1-B §5: „zakaj" vodi v predloge Z razlogi (isti jedrni klic).
+      return answerSuggest(body, plan, stops, hasAny(stripDiacritics(body), KW.why));
+    case "destination":
+      return answerDestinationInfo(body);
+    case "budget":
+      return answerBudget(plan, stops);
+    default:
+      return answerFallback(plan, stops);
   }
-
-  if (hasAny(nb, KW.weather)) return answerWeather(body, stops);
-  if (hasAny(nb, KW.distance)) return answerDistance(body, stops);
-  if (hasAny(nb, KW.food)) return answerFood(body, stops);
-  // P1-B §5: „zakaj" vodi v predloge Z razlogi (isti jedrni klic).
-  const wantsReasons = hasAny(nb, KW.why);
-  if (hasAny(nb, KW.suggest) || wantsReasons) {
-    return answerSuggest(body, plan, stops, wantsReasons);
-  }
-
-  const destInfo = answerDestinationInfo(body);
-  if (destInfo) return destInfo;
-
-  if (hasAny(nb, KW.budget)) return answerBudget(plan, stops);
-  return answerFallback(plan, stops);
 }

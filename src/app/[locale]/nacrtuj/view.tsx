@@ -16,6 +16,7 @@ import {
   Printer,
   Route as RouteIcon,
   Save,
+  Scale,
   Search,
   Sparkles,
   Wand2,
@@ -48,6 +49,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useRouter } from "@/i18n/navigation";
 import { asPickLocale, pick } from "@/lib/i18n-pick";
 import {
+  buildItinerary,
+  budgetTier,
   formatDuration,
   formatMoney,
   interestChips,
@@ -62,7 +65,13 @@ import { saveLastPlan } from "@/lib/plan-store";
 import { buildTripPdf, fromItineraryPlan } from "@/lib/pdf/trip-pdf-doc";
 import { downloadTripPdf } from "@/lib/pdf/trip-pdf-render";
 import { buildDaySegments } from "@/lib/day-segments";
-import { normalizeInterests, REGIONS, regionLabel, typeLabel } from "@/lib/slovenia-data";
+import {
+  DESTINATIONS,
+  normalizeInterests,
+  REGIONS,
+  regionLabel,
+  typeLabel,
+} from "@/lib/slovenia-data";
 import type { Budget, Season } from "@/lib/slovenia-data";
 import type { ItineraryPlan, TripStop } from "@/lib/types";
 
@@ -270,6 +279,49 @@ const L = {
     fr: (n: number) => `${n} ${n === 1 ? "région" : "régions"}`,
     es: (n: number) => `${n} ${n === 1 ? "región" : "regiones"}`,
   },
+  // POLIR A (2.28.0), naloga 1: one-click primeri prostega opisa (time-to-value).
+  examplesLabel: {
+    sl: "Ali začni s primerom — klik zgolj zapolni vnos, načrt se ne sestavi samodejno:",
+    en: "Or start from an example — a click only fills the input, the plan is not built automatically:",
+    it: "Oppure parti da un esempio — un clic riempie solo il campo, il piano non si crea automaticamente:",
+    de: "Oder starte mit einem Beispiel — ein Klick füllt nur das Feld, der Plan wird nicht automatisch erstellt:",
+    fr: "Ou pars d’un exemple — un clic remplit seulement le champ, le plan n’est pas créé automatiquement :",
+    es: "O empieza con un ejemplo — un clic solo rellena el campo, el plan no se crea automáticamente:",
+  },
+  exampleUse: { sl: "Uporabi primer", en: "Use example", it: "Usa l’esempio", de: "Beispiel verwenden", fr: "Utiliser l’exemple", es: "Usar el ejemplo" },
+  // POLIR A (2.28.0), naloga 2: 3-korakov onboarding trak (statičen, diskreten).
+  stepsLabel: { sl: "Kako do načrta", en: "How to get a plan", it: "Come ottenere un piano", de: "So bekommst du einen Plan", fr: "Comment obtenir un plan", es: "Cómo conseguir un plan" },
+  stepOne: { sl: "Opiši pot", en: "Describe the trip", it: "Descrivi il viaggio", de: "Beschreibe die Reise", fr: "Décris le voyage", es: "Describe el viaje" },
+  stepTwo: { sl: "Prilagodi čipe in dneve", en: "Adjust the chips and days", it: "Regola le chip e i giorni", de: "Passe Chips und Tage an", fr: "Ajuste les puces et les jours", es: "Ajusta las fichas y los días" },
+  stepThree: { sl: "Zaženi na poti z Go Mode", en: "Start it on the road with Go Mode", it: "Vivilo in viaggio con Go Mode", de: "Starte es unterwegs mit Go Mode", fr: "Lance-le sur la route avec Go Mode", es: "Ejecútalo en camino con Go Mode" },
+  // POLIR A (2.28.0), naloga 3: primerjalnik proračunov (odločitvena podpora).
+  compareTitle: { sl: "Primerjaj proračune", en: "Compare budgets", it: "Confronta i budget", de: "Budgets vergleichen", fr: "Comparer les budgets", es: "Compara presupuestos" },
+  compareLead: {
+    sl: "Ocene za trenutne izbire obrazca — isti deterministični motor, drugačen proračunski filter. Številke so ocene iz registra destinacij (vožnje ~60 km/h), ne obljube. Klik preklopi raven in znova sestavi načrt.",
+    en: "Estimates for the current form choices — the same deterministic engine, a different budget filter. The numbers are estimates from the destination register (drives at ~60 km/h), not promises. Clicking a tier rebuilds the plan.",
+    it: "Stime per le scelte attuali del modulo — lo stesso motore deterministico, un filtro budget diverso. I numeri sono stime dal registro delle destinazioni (tragitti a ~60 km/h), non promesse. Un clic sul livello ricrea il piano.",
+    de: "Schätzungen für die aktuellen Formularauswahlen — dieselbe deterministische Engine, ein anderer Budgetfilter. Die Zahlen sind Schätzungen aus dem Zielregister (Fahrten mit ~60 km/h), keine Versprechen. Ein Klick auf eine Stufe erstellt den Plan neu.",
+    fr: "Estimations pour les choix actuels du formulaire — le même moteur déterministe, un filtre budget différent. Les chiffres sont des estimations tirées du registre des destinations (trajets à ~60 km/h), pas des promesses. Un clic sur un palier recrée le plan.",
+    es: "Estimaciones para las elecciones actuales del formulario — el mismo motor determinista, un filtro de presupuesto distinto. Los números son estimaciones del registro de destinos (trayectos a ~60 km/h), no promesas. Un clic en un nivel vuelve a crear el plan.",
+  },
+  compareEstimate: { sl: "ocena", en: "estimate", it: "stima", de: "Schätzung", fr: "estimation", es: "estimación" },
+  compareCurrent: { sl: "trenutna izbira", en: "current choice", it: "scelta attuale", de: "aktuelle Wahl", fr: "choix actuel", es: "elección actual" },
+  compareRelaxed: {
+    sl: "Premogo ustreznih destinacij — filter je bil sproščen, načrt vsebuje tudi dražje postanke.",
+    en: "Too few matching destinations — the filter was relaxed, the plan also contains pricier stops.",
+    it: "Troppe poche destinazioni adatte — il filtro è stato allentato, il piano contiene anche tappe più costose.",
+    de: "Zu wenige passende Ziele — der Filter wurde gelockert, der Plan enthält auch teurere Stopps.",
+    fr: "Trop peu de destinations adaptées — le filtre a été assoupli, le plan contient aussi des étapes plus chères.",
+    es: "Muy pocos destinos adecuados — el filtro se relajó, el plan también contiene paradas más caras.",
+  },
+  compareFiltered: {
+    sl: "Proračunski filter je izpustil dražje postanke — zato manj postankov.",
+    en: "The budget filter skipped pricier stops — hence fewer stops.",
+    it: "Il filtro budget ha scartato le tappe più costose — quindi meno tappe.",
+    de: "Der Budgetfilter hat teurere Stopps ausgelassen — daher weniger Stopps.",
+    fr: "Le filtre budget a écarté les étapes plus chères — donc moins d’étapes.",
+    es: "El filtro de presupuesto descartó las paradas más caras — por eso menos paradas.",
+  },
 } as const;
 
 const SEASONS: {
@@ -299,6 +351,25 @@ const BUDGETS: {
   { value: "€", sl: "Najceneje (€)", en: "Cheapest (€)", it: "Economico (€)", de: "Günstigste (€)", fr: "Le moins cher (€)", es: "Más barato (€)" },
   { value: "€€", sl: "Zmerno (€€)", en: "Moderate (€€)", it: "Medio (€€)", de: "Mittel (€€)", fr: "Modéré (€€)", es: "Moderado (€€)" },
   { value: "€€€", sl: "Brez omejitve (€€€)", en: "No limit (€€€)", it: "Senza limiti (€€€)", de: "Kein Limit (€€€)", fr: "Sans limite (€€€)", es: "Sin límite (€€€)" },
+];
+
+/**
+ * POLIR A (2.28.0), naloga 3: ravni primerjalnika proračunov (navdih
+ * MonkeyTravel „3 budget tiers“). €€€ = brez omejitve (dovoljuje vse
+ * ravni registra — enak nabor kot „any“ v spustnem meniju).
+ */
+const COMPARE_TIERS: {
+  value: Budget;
+  sl: string;
+  en: string;
+  it: string;
+  de: string;
+  fr: string;
+  es: string;
+}[] = [
+  { value: "€", sl: "Varčno (€)", en: "Budget (€)", it: "Economico (€)", de: "Günstig (€)", fr: "Économique (€)", es: "Económico (€)" },
+  { value: "€€", sl: "Zmerno (€€)", en: "Balanced (€€)", it: "Equilibrato (€€)", de: "Ausgewogen (€€)", fr: "Équilibré (€€)", es: "Equilibrado (€€)" },
+  { value: "€€€", sl: "Brez omejitve (€€€)", en: "No limit (€€€)", it: "Senza limiti (€€€)", de: "Kein Limit (€€€)", fr: "Sans limite (€€€)", es: "Sin límites (€€€)" },
 ];
 
 interface PresetDef {
@@ -376,6 +447,57 @@ const PRESETS: PresetDef[] = [
       fr: "Coteaux viticoles, points de vue et dîner en tête-à-tête.",
       es: "Colinas vinícolas, miradores y cena para dos.",
     },
+  },
+];
+
+// ---------------------------------------------------------------------------
+// POLIR A (2.28.0), naloga 1: ONE-CLICK PRIMERI PROSTEGA OPISA.
+//
+// Vsak primer je PREVERJENO razumljiv z obstoječo skriptno NLU
+// (src/lib/advisor/nlu.ts) — interesi/dnevi/regija se res izvlečejo
+// (zaklenjeno v tests/nacrtuj-polir.test.ts: 6 jezikov × 3 primeri).
+// Odločitve (iskrene, ne ugibanja):
+//  - IT/ES: skripta NE pozna „sci“/„esquí“ → 3. primer v gorski različici
+//    („gora“ pride iz imena kraja Kranjska Gora);
+//  - FR: besednjak NE pozna „vin“/„vignoble“ (samo vina/vino/vini/vinc/…)
+//    → 2. primer v gastronomski različici (Maribor ostane nosilec regije);
+//  - DE/FR: „Wochenende“/„week-end“ bi skripta napačno prebrala kot teden
+//    (podniz „woche“/„week“ → 5 dni) → izrecna številka dni (2 Tage/jours).
+// ---------------------------------------------------------------------------
+const NL_EXAMPLES: ReadonlyArray<{
+  sl: string;
+  en: string;
+  it: string;
+  de: string;
+  fr: string;
+  es: string;
+}> = [
+  // 1) Bled + družina + jezero → [družina, jezero], 2 dni, gorenjska (×6).
+  {
+    sl: "vikend na Bledu z družino",
+    en: "a weekend on Lake Bled with the family",
+    it: "un weekend familiare sul lago di Bled",
+    de: "2 Tage in Bled mit der Familie",
+    fr: "2 jours au lac de Bled en famille",
+    es: "2 días en el lago de Bled en familia",
+  },
+  // 2) Vinogradi / Štajerska → vino (FR: kulinarika), 3 dni, stajerska (×6).
+  {
+    sl: "3 dni med vinogradi na Štajerskem",
+    en: "3 days among the vineyards of Styria",
+    it: "3 giorni alla scoperta dei vini di Maribor",
+    de: "3 Tage zwischen den Weingärten der Steiermark",
+    fr: "3 jours de gastronomie près de Maribor",
+    es: "3 días de catas de vino cerca de Maribor",
+  },
+  // 3) Smučarski teden → smučanje+gora (IT/ES: gora), 5 dni, brez regije (×6).
+  {
+    sl: "smučarski teden v Kranjski Gori",
+    en: "a week of skiing in Kranjska Gora",
+    it: "5 giorni in montagna a Kranjska Gora",
+    de: "eine Woche Skifahren in Kranjska Gora",
+    fr: "5 jours de ski à Kranjska Gora",
+    es: "5 días de montaña en Kranjska Gora",
   },
 ];
 
@@ -745,6 +867,19 @@ function PlannerApp() {
     }
   }, [plan, pdfBusy, l]);
 
+  // POLIR A (2.28.0), naloga 3: klik na raven primerjalnika → preklop
+  // proračuna + regeneracija (ISTI deterministični tok kot prednastavitve:
+  // setForm + generate — številke na karticah so bile izračunane iz
+  // istega motorja za isti obrazec, zato se načrt ujema s kartico).
+  const pickBudget = useCallback(
+    (b: Budget) => {
+      const next: FormState = { ...form, budget: b };
+      setForm(next);
+      void generate(next);
+    },
+    [form, generate]
+  );
+
   return (
     <>
       {/* PREDNASTAVITVE */}
@@ -889,8 +1024,46 @@ function PlannerApp() {
         </CardContent>
       </Card>
 
+      {/* POLIR A (2.28.0), naloga 2: 3-korakov onboarding trak — statičen,
+          diskreten (text-xs, muted), brez zapiranja/cookies. Iskrena
+          mikrocopy poti do načrta. */}
+      <ol
+        aria-label={pick(l, L.stepsLabel)}
+        className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-muted-foreground"
+      >
+        <li className="inline-flex items-center gap-1.5">
+          <span
+            className="flex size-4 shrink-0 items-center justify-center rounded-full border bg-muted font-semibold tabular-nums"
+            aria-hidden="true"
+          >
+            1
+          </span>
+          {pick(l, L.stepOne)}
+        </li>
+        <li aria-hidden="true" className="text-muted-foreground/50">→</li>
+        <li className="inline-flex items-center gap-1.5">
+          <span
+            className="flex size-4 shrink-0 items-center justify-center rounded-full border bg-muted font-semibold tabular-nums"
+            aria-hidden="true"
+          >
+            2
+          </span>
+          {pick(l, L.stepTwo)}
+        </li>
+        <li aria-hidden="true" className="text-muted-foreground/50">→</li>
+        <li className="inline-flex items-center gap-1.5">
+          <span
+            className="flex size-4 shrink-0 items-center justify-center rounded-full border bg-muted font-semibold tabular-nums"
+            aria-hidden="true"
+          >
+            3
+          </span>
+          {pick(l, L.stepThree)}
+        </li>
+      </ol>
+
       {/* OBRAZEC */}
-      <Card className="mt-8" id="nacrtuj-obrazec">
+      <Card className="mt-3" id="nacrtuj-obrazec">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="size-5 text-primary" aria-hidden="true" />
@@ -932,6 +1105,37 @@ function PlannerApp() {
                 {nlError}
               </p>
             )}
+            {/* POLIR A (2.28.0), naloga 1: ONE-CLICK PRIMERI — klik zgolj
+                ZAPOLNI vnos (ne generira): uporabnik vidi besedilo, ga lahko
+                prilagodi in pritisne gumb — iskreno in predvidljivo.
+                Stili čipov = obstoječi interest čipi, a min-h-11 (44 px). */}
+            <div className="mt-3">
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                {pick(l, L.examplesLabel)}
+              </p>
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {NL_EXAMPLES.map((ex) => {
+                  const text = pick(l, ex);
+                  return (
+                    <li key={text}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNlInput(text);
+                          setNlError(null);
+                          document.getElementById("nl-input")?.focus();
+                        }}
+                        aria-label={`${pick(l, L.exampleUse)}: ${text}`}
+                        className="inline-flex min-h-11 items-center rounded-full border bg-background px-3.5 text-sm text-foreground/80 transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
+                        disabled={nlBusy || loading}
+                      >
+                        {text}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
               {pick(l, L.nlHint)}
             </p>
@@ -1224,6 +1428,9 @@ function PlannerApp() {
             pdfBusy={pdfBusy}
             pdfError={pdfError}
             onPdf={() => void exportPdf()}
+            compareForm={form}
+            onBudgetPick={pickBudget}
+            loading={loading}
           />
         )}
       </section>
@@ -1245,6 +1452,11 @@ function PlanResult({
   pdfBusy,
   pdfError,
   onPdf,
+  // POLIR A (2.28.0), naloga 3: primerjalnik proračunov — variante za
+  // TRENUTNE izbire obrazca; klik preklopi raven in regenerira načrt.
+  compareForm,
+  onBudgetPick,
+  loading,
 }: {
   plan: ItineraryPlan;
   lang: PlannerLang;
@@ -1257,6 +1469,10 @@ function PlanResult({
   pdfBusy: boolean;
   pdfError: string | null;
   onPdf: () => void;
+  /** POLIR A (2.28.0): obrazec za primerjalnik (izbire + aktivna raven). */
+  compareForm: FormState;
+  onBudgetPick: (b: Budget) => void;
+  loading: boolean;
 }) {
   const l = useLocale();
   const allStops = plan.days.flat();
@@ -1298,6 +1514,16 @@ function PlanResult({
           </p>
         </CardContent>
       </Card>
+
+      {/* POLIR A (2.28.0), naloga 3: PRIMERJALNIK PRORAČUNOV — 3 ravni,
+          številke IZKLJUČNO iz motorja (ocena, ne obljuba). Prikazan samo
+          ob obstoječem načrtu; brez layout shifta (isti render kot načrt). */}
+      <BudgetCompare
+        form={compareForm}
+        lang={lang}
+        loading={loading}
+        onPick={onBudgetPick}
+      />
 
       {/* ISKRENA OPOZORILNA PLOŠČICA: manjkajoči dnevi (kanon 2.26.0) —
           coverageNote vsebuje podrobnost, a je v drobnem besedilu;
@@ -1420,6 +1646,153 @@ function PlanResult({
         {pick(l, L.deterministic)}
       </p>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// POLIR A (2.28.0), naloga 3: PRIMERJALNIK PRORAČUNOV (3 ravni)
+// ---------------------------------------------------------------------------
+
+/**
+ * Kompakten primerjalnik treh proračunskih ravni nad prikazanim načrtom
+ * (Varčno € / Zmerno €€ / Brez omejitve €€€). Vsaka kartica kaže št.
+ * postankov, oceno skupne cene na osebo in št. regij — VSE iz motora.
+ *
+ * Implementacija: variante izračuna NEPOSDREDNO s čisto funkcijo motorja
+ * (buildItinerary — isti modul kot /api/itinerary; 0 strežniških
+ * odvisnosti, 0 omrežja, 0 AI) za TRENUTNE izbire obrazca — klik na
+ * kartico torej regenerira NATANKO tisto, kar kartica obljublja.
+ * Relaksacijo filtra (pool < dni×2 → engine sprosti budget filter)
+ * izpeljemo iz istega registra (budgetTier + regija); zrcalo je
+ * zaklenjeno v tests/nacrtuj-polir.test.ts proti coverageNote motorja.
+ *
+ * Iskrenost: številke so OCENE (besedilo motora že pravi „ocena X € na
+ * osebo“); sprostitve in izpuščeni dražji postanki so razkrite na kartici.
+ */
+function BudgetCompare({
+  form,
+  lang,
+  loading,
+  onPick,
+}: {
+  form: FormState;
+  lang: PlannerLang;
+  loading: boolean;
+  onPick: (b: Budget) => void;
+}) {
+  const l = useLocale();
+
+  const variants = useMemo(() => {
+    // ISTA normalizacija kot POST /api/itinerary (trim/lowercase/dedup/12),
+    // da so variante bajtno enake regeneraciji prek API-ja.
+    const interests = [
+      ...new Set(
+        form.interests.map((s) => s.trim().toLowerCase()).filter(Boolean)
+      ),
+    ].slice(0, 12);
+    const region = form.region !== "all" ? form.region : undefined;
+    const season = (form.season !== "any" ? form.season : undefined) as
+      | Season
+      | undefined;
+    // Locale kanon /api/itinerary: vsebina načrta je sl/en — številke
+    // (postanki/cena/regije) so od jezikov neodvisne, izbira pa ista.
+    const locale: PlannerLang = lang === "en" ? "en" : "sl";
+    return COMPARE_TIERS.map((tier) => {
+      const p = buildItinerary({
+        interests,
+        days: form.days,
+        region,
+        season,
+        budget: tier.value,
+        locale,
+      });
+      const stops = p.days.flat();
+      return {
+        tier,
+        stops: stops.length,
+        cost: p.totalCost,
+        regions: new Set(stops.map((s) => s.region).filter(Boolean)).size,
+        // Zrcalo motorjeve relaksacije: pool (regija ∧ budget) < dni × 2
+        // → engine sprosti filter (PLANNER_MSG.budgetRelaxed v coverageNote).
+        relaxed:
+          DESTINATIONS.filter(
+            (d) =>
+              (!region || d.region === region) &&
+              budgetTier(d.budget) <= budgetTier(tier.value)
+          ).length < form.days * 2,
+      };
+    });
+  }, [form, lang]);
+
+  // Referenca za „manj postankov zaradi filtra“ je €€€ (dovoljuje vse).
+  const ref = variants[variants.length - 1];
+  // „any“ (brez filtra) ≡ €€€ (dovoljuje vse ravni) — zato je €€€ aktivna
+  // tudi, ko je v spustnem meniju izbrano „Brez omejitve“ brez €-znakov.
+  const active: Budget =
+    form.budget === "€" || form.budget === "€€" ? form.budget : "€€€";
+
+  // Brez interesov API iskreno zavrne (400) — kartice takrat ne kažemo,
+  // saj ne morejo obljubiti številk, ki jih ni mogoče regenerirati.
+  if (form.interests.length === 0) return null;
+
+  return (
+    <section className="mt-4" aria-labelledby="primerjalnik-proracunov">
+      <div className="flex items-center gap-2">
+        <Scale className="size-4 text-primary" aria-hidden="true" />
+        <h3 id="primerjalnik-proracunov" className="text-sm font-bold tracking-tight">
+          {pick(l, L.compareTitle)}
+        </h3>
+      </div>
+      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+        {pick(l, L.compareLead)}
+      </p>
+      <div className="mt-3 grid gap-2 sm:grid-cols-3">
+        {variants.map((v) => {
+          const isActive = v.tier.value === active;
+          return (
+            <button
+              key={v.tier.value}
+              type="button"
+              onClick={() => onPick(v.tier.value)}
+              disabled={loading}
+              aria-pressed={isActive}
+              className={`flex min-h-11 flex-col gap-1.5 rounded-xl border p-3 text-left transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60 ${
+                isActive
+                  ? "border-primary/50 bg-primary/5"
+                  : "bg-card hover:border-primary/30 hover:bg-accent/50"
+              }`}
+            >
+              <span className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+                {pick(l, v.tier)}
+                {isActive && (
+                  <Badge variant="secondary" className="gap-1">
+                    <CircleCheck className="size-3" aria-hidden="true" />
+                    {pick(l, L.compareCurrent)}
+                  </Badge>
+                )}
+              </span>
+              <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <span className="tabular-nums">{L.stopsWord[lang](v.stops)}</span>
+                <span className="tabular-nums">{L.regionsWord[lang](v.regions)}</span>
+                <span className="tabular-nums font-medium text-foreground">
+                  {pick(l, L.compareEstimate)} {formatMoney(v.cost, lang)} ·{" "}
+                  {pick(l, L.totalCost)}
+                </span>
+              </span>
+              {v.relaxed ? (
+                <span className="text-[11px] leading-snug text-amber-600 dark:text-amber-400">
+                  {pick(l, L.compareRelaxed)}
+                </span>
+              ) : v.stops < ref.stops ? (
+                <span className="text-[11px] leading-snug text-muted-foreground">
+                  {pick(l, L.compareFiltered)}
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 

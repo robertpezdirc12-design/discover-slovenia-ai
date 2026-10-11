@@ -19,6 +19,7 @@ import { useLocale } from "next-intl";
 import Image from "next/image";
 import * as React from "react";
 
+import { AffiliateChip } from "@/components/affiliate-chip";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -392,23 +393,23 @@ export function DestinationDetail({ d }: { d: Destination }) {
                         <p className="truncate text-sm font-bold">{p.name}</p>
                       </div>
                     </div>
-                    <Button
-                      asChild
-                      size="sm"
-                      variant="outline"
-                      className="shrink-0 font-semibold"
-                    >
-                      {/* Vodeni klik skozi lastni API (zapis klika + 302);
-                          rel="sponsored" je obvezen za provizijske povezave. */}
-                      <a
-                        href={`/api/affiliate/go?provider=${row.id}&dest=${d.slug}`}
-                        target="_blank"
-                        rel="nofollow sponsored noopener"
-                      >
-                        {cta}
-                        <ExternalLink className="size-3.5" aria-hidden="true" />
-                      </a>
-                    </Button>
+                    <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1">
+                      <Button asChild size="sm" variant="outline" className="font-semibold">
+                        {/* Vodeni klik skozi lastni API (zapis klika + 302);
+                            rel="sponsored" je obvezen za provizijske povezave. */}
+                        <a
+                          href={`/api/affiliate/go?provider=${row.id}&dest=${d.slug}`}
+                          target="_blank"
+                          rel="nofollow sponsored noopener"
+                        >
+                          {cta}
+                          <ExternalLink className="size-3.5" aria-hidden="true" />
+                        </a>
+                      </Button>
+                      {/* POLIR B (FTC): razkritje OB povezavi — čip vodi na
+                          /zaupanje-in-varnost (celotna objava o proviziji). */}
+                      <AffiliateChip />
+                    </div>
                   </div>
                 );
               })}

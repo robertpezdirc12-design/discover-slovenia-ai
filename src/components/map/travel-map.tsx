@@ -65,6 +65,7 @@ import {
   useMap,
 } from "react-leaflet";
 
+import { AffiliateChip } from "@/components/affiliate-chip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -922,6 +923,11 @@ function DestinationPopup({
               {labels.bookCar}
             </a>
           </Button>
+        </div>
+        {/* POLIR B (FTC): razkritje OB povezavah — čip vodi na
+            /zaupanje-in-varnost (celotna objava o proviziji). */}
+        <div className="mt-1.5 flex justify-center">
+          <AffiliateChip />
         </div>
         <p className="mt-1 text-[10px] leading-tight text-muted-foreground">
           {labels.bookingLinksNote}

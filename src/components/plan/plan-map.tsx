@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * PLAN-MAP — zemljevid ob načrtu (/nacrtuj, izdaja 2.29.0, POLIR2 B).
+ * PLAN-MAP — zemljevid ob načrtu (/nacrtuj; 2.29.0 POLIR2 B, 2.30.0 POLIR3 A).
  *
  * Leaflet/OSM zemljevid načrta potovanja (vzorci iz travel-map.tsx —
  * Leaflet 1.9 + react-leaflet 5, OSM ploščice, divIcon brez slik):
@@ -10,22 +10,31 @@
  *    ozadja DAY_COLORS[dayIdx % 8], bela številka. Poudarjen postanek
  *    (highlightId === stop.id) je povečan, z belo obrobo in višjim
  *    zIndexOffset (kanon sinhronizacije seznam ↔ zemljevid).
- *  - POVEZAVE med postanki dneva: ČRTKANE PREMOCRTNE črte (dashArray
- *    "6 8", barva dneva) — iskrena opomba pod zemljevidom izrecno pove,
- *    da gre za premočrtne povezave in NE vozljivo pot (vozljiva pot z
- *    OSRM je izrecno izpuščena v prihodnjo izdajo — glej raziskavo
- *    2026-10-12-polir2.md).
+ *  - POVEZAVE med postanki dneva (POLIR3 A, 2.30.0): izriše se ČRTKANA
+ *    PREMOCRTNA črta (dashArray "6 8", weight 3) TAKOJ ob spremembi dni
+ *    (nalaganje NE blokira), po odgovoru strežniškega proxyja
+ *    /api/plan/directions (OSRM) pa jo za uspešne dneve zamenja POLNA
+ *    črta iz DEJANSKE OSRM geometry (weight 4, opacity 0.9). Polna črta
+ *    nastane IZKLJUČNO iz dejanske geometry — ob padcu/timeoutu ostane
+ *    črtkana premočrtna črta z obstoječo iskreno opombo (nikoli
+ *    izmišljene poti).
  *  - ISKRENOST: postankov brez znanih koordinat se NE izmišljuje — niso
  *    prikazani; kadar jih je > 0, pod zemljevidom stoji iskren števec
- *    izpuščenih (planMapData.skippedNoCoords).
+ *    izpuščenih (planMapData.skippedNoCoords). Dan, ki ima sredinski
+ *    postanek brez koordinat, OSTANE črtkan: proxy prejme samo CELE dneve
+ *    (OSRM ne sme dobiti vrzeli v poti, mi pa ne izmišljujemo medtočk).
  *  - VARNOST (XSS kanon): tooltip „Dan d · ura | brez ure · ime" je
  *    sestavljen IZKLJUČNO prek DOM elementa (document.createElement +
  *    textContent) — ime postanka je lahko uporabnikov vnos (custom
  *    postanki), zato vsebina tooltipa NIKOLI ni html niz. Edini html v
  *    divIconu je statična številka dneva + barva (brez uporabniških
  *    podatkov).
- *  - 0 omrežja, 0 useSession: samo Leaflet + čisti podatki (planMapData
- *    je čista funkcija; nič se ne pridobiva med prikazom).
+ *  - OMREŽJE: 0 zunanjih klicov; ob spremembi dni pošljemo EN POST na
+ *    lastni proxy /api/plan/directions (RELATIVNA pot — kanon vremenskega
+ *    proxyja; ZUNANJI URL-ji so v komponenti prepovedani). Stanje poti je
+ *    VEZANO NA REFERENCO dni (isti kanon kot predogled vlečenja v 2.29.0):
+ *    regeneracija/reurejanje samodejno razveljavi zastarelo stanje — brez
+ *    setState v efektu (eslint react-hooks/set-state-in-effect čist).
  *
  * SSR: Leaflet potrebuje window (že uvoz modula leaflet brez DOM povzroči
  * „window is not defined") — komponento nalagaj IZKLJUČNO klientno:
@@ -54,6 +63,8 @@ import { pick } from "@/lib/i18n-pick";
 import {
   DAY_COLORS,
   planMapData,
+  planMapLines,
+  type DayGeometry,
   type PlanMapMarker,
 } from "@/lib/plan-map-data";
 import type { TripStop } from "@/lib/types";
@@ -70,6 +81,26 @@ const BADGE_SIZE_ACTIVE = 30;
 
 /** zIndexOffset poudarjenega markerja (nad vsemi ostalimi znaki). */
 const Z_ACTIVE = 1000;
+
+/** Prazno stanje poti (deljena konstanta — nikoli se ne mutira). */
+const NO_ROUTES: Readonly<Record<number, DayGeometry>> = {};
+
+/**
+ * Koordinate dneva za proxy [lon, lat] (OSRM vrstni red) — ali null, če dan
+ * NI upravičen do usmerjanja: < 2 postanka ali KATERIKOLI postanek brez
+ * koordinat. Dan z vrzeljo OSTANE črtkan (glej opombo POLIR3 A zgoraj):
+ * proxy prejme samo CELE dni, OSRM ne sme dobiti vrzeli v poti, mi pa ne
+ * izmišljujemo medtočk (iskrenost).
+ */
+function dayCoords(stops: TripStop[]): [number, number][] | null {
+  if (stops.length < 2) return null;
+  const coords: [number, number][] = [];
+  for (const s of stops) {
+    if (!s.coords) return null;
+    coords.push([s.coords.lng, s.coords.lat]); // [lon, lat] = OSRM vrstni red
+  }
+  return coords;
+}
 
 /**
  * Interni i18n slovar ×6 (kanon i18n-pick: „sl" je vedno resnica,
@@ -92,6 +123,14 @@ const L10N = {
     de: "Verbindungen sind gerade Linien (keine befahrbare Route) · Daten: OpenStreetMap",
     fr: "Les liaisons sont des lignes droites (pas un itinéraire routable) · Données : OpenStreetMap",
     es: "Las conexiones son líneas rectas (no una ruta transitable) · Datos: OpenStreetMap",
+  },
+  routedNote: {
+    sl: "Vozljiva pot (OSRM/OpenStreetMap); urnik načrta ostaja ocena.",
+    en: "Drivable route (OSRM/OpenStreetMap); the plan's schedule remains an estimate.",
+    it: "Percorso percorribile (OSRM/OpenStreetMap); l'orario del piano resta una stima.",
+    de: "Befahrbare Route (OSRM/OpenStreetMap); der Zeitplan des Plans bleibt eine Schätzung.",
+    fr: "Itinéraire routable (OSRM/OpenStreetMap) ; l'horaire du plan reste une estimation.",
+    es: "Ruta transitable (OSRM/OpenStreetMap); el horario del plan sigue siendo una estimación.",
   },
   skippedNote: {
     sl: (n: number) =>
@@ -248,9 +287,10 @@ function PlanMarker({
 }
 
 /**
- * ZEMLJEVID NAČRTA — dnevno obarvani številčni markerji + črtkane
- * premočrtne povezave z iskreno opombo. Imenovani export PlanMap
- * (nalaganje izključno klientno: glej SSR opombo na vrhu modula).
+ * ZEMLJEVID NAČRTA — dnevno obarvani številčni markerji + povezave po
+ * dnevih (POLNA OSRM črta ob uspehu, sicer iskrena ČRTKANA premočrtna).
+ * Imenovani export PlanMap (nalaganje izključno klientno: glej SSR opombo
+ * na vrhu modula).
  */
 export function PlanMap({ days, highlightId, onMarkerClick }: PlanMapProps) {
   const l = useLocale();
@@ -259,8 +299,97 @@ export function PlanMap({ days, highlightId, onMarkerClick }: PlanMapProps) {
   // ne vežejo znova ob vsakem renderju).
   const data = React.useMemo(() => planMapData(days), [days]);
 
+  // POLIR3 A: usmerjene geometrije iz lastnega proxyja. Stanje je VEZANO
+  // NA REFERENCO dni (kanon predogleda vlečenja 2.29.0): velja samo za
+  // `days`, ob katerih je nastalo — regeneracija/reurejanje (nova
+  // referenca) ga samodejno razveljavi, brez čiščenja v efektu.
+  const [routeState, setRouteState] = React.useState<{
+    forDays: TripStop[][] | null;
+    routes: Record<number, DayGeometry>;
+  }>({ forDays: null, routes: {} });
+
+  // EN POST na lastni proxy ob montiranju in ob spremembi dni: en zahtevek
+  // pomeni VSE upravičene dneve naenkrat (dan = ena postavka). Dnevi z
+  // manjkajočo koordinato kateregakoli postanka se NE pošljejo — ostanejo
+  // črtkani (iskrenost; glej dayCoords). NALAGANJE NE BLOKIRA: črtkane
+  // črte se izrišejo takoj (stanje = prazno), polne zamenjajo črtkane
+  // šele, ko odgovor pride.
+  React.useEffect(() => {
+    const eligible: { dayIdx: number; coords: [number, number][] }[] = [];
+    days.forEach((stops, dayIdx) => {
+      const coords = dayCoords(stops);
+      if (coords) eligible.push({ dayIdx, coords });
+    });
+    if (eligible.length === 0) return; // nič za usmerjanje → 0 omrežja
+
+    let cancelled = false;
+    fetch("/api/plan/directions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ days: eligible.map((d) => d.coords) }),
+    })
+      .then((res) => (res.ok ? (res.json() as Promise<unknown>) : null))
+      .then((body) => {
+        // Fail-closed: karkoli manjka/je slabe oblike → stanje ostane
+        // prazno (črtkane črte z iskreno opombo ostanejo).
+        if (cancelled || body === null || typeof body !== "object") return;
+        const daysOut = (body as { days?: unknown }).days;
+        if (!Array.isArray(daysOut)) return;
+        const routes: Record<number, [number, number][]> = {};
+        for (const entry of daysOut) {
+          if (typeof entry !== "object" || entry === null) continue;
+          const e = entry as {
+            day?: unknown;
+            status?: unknown;
+            geometry?: unknown;
+          };
+          if (e.status !== "route") continue; // straight/padec dneva → črtkana
+          if (typeof e.day !== "number") continue;
+          const origin = eligible[e.day]; // day = indeks dneva V ZAHTEVI
+          if (!origin) continue;
+          const geometry = e.geometry;
+          if (!Array.isArray(geometry) || geometry.length < 2) continue;
+          const pts: [number, number][] = [];
+          let valid = true;
+          for (const p of geometry) {
+            if (
+              Array.isArray(p) &&
+              p.length === 2 &&
+              typeof p[0] === "number" &&
+              Number.isFinite(p[0]) &&
+              typeof p[1] === "number" &&
+              Number.isFinite(p[1])
+            ) {
+              pts.push([p[0], p[1]]); // [lat, lon] — Leaflet vrstni red
+            } else {
+              valid = false;
+              break;
+            }
+          }
+          if (valid) routes[origin.dayIdx] = pts;
+        }
+        setRouteState({ forDays: days, routes });
+      })
+      .catch(() => {
+        // fail-closed: napaka/odmerek → črtkane črte ostanejo (0 utripanja)
+      });
+    return () => {
+      cancelled = true; // days so se spremenila → zastarel odgovor ignoriramo
+    };
+  }, [days]);
+
+  // Samo stanje, ki pripada TRENUTNI referenci dni (zastarelo → prazno).
+  const routes = routeState.forDays === days ? routeState.routes : NO_ROUTES;
+
+  // Čista presodba črt + opomb (plan-map-data — testabilna brez Leafleta).
+  const lineState = React.useMemo(
+    () => planMapLines(data, routes),
+    [data, routes]
+  );
+
   const mapLabel = pick(l, L10N.mapLabel);
   const straightNote = pick(l, L10N.straightNote);
+  const routedNote = pick(l, L10N.routedNote);
   const skippedNote = pick(l, L10N.skippedNote);
   const dayLabel = pick(l, L10N.dayLabel);
   const noTime = pick(l, L10N.noTime);
@@ -291,20 +420,35 @@ export function PlanMap({ days, highlightId, onMarkerClick }: PlanMapProps) {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>'
           />
           <FitPlanBounds markers={data.markers} />
-          {/* Povezave po dnevih — ČRTKANO = iskrena premočrtna črta
-              (nikoli ne sugestira vozljive poti; glej opombo spodaj). */}
-          {data.dayLines.map((line) => (
+          {/* Povezave po dnevih: POLNA črta IZKLJUČNO iz dejanske OSRM
+              geometry (weight 4, opacity 0.9); sicer iskrena ČRTKANA
+              premočrtna črta (dashArray "6 8", weight 3) — nalaganje/
+              padec/dan z vrzeljo nikoli ne blokirata izrisa.
+
+              POZOR (Leaflet/react-leaflet past, živo dokazano): ob prehodu
+              črtkana → polna pathOptions NESMEJO izpustiti dashArray —
+              setStyle le ZLIVA manjkajoče ključe, zato bi zastareli
+              "6 8" ostal na elementu in polna črta bi ostala črtkana.
+              Eksplicitni dashArray: undefined počisti atribut. */}
+          {lineState.lines.map((line) => (
             <Polyline
               key={`day-line-${line.dayIdx}`}
-              positions={line.points.map(
-                (p) => [p.lat, p.lng] as [number, number]
-              )}
-              pathOptions={{
-                color: DAY_COLORS[line.dayIdx % DAY_COLORS.length],
-                weight: 3,
-                opacity: 0.8,
-                dashArray: "6 8",
-              }}
+              positions={line.points}
+              pathOptions={
+                line.solid
+                  ? {
+                      color: DAY_COLORS[line.dayIdx % DAY_COLORS.length],
+                      weight: 4,
+                      opacity: 0.9,
+                      dashArray: undefined, // POČISTI zastarelo črtkanje
+                    }
+                  : {
+                      color: DAY_COLORS[line.dayIdx % DAY_COLORS.length],
+                      weight: 3,
+                      opacity: 0.8,
+                      dashArray: "6 8",
+                    }
+              }
             />
           ))}
           {data.markers.map((m) => (
@@ -320,12 +464,27 @@ export function PlanMap({ days, highlightId, onMarkerClick }: PlanMapProps) {
         </MapContainer>
       </div>
 
-      {/* Iskreni opombi pod zemljevidom: (1) povezave NISO vozljiva pot,
-          vir ploščic OSM; (2) kadar so postanki brez koordinat, koliko
-          jih ni prikazanih (koordinat ne izmišljujemo). */}
-      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-        {straightNote}
-      </p>
+      {/* Iskrene opombe pod zemljevidom (logika planMapLines.notes):
+          (1) vsaj ena POLNA črta → „Vozljiva pot (OSRM/…) — urnik ostaja
+          ocena"; (2) vsaj ena ČRTKANA črta ali nobena pot → „Povezave so
+          premočrtne (ne vozljiva pot)"; mešano stanje pokaže OBE. Vir
+          OSM/OSRM je vedno v opombi (atribucija). */}
+      {lineState.notes.routed && (
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+          {routedNote}
+        </p>
+      )}
+      {lineState.notes.straight && (
+        <p
+          className={
+            lineState.notes.routed
+              ? "mt-1 text-xs leading-relaxed text-muted-foreground"
+              : "mt-2 text-xs leading-relaxed text-muted-foreground"
+          }
+        >
+          {straightNote}
+        </p>
+      )}
       {data.skippedNoCoords > 0 && (
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
           {skippedNote(data.skippedNoCoords)}

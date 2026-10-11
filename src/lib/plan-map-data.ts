@@ -118,3 +118,89 @@ export function planMapData(days: TripStop[][]): PlanMapData {
 
   return { markers, dayLines, skippedNoCoords };
 }
+
+// ── POLIR3 A (2.30.0): vozljiva pot (OSRM) nad premočrtnimi črtami ────────
+//
+// Čista odločitev IZRISA (polna/črtkana) + opomb pod zemljevidom. Živi tu in
+// ne v komponenti, ker komponente plan-map.tsx ni mogoče uvoziti v testih
+// (uvoz leaflet modula zahteva window) — brez tega odseka logika polne/črtkane
+// črte ne bi bila testabilna na čistem izhodu planMapData + simuliranega
+// odgovora proxyja (edino mesto, kjer je sprememba te datoteke nujna).
+
+/**
+ * Usmerjena geometrija enega dneva iz odgovora /api/plan/directions:
+ * [[lat, lon], …] (Leaflet vrstni red). Manjkajoč dan = ni vozljive poti.
+ */
+export type DayGeometry = ReadonlyArray<readonly [number, number]>;
+
+/**
+ * Ena povezava dneva po vrsti izrisa:
+ *  - solid: true  → POLNA črta iz DEJANSKE OSRM geometry (weight 4,
+ *    opacity 0.9, barva dneva) — nikoli izmišljena;
+ *  - solid: false → ČRTKANA premočrtna črta (dashArray "6 8", weight 3) —
+ *    iskren nadomestek, ko OSRM poti ni (padec, timeout, dan s postankom
+ *    brez koordinat ali nalaganje).
+ */
+export interface PlanMapLine {
+  dayIdx: number;
+  /** Točke [lat, lng] v vrstnem redu postankov oziroma OSRM geometry. */
+  points: [number, number][];
+  solid: boolean;
+}
+
+/**
+ * Odločitev opomb pod zemljevidom (iskrenost — opombi se nikoli ne lažeta):
+ *  - routed:  vsaj ena POLNA črta → opomba „Vozljiva pot (OSRM/…)";
+ *  - straight: vsaj ena ČRTKANA črta ALI nobene poti (nalaganje/napaka)
+ *    → opomba „Povezave so premočrtne (ne vozljiva pot)".
+ * Mešano stanje (del dni vozljiv, del ne) pokaže OBE opombi.
+ */
+export interface PlanMapNotes {
+  routed: boolean;
+  straight: boolean;
+}
+
+/** Izhod čiste odločitve izrisa: črte dneva + zastavici opomb. */
+export interface PlanMapLineState {
+  lines: PlanMapLine[];
+  notes: PlanMapNotes;
+}
+
+/**
+ * Čista presodba črt po dnevih (PLAN-MAP, izdaja 2.30.0):
+ * za vsak dan iz data.dayLines pogleda, ali ima dan usmerjeno geometrijo
+ * v `routed` (ključ = indeks dneva). Izhod NE deli tabel s vhodom
+ * (točke se skopirajo — kanon čistosti planMapData).
+ */
+export function planMapLines(
+  data: PlanMapData,
+  routed: Readonly<Record<number, DayGeometry>>
+): PlanMapLineState {
+  const lines: PlanMapLine[] = data.dayLines.map((line) => {
+    const geometry = routed[line.dayIdx];
+    if (geometry && geometry.length >= 2) {
+      // POLNA črta: kopija točk [lat, lon] iz OSRM geometry.
+      return {
+        dayIdx: line.dayIdx,
+        points: geometry.map((p) => [p[0], p[1]] as [number, number]),
+        solid: true,
+      };
+    }
+    // ČRTKANA premočrtna črta: točke postankov dneva (iz planMapData).
+    return {
+      dayIdx: line.dayIdx,
+      points: line.points.map((p) => [p.lat, p.lng] as [number, number]),
+      solid: false,
+    };
+  });
+
+  const routedCount = lines.filter((l) => l.solid).length;
+  const dashedCount = lines.length - routedCount;
+  return {
+    lines,
+    notes: {
+      routed: routedCount > 0,
+      straight: dashedCount > 0 || routedCount === 0,
+    },
+  };
+}

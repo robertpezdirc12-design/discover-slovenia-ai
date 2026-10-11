@@ -84,7 +84,11 @@ export default function MapPage() {
             <dt className="sr-only">{s.label}</dt>
             <dd>
               <span className="text-2xl font-bold text-primary">{s.value}</span>{" "}
-              <span className="text-sm text-muted-foreground">{s.label}</span>
+              {/* POLIR7 (2.34.0): break-words — dolge nemške sestavljenke
+                  (npr. „Durchschnittsbewertung", 172 px, ena nedeljiva beseda)
+                  se prelomijo namesto da raznesejo 3-stolpčno statistiko
+                  (stolpec ~111 px na mobilnem). */}
+              <span className="text-sm break-words text-muted-foreground">{s.label}</span>
             </dd>
           </div>
         ))}

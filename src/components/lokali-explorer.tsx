@@ -171,7 +171,10 @@ export function LokaliExplorer() {
     <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <PageHeader kicker={t("kicker")} title={t("title")} lead={t("lead")}>
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Badge variant="outline" className="border-primary/40 text-primary">
+          {/* POLIR7 (2.34.0): whitespace-normal — badge.tsx osnova ima whitespace-nowrap,
+              a sectionLead je CELOTEN STAVEK (v ES 48 px preliva ekrana 390 px).
+              Preklop deluje zanesljivo, ker Badge uporablja cn()/tailwind-merge. */}
+          <Badge variant="outline" className="border-primary/40 text-left whitespace-normal text-primary">
             {t("sectionLead")}
           </Badge>
           <Badge variant="outline" className="border-primary/40 text-primary">
@@ -324,7 +327,14 @@ export function LokaliExplorer() {
                       {pick(l, x.description)}
                     </p>
 
-                    <div className="mt-auto flex items-center gap-2 pt-1">
+                    {/* POLIR7 (2.34.0): flex-wrap — ISTI vzorec kot vrstica gumbov
+                        na /nacrtuj: osnova Button ima whitespace-nowrap, DE oznaka
+                        „Zu meiner Reise hinzufügen" (239 px) + „Reiseziel" (87 px)
+                        skupaj presežeta stolpec kartice na mobilnem (min-vsebina
+                        334 px > razpoložljivih 316 px); vrstica se lomi, oznaki
+                        ostaneta enovrstni. Odkrito pri živi verifikaciji 2.34.0
+                        (v 2.33.0 maskirano z 25 px prelivom badge sectionLead). */}
+                    <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
                       <Button
                         type="button"
                         size="sm"

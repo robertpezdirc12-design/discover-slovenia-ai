@@ -117,9 +117,17 @@ describe("POLIR3 B: pogojna izrisava (iskreno prazno stanje)", () => {
   });
 
   test("deljena pot: kartica v OBEH poteh (baza in lokalna — pariteta)", () => {
-    const pojav =
-      SHARED.split("<PlanMap days={sharedPlanMapDays(").length - 1;
+    // POLIR6 A (2.33.0): dnevi za PlanMap so MEMOIZIRANI (cloudMapDays /
+    // localMapDays — stabilna referenca stanja je pogoji za vezavo izmer),
+    // klicev PlanMap pa je še vedno TOČNO 2 (baza + lokalna pota).
+    const pojav = SHARED.split("<PlanMap").length - 1;
     expect(pojav).toBe(2);
+    expect(SHARED).toContain(
+      "<PlanMap days={cloudMapDays} onMeasured={handleMeasured}",
+    );
+    expect(SHARED).toContain(
+      "<PlanMap days={localMapDays} onMeasured={handleMeasured}",
+    );
   });
 });
 

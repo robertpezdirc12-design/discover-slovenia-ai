@@ -22,7 +22,7 @@ import dynamic from "next/dynamic";
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { DaySegmentHeader } from "@/components/day-segment-header";
@@ -49,6 +49,15 @@ import {
 } from "@/lib/itinerary-engine";
 import { useMyTripList } from "@/lib/my-trip";
 import { interestDisplay } from "@/lib/interests-i18n";
+// POLIR6 A (2.33.0): čisti pomoži IZMERJENIH dni (EN izvor resnice — isti
+// kot na /nacrtuj; ocena dneva = ISTA hevristika kot LegRow, km pa nosijo
+// 1 decimalko po jeziku, EN pika / ostali vejica — determinizem brez Intl).
+import {
+  dayEstimate,
+  fmtKm1,
+  summarizeMeasured,
+  type MeasuredDay,
+} from "@/lib/plan-map-data";
 import { loadLastPlan, type SavedPlan } from "@/lib/plan-store";
 import { buildTripPdf, fromItineraryPlan } from "@/lib/pdf/trip-pdf-doc";
 import { downloadTripPdf } from "@/lib/pdf/trip-pdf-render";
@@ -266,6 +275,50 @@ const L = {
     fr: "Positions des arrêts par jour — couleur et numéro désignent le jour.",
     es: "Posiciones de las paradas por día — color y número indican el día.",
   },
+  // POLIR6 A (2.33.0): IZMERJENE razdalje na „Moja pot" (pariteta
+  // /nacrtuj 2.32.0 — besedila DOBESEEDNO iz nacrtuj/view.tsx; vsaka
+  // številka nosi razložljiv vir: izmerjeno OSRM ali izrecno ocena;
+  // vsota združuje SAMO izmerjene dneve — Roadtrippersova past).
+  measuredDay: {
+    sl: (km: string, min: number) => `${km} km · ${min} min vožnje — izmerjeno (OSRM/OpenStreetMap)`,
+    en: (km: string, min: number) => `${km} km · ${min} min of driving — measured (OSRM/OpenStreetMap)`,
+    it: (km: string, min: number) => `${km} km · ${min} min di guida — misurato (OSRM/OpenStreetMap)`,
+    de: (km: string, min: number) => `${km} km · ${min} Min. Fahrt — gemessen (OSRM/OpenStreetMap)`,
+    fr: (km: string, min: number) => `${km} km · ${min} min de conduite — mesuré (OSRM/OpenStreetMap)`,
+    es: (km: string, min: number) => `${km} km · ${min} min de conducción — medido (OSRM/OpenStreetMap)`,
+  },
+  estimatedDay: {
+    sl: (km: number, min: number) => `~ ${km} km · ~ ${min} min — ocena (premočna ×1,3 @ ~60 km/h)`,
+    en: (km: number, min: number) => `~ ${km} km · ~ ${min} min — estimate (straight-line ×1.3 @ ~60 km/h)`,
+    it: (km: number, min: number) => `~ ${km} km · ~ ${min} min — stima (linea d'aria ×1,3 a ~60 km/h)`,
+    de: (km: number, min: number) => `~ ${km} km · ~ ${min} Min. — Schätzung (Luftlinie ×1,3 bei ~60 km/h)`,
+    fr: (km: number, min: number) => `~ ${km} km · ~ ${min} min — estimation (à vol d'oiseau ×1,3 à ~60 km/h)`,
+    es: (km: number, min: number) => `~ ${km} km · ~ ${min} min — estimación (línea recta ×1,3 a ~60 km/h)`,
+  },
+  measuredTotal: {
+    sl: (km: string, dur: string) => `Skupaj izmerjeno: ${km} km · ${dur} vožnje (OSRM/OpenStreetMap)`,
+    en: (km: string, dur: string) => `Measured in total: ${km} km · ${dur} of driving (OSRM/OpenStreetMap)`,
+    it: (km: string, dur: string) => `Totale misurato: ${km} km · ${dur} di guida (OSRM/OpenStreetMap)`,
+    de: (km: string, dur: string) => `Insgesamt gemessen: ${km} km · ${dur} Fahrt (OSRM/OpenStreetMap)`,
+    fr: (km: string, dur: string) => `Total mesuré : ${km} km · ${dur} de conduite (OSRM/OpenStreetMap)`,
+    es: (km: string, dur: string) => `Total medido: ${km} km · ${dur} de conducción (OSRM/OpenStreetMap)`,
+  },
+  measuredMissing: {
+    sl: (n: number) => `za ${n} ${n === 1 ? "dan" : "dni"} ni izmerjenih podatkov — prikazana je ocena`,
+    en: (n: number) => `for ${n} ${n === 1 ? "day" : "days"} no measured data is available — an estimate is shown`,
+    it: (n: number) => `per ${n} ${n === 1 ? "giorno" : "giorni"} non ci sono dati misurati — viene mostrata una stima`,
+    de: (n: number) => `für ${n} ${n === 1 ? "Tag" : "Tage"} liegen keine gemessenen Daten vor — eine Schätzung wird angezeigt`,
+    fr: (n: number) => `pour ${n} ${n === 1 ? "jour" : "jours"} aucune donnée mesurée n'est disponible — une estimation est affichée`,
+    es: (n: number) => `para ${n} ${n === 1 ? "día" : "días"} no hay datos medidos — se muestra una estimación`,
+  },
+  measuredSrPrefix: {
+    sl: "Vožnja tega dne: ",
+    en: "Driving this day: ",
+    it: "Guida di questo giorno: ",
+    de: "Fahrt an diesem Tag: ",
+    fr: "Conduite de ce jour : ",
+    es: "Conducción de este día: ",
+  },
 } as const;
 
 type Source = "planner" | "my-trip";
@@ -329,6 +382,50 @@ export default function JourneyPage() {
     () => (data ? validatePlanGeo(data.plan, lang) : null),
     [data, lang]
   );
+
+  // POLIR6 A (2.33.0): IZMERJENI dnevi iz odgovora proxyja (OSRM distance/
+  // duration) — isti kanon kot /nacrtuj 2.32.0. Stanje je VEZANO NA
+  // REFERENCO dni (data.plan.days je stabilna referenca stanja fetcha):
+  // regeneracija osnutka (my-trip) da novo referenco → pošteno ponovno
+  // vezanje, zato vrstica NIKOLI ne kaže številk tujega vrstnega reda.
+  const [measuredState, setMeasuredState] = useState<{
+    forDays: TripStop[][];
+    stats: MeasuredDay[];
+  } | null>(null);
+  const days = data?.plan.days ?? null;
+  const handleMeasured = useCallback(
+    (stats: MeasuredDay[]) => {
+      if (days) setMeasuredState({ forDays: days, stats });
+    },
+    [days]
+  );
+  const measured = measuredState?.forDays === days ? measuredState.stats : null;
+
+  // Čista presodba povzetka (vrstica trenutnega dneva + skupna vrstica) —
+  // SAMO nad izmerjenimi dnevi (Roadtrippersova past: mešana vsota bi
+  // tiho lagala; padli dnevi se izrecno preštejejo v opombo).
+  const measuredSummary = useMemo(
+    () => (measured && days ? summarizeMeasured(days.length, measured) : null),
+    [measured, days]
+  );
+
+  // Vrstica izmere/ocene TRENUTNEGA dneva (menja se z dnevno navigacijo —
+  // ISTA semantika kot /nacrtuj 2.32.0): izmerjen dan → izmerjeno (OSRM);
+  // padel dan z oceno → ISTA hevristika kot LegRow (dayEstimate nad dnevi
+  // načrta, ki nosijo koordinate); dan brez skoka → BREZ vrstice (iskrena
+  // odsotnost). Print-VIDNA in neodvisna od zemljevida (< 2 točki).
+  const currentTravelRow = (() => {
+    if (!data) return null;
+    const row = measuredSummary?.rows[dayIndex];
+    if (row?.kind === "measured") {
+      return { text: pick(l, L.measuredDay)(fmtKm1(l, row.km), row.min) };
+    }
+    if (row?.kind === "estimate") {
+      const est = dayEstimate(data.plan.days[dayIndex] ?? []);
+      if (est) return { text: pick(l, L.estimatedDay)(est.km, est.min) };
+    }
+    return null;
+  })();
 
   /**
    * SHRANI KOT SKUPINSKO POT (kanon 2.26.0 — popravek P0 iz uporabniškega
@@ -511,6 +608,19 @@ export default function JourneyPage() {
                   )}
                 </span>
               </CardTitle>
+              {/* POLIR6 A (2.33.0): vrstica izmere/ocene TRENUTNEGA dneva POD
+                  glavo dneva (ob dnevni ceni) — pariteta /nacrtuj 2.32.0:
+                  vsaka številka nosi vir (izmerjeno OSRM ali izrecno
+                  označena ocena). Print-VIDNA — del povzetka dneva (vir
+                  resnice je kartica dneva, zemljevid se v natisu izpusti,
+                  ta vrstica pa NE). DODATEK k obstoječi kartici: naslov,
+                  cena in DayTimeline ostajajo nespremenjeni. */}
+              {currentTravelRow && (
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  <span className="sr-only">{pick(l, L.measuredSrPrefix)}</span>
+                  {currentTravelRow.text}
+                </p>
+              )}
             </CardHeader>
             <CardContent>
               <DayTimeline
@@ -519,6 +629,28 @@ export default function JourneyPage() {
               />
             </CardContent>
           </Card>
+
+          {/* POLIR6 A (2.33.0): SKUPNA IZMERJENA vrstica (vsi dnevi) POD
+              dnevno kartico — SAMO nad izmerjenimi dnevi + iskrena opomba
+              o padlih (dvojina 1 dan/dni pravilna ×6). Print-VIDNA (kanon
+              /nacrtuj — izmera je del povzetka poti, ne zemljevida). */}
+          {measuredSummary &&
+            measuredSummary.totalKm !== null &&
+            measuredSummary.totalMin !== null && (
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                {pick(l, L.measuredTotal)(
+                  fmtKm1(l, measuredSummary.totalKm),
+                  formatDuration(measuredSummary.totalMin)
+                )}
+              </p>
+            )}
+          {measuredSummary &&
+            measuredSummary.totalKm !== null &&
+            measuredSummary.failedCount > 0 && (
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                {pick(l, L.measuredMissing)(measuredSummary.failedCount)}
+              </p>
+            )}
 
           {/* Neujemajoči zapisi (osnutek) */}
           {data.source === "my-trip" && data.unmatched.length > 0 && (
@@ -560,7 +692,7 @@ export default function JourneyPage() {
                   <p className="text-xs text-muted-foreground">{pick(l, L.mapDesc)}</p>
                 </CardHeader>
                 <CardContent>
-                  <PlanMap days={data.plan.days} />
+                  <PlanMap days={data.plan.days} onMeasured={handleMeasured} />
                 </CardContent>
               </Card>
             </div>

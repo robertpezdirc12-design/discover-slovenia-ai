@@ -37,6 +37,13 @@ const VIEW = readFileSync(
   "utf8"
 );
 
+// POLIR6 A (2.33.0): dayEstimate + fmtKm1 živita v plan-map-data.ts —
+// zaklep ocene dneva sledi premiku (EN izvor resnice za vse poglede).
+const PLAN_MAP_DATA = readFileSync(
+  join(import.meta.dir, "../src/lib/plan-map-data.ts"),
+  "utf8"
+);
+
 const PLAN_MAP = readFileSync(
   join(import.meta.dir, "../src/components/plan/plan-map.tsx"),
   "utf8"
@@ -284,10 +291,20 @@ describe("POLIR5 A: view.tsx — povzetek izmerjenih dni", () => {
   });
 
   test("㉑ ocena padlega dneva = ISTA hevristika kot LegRow (vsota skokov dneva)", () => {
-    const ocena = block(VIEW, "function dayEstimate(", "return hops > 0");
+    // POLIR6 A (2.33.0): funkcija je PRESTAVLJENA v plan-map-data.ts —
+    // zaklep gre na TAMKRAŠNJO izpeljava (ista semantika: ISTA hevristika
+    // kot LegRow — round5(roadKm) + travelMinutes po skokih dneva).
+    const ocena = block(PLAN_MAP_DATA, "function dayEstimate(", "return hops > 0");
     expect(ocena).toContain("round5(roadKm(prev.coords, stop.coords))");
     expect(ocena).toContain("travelMinutes(prev.coords, stop.coords)");
     expect(ocena).toContain("if (!prev.coords || !stop.coords) continue;");
+    // nacrtuj: UVOZ iz skupnega modula, lokalni definiciji sta IZBRISANI
+    // (izvor resnice je EN — isti izvoz porabita tudi /potovanje in /pot).
+    expect(VIEW).toContain("dayEstimate,");
+    expect(VIEW).toContain("fmtKm1,");
+    expect(VIEW).toContain('} from "@/lib/plan-map-data";');
+    expect(VIEW).not.toContain("function dayEstimate(");
+    expect(VIEW).not.toContain("function fmtKm1(");
     // LegRow OSTAJA (med postankoma) — povzetek je dodatek, ne nadomestilo
     const legRow = block(VIEW, "function LegRow({", "aria-label={`${label}");
     expect(legRow).toContain("round5(roadKm(prev.coords, stop.coords))");

@@ -31,6 +31,7 @@ import {
 import { useLocale } from "next-intl";
 import * as React from "react";
 
+import { AffiliateChip } from "@/components/affiliate-chip";
 import { DestinationCard } from "@/components/destination-card";
 import { NextStepCard, useNextStepContext } from "@/components/next-step-card";
 import { PersonalHomeSection } from "@/components/home/personal-home-section";
@@ -828,23 +829,28 @@ export function HomeView() {
                     {pick(l, { sl: p.descSl, en: p.descEn })}
                   </p>
                   {p.commissionable ? (
-                    <Button
-                      asChild
-                      size="sm"
-                      variant="outline"
-                      className="mt-4 w-full font-semibold tap-target"
-                    >
-                      {/* Vodeni klik skozi lastni API (izpis klika + 302);
-                          rel="sponsored" je obvezen za provizijske povezave. */}
-                      <a
-                        href={`/api/affiliate/go?provider=${p.id}`}
-                        target="_blank"
-                        rel="nofollow sponsored noopener"
+                    <>
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="mt-4 w-full font-semibold tap-target"
                       >
-                        {t("bookingOpenAt")(p.name)}
-                        <ExternalLink className="size-3.5" aria-hidden="true" />
-                      </a>
-                    </Button>
+                        {/* Vodeni klik skozi lastni API (izpis klika + 302);
+                            rel="sponsored" je obvezen za provizijske povezave. */}
+                        <a
+                          href={`/api/affiliate/go?provider=${p.id}`}
+                          target="_blank"
+                          rel="nofollow sponsored noopener"
+                        >
+                          {t("bookingOpenAt")(p.name)}
+                          <ExternalLink className="size-3.5" aria-hidden="true" />
+                        </a>
+                      </Button>
+                      {/* POLIR B (FTC): razkritje OB povezavi — čip vodi na
+                          /zaupanje-in-varnost (celotna objava o proviziji). */}
+                      <AffiliateChip className="mt-2 self-center" />
+                    </>
                   ) : (
                     <Button
                       asChild

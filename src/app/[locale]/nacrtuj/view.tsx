@@ -1264,7 +1264,10 @@ function PlannerApp() {
               className="min-h-11 flex-1"
               disabled={saBusy || loading}
             />
-            <div className="flex gap-2">
+            {/* POLIR7 (2.34.0): flex-wrap — oba gumba imata whitespace-nowrap
+                (osnova Button), v FR (15 px) in ES (23 px) skupaj prelivata
+                ekran; vrstica se lomi, oznaki ostanejeta enovrstni. */}
+            <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
                 onClick={() => void runStartAnywhere()}

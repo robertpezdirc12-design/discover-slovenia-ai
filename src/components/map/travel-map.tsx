@@ -1941,8 +1941,13 @@ export default function TravelMap() {
           </MapContainer>
         </div>
 
-        {/* Sinhroniziran seznam destinacij (hover/klik ↔ markerji). */}
-        <aside aria-label={t("listTitle")}>
+        {/* Sinhroniziran seznam destinacij (hover/klik ↔ markerji).
+            POLIR8 (2.35.0): min-w-0 — aside je PREDMET mreže
+            grid gap-4 lg:grid-cols-[1fr_340px] z min-width:auto, ki ni
+            dovoljeval skrčitve (FR/IT/ES 3–4 px @360, do 44 px @320);
+            truncate veriga (li > button > span.min-w-0 > span.truncate)
+            prevzame delo, živi dokaz: minWidth 0 → preliv 4 → 0. */}
+        <aside aria-label={t("listTitle")} className="min-w-0">
           <p className="mb-2 text-xs font-bold tracking-[0.12em] text-muted-foreground uppercase">
             {t("listTitle")} · {t("count")(results.length)}
           </p>

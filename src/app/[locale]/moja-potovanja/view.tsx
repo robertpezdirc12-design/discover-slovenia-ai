@@ -627,11 +627,16 @@ export default function MyTripsPage() {
                 <p className="text-sm font-semibold">{pick(l, L.sampleTitle)}</p>
                 <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
                   {SAMPLE_PLANS.map((p) => (
+                    /* POLIR8 (2.35.0): whitespace-normal h-auto shrink — FR
+                       oznaka „Plan type : Un week-end paisible au bord de la
+                       rivière“ (423 px nowrap) je povzročala 138 px preliva
+                       @320; shrink preglase shrink-0 iz Button osnove, da
+                       flex-wrap vrstica gumb dejansko skrči. */
                     <Button
                       key={p.id}
                       asChild
                       variant="secondary"
-                      className="min-h-11"
+                      className="min-h-11 h-auto whitespace-normal shrink"
                     >
                       <Link href={`/nacrtuj?preset=${p.id}`}>
                         <Wand2 className="size-4" aria-hidden="true" />
@@ -798,7 +803,10 @@ export default function MyTripsPage() {
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                 {pick(l, L.guestBody)}
               </p>
-              <Button asChild variant="outline" size="sm" className="mt-3 min-h-11 gap-1.5 font-semibold">
+              {/* POLIR8 (2.35.0): whitespace-normal h-auto — FR oznaka
+                  „Connecte-toi pour les voyages dans le cloud" (~350 px
+                  nowrap) je povzročala preliv @320 (WCAG 1.4.10). */}
+              <Button asChild variant="outline" size="sm" className="mt-3 min-h-11 h-auto whitespace-normal gap-1.5 font-semibold">
                 <Link href="/prijava">
                   <CloudUpload className="size-4" aria-hidden="true" />
                   {pick(l, { sl: "Prijavi se za pote v oblaku", en: "Sign in for cloud trips", it: "Accedi per i viaggi nel cloud", de: "Melde dich an für Cloud-Reisen", fr: "Connecte-toi pour les voyages dans le cloud", es: "Inicia sesión para viajes en la nube" })}

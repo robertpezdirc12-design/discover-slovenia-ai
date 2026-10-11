@@ -1096,8 +1096,32 @@ export function interestChips(): InterestChip[] {
       counts.set(a, (counts.get(a) ?? 0) + 1);
     }
   }
-  return [...counts.entries()]
-    .map(([label, count]) => ({ label, count }))
+  // QA U8 (2026-10-11): podatkovni nabor meša velike/male začetnice
+  // („fotografija" iz bestFor + „Fotografija" iz activities) — uporabnik
+  // je videl PODVOJENE čipe. Združevanje po normaliziranem ključu
+  // (normText, brezdiakritično, male črke) s seštevanjem števcev;
+  // prikazna oblika = najpogostejša surova oblika, ob izenačenju
+  // abecedno prva (popolnoma deterministično). Ujemanje ni prizadeto
+  // (interestMatches normalizira interes enako).
+  const merged = new Map<string, { label: string; count: number; topCount: number }>();
+  for (const [label, count] of counts) {
+    const key = normText(label);
+    const prev = merged.get(key);
+    if (!prev) {
+      merged.set(key, { label, count, topCount: count });
+    } else {
+      prev.count += count;
+      if (
+        count > prev.topCount ||
+        (count === prev.topCount && label.localeCompare(prev.label, "sl") < 0)
+      ) {
+        prev.label = label;
+        prev.topCount = count;
+      }
+    }
+  }
+  return [...merged.values()]
+    .map(({ label, count }) => ({ label, count }))
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "sl"));
 }
 

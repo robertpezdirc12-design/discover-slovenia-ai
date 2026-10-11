@@ -29,6 +29,8 @@ import {
   haversineKm,
   round5,
   roadKm,
+  interestChips,
+  normText,
 } from "../src/lib/itinerary-engine";
 import { DESTINATIONS } from "../src/lib/slovenia-data";
 
@@ -293,3 +295,58 @@ describe("geo-koherenca: regresijske invariante starega kanona", () => {
     expect(plan.totalCost).toBe(plan.days.flat().reduce((n, s) => n + s.cost, 0));
   });
 });
+
+// ── 8) QA U8: čipi interesov brez podvojitev ────────────────────────────────
+
+describe("QA U8: interestChips brez podvojenih oblik (velikost črk/diakritiki)", () => {
+  const chips = interestChips();
+
+  test("nobena dva čipa se ne ujemata po normaliziranem ključu (fotografija/Fotografija)", () => {
+    const keys = chips.map((c) => normText(c.label));
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  test("števci podvojenih oblik so sešteti (skupna vsota ohranjena)", () => {
+    // Vsota števil vseh surovih activities+bestFor vnosov = vsota števil čipov
+    // (združevanje samo grupira — ničesar ne zavže).
+    let rawTotal = 0;
+    const rawCounts = new Map<string, number>();
+    for (const d of DESTINATIONS) {
+      for (const a of [...d.activities, ...d.bestFor]) {
+        rawCounts.set(a, (rawCounts.get(a) ?? 0) + 1);
+        rawTotal++;
+      }
+    }
+    const chipTotal = chips.reduce((n, c) => n + c.count, 0);
+    expect(chipTotal).toBe(rawTotal);
+  });
+
+  test("prikazna oblika je vedno ena izmed surovih oblik (ni izmišljenih oznak)", () => {
+    const rawForms = new Set(rawCountsKeys());
+    for (const c of chips) expect(rawForms.has(c.label)).toBe(true);
+  });
+
+  test("determinizem: 5× identičen izpis", () => {
+    const a = JSON.stringify(interestChips());
+    for (let i = 0; i < 5; i++) expect(JSON.stringify(interestChips())).toBe(a);
+  });
+
+  test("urejenost: count ↓ nato abecedno (kanon ostaja)", () => {
+    for (let i = 1; i < chips.length; i++) {
+      const [a, b] = [chips[i - 1], chips[i]];
+      const ok =
+        b.count < a.count ||
+        (b.count === a.count && a.label.localeCompare(b.label, "sl") <= 0);
+      expect(ok).toBe(true);
+    }
+  });
+});
+
+/** Surove oblike iz podatkov (pomočnik testa U8). */
+function rawCountsKeys(): string[] {
+  const keys = new Set<string>();
+  for (const d of DESTINATIONS) {
+    for (const a of [...d.activities, ...d.bestFor]) keys.add(a);
+  }
+  return [...keys];
+}

@@ -6,6 +6,7 @@ import {
   Clock,
   CloudUpload,
   FileDown,
+  Globe,
   HardDrive,
   Loader2,
   MapPin,
@@ -94,6 +95,13 @@ export function SharedTripView({ shareId }: { shareId: string }) {
   const [cloudError, setCloudError] = React.useState<string | null>(null);
   const [pdfBusy, setPdfBusy] = React.useState(false);
   const [pdfError, setPdfError] = React.useState<string | null>(null);
+  // QA U6: opozorilo po kopiranju zasebne povezave ("private" = pot v oblaku,
+  // a javna povezava IZKLOPLJENA; "local" = pot živi samo lokalno) + kratka
+  // potrditev uspešnega kopiranja (prej tiho dejanje).
+  const [copyNote, setCopyNote] = React.useState<"private" | "local" | null>(null);
+  const [copiedFlash, setCopiedFlash] = React.useState(false);
+  const [publicBusy, setPublicBusy] = React.useState(false);
+  const [publicError, setPublicError] = React.useState<string | null>(null);
 
   const loadDb = React.useCallback(async () => {
     const agg = await fetchTripAggregate(shareId);
@@ -134,12 +142,15 @@ export function SharedTripView({ shareId }: { shareId: string }) {
     addTrip: { sl: "Dodaj v mojo pot", en: "Add to my trip", it: "Aggiungi al mio viaggio", de: "Zu meiner Reise hinzufügen", fr: "Ajouter à mon voyage", es: "Añadir a mi viaje" },
     added: { sl: "Dodano ✓", en: "Added ✓", it: "Aggiunto ✓", de: "Hinzugefügt ✓", fr: "Ajouté ✓", es: "Añadido ✓" },
     addAll: { sl: "Dodaj celo pot v mojo pot", en: "Add the whole trip to my trip", it: "Aggiungi l’intero viaggio al mio viaggio", de: "Ganze Reise zu meiner Reise hinzufügen", fr: "Ajouter tout le voyage à mon voyage", es: "Añadir todo el viaje a mi viaje" },
-    print: { sl: "Natisni / shrani PDF", en: "Print / save PDF", it: "Stampa / salva PDF", de: "Drucken / als PDF speichern", fr: "Imprimer / enregistrer en PDF", es: "Imprimir / guardar PDF" },
+    // QA U10 (2026-10-11): POENOTENE oznake izvozov na vseh treh pogledih
+    // (/nacrtuj, /potovanje, /pot/[shareId]): Natisni / Izvozi PDF /
+    // Koledar (.ics) / QR koda — prej trije različni napisi za isto dejanje.
+    print: { sl: "Natisni", en: "Print", it: "Stampa", de: "Drucken", fr: "Imprimer", es: "Imprimir" },
     pdfBtn: { sl: "Izvozi PDF", en: "Export PDF", it: "Esporta PDF", de: "PDF exportieren", fr: "Exporter en PDF", es: "Exportar PDF" },
     pdfBusy: { sl: "Pripravljam PDF …", en: "Preparing PDF …", it: "Preparo il PDF …", de: "PDF wird vorbereitet …", fr: "Préparation du PDF …", es: "Preparando PDF …" },
     pdfErr: { sl: "PDF izvoz ni uspel — poskusi znova.", en: "PDF export failed — try again.", it: "Esportazione PDF non riuscita — riprova.", de: "PDF-Export fehlgeschlagen — bitte erneut versuchen.", fr: "Échec de l'export PDF — réessaie.", es: "Fallo al exportar PDF — reinténtalo." },
     printFooter: { sl: "Izvoženo z Discover Slovenia AI", en: "Exported with Discover Slovenia AI", it: "Esportato con Discover Slovenia AI", de: "Exportiert mit Discover Slovenia AI", fr: "Exporté avec Discover Slovenia AI", es: "Exportado con Discover Slovenia AI" },
-    qrTitle: { sl: "QR koda te povezave", en: "QR code of this link", it: "Codice QR di questo link", de: "QR-Code dieses Links", fr: "Code QR de ce lien", es: "Código QR de este enlace" },
+    qrTitle: { sl: "QR koda", en: "QR code", it: "Codice QR", de: "QR-Code", fr: "Code QR", es: "Código QR" },
     qrNote: {
       sl: "Skeniraj s telefonom in odpri to pot — koda vsebuje samo javno povezavo.",
       en: "Scan with your phone to open this trip — the code contains only the public link.",
@@ -150,8 +161,62 @@ export function SharedTripView({ shareId }: { shareId: string }) {
     },
     copy: { sl: "Kopiraj povezavo", en: "Copy link", it: "Copia link", de: "Link kopieren", fr: "Copier le lien", es: "Copiar enlace" },
     copied: { sl: "Povezava skopirana!", en: "Link copied!", it: "Link copiato!", de: "Link kopiert!", fr: "Lien copié !", es: "¡Enlace copiado!" },
-    // P0-G (issue §17): ICS izvoz v koledar
-    icsBtn: { sl: "Dodaj v koledar (.ics)", en: "Add to calendar (.ics)", it: "Aggiungi al calendario (.ics)", de: "Zum Kalender hinzufügen (.ics)", fr: "Ajouter au calendrier (.ics)", es: "Añadir al calendario (.ics)" },
+    // QA U6 (2026-10-11): kopiranje ZASEBNE povezave brez opozorila je
+    // ustvarjalo lažno zaupanje (prijatelji → 404). Opozorilo + en klik za
+    // vklop javnega deljenja (samo lastnik — API kanon); gostje in
+    // sodelujoči dobijo iskreno razlago.
+    copyPrivate: {
+      sl: "Povezava je zasebna — vidijo jo samo povabljeni. Vklopi javno deljenje ali pošlji vabila?",
+      en: "This link is private — only invited collaborators can see it. Enable public sharing or send invites?",
+      it: "Questo link è privato — possono vederlo solo gli invitati. Attivi la condivisione pubblica o invii degli inviti?",
+      de: "Dieser Link ist privat — nur Eingeladene können ihn sehen. Öffentliche Freigabe aktivieren oder Einladungen senden?",
+      fr: "Ce lien est privé — seules les personnes invitées peuvent le voir. Activer le partage public ou envoyer des invitations ?",
+      es: "Este enlace es privado — solo pueden verlo los invitados. ¿Activar el enlace público o enviar invitaciones?",
+    },
+    copyGuest: {
+      sl: "Prosi lastnika za vabilo ali za vklop javne povezave.",
+      en: "Ask the owner for an invitation or to enable the public link.",
+      it: "Chiedi al proprietario un invito o di attivare il link pubblico.",
+      de: "Bitte den Besitzer um eine Einladung oder darum, den öffentlichen Link zu aktivieren.",
+      fr: "Demande au propriétaire une invitation ou d’activer le lien public.",
+      es: "Pide al propietario una invitación o que active el enlace público.",
+    },
+    copyEnable: { sl: "Vklopi javno deljenje", en: "Enable public sharing", it: "Attiva la condivisione pubblica", de: "Öffentliche Freigabe aktivieren", fr: "Activer le partage public", es: "Activar el enlace público" },
+    copyEnabling: { sl: "Vklapljam …", en: "Enabling …", it: "Attivo …", de: "Aktiviere …", fr: "Activation …", es: "Activando …" },
+    copyPublicErr: {
+      sl: "Vklop javne povezave ni uspel — poskusi znova.",
+      en: "Enabling the public link failed — try again.",
+      it: "Attivazione del link pubblico non riuscita — riprova.",
+      de: "Aktivieren des öffentlichen Links fehlgeschlagen — bitte erneut versuchen.",
+      fr: "Échec de l’activation du lien public — réessaie.",
+      es: "No se pudo activar el enlace público — reinténtalo.",
+    },
+    copyLocal: {
+      sl: "Ta pot živi samo na tej napravi — povezava za prijatelje ne bo delovala. Shrani jo v oblak (zgoraj), da odkleneš deljenje.",
+      en: "This trip lives only on this device — the link will not work for friends. Save it to the cloud (above) to unlock sharing.",
+      it: "Questo viaggio vive solo su questo dispositivo — il link non funzionerà per gli amici. Salvalo nel cloud (sopra) per sbloccare la condivisione.",
+      de: "Diese Reise lebt nur auf diesem Gerät — der Link funktioniert für Freunde nicht. Speichere sie in der Cloud (oben), um die Freigabe freizuschalten.",
+      fr: "Ce voyage ne vit que sur cet appareil — le lien ne fonctionnera pas pour tes amis. Enregistre-le dans le cloud (ci-dessus) pour débloquer le partage.",
+      es: "Este viaje vive solo en este dispositivo — el enlace no funcionará para tus amigos. Guárdalo en la nube (arriba) para desbloquear el uso compartido.",
+    },
+    qrPrivate: {
+      sl: "Opozorilo: povezava je trenutno ZASEBNA — QR koda bo delovala samo povabljenim sodelujočim.",
+      en: "Warning: the link is currently PRIVATE — the QR code will work only for invited collaborators.",
+      it: "Attenzione: il link è attualmente PRIVATO — il codice QR funzionerà solo per i collaboratori invitati.",
+      de: "Achtung: Der Link ist derzeit PRIVAT — der QR-Code funktioniert nur für eingeladene Mitwirkende.",
+      fr: "Attention : le lien est actuellement PRIVÉ — le code QR ne fonctionnera que pour les collaborateurs invités.",
+      es: "Aviso: el enlace es actualmente PRIVADO — el código QR funcionará solo para los colaboradores invitados.",
+    },
+    qrLocal: {
+      sl: "Ta povezava deluje samo na tej napravi (lokalna shramba) — prijateljem QR koda ne bo odprla poti.",
+      en: "This link works only on this device (local storage) — the QR code will not open the trip for friends.",
+      it: "Questo link funziona solo su questo dispositivo (memoria locale) — il codice QR non aprirà il viaggio agli amici.",
+      de: "Dieser Link funktioniert nur auf diesem Gerät (lokaler Speicher) — der QR-Code öffnet Freunden die Reise nicht.",
+      fr: "Ce lien ne fonctionne que sur cet appareil (stockage local) — le code QR n’ouvrira pas le voyage aux amis.",
+      es: "Este enlace funciona solo en este dispositivo (almacenamiento local) — el código QR no abrirá el viaje a tus amigos.",
+    },
+    // P0-G (issue §17): ICS izvoz v koledar (QA U10: poenoten napis)
+    icsBtn: { sl: "Koledar (.ics)", en: "Calendar (.ics)", it: "Calendario (.ics)", de: "Kalender (.ics)", fr: "Calendrier (.ics)", es: "Calendario (.ics)" },
     icsNoDates: {
       sl: "Najprej določi realne datume poti — izvoz v koledar potrebuje dneve.",
       en: "Set the real trip dates first — the calendar export needs the days.",
@@ -229,7 +294,50 @@ export function SharedTripView({ shareId }: { shareId: string }) {
   const onCopy = React.useCallback(() => {
     if (!pageUrl) return;
     void navigator.clipboard?.writeText(pageUrl).catch(() => undefined);
-  }, [pageUrl]);
+    // QA U6: kopiranje mora biti GLASNO — potrditev + opozorilo, če
+    // povezava ni javna (prijatelji bi sicer videli 404).
+    setCopiedFlash(true);
+    window.setTimeout(() => setCopiedFlash(false), 2500);
+    if (db === null) {
+      setCopyNote("local");
+    } else if (db && !db.isPublic) {
+      setCopyNote("private");
+    } else {
+      setCopyNote(null);
+    }
+  }, [pageUrl, db]);
+
+  /**
+   * QA U6: EN KLIK za vklop javnega deljenja iz opozorila (samo lastnik —
+   * enak PATCH kot stikalo v zavihku Sodelovanje; API dovoli isPublic
+   * izključno OWNERju, urednik/gledalec dobi iskreno napako strežnika).
+   */
+  const enablePublicSharing = React.useCallback(async () => {
+    if (publicBusy) return;
+    setPublicBusy(true);
+    setPublicError(null);
+    try {
+      const r = await fetch(`/api/trips/${encodeURIComponent(shareId)}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ isPublic: true }),
+      });
+      const data = (await r.json().catch(() => null)) as {
+        success?: boolean;
+        error?: string;
+      } | null;
+      if (!r.ok || !data?.success) {
+        setPublicError(data?.error ?? pick(l, L.copyPublicErr));
+        return;
+      }
+      setCopyNote(null);
+      await loadDb();
+    } catch {
+      setPublicError(pick(l, L.copyPublicErr));
+    } finally {
+      setPublicBusy(false);
+    }
+  }, [shareId, publicBusy, loadDb, l]);
 
   // P0-G (issue §17): izvoz .ics — dnevi poti (eachTripDay, DST-varno) +
   // postanki načrta po dnevih; brez realnih datumov gumba sploh ni
@@ -317,6 +425,51 @@ export function SharedTripView({ shareId }: { shareId: string }) {
   }, [localPlan, shareId, savingCloud]);
 
   const loggedIn = sessionStatus === "authenticated" && Boolean(session?.user);
+
+  // QA U6 (2026-10-11): opozorilo ob kopiranju zasebne povezave (skupno
+  // obema poglavjema — baza in lokalna pota). Lastnik dobi EN KLIK za vklop
+  // javnega deljenja; gostje/uredniki/gledalci iskreno razlago; lokalna
+  // pota napotilo na shranjevanje v oblak.
+  const copyWarningNode =
+    copyNote === "private" ? (
+      <div
+        role="alert"
+        className="w-full rounded-lg border border-amber-400/60 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+      >
+        <p className="font-semibold leading-relaxed">{pick(l, L.copyPrivate)}</p>
+        {db?.role === "OWNER" ? (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              onClick={() => void enablePublicSharing()}
+              disabled={publicBusy}
+              className="tap-target min-h-9 font-semibold"
+            >
+              {publicBusy ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Globe className="size-4" aria-hidden="true" />
+              )}
+              {publicBusy ? pick(l, L.copyEnabling) : pick(l, L.copyEnable)}
+            </Button>
+            {publicError && (
+              <span role="alert" className="text-xs text-red-600 dark:text-red-400">
+                {publicError}
+              </span>
+            )}
+          </div>
+        ) : (
+          <p className="mt-1 text-xs">{pick(l, L.copyGuest)}</p>
+        )}
+      </div>
+    ) : copyNote === "local" ? (
+      <div
+        role="alert"
+        className="w-full rounded-lg border border-amber-400/60 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+      >
+        <p className="font-semibold leading-relaxed">{pick(l, L.copyLocal)}</p>
+      </div>
+    ) : null;
 
   // Nalaganje (prvi klic ni šel niti skozi localStorage niti skozi API)
   if (localPlan === undefined || db === undefined) {
@@ -453,6 +606,13 @@ export function SharedTripView({ shareId }: { shareId: string }) {
                 <Share2 className="size-4" aria-hidden="true" />
                 {pick(l, L.copy)}
               </Button>
+              {/* QA U6: glasna potrditev kopiranja + opozorilo o zasebnosti. */}
+              {copiedFlash && (
+                <Badge variant="secondary" className="self-center" role="status">
+                  {pick(l, L.copied)}
+                </Badge>
+              )}
+              {copyWarningNode}
               {pdfError && (
                 <p role="alert" className="w-full text-sm text-red-600 dark:text-red-400">
                   {pdfError}
@@ -491,6 +651,13 @@ export function SharedTripView({ shareId }: { shareId: string }) {
                   <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
                     {pick(l, L.qrNote)}
                   </p>
+                  {/* QA U6: iskrena opomba ob zasebni povezavi — QR drugače
+                      ustvarja lažno zaupanje (prijatelji → 404). */}
+                  {db && !db.isPublic && (
+                    <p className="mt-2 text-xs font-medium text-amber-700 dark:text-amber-400">
+                      {pick(l, L.qrPrivate)}
+                    </p>
+                  )}
                   <p className="mt-2 truncate rounded-md bg-muted px-2 py-1 font-mono text-xs">
                     {pageUrl}
                   </p>
@@ -713,6 +880,13 @@ export function SharedTripView({ shareId }: { shareId: string }) {
               <Share2 className="size-4" aria-hidden="true" />
               {pick(l, L.copy)}
             </Button>
+            {/* QA U6: glasna potrditev kopiranja + opozorilo (lokalna pota). */}
+            {copiedFlash && (
+              <Badge variant="secondary" className="self-center" role="status">
+                {pick(l, L.copied)}
+              </Badge>
+            )}
+            {copyWarningNode}
             {pdfError && (
               <p role="alert" className="w-full text-sm text-red-600 dark:text-red-400">
                 {pdfError}
@@ -733,6 +907,10 @@ export function SharedTripView({ shareId }: { shareId: string }) {
                 <QrCanvas url={pageUrl} label={pick(l, L.qrTitle)} />
                 <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
                   {pick(l, L.qrNote)}
+                </p>
+                {/* QA U6: lokalna pota — QR odpre pot SAMO na tej napravi. */}
+                <p className="mt-2 text-xs font-medium text-amber-700 dark:text-amber-400">
+                  {pick(l, L.qrLocal)}
                 </p>
                 <p className="mt-2 truncate rounded-md bg-muted px-2 py-1 font-mono text-xs">
                   {pageUrl}

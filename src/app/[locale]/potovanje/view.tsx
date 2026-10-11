@@ -3,6 +3,7 @@
 import {
   AlertTriangle,
   CalendarCheck,
+  CalendarDays,
   Check,
   CircleCheck,
   CloudUpload,
@@ -12,6 +13,7 @@ import {
   Info,
   Loader2,
   MapPin,
+  Printer,
   Route as RouteIcon,
   ShieldCheck,
   Wand2,
@@ -45,6 +47,7 @@ import {
   type PlannerLang,
 } from "@/lib/itinerary-engine";
 import { useMyTripList } from "@/lib/my-trip";
+import { interestDisplay } from "@/lib/interests-i18n";
 import { loadLastPlan, type SavedPlan } from "@/lib/plan-store";
 import { buildTripPdf, fromItineraryPlan } from "@/lib/pdf/trip-pdf-doc";
 import { downloadTripPdf } from "@/lib/pdf/trip-pdf-render";
@@ -159,6 +162,26 @@ const L = {
   pdfBtn: { sl: "Izvozi PDF", en: "Export PDF", it: "Esporta PDF", de: "PDF exportieren", fr: "Exporter en PDF", es: "Exportar PDF" },
   pdfBusy: { sl: "Pripravljam PDF …", en: "Preparing PDF …", it: "Preparo il PDF …", de: "PDF wird vorbereitet …", fr: "Préparation du PDF …", es: "Preparando PDF …" },
   pdfErr: { sl: "PDF izvoz ni uspel — poskusi znova.", en: "PDF export failed — try again.", it: "Esportazione PDF non riuscita — riprova.", de: "PDF-Export fehlgeschlagen — bitte erneut versuchen.", fr: "Échec de l'export PDF — réessaie.", es: "Fallo al exportar PDF — reinténtalo." },
+  // QA U4 (2026-10-11): interesi, ki so sestavili načrt (plan.meta.interests),
+  // prevedeni v jezik vmesnika — prej kanonski slovenski žetoni v EN UI.
+  interestsLabel: { sl: "Interesi", en: "Interests", it: "Interessi", de: "Interessen", fr: "Centres d’intérêt", es: "Intereses" },
+  // QA U10 (2026-10-11): poenoten nabor izvozov z /nacrtuj in /pot/[shareId].
+  print: { sl: "Natisni", en: "Print", it: "Stampa", de: "Drucken", fr: "Imprimer", es: "Imprimir" },
+  icsBtn: { sl: "Koledar (.ics)", en: "Calendar (.ics)", it: "Calendario (.ics)", de: "Kalender (.ics)", fr: "Calendrier (.ics)", es: "Calendario (.ics)" },
+  // QA U10: ta pogled NIMA realnih datumov (dai:last-plan jih ne nosi;
+  // določijo se na deljeni poti) → buildTripIcs fail-closed vrne null.
+  // Iskrena onemogočitev + napotilo; QR koda tu iskreno MANJKA (vsak URL,
+  // ki bi ga lahko kodirali, bi bil zavajajoč — /potovanje je napravno-
+  // lokalen pogled, /pot/[shareId] pa za to pot ne obstaja).
+  icsNoDatesTitle: { sl: "Najprej shrani datume", en: "Save the dates first", it: "Prima salva le date", de: "Zuerst die Daten speichern", fr: "Enregistre d'abord les dates", es: "Primero guarda las fechas" },
+  icsNoDates: {
+    sl: "Koledar (.ics) potrebuje realne datume, QR koda pa deljeno povezavo poti — shrani pot kot skupinsko pot (gumb zgoraj); datume in QR kodo najdeš na deljeni poti (/pot/…).",
+    en: "The calendar (.ics) needs real dates and the QR code needs a shared trip link — save the trip as a shared trip (button above); the dates and the QR code live on the shared trip (/pot/…).",
+    it: "Il Calendario (.ics) richiede date reali e il codice QR un link condiviso del viaggio — salva il viaggio come viaggio condiviso (pulsante sopra); date e codice QR si trovano sul viaggio condiviso (/pot/…).",
+    de: "Der Kalender (.ics) braucht echte Daten und der QR-Code einen geteilten Reise-Link — speichere die Reise als geteilte Reise (Schaltfläche oben); Daten und QR-Code findest du auf der geteilten Reise (/pot/…).",
+    fr: "Le Calendrier (.ics) nécessite de vraies dates et le code QR un lien partagé du voyage — enregistre le voyage comme voyage partagé (bouton ci-dessus) ; les dates et le code QR se trouvent sur le voyage partagé (/pot/…).",
+    es: "El Calendario (.ics) necesita fechas reales y el código QR un enlace compartido del viaje — guarda el viaje como viaje compartido (botón arriba); las fechas y el código QR están en el viaje compartido (/pot/…).",
+  },
   ctaGo: { sl: "Zaženi na poti", en: "Start on the road", it: "Parti per la strada", de: "Los geht's auf der Straße", fr: "Prends la route", es: "Sal a la carretera" },
   cloudSave: {
     sl: "Shrani kot skupinsko pot",
@@ -386,6 +409,21 @@ export default function JourneyPage() {
             </div>
           </div>
 
+          {/* QA U4: interesi, ki so sestavili načrt — preveden prikaz
+              (plan.meta.interests so kanonski žetoni motorja; neznan žeton
+              → iskreno surova oblika). Osnutek iz Moje poti žetonov nima
+              → vrstica čisto izpade (iskrena odsotnost). */}
+          {data.plan.meta?.interests?.length ? (
+            <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <span className="font-semibold">{pick(l, L.interestsLabel)}:</span>
+              {data.plan.meta.interests.map((i) => (
+                <Badge key={i} variant="outline" className="text-[11px]">
+                  {interestDisplay(i, l)}
+                </Badge>
+              ))}
+            </p>
+          ) : null}
+
           {/* Dnevna navigacija */}
           {data.plan.days.length > 1 && (
             <nav className="mt-4" aria-label={pick(l, L.dayNav)}>
@@ -511,10 +549,37 @@ export default function JourneyPage() {
               )}
               {pdfBusy ? pick(l, L.pdfBusy) : pick(l, L.pdfBtn)}
             </Button>
+            {/* QA U10: Koledar (.ics) iskreno ONEMOGOČEN — ta pogled nima
+                realnih datumov (nosijo jih deljene pote); nikoli izmišljenih
+                „približnih“ datumov (buildTripIcs fail-closed). */}
+            <Button
+              size="lg"
+              variant="secondary"
+              className="min-h-12"
+              disabled
+              title={pick(l, L.icsNoDatesTitle)}
+              aria-describedby="potovanje-ics-hint"
+            >
+              <CalendarDays className="size-5" aria-hidden="true" />
+              {pick(l, L.icsBtn)}
+            </Button>
+            <Button
+              size="lg"
+              variant="secondary"
+              className="min-h-12"
+              onClick={() => window.print()}
+            >
+              <Printer className="size-5" aria-hidden="true" />
+              {pick(l, L.print)}
+            </Button>
           </div>
           <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">
             <CloudUpload className="mr-1 inline size-3.5 align-[-2px]" aria-hidden="true" />
             {pick(l, L.cloudPerks)}
+          </p>
+          {/* QA U10: iskreno napotilo ob onemogočenem .ics (+ kje je QR). */}
+          <p id="potovanje-ics-hint" className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+            {pick(l, L.icsNoDates)}
           </p>
           {cloudError && (
             <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">

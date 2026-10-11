@@ -3,9 +3,11 @@
 import {
   AlertTriangle,
   ArrowRight,
+  CalendarDays,
   ChevronDown,
   ChevronUp,
   CircleCheck,
+  FileDown,
   Footprints,
   Info,
   Link2,
@@ -55,7 +57,10 @@ import {
   type PlannerLang,
 } from "@/lib/itinerary-engine";
 import { myTrip } from "@/lib/my-trip";
+import { interestDisplay } from "@/lib/interests-i18n";
 import { saveLastPlan } from "@/lib/plan-store";
+import { buildTripPdf, fromItineraryPlan } from "@/lib/pdf/trip-pdf-doc";
+import { downloadTripPdf } from "@/lib/pdf/trip-pdf-render";
 import { buildDaySegments } from "@/lib/day-segments";
 import { normalizeInterests, REGIONS, regionLabel, typeLabel } from "@/lib/slovenia-data";
 import type { Budget, Season } from "@/lib/slovenia-data";
@@ -199,7 +204,26 @@ const L = {
   save: { sl: "Shrani v Moja pot", en: "Save to My trip", it: "Salva in I miei viaggi", de: "In Meine Reisen speichern", fr: "Enregistrer dans Mes voyages", es: "Guardar en Mis viajes" },
   saved: { sl: "Shranjeno v Moja pot", en: "Saved to My trip", it: "Salvato in I miei viaggi", de: "In Meine Reisen gespeichert", fr: "Enregistré dans Mes voyages", es: "Guardado en Mis viajes" },
   go: { sl: "Zaženi na poti", en: "Start on the road", it: "Inizia il viaggio", de: "Unterwegs starten", fr: "Démarrer sur la route", es: "Empezar en camino" },
-  print: { sl: "Izpiši / natisni", en: "Print", it: "Stampa", de: "Drucken", fr: "Imprimer", es: "Imprimir" },
+  // QA U10 (2026-10-11): POENOTEN nabor izvozov na vseh treh pogledih
+  // (/nacrtuj, /potovanje, /pot/[shareId]) — ista imena gumbov za ista
+  // dejanja (prej: „Izpiši / natisni“ tu, „Natisni / shrani PDF“ na /pot).
+  print: { sl: "Natisni", en: "Print", it: "Stampa", de: "Drucken", fr: "Imprimer", es: "Imprimir" },
+  pdfBtn: { sl: "Izvozi PDF", en: "Export PDF", it: "Esporta PDF", de: "PDF exportieren", fr: "Exporter en PDF", es: "Exportar PDF" },
+  pdfBusy: { sl: "Pripravljam PDF …", en: "Preparing PDF …", it: "Preparo il PDF …", de: "PDF wird vorbereitet …", fr: "Préparation du PDF …", es: "Preparando PDF …" },
+  pdfErr: { sl: "PDF izvoz ni uspel — poskusi znova.", en: "PDF export failed — try again.", it: "Esportazione PDF non riuscita — riprova.", de: "PDF-Export fehlgeschlagen — bitte erneut versuchen.", fr: "Échec de l'export PDF — réessaie.", es: "Fallo al exportar PDF — reinténtalo." },
+  icsBtn: { sl: "Koledar (.ics)", en: "Calendar (.ics)", it: "Calendario (.ics)", de: "Kalender (.ics)", fr: "Calendrier (.ics)", es: "Calendario (.ics)" },
+  // QA U10: načrtovalnik nima realnih datumov (dnevi so zaporedne
+  // številke; datumi se določijo na deljeni poti) → buildTripIcs bi vrnil
+  // null. Iskrena onemogočitev z napotilom, ne tiha oz. izmišljeni datumi.
+  icsNoDatesTitle: { sl: "Najprej shrani datume", en: "Save the dates first", it: "Prima salva le date", de: "Zuerst die Daten speichern", fr: "Enregistre d'abord les dates", es: "Primero guarda las fechas" },
+  icsNoDates: {
+    sl: "Izvoz v koledar (.ics) potrebuje realne datume poti — shrani načrt, odpri potovanje in ga shrani kot skupinsko pot; datume nato določiš na deljeni poti (/pot/…).",
+    en: "The calendar (.ics) export needs real trip dates — save the plan, open the journey and save it as a shared trip; you can then set the dates on the shared trip (/pot/…).",
+    it: "L'esportazione Calendario (.ics) richiede le date reali del viaggio — salva il piano, apri il viaggio e salvalo come viaggio condiviso; le date le imposti poi sul viaggio condiviso (/pot/…).",
+    de: "Der Kalenderexport (.ics) braucht echte Reisedaten — speichere den Plan, öffne die Reise und speichere sie als geteilte Reise; die Daten legst du dann auf der geteilten Reise fest (/pot/…).",
+    fr: "L'export Calendrier (.ics) nécessite les vraies dates du voyage — enregistre le plan, ouvre le voyage et enregistre-le comme voyage partagé ; tu définiras ensuite les dates sur le voyage partagé (/pot/…).",
+    es: "La exportación a Calendario (.ics) necesita fechas reales del viaje — guarda el plan, abre el viaje y guárdalo como viaje compartido; las fechas las defines luego en el viaje compartido (/pot/…).",
+  },
   openJourney: { sl: "Odpri potovanje", en: "Open the journey", it: "Apri il viaggio", de: "Reise öffnen", fr: "Ouvrir le voyage", es: "Abrir el viaje" },
   emptyTitle: { sl: "Načrt še ni sestavljen", en: "No plan yet", it: "Nessun piano per ora", de: "Noch kein Plan", fr: "Pas encore de plan", es: "Aún no hay plan" },
   emptyBody: {
@@ -458,6 +482,10 @@ function PlannerApp() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedMsg, setSavedMsg] = useState(false);
+  // QA U10: PDF izvoz načrta (enake knjižnice kot /potovanje in /pot —
+  // jsPDF + Liberation Sans se naložita šele ob kliku, leni chunk).
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
   const startedRef = React.useRef(false);
 
   const generate = useCallback(
@@ -668,11 +696,19 @@ function PlannerApp() {
     void generate(next);
   };
 
+  // QA U4: iskanje med čipi dela po SLOVENSKEM kanonu IN po prikaznem
+  // prevodu (v EN vmesniku uporabnik išče „family“ in najde „družina“).
   const visibleChips = useMemo(() => {
     const q = chipSearch.trim().toLowerCase();
-    const filtered = q ? chips.filter((c) => c.label.toLowerCase().includes(q)) : chips;
+    const filtered = q
+      ? chips.filter(
+          (c) =>
+            c.label.toLowerCase().includes(q) ||
+            interestDisplay(c.label, l).toLowerCase().includes(q)
+        )
+      : chips;
     return showAllChips || q ? filtered : filtered.slice(0, POPULAR_CHIPS);
-  }, [chips, chipSearch, showAllChips]);
+  }, [chips, chipSearch, showAllChips, l]);
 
   const saveToMyTrip = () => {
     if (!plan) return;
@@ -689,6 +725,25 @@ function PlannerApp() {
     // Locale-zavedajoči push (iz @/i18n/navigation) — /en prefix se ohrani.
     router.push("/na-poti?start=1");
   };
+
+  /**
+   * QA U10: IZVOZI PDF trenutnega načrta — isti tok kot na /potovanje
+   * (fromItineraryPlan + buildTripPdf + downloadTripPdf; brez realnih
+   * datumov, ker jih načrtovalnik nima — PDF izpiše dneve po zaporedju).
+   */
+  const exportPdf = useCallback(async () => {
+    if (!plan || pdfBusy) return;
+    setPdfBusy(true);
+    setPdfError(null);
+    try {
+      const doc = buildTripPdf(fromItineraryPlan(plan, null), l);
+      await downloadTripPdf(doc);
+    } catch {
+      setPdfError(pick(l, L.pdfErr));
+    } finally {
+      setPdfBusy(false);
+    }
+  }, [plan, pdfBusy, l]);
 
   return (
     <>
@@ -801,7 +856,9 @@ function PlannerApp() {
                 <p className="mt-1 text-muted-foreground">
                   {pick(l, L.saInterestsLabel)}:{" "}
                   {saResult.suggestion.interests.length > 0
-                    ? saResult.suggestion.interests.join(", ")
+                    ? saResult.suggestion.interests
+                        .map((i) => interestDisplay(i, l))
+                        .join(", ")
                     : "—"}{" "}
                   · {pick(l, L.saRegionLabel)}:{" "}
                   {saResult.suggestion.region
@@ -893,10 +950,13 @@ function PlannerApp() {
                       onClick={() => toggleInterest(label)}
                       className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-primary/50 bg-primary/10 px-3 text-sm font-medium text-primary transition-colors hover:bg-primary/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                     >
-                      {label}
+                      {/* QA U4: prikaz je PREVEDEN (interestDisplay), identiteta
+                          žetona ostane kanonska — motor in ključi se ne
+                          spreminjajo; neznan žeton → surova oblika. */}
+                      {interestDisplay(label, l)}
                       <X className="size-3.5" aria-hidden="true" />
                       <span className="sr-only">
-                        {pick(l, L.remove)}: {label}
+                        {pick(l, L.remove)}: {interestDisplay(label, l)}
                       </span>
                     </button>
                   </li>
@@ -971,7 +1031,8 @@ function PlannerApp() {
                         : "bg-background text-foreground/80 hover:bg-accent hover:text-accent-foreground"
                     }`}
                   >
-                    {chip.label}
+                    {/* QA U4: preveden prikaz čipa (kanon ostane chip.label). */}
+                    {interestDisplay(chip.label, l)}
                     <span className="text-xs text-muted-foreground" aria-hidden="true">
                       {chip.count}
                     </span>
@@ -1160,6 +1221,9 @@ function PlannerApp() {
             saved={savedMsg}
             onSave={saveToMyTrip}
             onGo={startGo}
+            pdfBusy={pdfBusy}
+            pdfError={pdfError}
+            onPdf={() => void exportPdf()}
           />
         )}
       </section>
@@ -1178,6 +1242,9 @@ function PlanResult({
   saved,
   onSave,
   onGo,
+  pdfBusy,
+  pdfError,
+  onPdf,
 }: {
   plan: ItineraryPlan;
   lang: PlannerLang;
@@ -1186,6 +1253,10 @@ function PlanResult({
   saved: boolean;
   onSave: () => void;
   onGo: () => void;
+  /** QA U10: PDF izvoz (stanje + akcija iz PlannerApp). */
+  pdfBusy: boolean;
+  pdfError: string | null;
+  onPdf: () => void;
 }) {
   const l = useLocale();
   const allStops = plan.days.flat();
@@ -1286,6 +1357,38 @@ function PlanResult({
           <Footprints className="size-5" aria-hidden="true" />
           {pick(l, L.go)}
         </Button>
+        {/* QA U10: poenoten nabor izvozov — Izvozi PDF (živ tok kot na
+            /potovanje in /pot) + Koledar (.ics) iskreno onemogočen. */}
+        <Button
+          type="button"
+          size="lg"
+          variant="outline"
+          className="min-h-12"
+          onClick={onPdf}
+          disabled={pdfBusy}
+        >
+          {pdfBusy ? (
+            <Loader2 className="size-5 animate-spin" aria-hidden="true" />
+          ) : (
+            <FileDown className="size-5" aria-hidden="true" />
+          )}
+          {pdfBusy ? pick(l, L.pdfBusy) : pick(l, L.pdfBtn)}
+        </Button>
+        {/* QA U10: .ics brez realnih datumov je ONEMOGOČEN z iskrenim
+            napotilom (buildTripIcs fail-closed vrne null — nikoli
+            izmišljeni „približni“ datumi). */}
+        <Button
+          type="button"
+          size="lg"
+          variant="outline"
+          className="min-h-12"
+          disabled
+          title={pick(l, L.icsNoDatesTitle)}
+          aria-describedby="nacrtuj-ics-hint"
+        >
+          <CalendarDays className="size-5" aria-hidden="true" />
+          {pick(l, L.icsBtn)}
+        </Button>
         <Button
           type="button"
           size="lg"
@@ -1303,6 +1406,15 @@ function PlanResult({
           </Link>
         </Button>
       </div>
+
+      {pdfError && (
+        <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">
+          {pdfError}
+        </p>
+      )}
+      <p id="nacrtuj-ics-hint" className="mt-2 text-xs leading-relaxed text-muted-foreground">
+        {pick(l, L.icsNoDates)}
+      </p>
 
       <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
         {pick(l, L.deterministic)}

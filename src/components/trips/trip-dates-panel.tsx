@@ -13,6 +13,7 @@ import {
   eachTripDay,
   formatDateShort,
   forecastAvailabilityFor,
+  isIsoDate,
   todayIso,
   validateTripDates,
   weekdayShort,
@@ -48,7 +49,17 @@ const L = {
   end: { sl: "Konec", en: "End", it: "Fine", de: "Ende", fr: "Fin", es: "Fin" },
   save: { sl: "Shrani datume", en: "Save dates", it: "Salva le date", de: "Daten speichern", fr: "Enregistrer les dates", es: "Guardar las fechas" },
   clear: { sl: "Počisti", en: "Clear", it: "Cancella", de: "Leeren", fr: "Effacer", es: "Borrar" },
-  saved: { sl: "Datumi shranjeni ✓", en: "Dates saved ✓", it: "Date salvate ✓", de: "Daten gespeichert ✓", fr: "Dates enregistrées ✓", es: "Fechas guardadas ✓" },
+  // QA U2 (2026-10-11): tiho shranjevanje — potrditev mora povedati KATERI
+  // datumi so shranjeni (lokaliziran obseg), ne samo splošni ✓.
+  savedRange: {
+    sl: (r: string) => `Datumi shranjeni: ${r} ✓`,
+    en: (r: string) => `Dates saved: ${r} ✓`,
+    it: (r: string) => `Date salvate: ${r} ✓`,
+    de: (r: string) => `Daten gespeichert: ${r} ✓`,
+    fr: (r: string) => `Dates enregistrées : ${r} ✓`,
+    es: (r: string) => `Fechas guardadas: ${r} ✓`,
+  },
+  cleared: { sl: "Datumi pobrisani ✓", en: "Dates cleared ✓", it: "Date cancellate ✓", de: "Daten gelöscht ✓", fr: "Dates effacées ✓", es: "Fechas borradas ✓" },
   noneYet: {
     sl: "Datumi še niso določeni — vnesi jih, da se bodo dnevi poti in vreme vezali na prave datume.",
     en: "No dates yet — set them so trip days and weather bind to real dates.",
@@ -94,6 +105,57 @@ interface DayWeatherChip {
   day?: WeatherDay;
 }
 
+/** Lokalna ISO oblika (za razstavitev komponent v kompaktnem zapisu obsega). */
+const ISO_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/**
+ * Krajka imena mesecev za kompaktni zapis obsega (QA U2). Lokalne tabele —
+ * trip-dates.ts izvozi samo formatirne funkcije (formatDateShort/Long),
+ * meseške tabele pa ostajajo zasebne; vrednosti so usklajene s kanonom.
+ */
+const RANGE_MONTHS: Record<"sl" | "en" | "it" | "de" | "fr" | "es", readonly string[]> = {
+  sl: ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "avg", "sep", "okt", "nov", "dec"],
+  en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+  it: ["gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"],
+  de: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"],
+  fr: ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."],
+  es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"],
+};
+
+/**
+ * Kompakten zapis obsega datumov poti (QA U2, čista funkcija — testabilna):
+ *  - enodnevna pota → en datum (formatDateShort);
+ *  - isti mesec in leto → „12.–14. okt 2026" / „Oct 12–14, 2026" / …;
+ *  - prek mesecev/let → oba kratka datuma ločena z pomišljajem;
+ *  - neveljaven podatek → iskreno surov zapis (nikoli izmišljenega datuma).
+ * DST-varno: dela na lokalnih komponentah YYYY-MM-DD (kanon trip-dates).
+ */
+export function tripDatesRangeLabel(
+  start: string,
+  end: string,
+  lang: "sl" | "en" | "it" | "de" | "fr" | "es" = "sl"
+): string {
+  const a = ISO_DATE_RE.exec(start);
+  const b = ISO_DATE_RE.exec(end);
+  if (!a || !b || !isIsoDate(start) || !isIsoDate(end)) return `${start} – ${end}`;
+  if (start === end) return formatDateShort(start, lang);
+  const y1 = Number(a[1]);
+  const m1 = Number(a[2]);
+  const d1 = Number(a[3]);
+  const y2 = Number(b[1]);
+  const m2 = Number(b[2]);
+  const d2 = Number(b[3]);
+  if (y1 === y2 && m1 === m2) {
+    const m = RANGE_MONTHS[lang][m1 - 1] ?? RANGE_MONTHS.sl[m1 - 1] ?? "";
+    const yr = String(y1);
+    if (lang === "en") return `${m} ${d1}–${d2}, ${yr}`;
+    if (lang === "de") return `${d1}.–${d2}. ${m} ${yr}`;
+    if (lang === "it" || lang === "fr" || lang === "es") return `${d1}–${d2} ${m} ${yr}`;
+    return `${d1}.–${d2}. ${m} ${yr}`;
+  }
+  return `${formatDateShort(start, lang)} – ${formatDateShort(end, lang)}`;
+}
+
 export function TripDatesPanel({
   shareId,
   canEdit,
@@ -114,7 +176,10 @@ export function TripDatesPanel({
   const [end, setEnd] = React.useState(tripDates?.end ?? "");
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [savedFlash, setSavedFlash] = React.useState(false);
+  /** QA U2: shranjeni obseg (za potrditev) | "cleared" | null. */
+  const [savedFlash, setSavedFlash] = React.useState<
+    { start: string; end: string } | "cleared" | null
+  >(null);
 
   React.useEffect(() => {
     setStart(tripDates?.start ?? "");
@@ -124,7 +189,7 @@ export function TripDatesPanel({
   const save = async (next: TripDates | null) => {
     setBusy(true);
     setError(null);
-    setSavedFlash(false);
+    setSavedFlash(null);
     try {
       const r = await fetch(`/api/trips/${encodeURIComponent(shareId)}`, {
         method: "PATCH",
@@ -136,9 +201,12 @@ export function TripDatesPanel({
         setError(data?.error ?? pick(l, L.errGeneric));
         return;
       }
-      setSavedFlash(true);
+      // QA U2: potrditev pove KATERI datumi so shranjeni (lokaliziran
+      // obseg) — prej je bil badge splošen in 2,5 s neopazen; zdaj 4 s
+      // + role=status (tudi bralniki zaslona slišijo potrditev).
+      setSavedFlash(next ? { start: next.start, end: next.end } : "cleared");
       onSaved?.();
-      window.setTimeout(() => setSavedFlash(false), 2500);
+      window.setTimeout(() => setSavedFlash(null), 4000);
     } catch {
       setError(pick(l, L.errGeneric));
     } finally {
@@ -277,8 +345,12 @@ export function TripDatesPanel({
               </Button>
             )}
             {savedFlash && (
-              <Badge className="self-center" variant="secondary">
-                {pick(l, L.saved)}
+              <Badge className="self-center" variant="secondary" role="status">
+                {savedFlash === "cleared"
+                  ? pick(l, L.cleared)
+                  : pick(l, L.savedRange)(
+                      tripDatesRangeLabel(savedFlash.start, savedFlash.end, lang)
+                    )}
               </Badge>
             )}
           </form>

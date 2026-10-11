@@ -35,6 +35,13 @@
  *    VEZANO NA REFERENCO dni (isti kanon kot predogled vlečenja v 2.29.0):
  *    regeneracija/reurejanje samodejno razveljavi zastarelo stanje — brez
  *    setState v efektu (eslint react-hooks/set-state-in-effect čist).
+ *  - POLIR5 A (2.32.0): neobvezen prop onMeasured — ob VSAKEM odgovoru
+ *    proxyja (tudi delnem) pokliče izmerjene vrednosti dni { day, status,
+ *    km?, min? } (km = distanceM/1000 na 1 decimalko, min = durationS/60 na
+ *    5 — čista zaokrožitvi measuredKm/measuredMin iz plan-map-data). Padli
+ *    dnevi so v seznamu s statusom "straight" in BREZ km/min (iskrena
+ *    odsotnost). IZRIS SE NE SPREMINI — zemljevid ostaja sloj črt; izmerna
+ *    poročila so POVZETEK NAČRTA v view.tsx, ne vir urnika (odločitev 2.30.0).
  *
  * SSR: Leaflet potrebuje window (že uvoz modula leaflet brez DOM povzroči
  * „window is not defined") — komponento nalagaj IZKLJUČNO klientno:
@@ -62,9 +69,12 @@ import {
 import { pick } from "@/lib/i18n-pick";
 import {
   DAY_COLORS,
+  measuredKm,
+  measuredMin,
   planMapData,
   planMapLines,
   type DayGeometry,
+  type MeasuredDay,
   type PlanMapMarker,
 } from "@/lib/plan-map-data";
 import type { TripStop } from "@/lib/types";
@@ -174,6 +184,14 @@ export interface PlanMapProps {
   days: TripStop[][];
   highlightId?: string | null;
   onMarkerClick?: (stopId: string) => void;
+  /**
+   * POLIR5 A (2.32.0): neobvezen povzetek IZMERJENIH dni (km/min iz OSRM
+   * distance/duration). Pokliče se ob VSAKEM odgovoru proxyja — tudi delnem:
+   *  - status "route" + km/min (km na 1 decimalko, min na 5) — izmerjeno;
+   *  - status "straight" BREZ km/min — padel dan (fail-closed proxyja).
+   * Privzeto undefined (skupni pogled in /potovanje se NE spreminjata).
+   */
+  onMeasured?: (stats: MeasuredDay[]) => void;
 }
 
 /**
@@ -292,7 +310,12 @@ function PlanMarker({
  * Imenovani export PlanMap (nalaganje izključno klientno: glej SSR opombo
  * na vrhu modula).
  */
-export function PlanMap({ days, highlightId, onMarkerClick }: PlanMapProps) {
+export function PlanMap({
+  days,
+  highlightId,
+  onMarkerClick,
+  onMeasured,
+}: PlanMapProps) {
   const l = useLocale();
 
   // Čista izpeljava (memo: isti `days` → isti objekti, zato se tooltipi
@@ -336,19 +359,33 @@ export function PlanMap({ days, highlightId, onMarkerClick }: PlanMapProps) {
         const daysOut = (body as { days?: unknown }).days;
         if (!Array.isArray(daysOut)) return;
         const routes: Record<number, [number, number][]> = {};
+        // POLIR5 A: izmerni povzetek VSAKEGA dneva odgovora (tudi padlega —
+        // status "straight" brez km/min). Vrstni red = vrstni red daysOut.
+        const stats: MeasuredDay[] = [];
         for (const entry of daysOut) {
           if (typeof entry !== "object" || entry === null) continue;
           const e = entry as {
             day?: unknown;
             status?: unknown;
             geometry?: unknown;
+            distanceM?: unknown;
+            durationS?: unknown;
           };
-          if (e.status !== "route") continue; // straight/padec dneva → črtkana
           if (typeof e.day !== "number") continue;
           const origin = eligible[e.day]; // day = indeks dneva V ZAHTEVI
           if (!origin) continue;
+          if (e.status !== "route") {
+            // straight/padec dneva → črtkana črta, izmerni povzetek brez števil.
+            stats.push({ day: origin.dayIdx, status: "straight" });
+            continue;
+          }
           const geometry = e.geometry;
-          if (!Array.isArray(geometry) || geometry.length < 2) continue;
+          if (!Array.isArray(geometry) || geometry.length < 2) {
+            // Obrambno: "route" z slabo geometry ni izmerjen dan — iskrena
+            // ocena (straight), ne polna črta iz sumljivih točk.
+            stats.push({ day: origin.dayIdx, status: "straight" });
+            continue;
+          }
           const pts: [number, number][] = [];
           let valid = true;
           for (const p of geometry) {
@@ -366,9 +403,34 @@ export function PlanMap({ days, highlightId, onMarkerClick }: PlanMapProps) {
               break;
             }
           }
-          if (valid) routes[origin.dayIdx] = pts;
+          // IZMERJENI distanceM/durationS iz istega odgovora (aditivna polji
+          // 2.32.0): končna, nenegativna števila — drugače dan NI izmerjen
+          // (fail-closed: ne izmišljujemo števil, ki jih proxy ni poslal).
+          const distanceM = e.distanceM;
+          const durationS = e.durationS;
+          const numsOk =
+            typeof distanceM === "number" &&
+            Number.isFinite(distanceM) &&
+            distanceM >= 0 &&
+            typeof durationS === "number" &&
+            Number.isFinite(durationS) &&
+            durationS >= 0;
+          if (!valid || !numsOk) {
+            stats.push({ day: origin.dayIdx, status: "straight" });
+            continue;
+          }
+          routes[origin.dayIdx] = pts;
+          stats.push({
+            day: origin.dayIdx,
+            status: "route",
+            km: measuredKm(distanceM),
+            min: measuredMin(durationS),
+          });
         }
         setRouteState({ forDays: days, routes });
+        // Povzetek izmerjenih dni gre navzgor ob vsakem odgovoru (star podpis
+        // brez onMeasured se NE pokliče — skupni pogled ostaja pri 2.30.0).
+        onMeasured?.(stats);
       })
       .catch(() => {
         // fail-closed: napaka/odmerek → črtkane črte ostanejo (0 utripanja)
@@ -376,7 +438,7 @@ export function PlanMap({ days, highlightId, onMarkerClick }: PlanMapProps) {
     return () => {
       cancelled = true; // days so se spremenila → zastarel odgovor ignoriramo
     };
-  }, [days]);
+  }, [days, onMeasured]);
 
   // Samo stanje, ki pripada TRENUTNI referenci dni (zastarelo → prazno).
   const routes = routeState.forDays === days ? routeState.routes : NO_ROUTES;

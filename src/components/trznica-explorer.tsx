@@ -175,7 +175,10 @@ export function TrznicaExplorer() {
     <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <PageHeader kicker={t("kicker")} title={t("title")} lead={t("lead")}>
         <div className="mt-4">
-          <Badge variant="outline" className="border-primary/40 text-primary">
+          {/* POLIR7 (2.34.0): whitespace-normal — badge.tsx osnova ima whitespace-nowrap,
+              badge pa je STAVEK (SL 24 px, DE 32 px preliva ekrana 390 px).
+              Preklop deluje zanesljivo, ker Badge uporablja cn()/tailwind-merge. */}
+          <Badge variant="outline" className="border-primary/40 text-left whitespace-normal text-primary">
             <BadgeCheck className="size-3.5" aria-hidden="true" />
             {t("badge")}
           </Badge>

@@ -826,8 +826,15 @@ export function SharedTripView({ shareId }: { shareId: string }) {
               </div>
             )}
 
+            {/* POLIR7 (2.34.0): min-w-0 na predmetih mreže — truncate URL drugače
+                nowrap (min-vsebina) raznese stolpec (defensivecss „Minimum Content
+                Size In CSS grid" / css-tricks „Preventing a Grid Blowout"): predmet
+                mreže ima privzeto min-width:auto, zato nowrap URL (min-vsebina
+                369 px → kartica 411 px) preliva ekran 390 px. QR razdelek ostaja
+                v DOM pod VSEMI zavihki (Pot/Sodelovanje/Ankete/Klepet/
+                Rezervacije), zato ena napaka povzroča preliv povsod. */}
             <div className="grid gap-4 sm:grid-cols-2 print:hidden">
-              <Card>
+              <Card className="min-w-0">
                 <CardContent className="p-5">
                   <h3 className="flex items-center gap-2 text-sm font-bold">
                     <QrCode className="size-4 text-primary" aria-hidden="true" />
@@ -851,7 +858,8 @@ export function SharedTripView({ shareId }: { shareId: string }) {
                   </p>
                 </CardContent>
               </Card>
-              <Card className="border-primary/25 bg-primary/5">
+              {/* POLIR7: min-w-0 tudi na kartici vira — isti predmet mreže. */}
+              <Card className="min-w-0 border-primary/25 bg-primary/5">
                 <CardContent className="flex flex-col justify-start p-5">
                   <h3 className="flex items-center gap-2 text-sm font-bold">
                     <CloudUpload className="size-4 text-primary" aria-hidden="true" />
@@ -1102,8 +1110,11 @@ export function SharedTripView({ shareId }: { shareId: string }) {
           )}
 
           {/* QR izris + opomba (ne tiska) — P0-G: pravi izris */}
+          {/* POLIR7 (2.34.0): min-w-0 na predmetih mreže — ISTA past kot v oblačni
+              veji (defensivecss „Minimum Content Size In CSS grid"): nowrap URL
+              pod QR kodo raznese stolpec mreže na ozkih ekranih. */}
           <div className="mt-10 grid gap-4 sm:grid-cols-2 print:hidden">
-            <Card>
+            <Card className="min-w-0">
               <CardContent className="p-5">
                 <h3 className="flex items-center gap-2 text-sm font-bold">
                   <QrCode className="size-4 text-primary" aria-hidden="true" />
@@ -1122,7 +1133,8 @@ export function SharedTripView({ shareId }: { shareId: string }) {
                 </p>
               </CardContent>
             </Card>
-            <Card className="border-primary/25 bg-primary/5">
+            {/* POLIR7: min-w-0 tudi na kartici vira — isti predmet mreže. */}
+            <Card className="min-w-0 border-primary/25 bg-primary/5">
               <CardContent className="flex flex-col justify-start p-5">
                 <h3 className="flex items-center gap-2 text-sm font-bold">
                   <HardDrive className="size-4 text-primary" aria-hidden="true" />

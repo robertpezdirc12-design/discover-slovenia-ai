@@ -164,7 +164,10 @@ describe("advisor/answer — živo vreme (skripta, podatkovni vir)", () => {
       })
     );
     expect(calls).toBe(0); // ni ciljev → sploh ne sprašujemo vira
-    expect(a).toContain("Žive vremenske napovedi nimam"); // jedro iskreno
+    // QA U5 (2026-10-11): jedro je iskreno NEZNANO, a NE trdi več, da
+    // napovedi ne obstajajo — dnevna napoved živi na strani poti (vir).
+    expect(a).toContain("NEZNANO");
+    expect(a).toContain("Open-Meteo");
   });
 });
 

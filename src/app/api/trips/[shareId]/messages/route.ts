@@ -146,7 +146,16 @@ export async function POST(request: Request, { params }: RouteParams) {
     // P1 (2.24.0): SKRIPTNI svetovalec — deterministična sestava iz
     // kanonskih virov (register + STO + živo vreme), ob napaki vira pa
     // fail-quiet padec na čisto jedro (answerAiQuestion, 0 omrežja).
-    const answer = await answerAdvisorScript(text, plan, { reservations });
+    // QA U5 (2026-10-11): svetovalcu podamo še realne datume poti
+    // (P0-E stolpca dateStart/dateEnd — lokalna „YYYY-MM-DD"), da zna
+    // odgovarjati z DNEVNO napovedjo za prihodnje dni (»vreme jutri«).
+    const answer = await answerAdvisorScript(text, plan, {
+      reservations,
+      tripDates:
+        journey.dateStart && journey.dateEnd
+          ? { start: journey.dateStart, end: journey.dateEnd }
+          : null,
+    });
     const aiMessage = await db.tripMessage.create({
       data: {
         journeyId: journey.id,

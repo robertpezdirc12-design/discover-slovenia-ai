@@ -283,7 +283,7 @@ export function NextStepCard({
                         {pick(l, L.secondaryLead)}
                         <Link
                           href={secondary.ctaHref}
-                          className="font-semibold text-primary hover:underline"
+                          className="inline-flex min-h-6 items-center font-semibold text-primary hover:underline"
                         >
                           {secondary.title}
                         </Link>

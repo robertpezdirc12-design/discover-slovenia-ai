@@ -150,13 +150,13 @@ function answerWeather(body: string, stops: PlanStopRef[]): string {
   const mentioned = findMentionedDestinations(body);
   const targets = mentioned.length > 0 ? mentioned : stops.map((s) => s.dest).filter((d): d is Destination => Boolean(d)).slice(0, 3);
   if (targets.length === 0) {
-    return "Žive vremenske napovedi nimam — odgovarjam izključno iz podatkov poti in baze destinacij (0 zunanjih klicev). Za aktualno napoved preveri ARSO (meteo.arso.gov.si); pred odhodom pa glej zavihek Pot — vsak postanek ima navedene sezone.";
+    return "Trenutno vreme je NEZNANO — odgovarjam izključno iz podatkov poti in baze destinacij (0 zunanjih klicev). Dnevno napoved za dneve poti vidiš na strani potovanja (vir Open-Meteo); za uradno napoved preveri ARSO (meteo.arso.gov.si); pred odhodom pa glej zavihek Pot — vsak postanek ima navedene sezone.";
   }
   const lines = targets.map(
     (d) =>
       `· ${d.name}: najlepše v ${d.bestSeason.map((s) => SEASON_LABELS[s] ?? s).join(", ") || "NEZNANO (ni podatka)"}`
   );
-  return `Trenutno vreme je NEZNANO — nimam živih napovedi (iskrenost: 0 zunanjih klicev, odgovarjam samo iz baze 38 destinacij). Preveri ARSO (meteo.arso.gov.si). Iz baze pa vem, kdaj je najlepše:\n${lines.join("\n")}`;
+  return `Trenutno vreme je NEZNANO — vremenski vir je pravkar odpovedal (iskrena meja tega sloja: 0 zunanjih klicev, odgovarjam samo iz baze 38 destinacij). Dnevno napoved za dneve poti vidiš na strani potovanja (vir Open-Meteo); za uradno napoved preveri ARSO (meteo.arso.gov.si). Iz baze pa vem, kdaj je najlepše:\n${lines.join("\n")}`;
 }
 
 function answerDistance(body: string, stops: PlanStopRef[]): string {
@@ -296,7 +296,7 @@ function answerFallback(plan: SharedPlan, stops: PlanStopRef[]): string {
     parts.push(`Najbolje ocenjen postanek: ${top.name} (${top.rating}/10) — ${top.tagline}.`);
   }
   parts.push(
-    "Odgovarjam deterministično iz baze 38 destinacij in podatkov te poti (0 AI žetonov, 0 zunanjih klicev). Vprašaj me o vremenu (iskreno: napovedi nimam), razdaljah med postanki, predlogih, cenah ali kateri destinaciji."
+    "Odgovarjam deterministično iz baze 38 destinacij in podatkov te poti (0 AI žetonov, 0 zunanjih klicev). Vprašaj me o vremenu (trenutno stanje; ob shranjenih datumih poti tudi dnevna napoved), razdaljah med postanki, predlogih, cenah, hrani (zbirka Lokali) ali kateri destinaciji."
   );
   return parts.join("\n");
 }
@@ -310,7 +310,7 @@ function answerFallback(plan: SharedPlan, stops: PlanStopRef[]): string {
  * Izvoženo za testiranje (determinizem).
  */
 export const AI_GUARD_ANSWER =
-  "Tvoje sporočilo vsebuje znake poskusa navodil za AI (npr. »ignoriraj prejšnja navodila«). Jih ne izvajam in jih tudi ne ponavljam — sem deterministični svetovalec (0 AI žetonov, 0 zunanjih klicev) in odgovarjam samo na vprašanja o tvoji poti: vreme (iskreno: napovedi nimam), razdalje, predlogi, cene, destinacije.";
+  "Tvoje sporočilo vsebuje znake poskusa navodil za AI (npr. »ignoriraj prejšnja navodila«). Jih ne izvajam in jih tudi ne ponavljam — sem deterministični svetovalec (0 AI žetonov, 0 zunanjih klicev) in odgovarjam samo na vprašanja o tvoji poti: vreme (trenutno stanje; ob shranjenih datumih poti tudi dnevna napoved), razdalje, predlogi, cene, hrana, destinacije.";
 
 /**
  * Deterministični odgovor @AI na sporočilo (tele brez omembe @AI).

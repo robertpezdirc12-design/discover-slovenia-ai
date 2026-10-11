@@ -52,9 +52,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGeolocation, type UseGeolocation } from "@/hooks/use-geolocation";
+import { useOnlineStatus } from "@/hooks/use-online-status";
 import { Link, useRouter } from "@/i18n/navigation";
 import { asPickLocale, pick } from "@/lib/i18n-pick";
 import { intlDateLocale } from "@/lib/intl-locale";
+import {
+  CONNECTION_LABELS,
+  showsCachedWeather,
+  WEATHER_CACHED_LABEL,
+  WEATHER_OFFLINE_NOTE,
+  weatherNotice,
+  type WeatherFailureKind,
+} from "@/lib/go-offline";
 import {
   arrivalCheck,
   bearingDeg,
@@ -114,6 +123,12 @@ import {
  * startedAt, completed[] } (po vzorcu go-persist izvirnika). Deluje nad
  * zadnjim shranjenim načrtom (dai:last-plan) ali osnutkom iz Moje poti.
  * 100 % client-side — hidracija TEKOM mounta (brez mismatch-a).
+ *
+ * QA U12 (2026-10-11): živi kazatelj povezave v glavi (ConnectionBadge,
+ * navigator.onLine + dogodka online/offline) + ISKRENA opomba vremenske
+ * kartice, kadar ni na voljo zaradi povezave ("Ni povezave — vreme ni
+ * na voljo." ≠ generična napaka servisa); vreme ob odklopu, ki se še
+ * prikazuje, je oznakovano kot shranjeno (čas pridobitve fetchedAt).
  */
 
 const L = {
@@ -418,10 +433,47 @@ export default function GoModePage() {
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
       <PageHeader kicker={pick(l, L.kicker)} title={pick(l, L.title)} lead={pick(l, L.lead)} />
+      {/* QA U12: živi kazatelj povezave — majhen žeton pod glavo, desno
+          (nevsiljiv; med vožnjo/pohodom ne sme blokirati ali prekrivati
+          UI-ja). Stanje se osvežuje ŽIVO (dogodka online/offline). */}
+      <div className="mt-4 flex justify-end">
+        <ConnectionBadge l={l} />
+      </div>
       <Suspense fallback={<GoSkeleton />}>
         <GoModeApp />
       </Suspense>
     </div>
+  );
+}
+
+/**
+ * Živi kazatelj povezave (QA U12): zelena pika „Povezano“ / siva pika
+ * „Brez povezave“ (×6 jezikov, CONNECTION_LABELS). role="status" —
+ * spremembe se prijazno oznanijo bralnikom zaslona (aria-live polite,
+ * isti vzorec kot GPS kartica); pika je čista barvna pika (dotik ni
+ * potreben, barvo nosi tudi besedilo — ne samo barva).
+ */
+function ConnectionBadge({ l }: { l: string }) {
+  const status = useOnlineStatus();
+  const online = status === "online";
+  return (
+    <Badge
+      variant="outline"
+      role="status"
+      className={
+        online
+          ? "gap-1.5 border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+          : "gap-1.5 border-muted-foreground/30 bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+      }
+    >
+      <span
+        aria-hidden="true"
+        className={`size-2 shrink-0 rounded-full ${
+          online ? "bg-emerald-500" : "bg-muted-foreground/60"
+        }`}
+      />
+      {pick(l, CONNECTION_LABELS[status])}
+    </Badge>
   );
 }
 
@@ -1050,9 +1102,20 @@ function GoModeApp() {
  * Vreme na naslednjem postanku (Task 51-a) — ZASEBNOSTNI kanon izvirnika
  * (go-weather.ts): poizvedba gre po koordinatah NASLEDNJEGA POSTANKA načrta,
  * NIKOLI po uporabnikovi GPS lezi (razkrito v napisu vira). Stanja:
- * skeleton med nalaganjem, iskrena napaka ob nedosegljivem servisu (brez
- * izmišljenih podatkov), uspeh → temperatura (1 dec.), WMO oznaka, veter,
+ * skeleton med nalaganjem, uspeh → temperatura (1 dec.), WMO oznaka, veter,
  * padavine (samo če > 0 mm). En sam fetch; prekinitev ob odklopu.
+ *
+ * QA U12 (2026-10-11) — iskrena razložitev odsotnosti vremena:
+ *  - odklop (navigator.onLine === false oz. omrežna napaka poizvedbe,
+ *    vključno z zasilnim 503 { offline: true } service workerja) →
+ *    „Ni povezave — vreme ni na voljo.“ (WEATHER_OFFLINE_NOTE);
+ *  - napaka servisa ob POVEZANI napravi (502/429/oblika) → obstoječe
+ *    „Vreme trenutno ni dosegljivo.“ (povezava deluje — ne krivimo je);
+ *  - vreme, ki se ob odklopu še prikazuje (pomnilnik komponente ali
+ *    zasilni predpomnilnik SW), ostane vidno z oznako „shranjeno ob
+ *    HH:MM“ (fetchedAt — poštena starost, nikoli „sveža“ laž);
+ *  - ob PONOVNI povezavi se poizvedba samodejno ponovi (`online` je v
+ *    odvisnostih efekta) — opomba se pošteno nadomesti z osveženim stanjem.
  */
 function StopWeatherCard({
   lat,
@@ -1068,28 +1131,49 @@ function StopWeatherCard({
   lang: PlannerLang;
 }) {
   const [weather, setWeather] = useState<WeatherResponse | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [failureKind, setFailureKind] = useState<WeatherFailureKind | null>(null);
+  // Živo stanje povezave (QA U12) — skupni vir resnice s ConnectionBadge.
+  const status = useOnlineStatus();
+  const online = status === "online";
 
   useEffect(() => {
     const controller = new AbortController();
     let cancelled = false;
     // Stanje se ponastavi z remountom (glej key pri uporabi) — tukaj samo
     // asinhrono posodabljanje po odzivu (brez sinhronega setState v efektu).
+    // `online` v odvisnostih (QA U12): ob ponovni povezavi se poizvedba
+    // samodejno ponovi. Poizvedba gre ven TUDI brez povezave — service
+    // worker (api-public, network-first s predpomnilnikom) lahko pošteno
+    // vrne zadnje vreme (stari fetchedAt), sicer 503 { offline: true },
+    // ki ga fetchStopWeather prepozna kot omrežno napako.
     fetchStopWeather(lat, lng, controller.signal).then(
-      (w) => {
+      (r) => {
         if (cancelled) return;
-        if (w) setWeather(w);
-        else setFailed(true);
+        if (r.ok) {
+          setWeather(r.data);
+          setFailureKind(null);
+        } else {
+          setFailureKind(r.kind);
+        }
       },
       () => {
-        if (!cancelled) setFailed(true);
+        if (!cancelled) setFailureKind("network");
       }
     );
     return () => {
       cancelled = true;
       controller.abort();
     };
-  }, [lat, lng]);
+  }, [lat, lng, online]);
+
+  // Čista odločitev (testirana v tests/go-offline.test.ts): katera
+  // opomba velja in ali prikazano vreme nosi oznako „shranjeno“.
+  const notice = weatherNotice({
+    online,
+    failureKind,
+    hasWeather: weather !== null,
+  });
+  const cached = showsCachedWeather({ online, hasWeather: weather !== null });
 
   return (
     <Card className="mt-4">
@@ -1099,11 +1183,26 @@ function StopWeatherCard({
             <CloudSun className="size-4" aria-hidden="true" />
             {pick(l, L.weatherTitle)}
           </span>
-          {weather && (
-            <span className="text-lg font-bold tabular-nums text-primary">
-              {weather.current.temperatureC.toFixed(1)} °C
-            </span>
-          )}
+          <span className="flex items-center gap-2">
+            {cached && weather && (
+              <Badge
+                variant="outline"
+                className="border-muted-foreground/30 text-[11px] font-normal text-muted-foreground"
+              >
+                {WEATHER_CACHED_LABEL[lang](
+                  new Date(weather.fetchedAt).toLocaleTimeString(
+                    intlDateLocale(l),
+                    { hour: "2-digit", minute: "2-digit" }
+                  )
+                )}
+              </Badge>
+            )}
+            {weather && (
+              <span className="text-lg font-bold tabular-nums text-primary">
+                {weather.current.temperatureC.toFixed(1)} °C
+              </span>
+            )}
+          </span>
         </div>
 
         {weather ? (
@@ -1121,8 +1220,14 @@ function StopWeatherCard({
               </span>
             )}
           </p>
-        ) : failed ? (
-          <p className="mt-2 text-sm text-muted-foreground">{pick(l, L.weatherUnavailable)}</p>
+        ) : notice === "offline" ? (
+          <p className="mt-2 text-sm text-muted-foreground" role="status">
+            {pick(l, WEATHER_OFFLINE_NOTE)}
+          </p>
+        ) : notice === "unavailable" ? (
+          <p className="mt-2 text-sm text-muted-foreground">
+            {pick(l, L.weatherUnavailable)}
+          </p>
         ) : (
           <div className="mt-3 space-y-2" aria-hidden="true">
             <Skeleton className="h-4 w-2/3" />

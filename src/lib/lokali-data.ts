@@ -623,3 +623,81 @@ export function activeLokalCategories(): LokalCategory[] {
 export function activeLokalRegions(): string[] {
   return [...new Set(LOKALI.map((x) => x.region))];
 }
+
+// ── iskanje za svetovalca (QA U3, 2026-10-11) ───────────────────────────
+
+/** Parametri iskanja lokalov za destinacijo/kraj/regijo. */
+export interface LokaliSearchQuery {
+  /** Kanonski slug destinacije (najsibkejša veza: lokal.destinationSlug). */
+  destinationSlug?: string;
+  /** Ime kraja (npr. ime destinacije iz registra — primerjava po imenih). */
+  town?: string;
+  /** Ključ regije iz REGIONS (šibkejša veza — isti konec dežele). */
+  region?: string;
+  /** Prednostni vrstni red kategorij (npr. hrana: restaurant, bar, hotel). */
+  categoryOrder?: readonly LokalCategory[];
+  /** Beli seznam kategorij (če je podan, druge izpade — npr. samo jesti). */
+  categories?: readonly LokalCategory[];
+  /** Največ zadetkov (privzeto 3 — enako meji svetovalca). */
+  limit?: number;
+}
+
+/** Normaliziran niz za primerjavo (male črke, brez diakritik, brez ločil). */
+function lokalNorm(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9 ]/g, "")
+    .trim();
+}
+
+/**
+ * Deterministično iskanje lokalov za kontekst svetovalca (QA U3):
+ *  · stopnja 2 — lokal je POVEZAN na destinacijo (destinationSlug) ali
+ *    stoji v ISTEM KRAJU (primerjava imena kraja po normalizaciji);
+ *  · stopnja 1 — lokal je v ISTI REGIJI (če je regija podana);
+ *  · stopnja 0 — brez veze → IZPUSTI (nikoli ne ugibamo).
+ * Razvrščanje: stopnja ↓ → prednostna kategorija (categoryOrder) ↑ →
+ * izpostavljeni (featured) ↓ → ime abecedno (slowenska abeceda) — čisto
+ * deterministično, isti vhod vedno da isti seznam.
+ * ZAPISI imajo iskreno BREZ koordinat (glej LOKALI_HONESTY_NOTE) — zato
+ * bližino merimo po kraju/regiji/vezavi na destinacijo, ne po km.
+ */
+export function searchLokaliFor(query: LokaliSearchQuery): Lokal[] {
+  const limit = query.limit ?? 3;
+  const catRank = new Map<string, number>(
+    (query.categoryOrder ?? []).map((c, i) => [c, i])
+  );
+  const townNorm = query.town ? lokalNorm(query.town) : null;
+
+  const scored: { lokal: Lokal; tier: number }[] = [];
+  for (const lokal of LOKALI) {
+    if (query.categories && !query.categories.includes(lokal.category)) continue;
+    let tier = 0;
+    if (
+      (query.destinationSlug && lokal.destinationSlug === query.destinationSlug) ||
+      (townNorm && lokalNorm(lokal.town).includes(townNorm))
+    ) {
+      tier = 2;
+    } else if (query.region && lokal.region === query.region) {
+      tier = 1;
+    }
+    if (tier === 0) continue;
+    scored.push({ lokal, tier });
+  }
+
+  return scored
+    .sort((a, b) => {
+      if (a.tier !== b.tier) return b.tier - a.tier;
+      const ca = catRank.get(a.lokal.category) ?? catRank.size;
+      const cb = catRank.get(b.lokal.category) ?? catRank.size;
+      if (ca !== cb) return ca - cb;
+      const fa = a.lokal.featured ? 0 : 1;
+      const fb = b.lokal.featured ? 0 : 1;
+      if (fa !== fb) return fa - fb;
+      return a.lokal.name.localeCompare(b.lokal.name, "sl");
+    })
+    .slice(0, limit)
+    .map((s) => s.lokal);
+}

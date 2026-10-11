@@ -8,6 +8,7 @@ import {
   type StoLoadResult,
 } from "@/lib/supply/providers/sto/content";
 import type { SharedPlan } from "@/lib/shared-plan";
+import { mapUpstreamDaily, type WeatherDay } from "@/lib/weather";
 
 /**
  * ADVISOR CONTEXT — DETERMINISTIČNI podatkovni plan skriptnega @AI
@@ -37,10 +38,22 @@ export type FetchCurrentWeather = (
   lng: number
 ) => Promise<{ temperatureC: number; weatherCode: number } | null>;
 
-export type LoadSto = () => Promise<StoLoadResult>;
+/**
+ * Dnevna napoved 16 dni (QA U5, 2026-10-11; podatkovni vir Open-Meteo —
+ * isti vir in isti preslikavi kot /api/weather?daily=1, a STREŽNIŠKO:
+ * svetovalec teče v ruti messages in ne more klicati relativnega URL-ja).
+ * null = vir ni vrnil nič uporabnega (fail-quiet — NIKOLI ne izmišljujemo).
+ */
+export type FetchDailyWeather = (
+  lat: number,
+  lng: number
+) => Promise<WeatherDay[] | null>;
+
+type LoadSto = () => Promise<StoLoadResult>;
 
 export interface AdvisorDeps {
   fetchCurrentWeather?: FetchCurrentWeather;
+  fetchDailyWeather?: FetchDailyWeather;
   loadSto?: LoadSto;
 }
 
@@ -81,12 +94,44 @@ async function defaultLoadSto(): Promise<StoLoadResult> {
   return loadStoContent();
 }
 
+/** Dnevna polja za Open-Meteo (ista kot pot /api/weather?daily=1). */
+const OPEN_METEO_DAILY_FIELDS =
+  "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum";
+
+/**
+ * Default: dnevna napoved z Open-Meteo (javni API, brez ključa, fail-quiet).
+ * Preslikava v kanonske WeatherDay opravi ČISTA funkcija mapUpstreamDaily
+ * iz lib/weather.ts (ista oblika kot /api/weather?daily=1 — 0 odstopanj).
+ */
+async function defaultFetchDailyWeather(
+  lat: number,
+  lng: number
+): Promise<WeatherDay[] | null> {
+  try {
+    const url =
+      "https://api.open-meteo.com/v1/forecast" +
+      `?latitude=${lat}&longitude=${lng}` +
+      `&daily=${OPEN_METEO_DAILY_FIELDS}&timezone=auto&forecast_days=16`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(4_000) });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      daily?: Parameters<typeof mapUpstreamDaily>[0];
+    };
+    if (!data.daily) return null; // brez dnevnega bloka → iskrena izpustitev
+    return mapUpstreamDaily(data.daily);
+  } catch {
+    return null; // timeout / omrežje / napačna oblika → iskrena izpustitev
+  }
+}
+
 export function advisorDeps(deps?: AdvisorDeps): {
   fetchCurrentWeather: FetchCurrentWeather;
+  fetchDailyWeather: FetchDailyWeather;
   loadSto: LoadSto;
 } {
   return {
     fetchCurrentWeather: deps?.fetchCurrentWeather ?? defaultFetchCurrentWeather,
+    fetchDailyWeather: deps?.fetchDailyWeather ?? defaultFetchDailyWeather,
     loadSto: deps?.loadSto ?? defaultLoadSto,
   };
 }

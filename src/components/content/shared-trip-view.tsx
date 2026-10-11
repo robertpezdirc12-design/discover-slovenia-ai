@@ -46,7 +46,17 @@ import { PrintableConfirmation } from "@/components/trips/printable-confirmation
 import { Link } from "@/i18n/navigation";
 import { pick } from "@/lib/i18n-pick";
 import { intlDateLocale } from "@/lib/intl-locale";
+import { formatDuration } from "@/lib/itinerary-engine";
 import { myTrip } from "@/lib/my-trip";
+// POLIR6 A (2.33.0): čisti pomoži IZMERJENIH dni (EN izvor resnice — isti
+// kot na /nacrtuj; ocena dneva = ISTA hevristika kot LegRow, km pa nosijo
+// 1 decimalko po jeziku, EN pika / ostali vejica — determinizem brez Intl).
+import {
+  dayEstimate,
+  fmtKm1,
+  summarizeMeasured,
+  type MeasuredDay,
+} from "@/lib/plan-map-data";
 import { getDestination } from "@/lib/slovenia-data";
 import { type SharedPlan, sharedPlans } from "@/lib/shared-plan";
 import { buildTripPdf, fromSharedPlan } from "@/lib/pdf/trip-pdf-doc";
@@ -304,6 +314,50 @@ export function SharedTripView({ shareId }: { shareId: string }) {
       fr: "Positions des arrêts par jour — couleur et numéro désignent le jour.",
       es: "Posiciones de las paradas por día — color y número indican el día.",
     },
+    // POLIR6 A (2.33.0): IZMERJENE razdalje v skupnem pogledu (pariteta
+    // /nacrtuj 2.32.0 — besedila DOBESEEDNO iz nacrtuj/view.tsx; vsaka
+    // številka nosi razložljiv vir: izmerjeno OSRM ali izrecno ocena;
+    // vsota združuje SAMO izmerjene dneve — Roadtrippersova past).
+    measuredDay: {
+      sl: (km: string, min: number) => `${km} km · ${min} min vožnje — izmerjeno (OSRM/OpenStreetMap)`,
+      en: (km: string, min: number) => `${km} km · ${min} min of driving — measured (OSRM/OpenStreetMap)`,
+      it: (km: string, min: number) => `${km} km · ${min} min di guida — misurato (OSRM/OpenStreetMap)`,
+      de: (km: string, min: number) => `${km} km · ${min} Min. Fahrt — gemessen (OSRM/OpenStreetMap)`,
+      fr: (km: string, min: number) => `${km} km · ${min} min de conduite — mesuré (OSRM/OpenStreetMap)`,
+      es: (km: string, min: number) => `${km} km · ${min} min de conducción — medido (OSRM/OpenStreetMap)`,
+    },
+    estimatedDay: {
+      sl: (km: number, min: number) => `~ ${km} km · ~ ${min} min — ocena (premočna ×1,3 @ ~60 km/h)`,
+      en: (km: number, min: number) => `~ ${km} km · ~ ${min} min — estimate (straight-line ×1.3 @ ~60 km/h)`,
+      it: (km: number, min: number) => `~ ${km} km · ~ ${min} min — stima (linea d'aria ×1,3 a ~60 km/h)`,
+      de: (km: number, min: number) => `~ ${km} km · ~ ${min} Min. — Schätzung (Luftlinie ×1,3 bei ~60 km/h)`,
+      fr: (km: number, min: number) => `~ ${km} km · ~ ${min} min — estimation (à vol d'oiseau ×1,3 à ~60 km/h)`,
+      es: (km: number, min: number) => `~ ${km} km · ~ ${min} min — estimación (línea recta ×1,3 a ~60 km/h)`,
+    },
+    measuredTotal: {
+      sl: (km: string, dur: string) => `Skupaj izmerjeno: ${km} km · ${dur} vožnje (OSRM/OpenStreetMap)`,
+      en: (km: string, dur: string) => `Measured in total: ${km} km · ${dur} of driving (OSRM/OpenStreetMap)`,
+      it: (km: string, dur: string) => `Totale misurato: ${km} km · ${dur} di guida (OSRM/OpenStreetMap)`,
+      de: (km: string, dur: string) => `Insgesamt gemessen: ${km} km · ${dur} Fahrt (OSRM/OpenStreetMap)`,
+      fr: (km: string, dur: string) => `Total mesuré : ${km} km · ${dur} de conduite (OSRM/OpenStreetMap)`,
+      es: (km: string, dur: string) => `Total medido: ${km} km · ${dur} de conducción (OSRM/OpenStreetMap)`,
+    },
+    measuredMissing: {
+      sl: (n: number) => `za ${n} ${n === 1 ? "dan" : "dni"} ni izmerjenih podatkov — prikazana je ocena`,
+      en: (n: number) => `for ${n} ${n === 1 ? "day" : "days"} no measured data is available — an estimate is shown`,
+      it: (n: number) => `per ${n} ${n === 1 ? "giorno" : "giorni"} non ci sono dati misurati — viene mostrata una stima`,
+      de: (n: number) => `für ${n} ${n === 1 ? "Tag" : "Tage"} liegen keine gemessenen Daten vor — eine Schätzung wird angezeigt`,
+      fr: (n: number) => `pour ${n} ${n === 1 ? "jour" : "jours"} aucune donnée mesurée n'est disponible — une estimation est affichée`,
+      es: (n: number) => `para ${n} ${n === 1 ? "día" : "días"} no hay datos medidos — se muestra una estimación`,
+    },
+    measuredSrPrefix: {
+      sl: "Vožnja tega dne: ",
+      en: "Driving this day: ",
+      it: "Guida di questo giorno: ",
+      de: "Fahrt an diesem Tag: ",
+      fr: "Conduite de ce jour : ",
+      es: "Conducción de este día: ",
+    },
   } as const;
 
   const onAddAll = React.useCallback(
@@ -454,6 +508,88 @@ export function SharedTripView({ shareId }: { shareId: string }) {
       setSavingCloud(false);
     }
   }, [localPlan, shareId, savingCloud]);
+
+  // POLIR6 A (2.33.0): IZMERJENE RAZDALJE v skupnem pogledu (poročevalna
+  // pariteta /nacrtuj ↔ /potovanje ↔ /pot/[shareId]). Dnevi za PlanMap se
+  // MEMOIZIRAJO: sharedPlanMapDays bi ob vsakem re-renderju naredil NOVO
+  // tabelo dni → PlanMap efekt bi znova in znova poklical proxy, izmere pa
+  // nikoli ne bi »prisedela«. Deps so STABILNI referenci stanja (db /
+  // localPlan — nikoli izpeljanke), kar je tudi POGOJ za kanon vezave
+  // stanja izmer na referenco dni.
+  const cloudMapDays = React.useMemo(
+    () => (db?.plan ? sharedPlanMapDays(db.plan, shareId) : NO_MAP_DAYS),
+    [db, shareId]
+  );
+  const localMapDays = React.useMemo(
+    () => (localPlan ? sharedPlanMapDays(localPlan, shareId) : NO_MAP_DAYS),
+    [localPlan, shareId]
+  );
+
+  // Stanje izmer VEZANO NA REFERENCO dni (kanon 2.32.0): velja samo za
+  // dneve, ob katerih je nastalo — sprememba vira (reload baze, preklop
+  // oblak ↔ lokalno) da NOVO referenco → pošteno ponovno vezanje in nova
+  // izmera (nikoli številke tujega vrstnega reda). Baza ima prednost pred
+  // lokalno poto in zavihki niso hkrati montirani → ENO stanje zadošča.
+  const [measuredState, setMeasuredState] = React.useState<{
+    forDays: TripStop[][];
+    stats: MeasuredDay[];
+  } | null>(null);
+  const activeMapDays = db ? cloudMapDays : localMapDays;
+  const handleMeasured = React.useCallback(
+    (stats: MeasuredDay[]) => setMeasuredState({ forDays: activeMapDays, stats }),
+    [activeMapDays]
+  );
+  const measured =
+    measuredState?.forDays === activeMapDays ? measuredState.stats : null;
+
+  // Čista presodba povzetka (vrstica pod glavo dneva + skupna vrstica) —
+  // SAMO nad izmerjenimi dnevi (Roadtrippersova past: mešana vsota bi
+  // tiho lagala; padli dnevi se izrecno preštejejo v opombo).
+  const measuredSummary = React.useMemo(
+    () =>
+      measured && activeMapDays !== NO_MAP_DAYS
+        ? summarizeMeasured(activeMapDays.length, measured)
+        : null,
+    [measured, activeMapDays]
+  );
+
+  // Vrstica izmere/ocene enega dneva (ISTA semantika kot /nacrtuj 2.32.0):
+  // izmerjen dan → izmerjeno (OSRM); padel dan z oceno → ISTA hevristika
+  // kot LegRow (dayEstimate nad dnevi zemljevida — koordinate registra);
+  // dan brez skoka (manj kot 2 postanka s coords) → BREZ vrstice (iskrena
+  // odsotnost). Neodvisna od zemljevida: deluje tudi, ko zemljevid NI
+  // izrisan (< 2 točki skupaj).
+  const travelRow = (dayIdx: number): string | null => {
+    const row = measuredSummary?.rows[dayIdx];
+    if (row?.kind === "measured") {
+      return pick(l, L.measuredDay)(fmtKm1(l, row.km), row.min);
+    }
+    if (row?.kind === "estimate") {
+      const est =
+        activeMapDays === NO_MAP_DAYS
+          ? null
+          : dayEstimate(activeMapDays[dayIdx] ?? []);
+      if (est) return pick(l, L.estimatedDay)(est.km, est.min);
+    }
+    return null;
+  };
+  // Skupna vrstica SAMO nad izmerjenimi dnevi + iskrena opomba o padlih
+  // (dvojina 1 dan/dni je v ključu measuredMissing pravilna ×6).
+  const travelTotals =
+    measuredSummary &&
+    measuredSummary.totalKm !== null &&
+    measuredSummary.totalMin !== null
+      ? {
+          total: pick(l, L.measuredTotal)(
+            fmtKm1(l, measuredSummary.totalKm),
+            formatDuration(measuredSummary.totalMin)
+          ),
+          missing:
+            measuredSummary.failedCount > 0
+              ? pick(l, L.measuredMissing)(measuredSummary.failedCount)
+              : null,
+        }
+      : null;
 
   const loggedIn = sessionStatus === "authenticated" && Boolean(session?.user);
 
@@ -667,7 +803,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
               onSaved={() => void loadDb()}
             />
 
-            <PlanDays plan={plan} shareId={shareId} dayLabel={pick(l, L.dayLabel)} addLabel={pick(l, L.addTrip)} addedLabel={pick(l, L.added)} exploreLabel={pick(l, L.exploreDest)} />
+            <PlanDays plan={plan} shareId={shareId} dayLabel={pick(l, L.dayLabel)} addLabel={pick(l, L.addTrip)} addedLabel={pick(l, L.added)} exploreLabel={pick(l, L.exploreDest)} travelRows={travelRow} travelSrPrefix={pick(l, L.measuredSrPrefix)} travelTotals={travelTotals} />
 
             {/* POLIR3 B (2.30.0): ZEMLJEVID POTI — pariteta z /potovanje in
                 /nacrtuj (odjemalec deljene povezave vidi pot na zemljevidu,
@@ -684,7 +820,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
                     <p className="text-xs text-muted-foreground">{pick(l, L.mapDesc)}</p>
                   </CardHeader>
                   <CardContent>
-                    <PlanMap days={sharedPlanMapDays(plan, shareId)} />
+                    <PlanMap days={cloudMapDays} onMeasured={handleMeasured} />
                   </CardContent>
                 </Card>
               </div>
@@ -946,7 +1082,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
             )}
           </div>
 
-          <PlanDays plan={localPlan} shareId={shareId} dayLabel={pick(l, L.dayLabel)} addLabel={pick(l, L.addTrip)} addedLabel={pick(l, L.added)} exploreLabel={pick(l, L.exploreDest)} />
+          <PlanDays plan={localPlan} shareId={shareId} dayLabel={pick(l, L.dayLabel)} addLabel={pick(l, L.addTrip)} addedLabel={pick(l, L.added)} exploreLabel={pick(l, L.exploreDest)} travelRows={travelRow} travelSrPrefix={pick(l, L.measuredSrPrefix)} travelTotals={travelTotals} />
 
           {/* POLIR3 B (2.30.0): ZEMLJEVID POTI — enaka kartica kot v zavihku
               Pot oblačne pote (pariteta lokalna pota ↔ baza ↔ /potovanje);
@@ -959,7 +1095,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
                   <p className="text-xs text-muted-foreground">{pick(l, L.mapDesc)}</p>
                 </CardHeader>
                 <CardContent>
-                  <PlanMap days={sharedPlanMapDays(localPlan, shareId)} />
+                  <PlanMap days={localMapDays} onMeasured={handleMeasured} />
                 </CardContent>
               </Card>
             </div>
@@ -1043,6 +1179,14 @@ function sharedPlanMapDays(plan: SharedPlan, shareId: string): TripStop[][] {
 }
 
 /**
+ * POLIR6 A (2.33.0): stabilna PRAZNA referenca dni (kanon NO_ROUTES iz
+ * plan-map.tsx) — memoizirana tabela dni v pogledu brez pote (nalaganje /
+ * 404) ostane VEDNO ista referenca, zato kanon vezave stanja izmer
+ * (forDays === days) nikoli ne more lažno zadeti.
+ */
+const NO_MAP_DAYS: TripStop[][] = [];
+
+/**
  * P0-G (issue #1 §17 „QR sharing“): PRAVI izris QR kode povezave poti
  * (knjižnica qrcode, client-only canvas). Ob napaki izrisa koda čisto
  * izgine — URL pod njo ostane pot za ročno kopiranje (iskrena
@@ -1080,6 +1224,16 @@ function QrCanvas({ url, label }: { url: string; label: string }) {
   );
 }
 
+/**
+ * Skupna vrstica izmer za PlanDays (POLIR6 A, 2.33.0) — čista podatkovna
+ * struktura: `total` je oblikovana vrstica „Skupaj izmerjeno: …", `missing`
+ * pa iskrena opomba o padlih dnevih (null, če jih ni).
+ */
+interface TravelTotals {
+  total: string;
+  missing: string | null;
+}
+
 /** Dnevi pote (skupno za oblak in lokalno pot — enak izris kot prej). */
 function PlanDays({
   plan,
@@ -1088,6 +1242,9 @@ function PlanDays({
   addLabel,
   addedLabel,
   exploreLabel,
+  travelRows,
+  travelSrPrefix,
+  travelTotals,
 }: {
   plan: SharedPlan;
   shareId: string;
@@ -1095,64 +1252,106 @@ function PlanDays({
   addLabel: string;
   addedLabel: string;
   exploreLabel: string;
+  /**
+   * POLIR6 A (2.33.0): vrstica izmere/ocene POD glavo dneva (pariteta
+   * /nacrtuj): izmerjen dan → izmerjeno (OSRM); padel dan z oceno →
+   * ISTA hevristika kot LegRow; dan brez skoka → null (brez vrstice).
+   */
+  travelRows: (dayIdx: number) => string | null;
+  /** sr-only predpona bralcem zaslonov („Vožnja tega dne: "). */
+  travelSrPrefix: string;
+  /** Skupna vrstica + opomba o padlih (null → iskrena odsotnost). */
+  travelTotals: TravelTotals | null;
 }) {
   return (
-    <ol className="mt-10 space-y-6">
-      {plan.days.map((day) => (
-        <li key={day.day}>
-          <Card>
-            <CardContent className="p-5">
-              <h2 className="text-lg font-bold tracking-tight">
-                {dayLabel(day.day)}
-                {day.title ? ` — ${day.title}` : ""}
-              </h2>
-              {day.locations.length === 0 ? (
-                <p className="mt-3 text-sm text-muted-foreground">—</p>
-              ) : (
-                <ul className="mt-4 space-y-2.5">
-                  {day.locations.map((loc, i) => {
-                    const dest = loc.destSlug ? getDestination(loc.destSlug) : undefined;
-                    const refId = loc.destSlug ?? `pot/${shareId}/${day.day}/${loc.name}`;
-                    return (
-                      <li
-                        key={`${day.day}-${i}-${loc.name}`}
-                        className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-background px-4 py-3"
-                      >
-                        <span className="flex min-w-0 items-center gap-3">
-                          {loc.time ? (
-                            <span className="inline-flex items-center gap-1 font-mono text-sm text-muted-foreground">
-                              <Clock className="size-3.5 text-primary" aria-hidden="true" />
-                              {loc.time}
+    <>
+      <ol className="mt-10 space-y-6">
+        {plan.days.map((day, dayIdx) => {
+          const travelText = travelRows(dayIdx);
+          return (
+            <li key={day.day}>
+              <Card>
+                <CardContent className="p-5">
+                  <h2 className="text-lg font-bold tracking-tight">
+                    {dayLabel(day.day)}
+                    {day.title ? ` — ${day.title}` : ""}
+                  </h2>
+                  {/* POLIR6 A (2.33.0): vrstica izmere/ocene POD glavo dneva
+                      (pariteta /nacrtuj 2.32.0 — vsaka številka nosi vir:
+                      izmerjeno OSRM ali izrecno označena ocena). Print-VIDNA
+                      (del povzetka dneva, ne zemljevida — zemljevid se v
+                      natisu izpusti, ta vrstica pa NE) in neodvisna od
+                      zemljevida (deluje tudi, ko ta ni izrisan < 2 točki). */}
+                  {travelText && (
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                      <span className="sr-only">{travelSrPrefix}</span>
+                      {travelText}
+                    </p>
+                  )}
+                  {day.locations.length === 0 ? (
+                    <p className="mt-3 text-sm text-muted-foreground">—</p>
+                  ) : (
+                    <ul className="mt-4 space-y-2.5">
+                      {day.locations.map((loc, i) => {
+                        const dest = loc.destSlug ? getDestination(loc.destSlug) : undefined;
+                        const refId = loc.destSlug ?? `pot/${shareId}/${day.day}/${loc.name}`;
+                        return (
+                          <li
+                            key={`${day.day}-${i}-${loc.name}`}
+                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-background px-4 py-3"
+                          >
+                            <span className="flex min-w-0 items-center gap-3">
+                              {loc.time ? (
+                                <span className="inline-flex items-center gap-1 font-mono text-sm text-muted-foreground">
+                                  <Clock className="size-3.5 text-primary" aria-hidden="true" />
+                                  {loc.time}
+                                </span>
+                              ) : null}
+                              <span className="truncate text-sm font-medium">{loc.name}</span>
                             </span>
-                          ) : null}
-                          <span className="truncate text-sm font-medium">{loc.name}</span>
-                        </span>
-                        <span className="flex items-center gap-1.5 print:hidden">
-                          {dest && (
-                            <Link
-                              href={`/destinacija/${dest.slug}`}
-                              className="inline-flex min-h-9 items-center gap-1 rounded-md px-2.5 text-xs font-semibold text-primary hover:bg-primary/10 focus-green"
-                            >
-                              <MapPin className="size-3.5" aria-hidden="true" />
-                              {exploreLabel}
-                            </Link>
-                          )}
-                          <AddOne
-                            refId={refId}
-                            name={loc.name}
-                            labels={{ add: addLabel, added: addedLabel }}
-                          />
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-        </li>
-      ))}
-    </ol>
+                            <span className="flex items-center gap-1.5 print:hidden">
+                              {dest && (
+                                <Link
+                                  href={`/destinacija/${dest.slug}`}
+                                  className="inline-flex min-h-9 items-center gap-1 rounded-md px-2.5 text-xs font-semibold text-primary hover:bg-primary/10 focus-green"
+                                >
+                                  <MapPin className="size-3.5" aria-hidden="true" />
+                                  {exploreLabel}
+                                </Link>
+                              )}
+                              <AddOne
+                                refId={refId}
+                                name={loc.name}
+                                labels={{ add: addLabel, added: addedLabel }}
+                              />
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
+            </li>
+          );
+        })}
+      </ol>
+      {/* POLIR6 A (2.33.0): SKUPNA IZMERJENA vrstica POD seznamom dni, PRED
+          kartico zemljevida — SAMO nad izmerjenimi dnevi (Roadtrippersova
+          past: mešana vsota bi tiho lagala; padli dnevi prispevajo nič k
+          vsoti in se izrecno preštejejo v opombo). Print-VIDNA — del
+          natisa, kanon /nacrtuj (izmera je del povzetka, ne zemljevida). */}
+      {travelTotals && (
+        <p className="mt-6 text-xs leading-relaxed text-muted-foreground">
+          {travelTotals.total}
+        </p>
+      )}
+      {travelTotals?.missing && (
+        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+          {travelTotals.missing}
+        </p>
+      )}
+    </>
   );
 }
 

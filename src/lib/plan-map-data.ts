@@ -24,7 +24,7 @@
  *    številki — barva je le dopolnilo.
  */
 
-import { round5 } from "./itinerary-engine";
+import { roadKm, round5, travelMinutes } from "./itinerary-engine";
 import type { TripStop } from "./types";
 
 /**
@@ -330,4 +330,47 @@ export function summarizeMeasured(
     measuredCount,
     failedCount: dayCount - measuredCount,
   };
+}
+
+// ── POLIR6 A (2.33.0): IZMERJENE VRSTICE V VSEH POGLEDIH POTI ───────────────
+//
+// dayEstimate + fmtKm1 sta se PRESTAVILI iz nacrtuj/view.tsx (2.32.0), da so
+// izmerjene/ocenjene vrstice pod glavo dneva iz ENEGA izvora resnice na
+// VSEH pogledih (/nacrtuj, /potovanje, /pot/[shareId] — oblak in lokalno).
+// Obe funkciji sta ČISTI in klientansko varni (0 omrežja, 0 ure, 0 Intl),
+// zato živita tukaj poleg summarizeMeasured, kjer ju lahko testi uvozijo.
+
+/**
+ * Ocena vožnje CELEGA dneva = VSOTA LegRow vrednosti tistega dneva: po
+ * skokih (sosednja postanka OBA z koordinatama) sešteje round5(roadKm) in
+ * travelMinutes — ISTI hevristiki kot LegRow (premočna ×1,3 @ ~60 km/h),
+ * zato se vrstica pod glavo dneva in noge med postanki NIKOLI ne
+ * nasprotujeta. Skok brez koordinat se izpusti (LegRow zanj ne kaže
+ * vrstice); dan brez nobenega skoka → null (iskrena odsotnost — ni
+ * vožnje, ni vrstice). Urnik motorja to NE spreminja (OSRM je poročevalna
+ * plast, ne vir urnika — odločitev 2.30.0).
+ */
+export function dayEstimate(stops: TripStop[]): { km: number; min: number } | null {
+  let km = 0;
+  let min = 0;
+  let hops = 0;
+  for (let i = 1; i < stops.length; i++) {
+    const prev = stops[i - 1];
+    const stop = stops[i];
+    if (!prev.coords || !stop.coords) continue; // LegRow: brez koordinat ni vrstice
+    km += round5(roadKm(prev.coords, stop.coords));
+    min += travelMinutes(prev.coords, stop.coords);
+    hops += 1;
+  }
+  return hops > 0 ? { km, min } : null;
+}
+
+/**
+ * Kilometri z 1 decimalko po jeziku (EN pika, ostali vejica — deterministično,
+ * brez Intl; vzorec fmtKm iz plan-import). Izmerjene vrednosti iz OSRM so
+ * dostojne 1 decimale, ne več (21,6 km — ne 21,5512).
+ */
+export function fmtKm1(l: string, km: number): string {
+  const s = km.toFixed(1);
+  return l === "en" ? s : s.replace(".", ",");
 }

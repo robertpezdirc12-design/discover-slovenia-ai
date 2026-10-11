@@ -104,7 +104,11 @@ import { saveLastPlan } from "@/lib/plan-store";
 // POLIR5 A (2.32.0): čista izpeljava IZMERJENIH dni (OSRM) za povzetek
 // načrta — tip MeasuredDay + summarizeMeasured (0 omrežja, testabilna v bun;
 // ista datoteka že nosi čisto logiko črt planMapLines za zemljevid).
+// POLIR6 A (2.33.0): dayEstimate + fmtKm1 sta se prestavili sem — EN izvor
+// resnice za izmerjene/ocenjene vrstice VSEH pogledov poti.
 import {
+  dayEstimate,
+  fmtKm1,
   summarizeMeasured,
   type MeasuredDay,
 } from "@/lib/plan-map-data";
@@ -2468,43 +2472,11 @@ function BudgetCompare({
 }
 
 // ---------------------------------------------------------------------------
-// POLIR5 A (2.32.0): pomoži IZMERJENIH razdalj v povzetku načrta
+// POLIR5 A (2.32.0): pomoži IZMERJENIH razdalj — dayEstimate + fmtKm1 sta se
+// POLIR6 A (2.33.0) PRESTAVILI v @/lib/plan-map-data (EN izvor resnice za
+// vse poglede poti: /nacrtuj, /potovanje, /pot/[shareId]) — tukaj sta samo
+// še UVOŽENI (obnašanje povzetka načrta NEPREMJENJENO).
 // ---------------------------------------------------------------------------
-
-/**
- * Kilometri z 1 decimalko po jeziku (EN pika, ostali vejica — deterministično,
- * brez Intl; vzorec fmtKm iz plan-import). Izmerjene vrednosti iz OSRM so
- * dostojne 1 decimale, ne več (21,6 km — ne 21,5512).
- */
-function fmtKm1(l: string, km: number): string {
-  const s = km.toFixed(1);
-  return l === "en" ? s : s.replace(".", ",");
-}
-
-/**
- * Ocena vožnje CELEGA dneva = VSOTA LegRow vrednosti tistega dneva: po
- * skokih (sosednja postanka OBA z koordinatama) sešteje round5(roadKm) in
- * travelMinutes — ISTI hevristiki kot LegRow (premočna ×1,3 @ ~60 km/h),
- * zato se vrstica pod glavo dneva in noge med postanki NIKOLI ne
- * nasprotujeta. Skok brez koordinat se izpusti (LegRow zanj ne kaže
- * vrstice); dan brez nobenega skoka → null (iskrena odsotnost — ni
- * vožnje, ni vrstice). Urnik motorja to NE spreminja (OSRM je poročevalna
- * plast, ne vir urnika — odločitev 2.30.0).
- */
-function dayEstimate(stops: TripStop[]): { km: number; min: number } | null {
-  let km = 0;
-  let min = 0;
-  let hops = 0;
-  for (let i = 1; i < stops.length; i++) {
-    const prev = stops[i - 1];
-    const stop = stops[i];
-    if (!prev.coords || !stop.coords) continue; // LegRow: brez koordinat ni vrstice
-    km += round5(roadKm(prev.coords, stop.coords));
-    min += travelMinutes(prev.coords, stop.coords);
-    hops += 1;
-  }
-  return hops > 0 ? { km, min } : null;
-}
 
 /** Noga vožnje med postankoma (iskrena ocena, vir: hevristika). */
 function LegRow({

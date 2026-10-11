@@ -428,8 +428,10 @@ export function PlanMap({
           });
         }
         setRouteState({ forDays: days, routes });
-        // Povzetek izmerjenih dni gre navzgor ob vsakem odgovoru (star podpis
-        // brez onMeasured se NE pokliče — skupni pogled ostaja pri 2.30.0).
+        // Povzetek izmerjenih dni gre navzgor ob vsakem odgovoru. POLIR6 A
+        // (2.33.0): onMeasured zdaj podajo VSI pogledi poti (/nacrtuj,
+        // /potovanje, /pot/[shareId] — oblak in lokalno); brez podpisa se
+        // neobvezni klic NE izvede (starši brez izmer ostanejo pri črtah).
         onMeasured?.(stats);
       })
       .catch(() => {

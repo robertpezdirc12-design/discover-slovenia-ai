@@ -1,12 +1,21 @@
 import { describe, expect, test } from "bun:test";
 
 import { buildItinerary } from "@/lib/itinerary-engine";
-import { DAY_COLORS, planMapData } from "@/lib/plan-map-data";
+import {
+  DAY_COLORS,
+  planMapData,
+  planMapLines,
+  type DayGeometry,
+} from "@/lib/plan-map-data";
 import type { TripStop } from "@/lib/types";
 
 /**
  * POLIR2 B (2.29.0) — zemljevid ob načrtu (PlanMap): čisti podatkovni
  * modul plan-map-data + source-contract komponente plan-map.
+ * POLIR3 A (2.30.0) — VOZLJIVA POT: logika polne/črtkane črte (planMapLines
+ * na čistem izhodu planMapData + simuliran odgovor proxyja) + source-contract
+ * ENEGA samega omrežnega klica komponente (fetch SAMO na relativni
+ * /api/plan/directions — zunanji URL-ji prepovedani).
  *
  * Kanon (enak kot tests/nacrtuj-polir.test.ts):
  *  - planMapData: ČISTA funkcija — vrstni red markerjev po dneh/postankih,
@@ -14,12 +23,13 @@ import type { TripStop } from "@/lib/types";
  *    determinizem 10×, prazni dnevi, nemutabilnost vhoda;
  *  - source-contract na plan-map.tsx (komponenta se NE importira — uvoz
  *    leaflet modula zahteva window; zaklenimo strukturo izvorne kode);
- *  - i18n: vsi novi L10N ključi ×6 popolni (obe opombi pod zemljevidom
- *    sta preverjeni dobesedno po jezikih);
+ *  - i18n: vsi novi L10N ključi ×6 popolni (VSE opombe pod zemljevidom
+ *    so preverjene dobesedno po jezikih — premočrtna, vozljiva, izpuščeni);
  *  - round-trip čistost: planMapData(BuildItinerary izhoda) — motor
  *    vedno daje coords, zato je števec izpuščenih 0 in markerji pokrijejo
  *    vse postanke (preverjeno na 3 načrtih);
- *  - 0 omrežja: ta baterija ne uporablja fetch-a (nobenih stubov).
+ *  - 0 omrežja: ta baterija ne uporablja fetch-a (mock proxyja živi šele
+ *    v tests/plan-directions.test.ts).
  */
 
 const COMPONENT = "src/components/plan/plan-map.tsx";
@@ -219,7 +229,7 @@ describe("DAY_COLORS — paleta 8 dni (brez modro-indigo družine)", () => {
 // ── source-contract komponente (branje izvorne kode, 0 importov) ──────────
 
 describe("PLAN-MAP — source-contract komponente", () => {
-  test("⑩ struktura: use client, OSM ploščice + atribucija, črtkane črte, export", async () => {
+  test("⑩ struktura: use client, OSM ploščice + atribucija, črtkane in POLNE črte, export", async () => {
     const src = await componentSrc();
     expect(src).toContain('"use client"');
     expect(src).toContain("tile.openstreetmap.org/{z}/{x}/{y}.png");
@@ -227,6 +237,9 @@ describe("PLAN-MAP — source-contract komponente", () => {
     expect(src).toContain("OpenStreetMap</a>");
     // črtkana premočrtna povezava (iskrenost: ne vozljiva pot)
     expect(src).toContain('dashArray: "6 8"');
+    // POLNA črta iz dejanske OSRM geometry (POLIR3 A)
+    expect(src).toContain("weight: 4");
+    expect(src).toContain("opacity: 0.9");
     expect(src).toContain("export function PlanMap");
     // i18n kanon + sinhronizacija seznam ↔ zemljevid
     expect(src).toContain("useLocale");
@@ -244,10 +257,29 @@ describe("PLAN-MAP — source-contract komponente", () => {
     expect(src).toContain("L.divIcon");
   });
 
-  test("⑪ varnost: NI innerHTML, NI fetch (XSS kanon + 0 omrežja)", async () => {
+  test("⑪ varnost: NI innerHTML; fetch SAMO na relativni /api/plan/directions (0 zunanjih URL-jev)", async () => {
     const src = await componentSrc();
     expect(src).not.toContain("innerHTML");
-    expect(src).not.toContain("fetch(");
+    // POLIR3 A: edini omrežni klic komponente = lastni strežniški proxy
+    // (RELATIVNA pot — kanon vremenskega proxyja)
+    expect(src).toContain('fetch("/api/plan/directions"');
+    expect(src).toContain('method: "POST"');
+    // ZATRDNA PREPOVED: nobena vrstica s fetch( ne sme kazati zunaj —
+    // OSRM kliče IZKLJUČNO strežniški proxy, komponenta nikoli neposredno
+    const fetchLines = src.split("\n").filter((ln) => ln.includes("fetch("));
+    expect(fetchLines.length).toBeGreaterThan(0);
+    for (const ln of fetchLines) {
+      expect(ln).toContain('"/api/plan/directions"');
+    }
+    expect(src).not.toContain("router.project-osrm.org");
+    expect(src).not.toContain('fetch("http');
+    // stanje poti VEZANO NA REFERENCO dni (kanon predogleda 2.29.0 — brez
+    // setState v efektu) + zastareli odgovori se ignorirajo
+    expect(src).toContain("forDays");
+    expect(src).toContain("cancelled = true");
+    // nalaganje ne blokira: dan z vrzeljo (postanek brez coords) se NE
+    // pošlje — ostane črtkan (iskrenost, dokumentirano v dayCoords)
+    expect(src).toContain("if (!s.coords) return null;");
   });
 
   test("⑫ tooltip gradimo izključno prek textContent; html divIcona je samo statična številka", async () => {
@@ -272,6 +304,7 @@ describe("PLAN-MAP — i18n: vsi novi ključi imajo 6 jezikov", () => {
   const NEW_L10N_KEYS = [
     "mapLabel",
     "straightNote",
+    "routedNote",
     "skippedNote",
     "dayLabel",
     "noTime",
@@ -304,6 +337,33 @@ describe("PLAN-MAP — i18n: vsi novi ključi imajo 6 jezikov", () => {
     ]) {
       expect(src).toContain(fragment);
     }
+  });
+
+  test("⑲ opomba o VOZLJIVI poti ×6 (POLIR3 A: OSRM/OpenStreetMap + urnik ostaja ocena)", async () => {
+    const src = await componentSrc();
+    // sl je dobeseden kanon (niz iz specifikacije POLIR3 A)
+    expect(src).toContain(
+      "Vozljiva pot (OSRM/OpenStreetMap); urnik načrta ostaja ocena."
+    );
+    for (const fragment of [
+      "Drivable route (OSRM/OpenStreetMap)", // en
+      "Percorso percorribile (OSRM/OpenStreetMap)", // it
+      "Befahrbare Route (OSRM/OpenStreetMap)", // de
+      "Itinéraire routable (OSRM/OpenStreetMap)", // fr
+      "Ruta transitable (OSRM/OpenStreetMap)", // es
+      // urnik OSTAJA OCENA — iskrenost v vseh jezikih
+      "urnik načrta ostaja ocena", // sl
+      "the plan's schedule remains an estimate", // en
+      "orario del piano resta una stima", // it
+      "Zeitplan des Plans bleibt eine Schätzung", // de
+      "horaire du plan reste une estimation", // fr
+      "horario del plan sigue siendo una estimación", // es
+    ]) {
+      expect(src).toContain(fragment);
+    }
+    // opombe se prikazujeta po pogojih planMapLines.notes (mešano = OBE)
+    expect(src).toContain("lineState.notes.routed");
+    expect(src).toContain("lineState.notes.straight");
   });
 
   test("⑮ opomba o izpuščenih postankih ×6 (množina prek funkcije (n)=>niz)", async () => {
@@ -385,3 +445,109 @@ describe("PLAN-MAP — round-trip z motorjem (buildItinerary)", () => {
     }
   });
 });
+
+// ── POLIR3 A: logika POLNE/ČRTKANE črte (planMapLines + simuliran odgovor) ──
+//
+// Čista logika iz plan-map-data.ts na ČISTEM izhodu planMapData(DAYS) +
+// simuliran odgovor proxyja /api/plan/directions (brez Leafleta — komponenta
+// ni uvožena). ISKRENOST: polna črta IZKLJUČNO iz dejanske geometry.
+
+describe("PLAN-MAP — POLIR3 A: polna/črtkana logika (planMapLines + simuliran odgovor)", () => {
+  /** Simuliran odgovor proxyja za DAN 0 (Bled→Bohinj): geometry [lat, lon]. */
+  const ROUTE_DAY0: [number, number][] = [
+    [46.3701, 14.0958],
+    [46.3802, 14.107],
+    [46.2833, 13.8833],
+  ];
+  /** Simuliran odgovor za DAN 3 (Maribor→Ptuj→Celje). */
+  const ROUTE_DAY3: [number, number][] = [
+    [46.56, 15.65],
+    [46.42, 15.87],
+    [46.24, 15.27],
+  ];
+
+  test("⑳ brez odgovora (nalaganje/napaka/proxy padel): VSE črte ČRTKANE, samo opomba premočrtne", () => {
+    const data = planMapData(DAYS);
+    const st = planMapLines(data, {});
+    expect(st.lines.map((l) => l.solid)).toEqual([false, false]);
+    expect(st.notes).toEqual({ routed: false, straight: true });
+    // točke črtkane črte = premočrtne točke postankov (iz planMapData)
+    expect(st.lines[0].points).toEqual([
+      [46.36, 14.11],
+      [46.29, 13.84],
+    ]);
+    expect(st.lines[1].points).toEqual([
+      [46.56, 15.65],
+      [46.42, 15.87],
+      [46.24, 15.27],
+    ]);
+  });
+
+  test("㉑ vsi dnevi usmerjeni: VSE črte POLNE iz geometry, SAMO opomba vozljiva", () => {
+    const data = planMapData(DAYS);
+    const st = planMapLines(data, { 0: ROUTE_DAY0, 3: ROUTE_DAY3 });
+    expect(st.lines.map((l) => l.solid)).toEqual([true, true]);
+    expect(st.notes).toEqual({ routed: true, straight: false });
+    // polna črta = DEJANSKA OSRM geometry ([lat, lon]), ne premočrtne točke
+    expect(st.lines[0].points).toEqual(ROUTE_DAY0);
+    expect(st.lines[1].points).toEqual(ROUTE_DAY3);
+  });
+
+  test("㉒ mešano (dan 0 usmerjen, dan 3 padel/črta manjka): OBE opombi, polna + črtkana", () => {
+    const data = planMapData(DAYS);
+    const st = planMapLines(data, { 0: ROUTE_DAY0 });
+    expect(st.lines[0].solid).toBe(true); // polna iz geometry
+    expect(st.lines[1].solid).toBe(false); // črtkana premočrtna
+    expect(st.notes).toEqual({ routed: true, straight: true });
+  });
+
+  test("㉓ dan z manjkajočo koordinato sredinskega postanka OSTANE črtkan (iskrenost)", () => {
+    // Dan [A(coords), B(brez coords), C(coords)]: planMapData nariše črto
+    // [A, C], a dan NI upravičen do usmerjanja (vrzel) — odjemalec ga ne
+    // pošlje, zato odgovora za njega ni in črta ostane črtkana.
+    const days: TripStop[][] = [
+      [
+        stop({ id: "m1", name: "A", coords: { lat: 46.36, lng: 14.11 } }),
+        stop({ id: "m2", name: "Brez koordinat" }),
+        stop({ id: "m3", name: "C", coords: { lat: 46.29, lng: 13.84 } }),
+      ],
+    ];
+    const st = planMapLines(planMapData(days), {});
+    expect(st.lines.length).toBe(1); // premočrtna črta [A, C] obstaja
+    expect(st.lines[0].solid).toBe(false); // a OSTANE črtkana (iskrenost)
+    expect(st.lines[0].points).toEqual([
+      [46.36, 14.11],
+      [46.29, 13.84],
+    ]);
+    expect(st.notes).toEqual({ routed: false, straight: true });
+  });
+
+  test("㉔ obrambna: geometry z < 2 točkama se NE šteje za vozljivo pot", () => {
+    const data = planMapData(DAYS);
+    const st = planMapLines(data, { 0: [[46.36, 14.11]] });
+    expect(st.lines[0].solid).toBe(false);
+    expect(st.notes.routed).toBe(false);
+  });
+
+  test("㉕ čistost: izhod ne deli tabel z vhodom (mutacija izhoda ne dotakne geometry)", () => {
+    const geometry: [number, number][] = [
+      [46.36, 14.11],
+      [46.29, 13.84],
+    ];
+    const data = planMapData(DAYS);
+    const st = planMapLines(data, { 0: geometry });
+    expect(st.lines[0].solid).toBe(true);
+    st.lines[0].points[0][0] = 0; // mutacija izhoda
+    expect(geometry[0][0]).toBe(46.36); // vhod nedotaknjen
+  });
+
+  test("㉖ determinizem: isti vhod → isti izhod (10×)", () => {
+    const data = planMapData(DAYS);
+    const routed: Record<number, DayGeometry> = { 0: ROUTE_DAY0 };
+    const first = JSON.stringify(planMapLines(data, routed));
+    for (let i = 0; i < 10; i++) {
+      expect(JSON.stringify(planMapLines(data, routed))).toBe(first);
+    }
+  });
+});
+

@@ -18,6 +18,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import { useLocale } from "next-intl";
 import QRCode from "qrcode";
@@ -26,7 +27,8 @@ import * as React from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   fetchTripAggregate,
@@ -51,9 +53,14 @@ import { buildTripPdf, fromSharedPlan } from "@/lib/pdf/trip-pdf-doc";
 import { downloadTripPdf } from "@/lib/pdf/trip-pdf-render";
 import { addDaysIso, eachTripDay, type TripDates } from "@/lib/trip-dates";
 import { buildTripIcs, downloadTripIcs } from "@/lib/trip-ics";
+import type { TripStop } from "@/lib/types";
 
 /**
  * /pot/[shareId] — deljena pot (rekonstrukcija D7 + 48-a skupnostne funkcije).
+ *
+ * POLIR3 B (2.30.0): + ZEMLJEVID POTI (zavihek Pot / lokalna pota) —
+ * koordinate IZKLJUČNO iz registra prek destSlug, pariteta z /potovanje
+ * in /nacrtuj (odjemalec deljene povezave vidi pot na zemljevidu).
  *
  * VIR RESNICE (mostovna logika 48-a):
  *  1. GET /api/trips/[shareId] — če pot živi v bazi (javna ali sem
@@ -79,6 +86,19 @@ interface DbTrip {
   tripDates: TripDates | null;
 }
 
+// POLIR3 B (2.30.0): ZEMLJEVID POTI — klientanski dinamični uvoz (Leaflet
+// dostopa do window že ob uvozu modula → ssr: false je OBVEZEN; Skeleton
+// prepreči layout shift med nalaganjem). Imenovani export PlanMap iz
+// @/components/plan/plan-map — ISTA komponenta kot na /nacrtuj in
+// /potovanje (zemljevid ni podvojen; pariteta: odjemalec deljene
+// povezave vidi pot na zemljevidu, ne samo sezname dni).
+const PlanMap = dynamic(
+  () => import("@/components/plan/plan-map").then((m) => m.PlanMap),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-72 w-full rounded-xl sm:h-80" />,
+  }
+);
 
 export function SharedTripView({ shareId }: { shareId: string }) {
   const l = useLocale();
@@ -272,6 +292,17 @@ export function SharedTripView({ shareId }: { shareId: string }) {
       de: "Quelle: Datenbank (Cloud) — Kollaboration rollenbasiert verwaltet (Besitzer/Bearbeiter/Betrachter).",
       fr: "Source : base de données (cloud) — collaboration gérée par rôles (propriétaire/éditeur/lecteur).",
       es: "Fuente: base de datos (nube) — colaboración gestionada por roles (propietario/editor/lector).",
+    },
+    // POLIR3 B (2.30.0): zemljevid poti — naslov in legenda kartice (isti
+    // ključi kot na /potovanje: pot je skupna obema pogledoma).
+    mapTitle: { sl: "Zemljevid poti", en: "Trip map", it: "Mappa del viaggio", de: "Reisekarte", fr: "Carte du voyage", es: "Mapa del viaje" },
+    mapDesc: {
+      sl: "Položaji postankov po dnevih — barva in številka pomenita dan.",
+      en: "Stop positions by day — colour and number stand for the day.",
+      it: "Posizioni delle tappe per giorno — colore e numero indicano il giorno.",
+      de: "Positionen der Stopps nach Tag — Farbe und Nummer stehen für den Tag.",
+      fr: "Positions des arrêts par jour — couleur et numéro désignent le jour.",
+      es: "Posiciones de las paradas por día — color y número indican el día.",
     },
   } as const;
 
@@ -638,6 +669,27 @@ export function SharedTripView({ shareId }: { shareId: string }) {
 
             <PlanDays plan={plan} shareId={shareId} dayLabel={pick(l, L.dayLabel)} addLabel={pick(l, L.addTrip)} addedLabel={pick(l, L.added)} exploreLabel={pick(l, L.exploreDest)} />
 
+            {/* POLIR3 B (2.30.0): ZEMLJEVID POTI — pariteta z /potovanje in
+                /nacrtuj (odjemalec deljene povezave vidi pot na zemljevidu,
+                ne samo sezname dni). Koordinate IZKLJUČNO iz registra prek
+                destSlug (neujemanja iskreno brez markerjev + števec v
+                komponenti). Pogojna izrisava: vsaj 2 točki skupaj (prazno
+                stanje brez zemljevida). V natisu se izpusti (print:hidden)
+                — obstoječi natis (dnevi + noga) ostaja nedotaknjen. */}
+            {totalStops >= 2 && (
+              <div className="print:hidden">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">{pick(l, L.mapTitle)}</CardTitle>
+                    <p className="text-xs text-muted-foreground">{pick(l, L.mapDesc)}</p>
+                  </CardHeader>
+                  <CardContent>
+                    <PlanMap days={sharedPlanMapDays(plan, shareId)} />
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
             <div className="grid gap-4 sm:grid-cols-2 print:hidden">
               <Card>
                 <CardContent className="p-5">
@@ -896,6 +948,23 @@ export function SharedTripView({ shareId }: { shareId: string }) {
 
           <PlanDays plan={localPlan} shareId={shareId} dayLabel={pick(l, L.dayLabel)} addLabel={pick(l, L.addTrip)} addedLabel={pick(l, L.added)} exploreLabel={pick(l, L.exploreDest)} />
 
+          {/* POLIR3 B (2.30.0): ZEMLJEVID POTI — enaka kartica kot v zavihku
+              Pot oblačne pote (pariteta lokalna pota ↔ baza ↔ /potovanje);
+              pogoj vsaj 2 točki skupaj, v natisu se izpusti (print:hidden). */}
+          {localPlan.days.reduce((n, d) => n + d.locations.length, 0) >= 2 && (
+            <div className="mt-10 print:hidden">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">{pick(l, L.mapTitle)}</CardTitle>
+                  <p className="text-xs text-muted-foreground">{pick(l, L.mapDesc)}</p>
+                </CardHeader>
+                <CardContent>
+                  <PlanMap days={sharedPlanMapDays(localPlan, shareId)} />
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
           {/* QR izris + opomba (ne tiska) — P0-G: pravi izris */}
           <div className="mt-10 grid gap-4 sm:grid-cols-2 print:hidden">
             <Card>
@@ -937,6 +1006,39 @@ export function SharedTripView({ shareId }: { shareId: string }) {
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * POLIR3 B (2.30.0): DNEVI DELJENE POTE → POSTANKI ZA ZEMLJEVID.
+ *
+ * SharedPlanLocation koordinat NE nosi (iskrena odsotnost) — koordinate
+ * pridejo IZKLJUČNO iz registra destinacij prek destSlug
+ * (getDestination = DESTINATIONS.find(d => d.slug === …)). Lokacija brez
+ * ujemanja v registru ostane BREZ coords: PlanMap je ne izriše, planMapData
+ * pa jo iskreno prešteje v opombo „N postankov brez znanih koordinat ni
+ * prikazan“. Koordinate se NIKOLI ne izmišljujejo.
+ *
+ * durationMin/cost/kind ta načrt ne nosi (shared zapis jih nima) — za
+ * zemljevid so neutralni (0 / „custom“) in se nikjer ne prikažejo
+ * (PlanMap bere izključno id/name/time/coords). Id je enolično izpeljan
+ * iz shareId + številke dneva + zaporedja lokacije.
+ */
+function sharedPlanMapDays(plan: SharedPlan, shareId: string): TripStop[][] {
+  return plan.days.map((day) =>
+    day.locations.map((loc, i): TripStop => {
+      const dest = loc.destSlug ? getDestination(loc.destSlug) : undefined;
+      return {
+        id: `${shareId}-d${day.day}-${i}`,
+        name: loc.name,
+        time: loc.time ?? null,
+        durationMin: 0,
+        cost: 0,
+        kind: "custom",
+        // Iskrenost: coords SAMO iz ujemanja destSlug v registru.
+        ...(dest ? { coords: dest.coords } : {}),
+      };
+    })
   );
 }
 

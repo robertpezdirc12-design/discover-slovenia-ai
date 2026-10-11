@@ -160,23 +160,64 @@ export function isWeatherResponse(v: unknown): v is WeatherResponse {
 }
 
 /**
+ * Ali je telo odgovora zasilni „offline“ JSON service workerja
+ * (public/sw.js → makeOfflineApiResponse: { ok:false, offline:true })?
+ * Čista straža — klient ne zaupa slepo obliki (QA U12: prepoznan
+ * POŠTEN vzrok „brez povezave“, ne generična napaka).
+ */
+export function isOfflineApiBody(v: unknown): boolean {
+  if (typeof v !== "object" || v === null) return false;
+  const o = v as Record<string, unknown>;
+  return o.ok === false && o.offline === true;
+}
+
+/**
+ * Vrsta napake vremenske poizvedbe (QA U12 — iskren RAZLOG odsotnosti,
+ * ne le „null“):
+ *  - "network": poizvedba ni prišla do odgovora strežnika — zavrnitev
+ *    fetch (brez povezave) ali zasilni 503 { offline: true } SW-ja;
+ *  - "service": strežnik je odgovoril z napako (502/429/400) ali z
+ *    neveljavno obliko — povezava deluje, težava je na servisu.
+ */
+export type WeatherFetchErrorKind = "network" | "service";
+
+/**
+ * Rezultat fetchStopWeather: uspeh nosi podatke, napaka pa VRSTO —
+ * klicatelj (Go Mode) tako pošteno razloži, zakaj vreme ni na voljo.
+ */
+export type WeatherFetchResult =
+  | { ok: true; data: WeatherResponse }
+  | { ok: false; kind: WeatherFetchErrorKind };
+
+/**
  * Odjemalec: pridobi vreme na postanku prek /api/weather?lat&lng.
- * Vrača null ob KATERI koli napaki (omrežje, 4xx/5xx, napačna oblika) —
- * klicatelj pokaže iskreno stanje napake; NIKOLI ne izmišljamo podatkov.
- * `signal` omogoča prekinitev ob odklopu komponente (unmount).
+ * Vrača { ok:true, data } ob uspehu ali { ok:false, kind } z VRSTO
+ * napake (omrežje ≠ servis) — vremenskih podatkov NIKOLI ne izmišljujemo;
+ * ob kateri koli napaki klicatelj pokaže iskreno stanje. `signal`
+ * omogoča prekinitev ob odklopu komponente (unmount).
  */
 export async function fetchStopWeather(
   lat: number,
   lng: number,
   signal?: AbortSignal
-): Promise<WeatherResponse | null> {
+): Promise<WeatherFetchResult> {
   try {
     const res = await fetch(`/api/weather?lat=${lat}&lng=${lng}`, { signal });
-    if (!res.ok) return null;
+    if (res.status === 503) {
+      // Zasilni odgovor SW-ja brez povezave ({ ok:false, offline:true }) —
+      // prepoznamo pošten vzrok; tuji 503 brez telesa ostane "service".
+      const body: unknown = await res.json().catch(() => null);
+      if (isOfflineApiBody(body)) return { ok: false, kind: "network" };
+    }
+    if (!res.ok) return { ok: false, kind: "service" };
     const data: unknown = await res.json();
-    return isWeatherResponse(data) ? data : null;
+    return isWeatherResponse(data)
+      ? { ok: true, data }
+      : { ok: false, kind: "service" };
   } catch {
-    return null;
+    // Zavrnitev fetch = omrežna raven (brez povezave; tudi prekinitev ob
+    // odklopu komponente — tedaj vrsta ne pomenuje, klicatelj že odhaja).
+    return { ok: false, kind: "network" };
   }
 }
 

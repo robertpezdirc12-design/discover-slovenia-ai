@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   Wand2,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -63,7 +64,22 @@ import type { ItineraryPlan, MyTripItem, TripStop } from "@/lib/types";
  * dnevna navigacija, akcija Navigiraj (OSM directions — legal, brez ključev)
  * in sekcija ISKRENIH opozoril (geo-časovna validacija po vzorcu P0.2:
  * sosednja postanka — razdalja in ocena vožnje ~60 km/h).
+ * POLIR3 B (2.30.0): + ZEMLJEVID POTI — vsi dnevi načrta na enem pogledu
+ * (isti PlanMap kot na /nacrtuj; pariteta s /pot/[shareId]).
  */
+
+// POLIR3 B (2.30.0): ZEMLJEVID POTI — klientanski dinamični uvoz (Leaflet
+// dostopa do window že ob uvozu modula → ssr: false je OBVEZEN; Skeleton
+// prepreči layout shift med nalaganjem). Imenovani export PlanMap iz
+// @/components/plan/plan-map — ISTA komponenta kot na /nacrtuj (2.29.0),
+// zemljevid ni podvojen.
+const PlanMap = dynamic(
+  () => import("@/components/plan/plan-map").then((m) => m.PlanMap),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-72 w-full rounded-xl sm:h-80" />,
+  }
+);
 
 const L = {
   kicker: { sl: "Potovanje", en: "Journey", it: "Viaggio", de: "Reise", fr: "Voyage", es: "Viaje" },
@@ -238,6 +254,17 @@ const L = {
     de: "Quelle: Entwurf Meine Reise (Zeiten sind Vorschläge)",
     fr: "source : brouillon Mon voyage (les horaires sont des propositions)",
     es: "fuente: borrador de Mi viaje (los horarios son propuestas)",
+  },
+  // POLIR3 B (2.30.0): zemljevid poti — naslov in legenda kartice (isti
+  // ključi kot v shared-trip-view: pot je skupna obema pogledoma).
+  mapTitle: { sl: "Zemljevid poti", en: "Trip map", it: "Mappa del viaggio", de: "Reisekarte", fr: "Carte du voyage", es: "Mapa del viaje" },
+  mapDesc: {
+    sl: "Položaji postankov po dnevih — barva in številka pomenita dan.",
+    en: "Stop positions by day — colour and number stand for the day.",
+    it: "Posizioni delle tappe per giorno — colore e numero indicano il giorno.",
+    de: "Positionen der Stopps nach Tag — Farbe und Nummer stehen für den Tag.",
+    fr: "Positions des arrêts par jour — couleur et numéro désignent le jour.",
+    es: "Posiciones de las paradas por día — color y número indican el día.",
   },
 } as const;
 
@@ -513,6 +540,30 @@ export default function JourneyPage() {
                 </ul>
               </CardContent>
             </Card>
+          )}
+
+          {/* POLIR3 B (2.30.0): ZEMLJEVID POTI — vsi dnevi načrta na enem
+              pogledu (dnevno obarvani številčni markerji + črtkane premočrtne
+              povezave; iskreni opombi — premočrtna povezava, postanki brez
+              koordinat — sta znotraj komponente PlanMap). Klientanski
+              dinamični uvoz (ssr: false, Skeleton med nalaganjem). V natisu
+              se zemljevid izpusti (print:hidden): časovnica dneva je vir
+              resnice (kanon /nacrtuj). Pogojna izrisava: zemljevid stoji
+              SAMO, kadar načrt dejansko nosi vsaj en postanek (prazno
+              stanje ostane prazno — brez praznega zemljevida). Brez
+              poudarka markerja/klika: ta pogled nima izbirnih vrstic. */}
+          {data.plan.days.some((day) => day.length > 0) && (
+            <div className="mt-4 print:hidden">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">{pick(l, L.mapTitle)}</CardTitle>
+                  <p className="text-xs text-muted-foreground">{pick(l, L.mapDesc)}</p>
+                </CardHeader>
+                <CardContent>
+                  <PlanMap days={data.plan.days} />
+                </CardContent>
+              </Card>
+            </div>
           )}
 
           {/* ISKRENA OPOZORILA */}

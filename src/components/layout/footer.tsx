@@ -155,7 +155,7 @@ export function Footer() {
             © 2026 Discover Slovenia AI. {t("madeIn")}. {t("affiliate")}
           </p>
           <p className="font-mono">
-            v2.28.0 · {t("reconstruction")} 2026-10-11
+            v2.29.0 · {t("reconstruction")} 2026-10-12
           </p>
         </div>
       </div>

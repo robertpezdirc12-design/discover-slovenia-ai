@@ -530,7 +530,12 @@ export default function DataSourcePage() {
       </h2>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         {sources.map((s) => (
-          <Card key={s.name}>
+          /* POLIR8 (2.35.0): min-w-0 — vir je PREDMET mreže z min-width:auto;
+             min-content kartice = nowrap URL povezava (263 px) je naredila
+             kartico 305 px > 288 px tracka (1 px sub-pixel preliva @320,
+             WCAG 1.4.10); min-w-0 dovoli skrčenje, URL se poravna v
+             p-5 padding (ne raznese več strani). */
+          <Card key={s.name} className="min-w-0">
             <CardContent className="p-5">
               <p className="text-sm font-bold">{s.name}</p>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.desc}</p>

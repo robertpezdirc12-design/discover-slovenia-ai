@@ -136,9 +136,22 @@ export function Footer() {
                 <ul className="mt-3 space-y-2.5">
                   {col.links.map((link) => (
                     <li key={link.href}>
+                      {/* POLIR8 (2.35.0): break-words + max-w-full — nemške
+                          sestavljenke („Nutzungsbedingungen“ 158 px,
+                          „Datenschutzerklärung“ 155 px) se prelomijo v
+                          128 px stolpcu namesto da raznesejo stran (14 px
+                          preliva na VSEH straneh v DE @320, WCAG 1.4.10).
+                          EMPIRIČNO (agent-browser @320): break-words SAMO na
+                          inline-flex NE deluje — anonymous flex item ima
+                          min-width:auto = min-content besede (break-word ne
+                          vpliva na min-content), zato inline-flex →
+                          inline-block (besedilo živi v vrsticah BFC),
+                          max-w-full ga omeji na stolpec, break-words prelomi
+                          besedo; večbesedne povezave se ovijejo kot prej;
+                          min-h-6 ohrani tap-target. */}
                       <Link
                         href={link.href}
-                        className="inline-flex min-h-6 items-center text-sm text-muted-foreground transition-colors hover:text-primary"
+                        className="inline-block max-w-full min-h-6 text-sm break-words text-muted-foreground transition-colors hover:text-primary"
                       >
                         {link.label}
                       </Link>
@@ -155,7 +168,7 @@ export function Footer() {
             © 2026 Discover Slovenia AI. {t("madeIn")}. {t("affiliate")}
           </p>
           <p className="font-mono">
-            v2.34.0 · {t("reconstruction")} 2026-10-12
+            v2.35.0 · {t("reconstruction")} 2026-10-12
           </p>
         </div>
       </div>

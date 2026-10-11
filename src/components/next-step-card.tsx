@@ -263,7 +263,10 @@ export function NextStepCard({
                     </p>
 
                     <div className="mt-4">
-                      <Button asChild className="min-h-11 font-semibold">
+                      {/* POLIR8 (2.35.0): whitespace-normal h-auto — FR oznaka
+                          „Parcourir les destinations" (251 px nowrap) je povzročala
+                          16 px preliva na /nacrtuj in /trznica @320 (WCAG 1.4.10). */}
+                      <Button asChild className="min-h-11 h-auto whitespace-normal font-semibold">
                         <Link href={primary.ctaHref}>
                           {primary.ctaLabel}
                           <ArrowRight className="size-4" aria-hidden="true" />

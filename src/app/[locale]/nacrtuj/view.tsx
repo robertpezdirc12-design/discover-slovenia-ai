@@ -8,6 +8,7 @@ import {
   ChevronUp,
   CircleCheck,
   FileDown,
+  FileUp,
   Footprints,
   GripVertical,
   Info,
@@ -83,6 +84,14 @@ import {
   type PlannerLang,
 } from "@/lib/itinerary-engine";
 import { myTrip } from "@/lib/my-trip";
+// POLIR4 A (2.31.0): UVOZ KML/GPX — klientanski deterministični parser +
+// ujemanje po kanonu DEST_NEEDLES/bližina (0 omrežja: datoteka NE zapusti
+// brskalnika). Rezultat vstopi v ISTI tok Start Anywhere.
+import {
+  deriveImportSuggestion,
+  matchImportPlacemarks,
+  parseImportFile,
+} from "@/lib/plan-import";
 import { interestDisplay } from "@/lib/interests-i18n";
 // POLIR2 A (2.29.0): čiste transformacije za ročno preurejanje dni.
 import {
@@ -217,6 +226,61 @@ const L = {
   saDaysKept: { sl: "dni niso navedeni — ohranjena izbira", en: "days not stated — your choice kept", it: "giorni non indicati — resta la tua scelta", de: "Tage nicht angegeben — deine Wahl bleibt", fr: "jours non précisés — ton choix est conservé", es: "días no indicados — se mantiene tu elección" },
   saApply: { sl: "Uporabi kot izhodišče", en: "Use as the starting point", it: "Usa come punto di partenza", de: "Als Ausgangspunkt verwenden", fr: "Utiliser comme point de départ", es: "Usar como punto de partida" },
   saApplied: { sl: "✓ Uporabljeno — načrt se gradi", en: "✓ Applied — building the plan", it: "✓ Applicato — creo il piano", de: "✓ Übernommen — Plan wird erstellt", fr: "✓ Appliqué — création du plan", es: "✓ Aplicado — creando el plan" },
+  // POLIR4 A (2.31.0): UVOZ KML/GPX — uvoz seznama krajev (Google My Maps,
+  // pohodniška/kolesarska orodja) kot izhodišče načrta. Vse klientansko
+  // (0 omrežja), iskerno poročanje neznanih imen in izpuščenih poti.
+  importButton: { sl: "Uvozi KML/GPX", en: "Import KML/GPX", it: "Importa KML/GPX", de: "KML/GPX importieren", fr: "Importer KML/GPX", es: "Importar KML/GPX" },
+  importSource: {
+    sl: (f: string, n: number) => `Uvožena datoteka ${f.toUpperCase()} · ${n} ${n % 100 === 1 ? "točka" : n % 100 === 2 ? "točki" : n % 100 === 3 || n % 100 === 4 ? "točke" : "točk"}`,
+    en: (f: string, n: number) => `Imported ${f.toUpperCase()} file · ${n} ${n === 1 ? "point" : "points"}`,
+    it: (f: string, n: number) => `File ${f.toUpperCase()} importato · ${n} ${n === 1 ? "punto" : "punti"}`,
+    de: (f: string, n: number) => `Importierte ${f.toUpperCase()}-Datei · ${n} ${n === 1 ? "Punkt" : "Punkte"}`,
+    fr: (f: string, n: number) => `Fichier ${f.toUpperCase()} importé · ${n} ${n === 1 ? "point" : "points"}`,
+    es: (f: string, n: number) => `Archivo ${f.toUpperCase()} importado · ${n} ${n === 1 ? "punto" : "puntos"}`,
+  },
+  importUnmatched: {
+    sl: (names: string[]) => `Niso v registru: ${names.join(", ")} — niso vključeni v predlog (ne ugibamo).`,
+    en: (names: string[]) => `Not in the register: ${names.join(", ")} — not included in the suggestion (we don't guess).`,
+    it: (names: string[]) => `Non nel registro: ${names.join(", ")} — non inclusi nel suggerimento (non tiriamo a indovinare).`,
+    de: (names: string[]) => `Nicht im Register: ${names.join(", ")} — nicht in den Vorschlag aufgenommen (wir raten nicht).`,
+    fr: (names: string[]) => `Pas dans le registre : ${names.join(", ")} — non inclus dans la suggestion (on ne devine pas).`,
+    es: (names: string[]) => `No están en el registro: ${names.join(", ")} — no se incluyen en la sugerencia (no adivinamos).`,
+  },
+  importSkippedPaths: {
+    sl: (n: number) => `Izpuščene poti (niso kraji): ${n}.`,
+    en: (n: number) => `Skipped paths (not places): ${n}.`,
+    it: (n: number) => `Percorsi saltati (non luoghi): ${n}.`,
+    de: (n: number) => `Übersprungene Pfade (keine Orte): ${n}.`,
+    fr: (n: number) => `Itinéraires ignorés (pas des lieux) : ${n}.`,
+    es: (n: number) => `Rutas omitidas (no lugares): ${n}.`,
+  },
+  importDuplicates: {
+    sl: (n: number) => `Ponovljene točke: ${n} — isti kraj je upoštevan samo enkrat.`,
+    en: (n: number) => `Repeated points: ${n} — the same place is counted only once.`,
+    it: (n: number) => `Punti ripetuti: ${n} — lo stesso luogo è contato una sola volta.`,
+    de: (n: number) => `Wiederholte Punkte: ${n} — derselbe Ort wird nur einmal gezählt.`,
+    fr: (n: number) => `Points répétés : ${n} — un même lieu n'est compté qu'une seule fois.`,
+    es: (n: number) => `Puntos repetidos: ${n} — el mismo lugar se cuenta solo una vez.`,
+  },
+  importTruncated: { sl: "Datoteka ima več kot 200 točk — upoštevanih je prvih 200.", en: "The file has more than 200 points — the first 200 are used.", it: "Il file ha più di 200 punti — vengono usati i primi 200.", de: "Die Datei hat mehr als 200 Punkte — die ersten 200 werden verwendet.", fr: "Le fichier contient plus de 200 points — les 200 premiers sont utilisés.", es: "El archivo tiene más de 200 puntos — se usan los primeros 200." },
+  importNoMatch: {
+    sl: "V datoteki nisem prepoznal nobenega kraja iz registra (38 destinacij). Ne ugibam — dodaj imena krajev (npr. Bled) v datoteko ali izberi interese spodaj.",
+    en: "No place from the register (38 destinations) was recognized in the file. We don't guess — add place names (e.g. Bled) to the file or pick interests below.",
+    it: "Nel file non è stato riconosciuto nessun luogo del registro (38 destinazioni). Non indoviniamo — aggiungi i nomi dei luoghi (es. Bled) al file oppure scegli gli interessi sotto.",
+    de: "In der Datei wurde kein Ort aus dem Register (38 Reiseziele) erkannt. Wir raten nicht — füge Ortsnamen (z. B. Bled) zur Datei hinzu oder wähle unten Interessen.",
+    fr: "Aucun lieu du registre (38 destinations) n'a été reconnu dans le fichier. On ne devine pas — ajoute des noms de lieux (ex. Bled) au fichier ou choisis des centres d'intérêt ci-dessous.",
+    es: "No se reconoció ningún lugar del registro (38 destinos) en el archivo. No adivinamos — añade nombres de lugares (p. ej. Bled) al archivo o elige intereses abajo.",
+  },
+  importReadError: { sl: "Datoteke ni bilo mogoče prebrati — poskusi znova.", en: "The file could not be read — please try again.", it: "Impossibile leggere il file — riprova.", de: "Die Datei konnte nicht gelesen werden — bitte erneut versuchen.", fr: "Le fichier n'a pas pu être lu — veuillez réessayer.", es: "No se pudo leer el archivo — inténtalo de nuevo." },
+  importPrivacy: { sl: "Obdelava v brskalniku — datoteka ne zapusti naprave.", en: "Processed in the browser — the file never leaves your device.", it: "Elaborazione nel browser — il file non lascia il dispositivo.", de: "Verarbeitung im Browser — die Datei verlässt dein Gerät nicht.", fr: "Traitement dans le navigateur — le fichier ne quitte pas l'appareil.", es: "Procesado en el navegador — el archivo no sale del dispositivo." },
+  importOriginNote: {
+    sl: "Uvoženi kraji so izhodišče načrta (interesi in regija), ne prisilna pot — načrt sestavi deterministični motor.",
+    en: "Imported places are the plan's starting point (interests and region), not a forced route — the plan is built by the deterministic engine.",
+    it: "I luoghi importati sono il punto di partenza del piano (interessi e regione), non un itinerario forzato — il piano lo crea il motore deterministico.",
+    de: "Importierte Orte sind der Ausgangspunkt des Plans (Interessen und Region), keine erzwungene Route — den Plan erstellt die deterministische Engine.",
+    fr: "Les lieux importés sont le point de départ du plan (centres d'intérêt et région), pas un itinéraire imposé — le plan est créé par le moteur déterministe.",
+    es: "Los lugares importados son el punto de partida del plan (intereses y región), no una ruta forzada — el plan lo crea el motor determinista.",
+  },
   fewerDaysNote: {
     sl: (requested: number, filled: number) => `Zahteval si ${requested} ${requested === 1 ? "dan" : "dni"}, sestavljenih pa je bilo mogoče le ${filled}. Za preostale dni ni bilo več ustreznih destinacij za izbrane interese in regijo — razširi interese, spremeni regijo ali zmanjšaj število dni. Iskreno povejamo, namesto da bi izmišljevali postanke.`,
     en: (requested: number, filled: number) => `You asked for ${requested} ${requested === 1 ? "day" : "days"}, but only ${filled} ${filled === 1 ? "was" : "were"} possible to fill. There were no more matching destinations for the chosen interests and region — broaden the interests, change the region or reduce the number of days. We tell you honestly instead of inventing stops.`,
@@ -632,15 +696,18 @@ interface SaResult {
   engine: string;
   source:
     | { kind: "url"; host: string; title: string | null }
-    | { kind: "text"; chars: number };
+    | { kind: "text"; chars: number }
+    // POLIR4 A (2.31.0): uvožena datoteka KML/GPX (klientansko razčlenjena).
+    | { kind: "import"; format: "kml" | "gpx"; points: number };
   matches: {
     slug: string;
     name: string;
     type: string;
     region: string;
     evidence: string;
-    needle: string;
-    kind: "stem" | "exact";
+    // needle manjka pri koordinatnem ujemanju uvoza (dokaz je bližina).
+    needle?: string;
+    kind: "stem" | "exact" | "coords";
   }[];
   intent: {
     interests?: string[];
@@ -651,6 +718,11 @@ interface SaResult {
   } | null;
   suggestion: { interests: string[]; region?: string };
   hint?: string;
+  // POLIR4 A: iskreni dodatki uvoza (samo pri source.kind === "import").
+  unmatchedNames?: string[];
+  skippedPaths?: number;
+  duplicateCount?: number;
+  truncated?: boolean;
 }
 
 function PlannerApp() {
@@ -683,6 +755,10 @@ function PlannerApp() {
   const [saError, setSaError] = useState<string | null>(null);
   const [saResult, setSaResult] = useState<SaResult | null>(null);
   const [saApplied, setSaApplied] = useState(false);
+  // POLIR4 A (2.31.0): skriti datotečni vhod uvoza KML/GPX (sr-only; klik
+  // sproži gumb „Uvozi KML/GPX" — po branju se vrednost RESETIRA, da lahko
+  // uporabnik izbere ISTO datoteko znova).
+  const importInputRef = React.useRef<HTMLInputElement | null>(null);
   const [plan, setPlan] = useState<ItineraryPlan | null>(null);
   // POLIR2 A (2.29.0): zadnji ČISTI načrt motorja (za „Povrni vrstni red
   // motorja“) + zastavica ročnega preurejanja (iskrena značka). PlannerApp
@@ -856,6 +932,67 @@ function PlannerApp() {
       setSaBusy(false);
     }
   }, [saInput, l]);
+
+  // POLIR4 A (2.31.0): UVOZ KML/GPX — datoteka se prebere in razčleni
+  // IZKLJUČNO v brskalniku (FileReader + ročni deterministični tokenizer iz
+  // @/lib/plan-import; 0 fetch, 0 omrežja — datoteka NE zapusti naprave).
+  // Rezultat vstopi v ISTI tok Start Anywhere: saResult → „Uporabi kot
+  // izhodišče" → applyStartAnywhere (obstoječa zlitjev v obrazec + motor).
+  // 0 zadetkov → iskrena napaka brez načrta (nikoli ne ugibamo).
+  const onImportFile = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+      e.target.value = ""; // reset: uporabnik lahko izbere ISTO datoteko znova
+      if (!file) return;
+      if (saApplied) setSaApplied(false);
+      setSaBusy(true);
+      setSaError(null);
+      setSaResult(null);
+      const done = () => setSaBusy(false);
+      const reader = new FileReader();
+      reader.onerror = () => {
+        setSaError(pick(l, L.importReadError));
+        done();
+      };
+      reader.onload = () => {
+        try {
+          const text = typeof reader.result === "string" ? reader.result : "";
+          const parsed = parseImportFile(text);
+          if (parsed.error !== null || parsed.format === null) {
+            setSaError(parsed.error ?? pick(l, L.importNoMatch));
+            done();
+            return;
+          }
+          const mr = matchImportPlacemarks(parsed.placemarks);
+          if (mr.matched.length === 0) {
+            setSaError(pick(l, L.importNoMatch));
+            done();
+            return;
+          }
+          setSaResult({
+            engine: "client-import → deterministic-planner",
+            source: {
+              kind: "import",
+              format: parsed.format,
+              points: parsed.placemarks.length,
+            },
+            matches: mr.matched,
+            intent: null, // uvoz ne razume namena (dni/sezona) — izhodišče so kraji
+            suggestion: deriveImportSuggestion(mr.matched),
+            unmatchedNames: mr.unmatchedNames,
+            skippedPaths: parsed.skippedPaths,
+            duplicateCount: mr.duplicateCount,
+            truncated: parsed.truncated,
+          });
+        } catch {
+          setSaError(pick(l, L.importReadError));
+        }
+        done();
+      };
+      reader.readAsText(file);
+    },
+    [l, saApplied]
+  );
 
   // Zlivanje predloga v obrazec + generiranje (isti tok kot prednastavitve).
   const applyStartAnywhere = useCallback(() => {
@@ -1072,15 +1209,39 @@ function PlannerApp() {
               className="min-h-11 flex-1"
               disabled={saBusy || loading}
             />
-            <Button
-              type="button"
-              onClick={() => void runStartAnywhere()}
-              disabled={saBusy || loading || saInput.trim().length < 4}
-              className="min-h-11"
-            >
-              {saBusy ? pick(l, L.saBusy) : pick(l, L.saButton)}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                onClick={() => void runStartAnywhere()}
+                disabled={saBusy || loading || saInput.trim().length < 4}
+                className="min-h-11"
+              >
+                {saBusy ? pick(l, L.saBusy) : pick(l, L.saButton)}
+              </Button>
+              {/* POLIR4 A (2.31.0): uvoz datoteke KML/GPX — 100 % klientansko
+                  (razčlenitev v brskalniku, datoteka ne zapusti naprave). */}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => importInputRef.current?.click()}
+                disabled={saBusy || loading}
+                className="min-h-11"
+              >
+                <FileUp className="size-4" aria-hidden="true" />
+                {pick(l, L.importButton)}
+              </Button>
+            </div>
           </div>
+          {/* Skriti datotečni vhod (sr-only) — reset value po branju omogoča
+              ponovni izbor ISTE datoteke; sprejema samo KML/GPX/XML. */}
+          <input
+            ref={importInputRef}
+            type="file"
+            accept=".kml,.gpx,.xml"
+            className="sr-only"
+            aria-label={pick(l, L.importButton)}
+            onChange={onImportFile}
+          />
           {saError && (
             <p className="text-sm text-destructive" role="alert">
               {saError}
@@ -1093,7 +1254,9 @@ function PlannerApp() {
                 {pick(l, L.saSource)}: {" "}
                 {saResult.source.kind === "url"
                   ? saResult.source.title ?? saResult.source.host
-                  : `${saResult.source.chars} zn.`}
+                  : saResult.source.kind === "import"
+                    ? pick(l, L.importSource)(saResult.source.format, saResult.source.points)
+                    : `${saResult.source.chars} zn.`}
               </p>
               <div>
                 <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
@@ -1116,6 +1279,27 @@ function PlannerApp() {
                   ))}
                 </ul>
               </div>
+              {/* POLIR4 A: ISKRENO poročanje o uvozu — neznana imena, izpuščene
+                  poti, ponovitve in odrez (samo kadar so > 0, nikoli tiho). */}
+              {saResult.source.kind === "import" &&
+                (saResult.unmatchedNames?.length ?? 0) > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    {pick(l, L.importUnmatched)(saResult.unmatchedNames ?? [])}
+                  </p>
+                )}
+              {saResult.source.kind === "import" && (saResult.skippedPaths ?? 0) > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {pick(l, L.importSkippedPaths)(saResult.skippedPaths ?? 0)}
+                </p>
+              )}
+              {saResult.source.kind === "import" && (saResult.duplicateCount ?? 0) > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {pick(l, L.importDuplicates)(saResult.duplicateCount ?? 0)}
+                </p>
+              )}
+              {saResult.source.kind === "import" && saResult.truncated === true && (
+                <p className="text-sm text-muted-foreground">{pick(l, L.importTruncated)}</p>
+              )}
               <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
                 <p className="font-semibold">{pick(l, L.saSuggestionTitle)}</p>
                 <p className="mt-1 text-muted-foreground">
@@ -1146,6 +1330,13 @@ function PlannerApp() {
                   </Button>
                 </div>
               </div>
+              {/* POLIR4 A: zasebnost (0 omrežja) + kraji so izhodišče načrta
+                  (kot pri povezavah/besedilu) — ne prisilna pot. */}
+              {saResult.source.kind === "import" && (
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {pick(l, L.importPrivacy)} {pick(l, L.importOriginNote)}
+                </p>
+              )}
             </div>
           )}
           <p className="text-xs leading-relaxed text-muted-foreground">

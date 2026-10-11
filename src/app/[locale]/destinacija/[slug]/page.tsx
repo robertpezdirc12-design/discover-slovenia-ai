@@ -1,14 +1,22 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { DestinationDetail } from "@/components/destination-detail";
 import { DESTINATIONS, getDestination } from "@/lib/slovenia-data";
 import { alternatesFor } from "@/lib/hreflang";
+import { jsonldScriptHtml, touristDestinationJsonLd } from "@/lib/jsonld";
 
 /**
  * /destinacija/[slug] — podrobnost destinacije (SSG po slug-u).
  * Neznan slug → notFound() → [locale]/not-found.tsx.
+ *
+ * SEO JSON-LD (POLIR C, 2.28.0): schema.org TouristDestination — samo
+ * polja, ki res obstajajo v kanonskih podatkih (name/description = SL
+ * kanon, geo = realne koordinate, image = realna fotografija). Inline
+ * skripta nosi CSP nonce z zahteve (middleware → x-nonce; brez nonca bi
+ * jo produkcjska CSP blokirala — enak kanon kot layout/next-themes).
  */
 
 interface Props {
@@ -44,5 +52,18 @@ export default async function DestinationPage({ params }: Props) {
   setRequestLocale(locale);
   const d = getDestination(slug);
   if (!d) notFound();
-  return <DestinationDetail d={d} />;
+  // CSP nonce (middleware → x-nonce) — enak mehanizem kot v layoutu.
+  const nonce = (await headers()).get("x-nonce") ?? "";
+  return (
+    <>
+      <DestinationDetail d={d} />
+      <script
+        type="application/ld+json"
+        nonce={nonce}
+        dangerouslySetInnerHTML={{
+          __html: jsonldScriptHtml(touristDestinationJsonLd(d, locale)),
+        }}
+      />
+    </>
+  );
 }

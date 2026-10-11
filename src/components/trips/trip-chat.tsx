@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocale } from "next-intl";
 import {
+  AlertTriangle,
   Bot,
   Loader2,
   MessageCircle,
@@ -13,6 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { pick } from "@/lib/i18n-pick";
 // slovenski helperji — enkraten vir kanona (99-b / 48-a rekonstrukcija)
 import { messagesLabel, slTimeAgo } from "@/lib/sl-utils";
 // W2: čisti helperji @AI (omemba, rezervirano ime)
@@ -34,6 +37,21 @@ import { AI_ADVISOR_NAME, isAiMention } from "@/lib/trip-chat-engine";
 // ============================================================================
 
 const COMMENT_TEXT_MAX = 500;
+
+/**
+ * QA U14 (2026-10-11): 429 (omejitev 30 sporočil/min) mora biti VIDNA v
+ * klepetu — ne tiha ponastavitev. Opozorilo je v vrstici klepeta (ne le
+ * toast, ki ugasne) in je v 6 jezikih po vzorcu pick (ostanek klepeta je
+ * SL-only kanon izvirnika — sporočilo je namenoma dvojezično pripravljeno).
+ */
+const RATE_LIMIT_NOTICE = {
+  sl: "Prehitro si — počakaj trenutek in poskusi znova. Sporočilo ni bilo poslano.",
+  en: "You’re going too fast — wait a moment and try again. Your message was not sent.",
+  it: "Stai andando troppo veloce — aspetta un attimo e riprova. Il messaggio non è stato inviato.",
+  de: "Du bist zu schnell — warte einen Moment und versuche es erneut. Die Nachricht wurde nicht gesendet.",
+  fr: "Tu vas trop vite — attends un instant et réessaie. Ton message n’a pas été envoyé.",
+  es: "Vas demasiado rápido — espera un momento e inténtalo de nuevo. El mensaje no se ha enviado.",
+} as const;
 
 /** Barve avatarjev — toplo/zeleno obarvana paleta (brez modre/indigo). */
 const AVATAR_COLORS = [
@@ -79,12 +97,16 @@ function nameInitial(name: string): string {
 
 export function TripChat({ shareId, createdAt, canPost, myName }: TripChatProps) {
   const { toast } = useToast();
+  const l = useLocale();
 
   const [messages, setMessages] = useState<TripChatItem[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [text, setText] = useState<string>("");
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [aiPending, setAiPending] = useState<boolean>(false);
+  // QA U14: viden opomnik omejitve (429) v klepetu — izbriše se ob naslednji
+  // uspešni objavi (uporabnik vidi, da sporočilo NI bilo poslano).
+  const [rateLimited, setRateLimited] = useState<boolean>(false);
 
   // Relativni čas računamo šele po mountu (SSR/klient ura se razlikujeta)
   const [mounted, setMounted] = useState<boolean>(false);
@@ -219,12 +241,25 @@ export function TripChat({ shareId, createdAt, canPost, myName }: TripChatProps)
           | { success?: unknown; message?: TripChatItem; aiMessage?: TripChatItem; aiError?: string; error?: unknown }
           | null;
 
+        // QA U14 (2026-10-11): 429 = omejitev objavljanja (30/min) — izpišemo
+        // JASEN viden opomnik v klepetu (ne tiha napaka ne generični toast);
+        // besedilo uporabnika OSTANE v vnosnem polju (nič se ne izgubi).
+        if (res.status === 429) {
+          setRateLimited(true);
+          toast({
+            title: pick(l, RATE_LIMIT_NOTICE),
+            variant: "destructive",
+          });
+          return;
+        }
+
         if (!res.ok || d?.success !== true || !d?.message) {
           throw new Error(
             typeof d?.error === "string" ? d.error : `HTTP ${res.status}`
           );
         }
 
+        setRateLimited(false);
         setMessages((prev) => [...(prev ?? []), d.message as TripChatItem]);
         setText("");
 
@@ -314,8 +349,10 @@ export function TripChat({ shareId, createdAt, canPost, myName }: TripChatProps)
                 »@AI kje lahko večerjamo v Bledu?«
               </em>{" "}
               — svetovalec odgovarja vsem v klepetu, iz podatkov platforme
-              (deterministično, z viri). Odgovarja o vremenu, razdaljah,
-              predlogih in cenah — izključno iz te pote in baze destinacij.
+              (deterministično, z viri). Odgovarja o vremenu (trenutno in
+              dnevna napoved, ko ima pot datume), razdaljah, predlogih,
+              cenah, hrani (zbirka Lokali) in destinacijah — iz te pote
+              in kanonskih zbirk platforme.
             </p>
           </div>
 
@@ -435,6 +472,19 @@ export function TripChat({ shareId, createdAt, canPost, myName }: TripChatProps)
               onSubmit={(e) => void submitComment(e)}
               className="space-y-3 border-t border-border pt-4"
             >
+              {/* QA U14: viden opomnik omejitve 429 — v klepetu, ne le v toastu */}
+              {rateLimited ? (
+                <p
+                  role="alert"
+                  className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400"
+                >
+                  <AlertTriangle
+                    className="mt-0.5 size-4 shrink-0"
+                    aria-hidden="true"
+                  />
+                  {pick(l, RATE_LIMIT_NOTICE)}
+                </p>
+              ) : null}
               <p className="text-xs text-muted-foreground">
                 Pišeš kot <strong className="font-semibold text-foreground">{myName ?? "sodelujoči"}</strong>{" "}
                 (ime tvojega računa — avtorstvo je vkleto v sejo).

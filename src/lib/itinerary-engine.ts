@@ -371,6 +371,41 @@ const SYNONYMS: Record<string, string[]> = {
   museum: ["muzej"],
 };
 
+/**
+ * QA U13 (2026-10-11): PREDPONE IZPELJANIH OBLIK (pridevniki −ski/−ska/−sko,
+ * glagolniki −enje …). Surovi vnosi iz polja „lastni interesi“ na /nacrtuj
+ * (npr. „kolesarski izlet“) pridejo v motor NEobdelani — te oblike v
+ * podatkih ne živijo dobesedno, zato so pred tem padle v „Brez neposrednega
+ * zadetka“, čeprav je bil pomen znan. Preslikave so EKSPRESNE in usmerjene
+ * NA KORENE, KI DEJANSKO ŽIVIJO V PODATKIH DESTINACIJ (preverjeno nad
+ * naborom 38 — nikoli obratno, nikoli ugibanje). Predponska oblika pokrije
+ * vse sklone pridevnika (kolesarski/kolesarska/kolesarskega/…).
+ */
+const DERIVED_PREFIXES: ReadonlyArray<{
+  prefix: string;
+  roots: readonly string[];
+}> = [
+  { prefix: "kolesar", roots: ["kolo"] }, // kolesarski izlet, kolesarjenje
+  { prefix: "pohodnisk", roots: ["pohod"] }, // pohodniški izlet, pohodniška pot
+  { prefix: "smucarsk", roots: ["smucanje"] }, // smučarski vikend
+  { prefix: "vinogradn", roots: ["vino"] }, // vinogradniška pokrajina
+  { prefix: "vinar", roots: ["vino"] }, // vinarski konec tedna, vinarstvo
+  { prefix: "kultur", roots: ["kultura"] }, // kulturni spomenik
+  { prefix: "druzin", roots: ["druzina"] }, // družinski izlet
+  { prefix: "gorsk", roots: ["gora", "gorovje"] }, // gorska vas
+  { prefix: "morsk", roots: ["morje", "obala"] }, // morski izlet
+  { prefix: "jezersk", roots: ["jezero"] }, // jezerska stran
+  { prefix: "recn", roots: ["reka"] }, // rečni izlet
+];
+
+/** Koreni za izpeljano obliko besede (QA U13) — null, če ni izpeljanka. */
+function derivedRoots(word: string): readonly string[] | null {
+  for (const rule of DERIVED_PREFIXES) {
+    if (word.startsWith(rule.prefix)) return rule.roots;
+  }
+  return null;
+}
+
 /** Sinhroni slovar s normaliziranimi (brezdiakritičnimi) ključi. */
 const SYNONYMS_N = new Map<string, string[]>(
   Object.entries(SYNONYMS).map(([k, v]) => [normText(k), v])
@@ -396,13 +431,30 @@ function destinationBlob(d: Destination): string {
   );
 }
 
-/** Ali se interes ujema z destinacijo (interes se normalizira tu). */
-/**
- * Ali interesna beseda ujame destinacijo (sinonimi vključeni) — izvoženo
- * za P1-B recommendation-reasons (isti kanon ujemanja kot načrtovalnik).
- */
-export function interestMatches(blobTokens: string[], blob: string, interestRaw: string): boolean {
-  const interest = normText(interestRaw);
+/** Ali seznam korenov (sinonimov ali izpeljank) ujame blob? Skupna logika. */
+function rootsMatch(
+  blobTokens: string[],
+  blob: string,
+  roots: readonly string[]
+): boolean {
+  for (const syn of roots) {
+    if (blob.includes(syn)) return true;
+    const synStem = stemWord(syn);
+    if (synStem.length >= 3) {
+      for (const token of blobTokens) {
+        if (token.startsWith(synStem)) return true;
+      }
+    }
+  }
+  return false;
+}
+
+/** Ujemanje ENE oblike interesa (podniz → koren → sinonimi → izpeljanke). */
+function interestMatchesSingle(
+  blobTokens: string[],
+  blob: string,
+  interest: string
+): boolean {
   if (!interest) return false;
   if (blob.includes(interest)) return true;
   const stem = stemWord(interest);
@@ -411,13 +463,32 @@ export function interestMatches(blobTokens: string[], blob: string, interestRaw:
       if (token.startsWith(stem)) return true;
     }
   }
-  for (const syn of SYNONYMS_N.get(interest) ?? []) {
-    if (blob.includes(syn)) return true;
-    const synStem = stemWord(syn);
-    if (synStem.length >= 3) {
-      for (const token of blobTokens) {
-        if (token.startsWith(synStem)) return true;
-      }
+  if (rootsMatch(blobTokens, blob, SYNONYMS_N.get(interest) ?? [])) return true;
+  // QA U13 (2026-10-11): izpeljane/pridevniške oblike (kolesarski → kolo …).
+  const derived = derivedRoots(interest);
+  if (derived && rootsMatch(blobTokens, blob, derived)) return true;
+  return false;
+}
+
+/**
+ * Ali se interes ujema z destinacijo (interes se normalizira tu).
+ *
+ * Ali interesna beseda ujame destinacijo (sinonimi vključeni) — izvoženo
+ * za P1-B recommendation-reasons (isti kanon ujemanja kot načrtovalnik).
+ *
+ * QA U13 (2026-10-11): večbesedni lastni interesi („kolesarski izlet“) —
+ * fraza kot celota v podatkih ne živi; poskusimo še vsako besedo posebej
+ * (≥ 3 znaki, vrstni red pojavitve, prvi zadetek velja). Enobesedna pot
+ * ostaje BITNO identična (isti vrstni red preverjanj kot prej).
+ */
+export function interestMatches(blobTokens: string[], blob: string, interestRaw: string): boolean {
+  const interest = normText(interestRaw);
+  if (!interest) return false;
+  if (interestMatchesSingle(blobTokens, blob, interest)) return true;
+  if (interest.includes(" ")) {
+    for (const w of interest.split(" ")) {
+      if (w.length < 3) continue;
+      if (interestMatchesSingle(blobTokens, blob, w)) return true;
     }
   }
   return false;
@@ -497,12 +568,18 @@ export function typeAffinityMatches(d: Destination, interestRaw: string): boolea
     normText(typeLabel(d.type, "en")),
   ]);
   if (names.has(interest)) return true;
-  for (const syn of SYNONYMS_N.get(interest) ?? []) {
-    if (names.has(syn)) return true;
-    const stem = stemWord(syn);
-    if (stem.length >= 3) {
-      for (const n of names) {
-        if (n.startsWith(stem)) return true;
+  const synonymLists = [
+    SYNONYMS_N.get(interest) ?? [],
+    derivedRoots(interest) ?? [], // QA U13: tudi izpeljanke nosijo afiniteto
+  ];
+  for (const roots of synonymLists) {
+    for (const syn of roots) {
+      if (names.has(syn)) return true;
+      const stem = stemWord(syn);
+      if (stem.length >= 3) {
+        for (const n of names) {
+          if (n.startsWith(stem)) return true;
+        }
       }
     }
   }

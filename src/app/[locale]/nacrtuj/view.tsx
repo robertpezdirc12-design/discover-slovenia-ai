@@ -9,6 +9,7 @@ import {
   CircleCheck,
   FileDown,
   Footprints,
+  GripVertical,
   Info,
   Link2,
   Loader2,
@@ -19,9 +20,31 @@ import {
   Scale,
   Search,
   Sparkles,
+  Undo2,
   Wand2,
   X,
 } from "lucide-react";
+// POLIR2 A (2.29.0): povleci-in-spusti urejanje dni — dnd-kit je bil v
+// package.json ŽE nameščen (0 novih odvisnosti); v src/ ga prvič uporabljamo.
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCorners,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragOverEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import dynamic from "next/dynamic";
 import { useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
@@ -61,6 +84,13 @@ import {
 } from "@/lib/itinerary-engine";
 import { myTrip } from "@/lib/my-trip";
 import { interestDisplay } from "@/lib/interests-i18n";
+// POLIR2 A (2.29.0): čiste transformacije za ročno preurejanje dni.
+import {
+  isSameOrder,
+  moveStop,
+  recomputeDayTimes,
+  recomputeDayTitle,
+} from "@/lib/plan-reorder";
 import { saveLastPlan } from "@/lib/plan-store";
 import { buildTripPdf, fromItineraryPlan } from "@/lib/pdf/trip-pdf-doc";
 import { downloadTripPdf } from "@/lib/pdf/trip-pdf-render";
@@ -74,6 +104,18 @@ import {
 } from "@/lib/slovenia-data";
 import type { Budget, Season } from "@/lib/slovenia-data";
 import type { ItineraryPlan, TripStop } from "@/lib/types";
+
+// POLIR2 B (2.29.0): ZEMLJEVID NAČRTA — klientanski dinamični uvoz
+// (Leaflet dostopa do window že ob uvozu modula → ssr: false je
+// OBVEZEN; Skeleton prepreči layout shift med nalaganjem). Imenovani
+// export PlanMap iz @/components/plan/plan-map.
+const PlanMap = dynamic(
+  () => import("@/components/plan/plan-map").then((m) => m.PlanMap),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-72 w-full rounded-xl sm:h-80" />,
+  }
+);
 
 /**
  * /nacrtuj — DETERMINISTIČNI načrtovalnik (faza 45-d).
@@ -321,6 +363,47 @@ const L = {
     de: "Der Budgetfilter hat teurere Stopps ausgelassen — daher weniger Stopps.",
     fr: "Le filtre budget a écarté les étapes plus chères — donc moins d’étapes.",
     es: "El filtro de presupuesto descartó las paradas más caras — por eso menos paradas.",
+  },
+  // POLIR2 A (2.29.0): POVLECI-IN-SPUSTI urejanje dni (Wanderlog vzorec) —
+  // vsa nova besedila ×6 po vzorcu obstoječih ključev.
+  manualBadge: { sl: "Ročno preurejeno", en: "Manually reordered", it: "Riordinato manualmente", de: "Manuell umgeordnet", fr: "Réordonné manuellement", es: "Reordenado manualmente" },
+  manualNote: {
+    sl: "Vrstni red si preuredil sam; časi so preračunani (začetek 09:00 + trajanja + ocenjene vožnje).",
+    en: "You reordered the plan yourself; times are recalculated (09:00 start + durations + estimated drives).",
+    it: "Hai riordinato il piano tu; gli orari sono ricalcolati (inizio 09:00 + durate + tragitti stimati).",
+    de: "Du hast die Reihenfolge selbst umgeordnet; die Zeiten werden neu berechnet (Start 09:00 + Dauern + geschätzte Fahrten).",
+    fr: "Tu as réordonné le plan toi-même ; les horaires sont recalculés (début 09:00 + durées + trajets estimés).",
+    es: "Reordenaste el plan tú mismo; los horarios se recalculan (inicio 09:00 + duraciones + trayectos estimados).",
+  },
+  resetOrder: { sl: "Povrni vrstni red motorja", en: "Restore the engine order", it: "Ripristina l'ordine del motore", de: "Motor-Reihenfolge wiederherstellen", fr: "Restaurer l'ordre du moteur", es: "Restaurar el orden del motor" },
+  resetOrderAria: { sl: "Povrni prvotni vrstni red, ki ga je sestavil motor", en: "Restore the original order built by the engine", it: "Ripristina l'ordine originale creato dal motore", de: "Die ursprüngliche Reihenfolge der Engine wiederherstellen", fr: "Restaurer l'ordre original construit par le moteur", es: "Restaurar el orden original creado por el motor" },
+  dragHandle: { sl: "Povleci za preurejanje", en: "Drag to reorder", it: "Trascina per riordinare", de: "Zum Umsortieren ziehen", fr: "Glisser pour réordonner", es: "Arrastra para reordenar" },
+  // POLIR2 B (2.29.0): zemljevid načrta — naslov in legenda kartice.
+  mapTitle: { sl: "Zemljevid načrta", en: "Plan map", it: "Mappa del piano", de: "Plankarte", fr: "Carte du plan", es: "Mapa del plan" },
+  mapDesc: {
+    sl: "Položaji postankov po dnevih — barva in številka pomenita dan.",
+    en: "Stop positions by day — colour and number stand for the day.",
+    it: "Posizioni delle tappe per giorno — colore e numero indicano il giorno.",
+    de: "Positionen der Stopps nach Tag — Farbe und Nummer stehen für den Tag.",
+    fr: "Positions des arrêts par jour — couleur et numéro désignent le jour.",
+    es: "Posiciones de las paradas por día — color y número indican el día.",
+  },
+  dropHere: { sl: "Spusti postanek sem", en: "Drop a stop here", it: "Trascina qui una tappa", de: "Stopp hier ablegen", fr: "Dépose une étape ici", es: "Suelta una parada aquí" },
+  dragKeyboardHint: {
+    sl: "Vlečenje deluje tudi s tipkovnico: fokusiraj ročico, preslednica dvigne, puščice premikajo, preslednica spusti.",
+    en: "Dragging also works with the keyboard: focus the handle, Space lifts, arrow keys move, Space drops.",
+    it: "Anche il trascinamento funziona con la tastiera: metti a fuoco la maniglia, Spazio solleva, le frecce spostano, Spazio rilascia.",
+    de: "Das Ziehen funktioniert auch mit der Tastatur: Griff fokussieren, Leertaste hebt an, Pfeiltasten bewegen, Leertaste legt ab.",
+    fr: "Le glisser fonctionne aussi au clavier : focalise la poignée, Espace soulève, les flèches déplacent, Espace dépose.",
+    es: "Arrastrar también funciona con el teclado: enfoca el tirador, Espacio levanta, las flechas mueven, Espacio suelta.",
+  },
+  movedAnnouncement: {
+    sl: (name: string, day: string, m: number) => `${name} premaknjen na ${day}, mesto ${m}.`,
+    en: (name: string, day: string, m: number) => `${name} moved to ${day}, place ${m}.`,
+    it: (name: string, day: string, m: number) => `${name} spostato in ${day}, posizione ${m}.`,
+    de: (name: string, day: string, m: number) => `${name} verschoben nach ${day}, Platz ${m}.`,
+    fr: (name: string, day: string, m: number) => `${name} déplacé vers ${day}, place ${m}.`,
+    es: (name: string, day: string, m: number) => `${name} movido a ${day}, lugar ${m}.`,
   },
 } as const;
 
@@ -601,6 +684,13 @@ function PlannerApp() {
   const [saResult, setSaResult] = useState<SaResult | null>(null);
   const [saApplied, setSaApplied] = useState(false);
   const [plan, setPlan] = useState<ItineraryPlan | null>(null);
+  // POLIR2 A (2.29.0): zadnji ČISTI načrt motorja (za „Povrni vrstni red
+  // motorja“) + zastavica ročnega preurejanja (iskrena značka). PlannerApp
+  // ob mountu NE hidrira zadnjega načrta (dai:last-plan berejo /na-poti,
+  // /potovanje, PDF in PlanEditPanel — tukaj se načrt sestavi na novo),
+  // zato manualOrder = true SAMO po dejanskem spustu vlečenja.
+  const [enginePlan, setEnginePlan] = useState<ItineraryPlan | null>(null);
+  const [manualOrder, setManualOrder] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedMsg, setSavedMsg] = useState(false);
@@ -636,7 +726,13 @@ function PlannerApp() {
           setError(typeof data?.error === "string" ? data.error : `HTTP ${res.status}`);
           return;
         }
-        setPlan(data as ItineraryPlan);
+        const nov = data as ItineraryPlan;
+        setPlan(nov);
+        // POLIR2 A: vsak svež načrt motorja izstreše zastavico ročnega
+        // urejanja (prednastavitve / NLU / primerjalnik / ponovni poskus
+        // gredo VSI skozi ta en sam setPlan — nov čist kanon).
+        setEnginePlan(nov);
+        setManualOrder(false);
         setSavedMsg(false);
         requestAnimationFrame(() => {
           document.getElementById("nacrt-rezultat")?.scrollIntoView({ behavior: "smooth" });
@@ -879,6 +975,40 @@ function PlannerApp() {
     },
     [form, generate]
   );
+
+  // POLIR2 A (2.29.0): POVLECI-IN-SPUSTI — spust vlečenja nad načrtom.
+  // Časi vseh dni se preračunajo po ISTEM kanonu kot motor:
+  // recomputeDayTimes je idempotenten (nedotaknjeni dnevi ostanejo bajtno
+  // enaki — zaklenjeno v tests/nacrtuj-dnd.test.ts), dotaknjeni dnevi pa
+  // dobijo pošten urnik 09:00 + trajanja + ocenjene vožnje. Naslovi dni
+  // postanejo iskreni „Dan N · regije“ (motorjevih naslovov po premiku ne
+  // moremo reproducirati). saveLastPlan poskrbi, da PDF / Go Mode / oblak
+  // berejo isti `plan` → sprememba velja povsod samodejno.
+  const handleReorder = useCallback(
+    (newDays: TripStop[][]) => {
+      if (!plan) return;
+      const days = newDays.map((stops) => recomputeDayTimes(stops));
+      if (isSameOrder(plan.days, days)) return; // spust brez spremembe → brez lažne zastavice
+      const nov: ItineraryPlan = {
+        ...plan,
+        days,
+        dayTitles: days.map((stops, i) => recomputeDayTitle(i, stops, lang)),
+      };
+      setPlan(nov);
+      saveLastPlan(nov);
+      setManualOrder(true);
+    },
+    [plan, lang]
+  );
+
+  // POLIR2 A: povrnitev vrstnega reda motorja (iskrena razveljavitev —
+  // tudi dai:last-plan se povrne na čist izhod motorja).
+  const handleResetOrder = useCallback(() => {
+    if (!enginePlan) return;
+    setPlan(enginePlan);
+    saveLastPlan(enginePlan);
+    setManualOrder(false);
+  }, [enginePlan]);
 
   return (
     <>
@@ -1430,6 +1560,9 @@ function PlannerApp() {
             onPdf={() => void exportPdf()}
             compareForm={form}
             onBudgetPick={pickBudget}
+            onReorder={handleReorder}
+            onResetOrder={handleResetOrder}
+            manualOrder={manualOrder}
             loading={loading}
           />
         )}
@@ -1441,6 +1574,34 @@ function PlannerApp() {
 // ---------------------------------------------------------------------------
 // Prikaz načrta: povzetek + dnevi s časovnico
 // ---------------------------------------------------------------------------
+
+/** POLIR2 A: najdi dan + mesto postanka z id-jem (id-ji so globalno unikatni). */
+function findStop(
+  days: TripStop[][],
+  stopId: string
+): { dayIdx: number; stopIdx: number } | null {
+  for (let d = 0; d < days.length; d++) {
+    const i = days[d].findIndex((s) => s.id === stopId);
+    if (i !== -1) return { dayIdx: d, stopIdx: i };
+  }
+  return null;
+}
+
+/** POLIR2 A: kam spada cilj vlečenja — postanek (dan + mesto) ali cona
+ *  praznega dneva (id „day-N“ iz EmptyDayDropZone). */
+function locateTarget(
+  days: TripStop[][],
+  overId: string
+): { dayIdx: number; stopIdx?: number } | null {
+  const stop = findStop(days, overId);
+  if (stop) return stop;
+  const m = overId.match(/^day-(\d+)$/);
+  if (m) {
+    const dayIdx = Number(m[1]);
+    if (dayIdx >= 0 && dayIdx < days.length) return { dayIdx };
+  }
+  return null;
+}
 
 function PlanResult({
   plan,
@@ -1456,6 +1617,12 @@ function PlanResult({
   // TRENUTNE izbire obrazca; klik preklopi raven in regenerira načrt.
   compareForm,
   onBudgetPick,
+  // POLIR2 A (2.29.0): povleci-in-spusti — spust vlečenja pokliče onReorder
+  // (novi dnevi že s preračunanimi časi prek PlannerApp.handleReorder);
+  // onResetOrder povrne čist vrstni red motorja.
+  onReorder,
+  onResetOrder,
+  manualOrder,
   loading,
 }: {
   plan: ItineraryPlan;
@@ -1472,9 +1639,119 @@ function PlanResult({
   /** POLIR A (2.28.0): obrazec za primerjalnik (izbire + aktivna raven). */
   compareForm: FormState;
   onBudgetPick: (b: Budget) => void;
+  /** POLIR2 A: ročno preurejanje dni (dnd-kit). */
+  onReorder: (newDays: TripStop[][]) => void;
+  onResetOrder: () => void;
+  manualOrder: boolean;
   loading: boolean;
 }) {
   const l = useLocale();
+  // POLIR2 A: lokalni PREDogled vlečenja (premik MED dnevi brez preračuna
+  // časov — časi se preračunajo šele ob spustu) + aria-live naznanilo
+  // zadnjega premika (samo za bralnike zaslona). Predogled velja SAMO za
+  // načrt, ob katerem je nastal — regeneracija (nov objekt plan) ga
+  // samodejno razveljavi, brez čiščenja v efektu.
+  const [preview, setPreview] = useState<{
+    plan: ItineraryPlan;
+    days: TripStop[][];
+  } | null>(null);
+  const [announcement, setAnnouncement] = useState<string | null>(null);
+  // POLIR2 B (2.29.0): sinhronizacija seznam ↔ zemljevid (Wanderlog
+  // vzorec) — hover/fokus vrstice poudari marker; klik markerja poudari
+  // vrstico in zadrsi do nje.
+  const [highlightStopId, setHighlightStopId] = useState<string | null>(null);
+  const previewDays = preview?.plan === plan ? preview.days : null;
+  const days = previewDays ?? plan.days;
+
+  // POLIR2 B: klik markerja → poudarek + mehko drsenje do vrstice
+  // (iskanje po data-stop-id). POZOR: `CSS` je tu dnd-kitov pomočnik,
+  // zato brskalnikov CSS.escape klicemo prek globalThis (ni senčen).
+  // Manjka escape (starejši brskalniki) → nedolžen id (slugi so varni).
+  const handleMarkerClick = useCallback((stopId: string) => {
+    setHighlightStopId(stopId);
+    if (typeof document !== "undefined") {
+      const browserCss = (globalThis as { CSS?: { escape?: (v: string) => string } })
+        .CSS;
+      const safeId = browserCss?.escape ? browserCss.escape(stopId) : stopId;
+      const el = document.querySelector(`[data-stop-id="${safeId}"]`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, []);
+
+  // Sensorji: kazalec (8 px vzdržljivosti — klik na vrstico ne odlepi
+  // vlečenja) + tipkovnica (sortableKeyboardCoordinates: puščice premikajo
+  // tudi MED dnevi, preslednica dvigne/spusti).
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  // Predogled MED dnevi (onDragOver): premik brez preračuna časov — uporabnik
+  // vidi KJE bo postanek pristal; urnik se preračuna pošteno šele ob spustu.
+  const handleDragOver = useCallback(
+    (e: DragOverEvent) => {
+      const { active, over } = e;
+      if (!over) return;
+      const current = previewDays ?? plan.days;
+      const from = findStop(current, String(active.id));
+      if (!from) return;
+      const target = locateTarget(current, String(over.id));
+      if (!target) return;
+      // Znotraj istega dneva predogleda ni (vrstni red se zamenja šele ob
+      // spustu — standardna semantika razvrščljivih seznamov/dnd-kit).
+      if (target.dayIdx === from.dayIdx) return;
+      const toIndex =
+        target.stopIdx !== undefined ? target.stopIdx : current[target.dayIdx].length;
+      setPreview({
+        plan,
+        days: moveStop(current, String(active.id), target.dayIdx, toIndex),
+      });
+    },
+    [previewDays, plan]
+  );
+
+  // Končni spust (onDragEnd): izračun končnega dne + mesta → moveStop →
+  // preračun časov obeh dotaknjenih dni → onReorder + aria-live naznanilo.
+  const handleDragEnd = useCallback(
+    (e: DragEndEvent) => {
+      const { active, over } = e;
+      // Končno stanje izračunamo iz PREDogleda (WYSIWYG), naj ga počistimo.
+      const current = previewDays ?? plan.days;
+      setPreview(null);
+      if (!over) return;
+      const activeId = String(active.id);
+      const from = findStop(current, activeId);
+      if (!from) return;
+      const target = locateTarget(current, String(over.id));
+      if (!target) return;
+      // Spust na prazno-dnevno cono → konec dneva; spust na postanek →
+      // njegovo mesto (pri vlečenju navzdol konča ZA njim, navzgor PRED njim
+      // — semantika arrayMove, ki jo uporabniki pričakujejo od seznamov).
+      const toIndex =
+        target.stopIdx !== undefined ? target.stopIdx : current[target.dayIdx].length;
+      const moved = current[from.dayIdx][from.stopIdx];
+      let newDays = moveStop(current, activeId, target.dayIdx, toIndex);
+      if (isSameOrder(plan.days, newDays)) return; // spust brez spremembe
+      // Časi na obeh dotaknjenih dneh po kanonu motorja (ostali dnevi so že
+      // preračunani ali bajtno enaki — recomputeDayTimes je idempotenten).
+      newDays = newDays.map((stops, i) =>
+        i === from.dayIdx || i === target.dayIdx ? recomputeDayTimes(stops) : stops
+      );
+      const finalIdx = newDays[target.dayIdx].findIndex((s) => s.id === activeId);
+      setAnnouncement(
+        pick(l, L.movedAnnouncement)(
+          moved.name,
+          recomputeDayTitle(target.dayIdx, newDays[target.dayIdx], lang),
+          finalIdx + 1
+        )
+      );
+      onReorder(newDays);
+    },
+    [previewDays, plan, lang, l, onReorder]
+  );
+
+  const handleDragCancel = useCallback(() => setPreview(null), []);
+
   const allStops = plan.days.flat();
   const regions = new Set(allStops.map((s) => s.region).filter(Boolean));
 
@@ -1506,14 +1783,54 @@ function PlanResult({
                 {formatMoney(plan.totalCost, lang)}
                 <span className="font-normal opacity-80">{pick(l, L.totalCost)}</span>
               </Badge>
+              {manualOrder && (
+                // POLIR2 A: iskrena značka — vrstni red ni več motorjev
+                // (amber outline, vidna tudi v natisu — načrt je resnično
+                // ročno preurejen in to mora ostati razkrito tudi na papirju).
+                <Badge
+                  variant="outline"
+                  className="gap-1 border-amber-500/60 text-amber-700 dark:text-amber-400"
+                >
+                  <GripVertical className="size-3.5" aria-hidden="true" />
+                  {pick(l, L.manualBadge)}
+                </Badge>
+              )}
             </div>
           </div>
           <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
             <span className="font-semibold">{pick(l, L.coverage)}: </span>
             {plan.coverageNote}
           </p>
+          {manualOrder && (
+            // POLIR2 A: mikrovrstica z razlago preračuna (vidna tudi v natisu).
+            <p className="mt-2 text-xs leading-relaxed text-amber-700 dark:text-amber-400">
+              {pick(l, L.manualNote)}
+            </p>
+          )}
         </CardContent>
       </Card>
+
+      {/* POLIR2 B (2.29.0): ZEMLJEVID NAČRTA — dnevno obarvani številčni
+          markerji + črtkane premočrtne povezave (iskrena opomba o premočrtni
+          povezavi je znotraj komponente). Klientanski dinamični uvoz —
+          Leaflet potrebuje window (ssr: false, Skeleton med nalaganjem).
+          V natisu se zemljevid izpusti (print:hidden): kartice dneva so
+          vir resnice, ploščice se natisnejo nezanesljivo. */}
+      <div className="mt-6 print:hidden">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">{pick(l, L.mapTitle)}</CardTitle>
+            <p className="text-xs text-muted-foreground">{pick(l, L.mapDesc)}</p>
+          </CardHeader>
+          <CardContent>
+            <PlanMap
+              days={days}
+              highlightId={highlightStopId}
+              onMarkerClick={handleMarkerClick}
+            />
+          </CardContent>
+        </Card>
+      </div>
 
       {/* POLIR A (2.28.0), naloga 3: PRIMERJALNIK PRORAČUNOV — 3 ravni,
           številke IZKLJUČNO iz motorja (ocena, ne obljuba). Prikazan samo
@@ -1540,32 +1857,78 @@ function PlanResult({
         </div>
       )}
 
-      {/* Dnevi s časovnico */}
-      <div className="mt-6 space-y-6">
-        {plan.days.map((stops, dayIdx) => {
-          const dayTitle =
-            plan.dayTitles?.[dayIdx] ?? (lang === "en" ? `Day ${dayIdx + 1}` : `Dan ${dayIdx + 1}`);
-          const dayCost = stops.reduce((s, x) => s + x.cost, 0);
-          return (
-            <Card key={dayIdx}>
-              <CardHeader className="pb-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <CardTitle className="text-base">{dayTitle}</CardTitle>
-                  <Badge variant="outline" className="gap-1">
-                    {formatMoney(dayCost, lang)}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <DayTimeline stops={stops} lang={lang} />
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      {/* Dnevi s časovnico — POLIR2 A (2.29.0): POVLECI-IN-SPUSTI urejanje
+          dni (Wanderlog vzorec). EN DndContext okoli VSEH dni omogoča
+          vlečenje znotraj dneva IN med dnevi; brez DragOverlay (preprosto
+          domače premikanje). Ročica je edini aktivator, zato pomikanje
+          strani po vrstici deluje normalno. */}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        {/* Tipkovnična navodila (sr-only — bralcem zaslonov ob vsakem načrtu) */}
+        <p className="sr-only">{pick(l, L.dragKeyboardHint)}</p>
+        <div className="mt-6 space-y-6">
+          {days.map((stops, dayIdx) => {
+            const dayTitle =
+              plan.dayTitles?.[dayIdx] ?? (lang === "en" ? `Day ${dayIdx + 1}` : `Dan ${dayIdx + 1}`);
+            const dayCost = stops.reduce((s, x) => s + x.cost, 0);
+            return (
+              <Card key={dayIdx}>
+                <CardHeader className="pb-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <CardTitle className="text-base">{dayTitle}</CardTitle>
+                    <Badge variant="outline" className="gap-1">
+                      {formatMoney(dayCost, lang)}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <SortableContext
+                    items={stops.map((s) => s.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <DayTimeline
+                      stops={stops}
+                      lang={lang}
+                      highlightId={highlightStopId}
+                      onHighlight={setHighlightStopId}
+                    />
+                  </SortableContext>
+                  {stops.length === 0 && <EmptyDayDropZone dayIdx={dayIdx} />}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+        {/* aria-live naznanilo zadnjega premika (POLIR2 A, samo za bralnike
+            zaslonov — dnd-kit s tipkovnico sicer sporoča premike sam, to je
+            naše potrditveno naznanilo končnega mesta po spustu) */}
+        <div role="status" aria-live="polite" className="sr-only">
+          {announcement ?? ""}
+        </div>
+      </DndContext>
 
       {/* Akcije */}
       <div className="mt-6 flex flex-wrap gap-3">
+        {manualOrder && (
+          // POLIR2 A: povrnitev čistega vrstnega reda motorja (iskrena
+          // razveljavitev ročnega preurejanja — samo ko je načrt ročno preurejen).
+          <Button
+            type="button"
+            size="lg"
+            variant="ghost"
+            className="min-h-12"
+            onClick={onResetOrder}
+            aria-label={pick(l, L.resetOrderAria)}
+          >
+            <Undo2 className="size-5" aria-hidden="true" />
+            {pick(l, L.resetOrder)}
+          </Button>
+        )}
         <Button type="button" size="lg" className="min-h-12" onClick={onSave}>
           {saved ? (
             <>
@@ -1824,15 +2187,115 @@ function LegRow({
 }
 
 /**
+ * POLIR2 A (2.29.0): VLEČLJIVA VRSTICA POSTANKA — wrapper <li> nosi
+ * transform/transition (standardni dnd-kit pristop brez DragOverlay),
+ * ročica GripVertical pa je EDINI aktivator (listeners/attributes samo
+ * na njej — vlečenje ne ugrabi klikov po vrstici, pomikanje strani
+ * drugje deluje normalno; Wanderlog vzorec). Tipkovnica: fokus ročice +
+ * preslednica dvigne, puščice premikajo, preslednica spusti.
+ */
+function SortableStopRow({
+  stop,
+  prev,
+  lang,
+  highlighted,
+  onHover,
+}: {
+  stop: TripStop;
+  prev?: TripStop;
+  lang: PlannerLang;
+  /** POLIR2 B: vrstica je poudarjena (klik markerja na zemljevidu). */
+  highlighted?: boolean;
+  /** POLIR2 B: hover/fokus → poudarek markerja; odhod → ponastavitev. */
+  onHover?: (id: string | null) => void;
+}) {
+  const l = useLocale();
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: stop.id });
+  const style: React.CSSProperties = {
+    transform: CSS.Translate.toString(transform),
+    transition: transition ?? undefined,
+  };
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      data-stop-id={stop.id}
+      className={isDragging ? "relative z-10" : undefined}
+      onMouseEnter={() => onHover?.(stop.id)}
+      onMouseLeave={() => onHover?.(null)}
+      onFocus={() => onHover?.(stop.id)}
+      onBlur={() => onHover?.(null)}
+    >
+      {prev && <LegRow prev={prev} stop={stop} lang={lang} />}
+      <div className="flex items-start gap-1.5">
+        <button
+          ref={setActivatorNodeRef}
+          type="button"
+          className={`mt-3 flex size-8 shrink-0 cursor-grab touch-none items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none print:hidden ${
+            isDragging ? "cursor-grabbing" : ""
+          }`}
+          aria-label={`${pick(l, L.dragHandle)}: ${stop.name}`}
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="size-4" aria-hidden="true" />
+        </button>
+        <div
+          className={`min-w-0 flex-1 rounded-xl transition-colors ${
+            highlighted
+              ? "bg-accent/50 ring-2 ring-primary/60"
+              : ""
+          }`}
+        >
+          <StopRow stop={stop} lang={lang} />
+        </div>
+      </div>
+    </li>
+  );
+}
+
+/** POLIR2 A: cona za spust v PRAZEN dan (dan, ki ga je uporabnik izpraznil
+ *  z vlečenjem — črtkana obroba, iskreno prazno stanje z možnostjo vračila). */
+function EmptyDayDropZone({ dayIdx }: { dayIdx: number }) {
+  const l = useLocale();
+  const { setNodeRef, isOver } = useDroppable({ id: `day-${dayIdx}` });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`flex min-h-16 items-center justify-center rounded-xl border-2 border-dashed p-4 text-sm text-muted-foreground transition-colors ${
+        isOver ? "border-primary/60 bg-primary/5" : "border-border"
+      }`}
+    >
+      {pick(l, L.dropHere)}
+    </div>
+  );
+}
+
+/**
  * Časovnica dneva s segmenti Jutro/Popoldan/Večer (P0-D, kanon izvirnika):
  * glava segmenta + poštene etape (~km/~min) tudi preko mej segmentov.
- */
+ * POLIR2 A: vsak postanek je ovit v SortableStopRow (vlečenje po kanonu
+ * dnd-kit — vrstni red dneva določa vrstni red v SortableContext). */
 function DayTimeline({
   stops,
   lang,
+  highlightId,
+  onHighlight,
 }: {
   stops: TripStop[];
   lang: PlannerLang;
+  /** POLIR2 B: id poudarjenega postanka (obroba vrstice) ali null. */
+  highlightId?: string | null;
+  /** POLIR2 B: hover/fokus vrstice → poudarek markerja na zemljevidu. */
+  onHighlight?: (id: string | null) => void;
 }) {
   const groups = buildDaySegments(stops);
   const indexOf = new Map(stops.map((s, i) => [s.id, i]));
@@ -1845,10 +2308,14 @@ function DayTimeline({
             {group.stops.map((stop) => {
               const i = indexOf.get(stop.id) ?? 0;
               return (
-                <li key={stop.id}>
-                  {i > 0 && <LegRow prev={stops[i - 1]} stop={stop} lang={lang} />}
-                  <StopRow stop={stop} lang={lang} />
-                </li>
+                <SortableStopRow
+                  key={stop.id}
+                  stop={stop}
+                  prev={i > 0 ? stops[i - 1] : undefined}
+                  lang={lang}
+                  highlighted={highlightId === stop.id}
+                  onHover={onHighlight}
+                />
               );
             })}
           </ol>

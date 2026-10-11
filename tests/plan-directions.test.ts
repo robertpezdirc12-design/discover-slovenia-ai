@@ -4,10 +4,10 @@ import * as routeModule from "@/app/api/plan/directions/route";
 import { POST } from "@/app/api/plan/directions/route";
 
 /**
- * PLAN-DIRECTIONS (POLIR3 A, 2.30.0) — enotski preizkusi strežniškega
- * OSRM proxyja /api/plan/directions Z MAKETO globalnega fetch (0 omrežja:
- * noben preizkus ne gre na internet; fixture-ji so DEJANSKI odgovori
- * javnega OSRM demo strežnika, ujeti 2026-10-12 na točno določenih
+ * PLAN-DIRECTIONS (POLIR3 A, 2.30.0; POLIR5 A, 2.32.0) — enotski preizkusi
+ * strežniškega OSRM proxyja /api/plan/directions Z MAKETO globalnega fetch
+ * (0 omrežja: noben preizkus ne gre na internet; fixture-ji so DEJANSKI
+ * odgovori javnega OSRM demo strežnika, ujeti 2026-10-12 na točno določenih
  * koordinatah registra — Bled→Ljubljana 20 točk, več-točkovni dan
  * Bled;Vintgar;Bohinj 66 točk).
  *
@@ -17,7 +17,12 @@ import { POST } from "@/app/api/plan/directions/route";
  *  - predpomnilnik po zaokroženih koordinatah (2. klic NE kliče fetch);
  *  - fail-closed PO DNEVIH (padec enega dneva ne podre ostalih);
  *  - TimeoutError → iskren status "straight";
- *  - oblika odgovora { source, days } + omejitev 60/min po odjemalcu.
+ *  - oblika odgovora { source, days } + omejitev 60/min po odjemalcu;
+ *  - POLIR5 A: IZMERJENI distanceM/durationS iz istega OSRM odgovora —
+ *    aditivna polji, veljavno le kot celo število ≥ 0; negativna/nekončna/
+ *    manjkajoča vrednost → fail-closed "straight" ZA TISTI dan (in dan se
+ *    NE predpomni); predpomnilnik hrani VSE TROJE (geometry, distanceM,
+ *    durationS) pod istim ključem.
  *
  * 0 AI, 0 omrežja, determinizem (vsak preizkus ima svoj XFF in svoje
  * koordinate dneva, da predpomnilnik med preizkusi ne pušča sledi).
@@ -44,12 +49,21 @@ function jsonRes(status: number, body: unknown): Response {
   });
 }
 
-/** OSRM odgovor ob uspehu (oblika geometry.geojson, [lon, lat]). */
-function osrmOk(coordinates: [number, number][]): unknown {
+/**
+ * OSRM odgovor ob uspehu (oblika geometry.geojson, [lon, lat]).
+ * POLIR5 A: privzeti distance/duration sta ŽIVI ujeti vrednosti iz raziskave
+ * 2026-10-11-polir5.md, preizkus B (Bled→Vintgar→Bohinj: 21551 m / 2173 s) —
+ * proxy zdaj iz ISTEGA odgovora bere ves trojček.
+ */
+function osrmOk(
+  coordinates: [number, number][],
+  distance: number = 21_551,
+  duration: number = 2_173
+): unknown {
   return {
     code: "Ok",
     routes: [
-      { geometry: { type: "LineString", coordinates } },
+      { geometry: { type: "LineString", coordinates }, distance, duration },
     ],
   };
 }
@@ -229,7 +243,13 @@ describe("PLAN-DIRECTIONS — uspeh: pretvorba lon/lat → lat/lon + oblika", ()
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
       source: string;
-      days: { day: number; status: string; geometry: [number, number][] }[];
+      days: {
+        day: number;
+        status: string;
+        geometry: [number, number][];
+        distanceM: number;
+        durationS: number;
+      }[];
     };
     // oblika odgovora: source + days (kanon specifikacije)
     expect(body.source).toBe("OSRM (OpenStreetMap)");
@@ -241,6 +261,13 @@ describe("PLAN-DIRECTIONS — uspeh: pretvorba lon/lat → lat/lon + oblika", ()
     expect(body.days[0].geometry.length).toBe(20);
     expect(body.days[0].geometry[0]).toEqual([46.370582, 14.095853]);
     expect(body.days[0].geometry[19]).toEqual([46.056898, 14.5058]);
+    // POLIR5 A: ADITIVNI poli — IZMERJENI distanceM/durationS iz istega
+    // odgovora (cela števila, metri/sekunde); geometry ostaja nespremenjena
+    // (stari odjemalci, ki berejo samo geometry, se ne prelomijo).
+    expect(body.days[0].distanceM).toBe(21_551);
+    expect(body.days[0].durationS).toBe(2_173);
+    expect(Number.isInteger(body.days[0].distanceM)).toBe(true);
+    expect(Number.isInteger(body.days[0].durationS)).toBe(true);
     // zahtevek proti OSRM: GET (brez metode), JSON sprejem, signal prekinitve
     expect(fetchCalls.length).toBe(1);
     expect(fetchCalls[0].init?.method).toBeUndefined();
@@ -261,11 +288,21 @@ describe("PLAN-DIRECTIONS — uspeh: pretvorba lon/lat → lat/lon + oblika", ()
     );
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
-      days: { status: string; geometry: [number, number][] }[];
+      days: {
+        status: string;
+        geometry: [number, number][];
+        distanceM: number;
+        durationS: number;
+      }[];
     };
     expect(body.days[0].status).toBe("route");
     expect(body.days[0].geometry).toEqual(toLatLng(FIXTURE_BVG_BOHINJ));
     expect(body.days[0].geometry.length).toBe(66);
+    // POLIR5 A: ŽIVI ujet vzorec iz raziskave 2026-10-11-polir5.md (preizkus
+    // B): isti dan Bled→Vintgar→Bohinj = 21551 m / 2173 s — proxy ves trojček
+    // pošilja naprej BREZ dodatnih poizvedb (en fetch za cel dan zgoraj).
+    expect(body.days[0].distanceM).toBe(21_551);
+    expect(body.days[0].durationS).toBe(2_173);
     expect(fetchCalls.length).toBe(1); // en dan = en zahtevek (tudi pri 3 točkah)
   });
 
@@ -418,6 +455,138 @@ describe("PLAN-DIRECTIONS — fail-closed PO DNEVIH (padec ne podre ostalih)", (
   });
 });
 
+// ── IZMERE: distanceM/durationS (POLIR5 A, 2.32.0) ─────────────────────
+
+describe("PLAN-DIRECTIONS — izmere: validacija distanceM/durationS (fail-closed po dnevih)", () => {
+  test("⑯ negativna distance → iskren straight ZA TISTI dan (ne za vse; ni predpomnilnika)", async () => {
+    mockFetch((url) => {
+      if (url === OSRM_URL([BLED, CELJE])) {
+        return jsonRes(200, osrmOk(FIXTURE_BLED_LJ, -1, 2_173)); // negativna razdalja
+      }
+      return jsonRes(200, osrmOk(FIXTURE_BVG_BOHINJ)); // zdrav dan
+    });
+    const res = await drPost(
+      { days: [[BLED, CELJE], [LJ, PTUJ]] },
+      "dr-m-16"
+    );
+    expect(res.status).toBe(200); // zahteva KOT CELOTA uspe
+    const body = (await res.json()) as {
+      days: { day: number; status: string; distanceM?: unknown }[];
+    };
+    // padli dan: SAMO { day, status } — brez geometry, distanceM, durationS
+    expect(body.days[0]).toEqual({ day: 0, status: "straight" });
+    // zdrav dan je NEODVISEN (fail-closed po dnevih) z izmerjenim trojčkom
+    expect(body.days[1].status).toBe("route");
+    expect(body.days[1].distanceM).toBe(21_551);
+    expect(fetchCalls.length).toBe(2);
+    // NEUSPEŠEN dan se NE predpomni: ponovna zahteva gre SPET v omrežje
+    const again = await drPost({ days: [[BLED, CELJE]] }, "dr-m-16");
+    expect(fetchCalls.length).toBe(3);
+    const body2 = (await again.json()) as { days: { status: string }[] };
+    expect(body2.days[0].status).toBe("straight");
+  });
+
+  test("⑰ nekončna duration (1e999 v JSON) → iskren straight", async () => {
+    // JSON.stringify(Infinity) vrne null, zato mora biti telo SESTAVLJENO
+    // dobesedno — JSON.parse("1e999") da Number.POSITIVE_INFINITY.
+    const raw =
+      '{"code":"Ok","routes":[{"geometry":{"type":"LineString",' +
+      '"coordinates":[[13.7294,45.5467],[15.6466,46.5565]]},' +
+      '"distance":21551,"duration":1e999}]}';
+    mockFetch(
+      () =>
+        new Response(raw, {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        })
+    );
+    const res = await drPost({ days: [[KOPER, MARIBOR]] }, "dr-m-17");
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { days: { status: string }[] };
+    expect(body.days[0].status).toBe("straight"); // nekončno trajanje NI izmerjena vrednost
+    expect(fetchCalls.length).toBe(1);
+  });
+
+  test("⑱ manjkajoča polja (stara oblika 2.30.0 brez distance/duration) → straight", async () => {
+    mockFetch((url) => {
+      if (url === OSRM_URL([PTUJ, CELJE])) {
+        // POVSEM stara oblika: SAMO geometry (odgovor, kakršnega je poslal
+        // živi OSRM pred 2.32.0 — proxy zdaj zahteva ves trojček)
+        return jsonRes(200, {
+          code: "Ok",
+          routes: [
+            { geometry: { type: "LineString", coordinates: FIXTURE_BLED_LJ } },
+          ],
+        });
+      }
+      // distance je, duration MANJKA → dan ni izmerjen (ne izmišljujemo)
+      return jsonRes(200, {
+        code: "Ok",
+        routes: [
+          {
+            geometry: { type: "LineString", coordinates: FIXTURE_BVG_BOHINJ },
+            distance: 21_551,
+          },
+        ],
+      });
+    });
+    const res = await drPost(
+      { days: [[PTUJ, CELJE], [PIRAN, LJ]] },
+      "dr-m-18"
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { days: { status: string }[] };
+    expect(body.days.map((d) => d.status)).toEqual(["straight", "straight"]);
+    // oba padla dneva se NE predpomnita → ponovna zahteva znova v omrežje
+    const again = await drPost(
+      { days: [[PTUJ, CELJE], [PIRAN, LJ]] },
+      "dr-m-18"
+    );
+    expect(fetchCalls.length).toBe(4);
+    expect(again.status).toBe(200);
+  });
+
+  test("⑲ velik odgovor (dan 12 točk, geometry 89 točk) z vsemi tremi → predpomnjeno VSE TROJE (2. klic brez fetch)", async () => {
+    // 12-točkovni dan = zgornja meja validacije; 89 točk geometry = obseg
+    // živega vzorca iz raziskave POLIR5 (preizkus B). Koordinate registra.
+    const DAY_12: [number, number][] = [
+      [14.0944, 46.3683], [14.1167, 46.4], [13.8833, 46.2833],
+      [13.7332, 46.3447], [13.8462, 46.3794], [13.5864, 46.2453],
+      [14.5058, 46.0569], [14.2045, 45.7845], [15.2675, 46.2389],
+      [15.6459, 46.5547], [15.867, 46.4197], [15.0864, 46.5131],
+    ];
+    const BIG_89: [number, number][] = Array.from(
+      { length: 89 },
+      (_, i) => [14.0944 + i * 0.0045, 46.3683 - i * 0.0035] // deterministično
+    );
+    mockFetch((url) => {
+      expect(url).toBe(OSRM_URL(DAY_12));
+      return jsonRes(200, osrmOk(BIG_89, 21_551, 2_173));
+    });
+    const req = { days: [DAY_12] };
+    const a = await drPost(req, "dr-m-19");
+    expect(a.status).toBe(200);
+    const bodyA = (await a.json()) as {
+      days: {
+        status: string;
+        geometry: [number, number][];
+        distanceM: number;
+        durationS: number;
+      }[];
+    };
+    expect(bodyA.days[0].status).toBe("route");
+    expect(bodyA.days[0].geometry.length).toBe(89);
+    expect(bodyA.days[0].distanceM).toBe(21_551);
+    expect(bodyA.days[0].durationS).toBe(2_173);
+    // 2. klic: predpomnilnik pod ISTIM ključem vrne VSE TROJE brez fetch-a
+    const b = await drPost(req, "dr-m-19");
+    expect(b.status).toBe(200);
+    expect(fetchCalls.length).toBe(1); // NI novega klica
+    const bodyB = (await b.json()) as typeof bodyA;
+    expect(bodyB).toEqual(bodyA); // ves trojček identičen (deep equal)
+  });
+});
+
 // ── OMEJITEV 60/MIN + POGODBA MODULA ──────────────────────────────────────
 
 describe("PLAN-DIRECTIONS — omejitev 60/min po odjemalcu (XFF)", () => {
@@ -457,6 +626,10 @@ describe("PLAN-DIRECTIONS — pogodba modula (SAMO POST, kanoni proxyja)", () =>
     expect(src).toContain("24 * 60 * 60_000"); // TTL predpomnilnika 24 h
     expect(src).toContain("500"); // največ 500 vnosov
     expect(src).toContain("rateLimited"); // skupni kanon omejitve
+    // POLIR5 A: izmere iz ISTEGA odgovora (routes[0].distance/duration) —
+    // nikoli izpeljane iz geometry in nikoli iz hevristike.
+    expect(src).toContain("distanceM");
+    expect(src).toContain("durationS");
     // 0 AI / 0 naključja v strežniški logiki
     expect(src).not.toContain("Math.random");
     expect(src).not.toContain("Date.now() + Math");

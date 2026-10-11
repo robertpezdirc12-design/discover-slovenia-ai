@@ -31,13 +31,22 @@ import { rateLimited, tooManyRequests } from "@/lib/rate-limit";
  *    biti mogoče; validacija je varovalka (OSRM sicer tiho pripenja na
  *    najbližjo cesto — glej raziskavo 2026-10-12-polir3.md, preizkus #3).
  *  - IZHOD 200: { source: "OSRM (OpenStreetMap)", days: [{ day, status:
- *    "route", geometry: [[lat, lon], …] } | { day, status: "straight" }] }
- *    — `day` je INDEKS DNEVA V ZAHTEVI; geometry je PREOBRNJENA v vrstni
- *    red [lat, lon] (Leaflet).
+ *    "route", geometry: [[lat, lon], …], distanceM, durationS } | { day,
+ *    status: "straight" }] } — `day` je INDEKS DNEVA V ZAHTEVI; geometry je
+ *    PREOBRNJENA v vrstni red [lat, lon] (Leaflet). POLIR5 A (2.32.0):
+ *    distanceM (celo število metrov) in durationS (celo število sekund) sta
+ *    IZMERJENI vrednosti iz ISTEGA OSRM odgovora (routes[0].distance /
+ *    routes[0].duration — 0 dodatnih poizvedb; raziskava 2026-10-11-polir5.md,
+ *    preizkus B: Bled→Vintgar→Bohinj 21551 m / 2173 s). Odgovor je ADITIVEN:
+ *    stari odjemalci, ki berejo samo geometry, se ne prelomijo.
+ *    Slaba/manjkajoča/negativna/nekončna razdalja ali trajanje pomeni
+ *    fail-closed "straight" ZA TISTI DAN (enak kanon kot slaba geometry —
+ *    nikoli ne izmišljujemo števil, ki jih OSRM ni izmeril).
  *  - Predpomnilnik: pomnilniška Map, ključ "driving:" + koordinate zaokrožene
  *    na 4 decimalke (determinizem: isti vhod → isti ključ), TTL 24 h, največ
- *    500 vnosov (izmet najstarejšega). NEUSPELI dnevi se NE predpomnijo
- *    (prehodna napaka ne zastrupi 24 ur).
+ *    500 vnosov (izmet najstarejšega). Vnos nosi VSE TROJE (geometry,
+ *    distanceM, durationS) pod istim ključem. NEUSPELI dnevi se NE
+ *    predpomnijo (prehodna napaka ne zastrupi 24 ur).
  *  - Omejitev: 60 zahtev/min na odjemalca (XFF, skupni kanon rate-limit).
  *  - 0 skrivnosti, 0 persistenc (nič ne shranjujemo); 0 AI.
  */
@@ -79,18 +88,39 @@ const LAT_MAX = 47.2;
 /** Točka dneva v zahtvi: [lon, lat] (vrstni red OSRM). */
 type ReqPoint = [number, number];
 
-/** Rezultat enega dneva: vozljiva pot ali iskrena premočrtna povezava. */
+/**
+ * Rezultat enega dneva: vozljiva pot z IZMERJENO razdaljo/časom ali iskrena
+ * premočrtna povezava. distanceM/durationS (POLIR5 A, 2.32.0) sta iz
+ * OSRM routes[0].distance/duration — nikoli izpeljana iz geometry (dolžina
+ * geometrije ≠ cestna razdalja) in nikoli iz hevristike.
+ */
 type DayResult =
-  | { day: number; status: "route"; geometry: [number, number][] }
+  | {
+      day: number;
+      status: "route";
+      geometry: [number, number][];
+      /** IZMERJENA cestna razdalja dneva (celo število metrov). */
+      distanceM: number;
+      /** IZMERJEN čas vožnje dneva (celo število sekund). */
+      durationS: number;
+    }
   | { day: number; status: "straight" };
 
+/** Uspešno razrešen dan: celoten trojček iz enega OSRM odgovora. */
+interface DayRoute {
+  geometry: [number, number][];
+  distanceM: number;
+  durationS: number;
+}
+
 /**
- * Pomnilniški predpomnilnik uspešnih geometrij (0 persistenc): ključ →
- * { potek, geometry } (geometry je ŽE v vrstnem redu [lat, lon]).
+ * Pomnilniški predpomnilnik uspešnih dni (0 persistenc): ključ →
+ * { potek, geometry, distanceM, durationS } (geometry je ŽE v vrstnem redu
+ * [lat, lon]; trojček pripada istemu odgovoru, zato ostane skupaj).
  */
 const cache = new Map<
   string,
-  { expiresAt: number; geometry: [number, number][] }
+  { expiresAt: number; geometry: [number, number][]; distanceM: number; durationS: number }
 >();
 
 function isFiniteNumber(v: unknown): v is number {
@@ -135,19 +165,28 @@ function cacheKey(points: ReqPoint[]): string {
   );
 }
 
-function cacheGet(key: string, now: number): [number, number][] | null {
+function cacheGet(key: string, now: number): DayRoute | null {
   const hit = cache.get(key);
   if (!hit) return null;
   if (hit.expiresAt <= now) {
     cache.delete(key); // potekel → počistimo in gre naprej na gorovje
     return null;
   }
-  return hit.geometry;
+  return {
+    geometry: hit.geometry,
+    distanceM: hit.distanceM,
+    durationS: hit.durationS,
+  };
 }
 
-function cacheSet(key: string, geometry: [number, number][], now: number): void {
+function cacheSet(key: string, route: DayRoute, now: number): void {
   cache.delete(key); // osveži mesto v vrstnem redu vmapiravanja
-  cache.set(key, { expiresAt: now + CACHE_TTL_MS, geometry });
+  cache.set(key, {
+    expiresAt: now + CACHE_TTL_MS,
+    geometry: route.geometry,
+    distanceM: route.distanceM,
+    durationS: route.durationS,
+  });
   while (cache.size > CACHE_CAP) {
     const oldest = cache.keys().next().value; // Map ohranja vrstni red vnosa
     if (oldest === undefined) break;
@@ -156,14 +195,22 @@ function cacheSet(key: string, geometry: [number, number][], now: number): void 
 }
 
 /**
- * Preveri obliko OSRM odgovora in geometry preobrne v vrstni red
- * [lat, lon] (Leaflet). Slaba oblika → null (fail-closed po dnevih).
+ * Preveri obliko OSRM odgovora: geometry preobrne v vrstni red [lat, lon]
+ * (Leaflet), iz ISTEGA routes[0] pa prebere še IZMERJENI distance (m) in
+ * duration (s). Slaba oblika / manjkajoča / negativna / nekončna vrednost
+ * katerekoli od treh → null (fail-closed po dnevih — en dan, ena odločitev:
+ * dan z izmerjeno geometry a slabo razdaljo NI izmerjen dan).
  */
-function parseGeometry(data: unknown): [number, number][] | null {
+function parseDayRoute(data: unknown): DayRoute | null {
   if (typeof data !== "object" || data === null) return null;
   const routes = (data as { routes?: unknown }).routes;
   if (!Array.isArray(routes) || routes.length === 0) return null;
-  const geometry = (routes[0] as { geometry?: unknown }).geometry;
+  const route0 = routes[0] as {
+    geometry?: unknown;
+    distance?: unknown;
+    duration?: unknown;
+  };
+  const geometry = route0.geometry;
   if (typeof geometry !== "object" || geometry === null) return null;
   const coordinates = (geometry as { coordinates?: unknown }).coordinates;
   if (!Array.isArray(coordinates) || coordinates.length < 2) return null;
@@ -174,17 +221,29 @@ function parseGeometry(data: unknown): [number, number][] | null {
     if (!isFiniteNumber(lon) || !isFiniteNumber(lat)) return null;
     out.push([lat, lon]); // PREOBRAT: OSRM [lon, lat] → Leaflet [lat, lon]
   }
-  return out;
+  // IZMERJENI vrednosti iz istega odgovora (POLIR5 A): končni, nenegativni.
+  // OSRM praktično vrača cela števila; Math.round je deterministična
+  // varovalka za morebitne decimalne vnose (nikoli ne izmišljujemo vrednosti,
+  // ki je OSRM ni poslal).
+  const distance = route0.distance;
+  const duration = route0.duration;
+  if (!isFiniteNumber(distance) || distance < 0) return null;
+  if (!isFiniteNumber(duration) || duration < 0) return null;
+  return {
+    geometry: out,
+    distanceM: Math.round(distance),
+    durationS: Math.round(duration),
+  };
 }
 
 /**
- * En dan: predpomnilnik → (zgrešil) OSRM. Katerikoli padec → geometry null
+ * En dan: predpomnilnik → (zgrešil) OSRM. Katerikoli padec → null
  * (iskrena črtkana povezava; ostali dnevi neodvisni — fail-closed po dnevih).
  */
 async function resolveDay(
   points: ReqPoint[],
   now: number
-): Promise<[number, number][] | null> {
+): Promise<DayRoute | null> {
   const key = cacheKey(points);
   const cached = cacheGet(key, now);
   if (cached) return cached;
@@ -207,10 +266,10 @@ async function resolveDay(
     ) {
       return null; // NoRoute / InvalidValue / … → straight
     }
-    const geometry = parseGeometry(json);
-    if (!geometry) return null; // slaba oblika → straight
-    cacheSet(key, geometry, now); // predpomnimo SAMO uspeh
-    return geometry;
+    const route = parseDayRoute(json);
+    if (!route) return null; // slaba oblika (tudi distance/duration) → straight
+    cacheSet(key, route, now); // predpomnimo SAMO uspeh (ves trojček)
+    return route;
   } catch {
     // timeout / omrežna napaka / slaba oblika JSON → straight (fail-closed)
     return null;
@@ -250,9 +309,15 @@ export async function POST(request: Request): Promise<Response> {
   const now = Date.now();
   const results: DayResult[] = await Promise.all(
     days.map(async (points, i): Promise<DayResult> => {
-      const geometry = await resolveDay(points, now);
-      return geometry
-        ? { day: i, status: "route", geometry }
+      const route = await resolveDay(points, now);
+      return route
+        ? {
+            day: i,
+            status: "route",
+            geometry: route.geometry,
+            distanceM: route.distanceM,
+            durationS: route.durationS,
+          }
         : { day: i, status: "straight" };
     })
   );

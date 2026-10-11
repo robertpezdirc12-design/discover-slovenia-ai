@@ -24,6 +24,7 @@
  *    številki — barva je le dopolnilo.
  */
 
+import { round5 } from "./itinerary-engine";
 import type { TripStop } from "./types";
 
 /**
@@ -202,5 +203,131 @@ export function planMapLines(
       routed: routedCount > 0,
       straight: dashedCount > 0 || routedCount === 0,
     },
+  };
+}
+
+// ── POLIR5 A (2.32.0): IZMERJENE razdalje/časi dneva (OSRM poročanje) ──────
+//
+// OSRM odgovor, ki ga proxy /api/plan/directions ŽE pobira za polno črto,
+// vsebuje tudi IZMERJENI routes[0].distance (m) in routes[0].duration (s)
+// (raziskava 2026-10-11-polir5.md, preizkus B: Bled→Vintgar→Bohinj
+// 21551 m / 2173 s) — 0 dodatnih poizvedb. Ta odsek je ČISTA plasti
+// teh vrednosti (tip + zaokrožitvi + povzetek), da sta testabilni v bun
+// (komponente plan-map.tsx ni mogoče uvoziti v testih — listat potrebuje
+// window; precedens planMapLines zgoraj).
+
+/**
+ * Izmerjen podatek enega dneva iz odgovora proxyja (POVZETEK NAČRTA):
+ *  - status "route": dan ima vozljivo pot, km/min sta IZMERJENI vrednosti
+ *    (distanceM/1000 na 1 decimalko, durationS/60 na 5 — glej measuredKm /
+ *    measuredMin);
+ *  - status "straight": dan je PADel (fail-closed proxyja) — BREZ km/min
+ *    (iskrena odsotnost; povzetek tedaj pokaže oceno, ne izmišljene številke).
+ */
+export interface MeasuredDay {
+  /** Indeks dneva v `days` načrta (0-based — isti ključ kot pri planMapLines). */
+  day: number;
+  status: "route" | "straight";
+  /** Kilometri (distanceM / 1000, 1 decimala) — samo za status "route". */
+  km?: number;
+  /** Minute vožnje (durationS / 60, zaokroženo na 5) — samo za status "route". */
+  min?: number;
+}
+
+/**
+ * IZMERJENI kilometri dneva: distanceM / 1000, zaokroženo na 1 decimalko
+ * (prikaz — brez lažne natančnosti). Čista funkcija, kliče jo PlanMap ob
+ * odgovoru proxyja (zaokrožitev živi tukaj, da jo testi zaklenejo).
+ */
+export function measuredKm(distanceM: number): number {
+  return Math.round((distanceM / 1000) * 10) / 10;
+}
+
+/**
+ * IZMERJENE minute vožnje dneva: durationS / 60, zaokroženo na 5 (ISTI kanon
+ * round5 iz itinerary-engine — enaka semantika kot pri LegRow/oceni, da se
+ * izmerjene in ocenjene minute lahko pošteno primerjajo).
+ */
+export function measuredMin(durationS: number): number {
+  return round5(durationS / 60);
+}
+
+/** Vrstica povzetka enega dneva: izmerjeno (s številkami) ali ocena. */
+export type MeasuredRow =
+  | { day: number; kind: "measured"; km: number; min: number }
+  | { day: number; kind: "estimate" };
+
+/** Povzetek izmerjenih dni (čista izpeljava za povzetek načrta). */
+export interface MeasuredSummary {
+  /** Ena vrstica na dan načrta (0 … dayCount-1, po vrstnem redu dni). */
+  rows: MeasuredRow[];
+  /** Vsota km SAMO izmerjenih dni (null, če ni nobenega izmerjenega dneva). */
+  totalKm: number | null;
+  /** Vsota minut SAMO izmerjenih dni (null, če ni nobenega izmerjenega dneva). */
+  totalMin: number | null;
+  /** Število izmerjenih dni (status "route" z veljavnima km in min). */
+  measuredCount: number;
+  /** Število dni BREZ izmere (padli pri OSRM ali sploh neupravičeni). */
+  failedCount: number;
+}
+
+/**
+ * Čista presodba povzetka izmerjenih dni (POLIR5 A, 2.32.0):
+ *  - za vsak dan 0 … dayCount-1 ena vrstica: "measured" (status "route" z
+ *    veljavnima, končnima, nenegativnima km/min) ali "estimate" (vse
+ *    ostalo: padel dan pri OSRM, dan, ki ga proxy sploh ni smel dobiti —
+ *    npr. postanek brez koordinat — ali obrambno zavrnjen vnos);
+ *  - totalKm/totalMin = vsota SAMO izmerjenih dni (Roadtrippersova past:
+ *    mešana vsota bi tiho zavajala; padli dnevi se izrecno preštejejo v
+ *    failedCount in ne prispevajo nič k vsoti);
+ *  - ni izmerjenih dni → totalKm/totalMin null (iskrena odsotnost, ne laž);
+ *  - 0 omrežja, 0 ure, 0 mutacij vhoda (kanon te datoteke).
+ */
+export function summarizeMeasured(
+  dayCount: number,
+  stats: readonly MeasuredDay[]
+): MeasuredSummary {
+  // Zemljevid dan → izmerjen vnos (podvojeni vnosi: zadnji zmaga — v praksi
+  // jih PlanMap ne pošilja, obrambno pa je odločitev deterministična).
+  const byDay = new Map<number, MeasuredDay>();
+  for (const s of stats) {
+    if (s.day >= 0 && s.day < dayCount) byDay.set(s.day, s);
+  }
+
+  const rows: MeasuredRow[] = [];
+  let totalKm = 0;
+  let totalMin = 0;
+  let measuredCount = 0;
+  for (let day = 0; day < dayCount; day++) {
+    const s = byDay.get(day);
+    // Veljaven izmerjen vnos: status "route" + končni, nenegativni km/min
+    // (drugo je obrambno zavrnjeno — prikaz ocene, ne izmišljene izmere).
+    if (
+      s &&
+      s.status === "route" &&
+      typeof s.km === "number" &&
+      typeof s.min === "number" &&
+      Number.isFinite(s.km) &&
+      Number.isFinite(s.min) &&
+      s.km >= 0 &&
+      s.min >= 0
+    ) {
+      rows.push({ day, kind: "measured", km: s.km, min: s.min });
+      totalKm += s.km;
+      totalMin += s.min;
+      measuredCount += 1;
+    } else {
+      rows.push({ day, kind: "estimate" });
+    }
+  }
+
+  return {
+    rows,
+    // Vsota 1-decimalnih km lahko odplava v plavajoči vejici (21,6 + 13,5) —
+    // zaokrožitev nazaj na 1 decimalko je deterministična in brez izgube.
+    totalKm: measuredCount > 0 ? Math.round(totalKm * 10) / 10 : null,
+    totalMin: measuredCount > 0 ? totalMin : null,
+    measuredCount,
+    failedCount: dayCount - measuredCount,
   };
 }

@@ -109,6 +109,24 @@ const L = {
     es: "La colección se ha vaciado — puedes añadir nuevas paradas cuando quieras.",
   },
   explore: { sl: "Razišči destinacije", en: "Explore destinations", it: "Esplora le destinazioni", de: "Destinationen erkunden", fr: "Explorer les destinations", es: "Explora los destinos" },
+  // POLIR B (2.28.0): one-click start v praznem stanju — vzorčni načrti.
+  sampleTitle: { sl: "Začni z vzorčnim načrtom", en: "Start with a sample plan", it: "Inizia con un piano di esempio", de: "Starte mit einem Beispielplan", fr: "Commence avec un plan type", es: "Empieza con un plan de muestra" },
+  samplePlan: {
+    sl: (name: string) => `Vzorčni načrt: ${name}`,
+    en: (name: string) => `Sample plan: ${name}`,
+    it: (name: string) => `Piano di esempio: ${name}`,
+    de: (name: string) => `Beispielplan: ${name}`,
+    fr: (name: string) => `Plan type : ${name}`,
+    es: (name: string) => `Plan de muestra: ${name}`,
+  },
+  sampleNote: {
+    sl: "Vzorčni načrti so fiksni vnosi v isti deterministični motor — brez AI, brez ugibanj.",
+    en: "Sample plans are fixed inputs into the same deterministic engine — no AI, no guessing.",
+    it: "I piani di esempio sono input fissi dello stesso motore deterministico — niente AI, niente supposizioni.",
+    de: "Beispielpläne sind feste Eingaben in dieselbe deterministische Engine — keine KI, kein Rätseln.",
+    fr: "Les plans types sont des entrées fixes du même moteur déterministe — pas d’IA, pas de devinettes.",
+    es: "Los planes de muestra son entradas fijas del mismo motor determinista — sin IA, sin suposiciones.",
+  },
   plansTitle: { sl: "Zadnji načrt", en: "Latest plan", it: "Ultimo piano", de: "Letzter Plan", fr: "Dernier plan", es: "Último plan" },
   plansLead: {
     sl: "Deterministični načrt, shranjen z /nacrtuj (gumb „Shrani v Moja pot“).",
@@ -156,6 +174,54 @@ const L = {
   },
   unknown: { sl: "podatek neznan", en: "data unknown", it: "dato sconosciuto", de: "Daten unbekannt", fr: "donnée inconnue", es: "dato desconocido" },
 } as const;
+
+/**
+ * VZORČNI NAČRTI za prazno stanje zbirke (POLIR B, 2.28.0) — en klik do
+ * prvega načrta: Link na /nacrtuj?preset=<id> sproži obstoječo
+ * avto-generacijo (?preset= v PlannerApp). ID-ji MORAJO obstajati v PRESETS
+ * seznamu na /nacrtuj — pogodbo zaklepa tests/empty-state-presets.test.ts
+ * (source-contract: preimenovanje prednastavitve takoj pade).
+ * Iskrenost: fiksni vnosi v isti deterministični motor (0 AI) — isti vhod
+ * vedno da isti načrt.
+ */
+const SAMPLE_PLANS: ReadonlyArray<{
+  id: string;
+  title: { sl: string; en: string; it: string; de: string; fr: string; es: string };
+}> = [
+  {
+    id: "mirni-vikend-reka",
+    title: {
+      sl: "Miren vikend ob reki",
+      en: "A calm weekend by the river",
+      it: "Un fine settimana tranquillo al fiume",
+      de: "Ein ruhiges Wochenende am Fluss",
+      fr: "Un week-end paisible au bord de la rivière",
+      es: "Un fin de semana tranquilo junto al río",
+    },
+  },
+  {
+    id: "druzinski-izlet",
+    title: {
+      sl: "Družinski izlet danes",
+      en: "Family day trip today",
+      it: "Gita in famiglia oggi",
+      de: "Familienausflug heute",
+      fr: "Excursion en famille aujourd’hui",
+      es: "Excursión familiar hoy",
+    },
+  },
+  {
+    id: "romantika-vino",
+    title: {
+      sl: "Romantičen vikend z vinom",
+      en: "Romantic wine weekend",
+      it: "Weekend romantico col vino",
+      de: "Romantisches Wein-Wochenende",
+      fr: "Week-end romantique et vin",
+      es: "Fin de semana romántico con vino",
+    },
+  },
+];
 
 // ── REZERVACIJE NA POTEH (issue #1 področje 2 — My Trips statusi) ────────────
 // Števec rezervacij po poteh v oblaku + kanalno razkritje (demo/user/partner).
@@ -553,6 +619,31 @@ export default function MyTripsPage() {
               <Button asChild variant="outline" className="min-h-11">
                 <Link href="/destinacije">{pick(l, L.explore)}</Link>
               </Button>
+
+              {/* POLIR B (2.28.0): one-click start — vzorčni načrti (fiksni
+                  vnosi v isti deterministični motor, 0 AI). ID-ji zaklenjeni
+                  proti PRESETS na /nacrtuj (tests/empty-state-presets). */}
+              <div className="mt-3 w-full border-t pt-4">
+                <p className="text-sm font-semibold">{pick(l, L.sampleTitle)}</p>
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                  {SAMPLE_PLANS.map((p) => (
+                    <Button
+                      key={p.id}
+                      asChild
+                      variant="secondary"
+                      className="min-h-11"
+                    >
+                      <Link href={`/nacrtuj?preset=${p.id}`}>
+                        <Wand2 className="size-4" aria-hidden="true" />
+                        {pick(l, L.samplePlan)(pick(l, p.title))}
+                      </Link>
+                    </Button>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                  {pick(l, L.sampleNote)}
+                </p>
+              </div>
             </CardContent>
           </Card>
         ) : (

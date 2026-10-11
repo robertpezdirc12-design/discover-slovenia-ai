@@ -39,7 +39,7 @@ describe("sw: konstante (verzija, lupina aplikacije, meje)", () => {
   test("SW_VERSION je usklajena s package.json in trenutno izdajo 2.25.0", () => {
     // Kanarček ob izdaji: glava sw.js obljublja usklajenost s package.json —
     // pozabljen bump ob izdaji takoj pade na tem testu.
-    expect(swApi.SW_VERSION).toBe("2.27.1");
+    expect(swApi.SW_VERSION).toBe("2.28.0");
     expect(swApi.SW_VERSION).toBe(pkg.version);
   });
 

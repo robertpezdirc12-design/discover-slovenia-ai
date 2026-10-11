@@ -219,6 +219,26 @@ const L = {
   savedAt: { sl: "Shranjeno", en: "Saved", it: "Salvato", de: "Gespeichert", fr: "Enregistré", es: "Guardado" },
   totalTrip: { sl: "Celotno potovanje", en: "Whole trip", it: "Viaggio completo", de: "Ganze Reise", fr: "Voyage complet", es: "Viaje completo" },
   perPerson: { sl: "na osebo", en: "per person", it: "a persona", de: "pro Person", fr: "par personne", es: "por persona" },
+  // POLIR C (2.28.0): print pariteta z /pot/[shareId] (kanon shared-trip-view) —
+  // čist podpis SAMO ob tiskanju: kdaj natisnjeno + iskren vir podatkov (ta
+  // pogled je napravno-lokalen, zato ni deljene povezave kot v shared nogi).
+  printStamp: { sl: "Natisnjeno", en: "Printed", it: "Stampato", de: "Gedruckt", fr: "Imprimé", es: "Impreso" },
+  printSrcPlan: {
+    sl: "vir: zadnji načrt (lokalna shramba)",
+    en: "source: last plan (local storage)",
+    it: "fonte: ultimo piano (memoria locale)",
+    de: "Quelle: letzter Plan (lokaler Speicher)",
+    fr: "source : dernier plan (stockage local)",
+    es: "fuente: último plan (almacenamiento local)",
+  },
+  printSrcDraft: {
+    sl: "vir: osnutek Moje pot (časi so predlogi)",
+    en: "source: My trip draft (times are proposals)",
+    it: "fonte: bozza Il mio viaggio (gli orari sono proposte)",
+    de: "Quelle: Entwurf Meine Reise (Zeiten sind Vorschläge)",
+    fr: "source : brouillon Mon voyage (les horaires sont des propositions)",
+    es: "fuente: borrador de Mi viaje (los horarios son propuestas)",
+  },
 } as const;
 
 type Source = "planner" | "my-trip";
@@ -424,9 +444,9 @@ export default function JourneyPage() {
             </p>
           ) : null}
 
-          {/* Dnevna navigacija */}
+          {/* Dnevna navigacija (kontrola — se NE tiska, kanon shared-trip-view) */}
           {data.plan.days.length > 1 && (
-            <nav className="mt-4" aria-label={pick(l, L.dayNav)}>
+            <nav className="mt-4 print:hidden" aria-label={pick(l, L.dayNav)}>
               <ul className="flex flex-wrap gap-2">
                 {data.plan.days.map((_, i) => (
                   <li key={i}>
@@ -498,8 +518,8 @@ export default function JourneyPage() {
           {/* ISKRENA OPOZORILA */}
           {validation && <WarningsSection validation={validation} />}
 
-          {/* Akcije */}
-          <div className="mt-6 flex flex-wrap gap-3">
+          {/* Akcije (gumbi/izvozi — se NE tiska, kanon shared-trip-view) */}
+          <div className="mt-6 flex flex-wrap gap-3 print:hidden">
             <Button asChild size="lg" className="min-h-12">
               <Link href="/na-poti?start=1">
                 <Footprints className="size-5" aria-hidden="true" />
@@ -573,24 +593,35 @@ export default function JourneyPage() {
               {pick(l, L.print)}
             </Button>
           </div>
-          <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">
+          <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground print:hidden">
             <CloudUpload className="mr-1 inline size-3.5 align-[-2px]" aria-hidden="true" />
             {pick(l, L.cloudPerks)}
           </p>
-          {/* QA U10: iskreno napotilo ob onemogočenem .ics (+ kje je QR). */}
-          <p id="potovanje-ics-hint" className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+          {/* QA U10: iskreno napotilo ob onemogočenem .ics (+ kje je QR) —
+              interaktivno napotilo, se NE tiska. */}
+          <p id="potovanje-ics-hint" className="mt-1.5 text-xs leading-relaxed text-muted-foreground print:hidden">
             {pick(l, L.icsNoDates)}
           </p>
           {cloudError && (
-            <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">
+            <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400 print:hidden">
               {pick(l, L.cloudErr)}: {cloudError}
             </p>
           )}
           {pdfError && (
-            <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">
+            <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400 print:hidden">
               {pdfError}
             </p>
           )}
+
+          {/* POLIR C (2.28.0): print podpis (viden SAMO ob tiskanju) — zrcalo
+              noge shared-trip-view (»Izvoženo z …«): natisnjeno <datum> ·
+              iskren vir podatkov · znamka. Na papirju ostanejo samo dnevi,
+              postanki in meta (vir, interesi, opozorila, metrike). */}
+          <p className="hidden pt-6 text-center text-xs text-muted-foreground print:block">
+            {pick(l, L.printStamp)}: {new Date().toLocaleString(intlDateLocale(l))} ·{" "}
+            {data.source === "planner" ? pick(l, L.printSrcPlan) : pick(l, L.printSrcDraft)} ·{" "}
+            Discover Slovenia AI
+          </p>
         </div>
       )}
     </div>
@@ -669,7 +700,7 @@ function JourneyStopRow({ stop, lang }: { stop: TripStop; lang: PlannerLang }) {
             href={osmDirectionsUrl(stop.coords)}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-2 inline-flex min-h-9 items-center gap-1.5 rounded-md border px-3 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="mt-2 inline-flex min-h-9 items-center gap-1.5 rounded-md border px-3 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none print:hidden"
           >
             <ExternalLink className="size-3.5" aria-hidden="true" />
             {pick(l, L.navigate)}

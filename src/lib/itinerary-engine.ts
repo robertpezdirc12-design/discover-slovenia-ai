@@ -166,6 +166,22 @@ const PLANNER_MSG = {
     fr: (total: number) => `Toutes les destinations du jeu de données : ${total} ; le moteur est déterministe — la même entrée donne toujours le même itinéraire.`,
     es: (total: number) => `Todos los destinos del conjunto de datos: ${total}; el motor es determinista — la misma entrada da siempre el mismo plan.`,
   },
+  geoChain: {
+    sl: () => `Dnevi so urejeni geografsko (naslednji dan blizu prejšnjega, do ~120 km).`,
+    en: () => `Days are ordered geographically (each day near the previous one, up to ~120 km).`,
+    it: () => `I giorni sono ordinati geograficamente (ogni giorno vicino al precedente, fino a ~120 km).`,
+    de: () => `Die Tage sind geografisch geordnet (jeder Tag in der Nähe des vorherigen, bis ~120 km).`,
+    fr: () => `Les jours sont ordonnés géographiquement (chaque jour près du précédent, jusqu'à ~120 km).`,
+    es: () => `Los días están ordenados geográficamente (cada día cerca del anterior, hasta ~120 km).`,
+  },
+  geoHop: {
+    sl: (day: number, km: number) => `Dan ${day} je geografsko ločen (preskok ~${km} km) — tvoje želje so razpršene po regijah; dolgo vožnjo izrecno priznavamo.`,
+    en: (day: number, km: number) => `Day ${day} is geographically separated (a ~${km} km hop) — your interests are spread across regions; we acknowledge the long drive explicitly.`,
+    it: (day: number, km: number) => `Il giorno ${day} è separato geograficamente (un salto di ~${km} km) — i tuoi interessi sono sparsi tra le regioni; riconosciamo esplicitamente il lungo tragitto.`,
+    de: (day: number, km: number) => `Tag ${day} ist geografisch getrennt (ein Sprung von ~${km} km) — deine Interessen sind über Regionen verteilt; wir weisen ausdrücklich auf die lange Fahrt hin.`,
+    fr: (day: number, km: number) => `Le jour ${day} est géographiquement séparé (un saut de ~${km} km) — tes envies sont réparties entre les régions ; nous signalons explicitement le long trajet.`,
+    es: (day: number, km: number) => `El día ${day} está geográficamente separado (un salto de ~${km} km) — tus intereses están repartidos por regiones; reconocemos explícitamente el trayecto largo.`,
+  },
   draftTitle: {
     sl: () => `Osnutek: Moja pot`,
     en: () => `Draft: My trip`,
@@ -425,6 +441,19 @@ const DAY_END_MIN = 19 * 60;
 const MAX_STOPS_PER_DAY = 4;
 const NEIGHBOR_POOL = 12;
 
+/**
+ * GEO KOHERENCA (2.24.0-geo prototip, QA U1 2026-10-11):
+ * radij veriženja sidrov dni — naslednji dan se sidro izbere znotraj
+ * ~120 km premočno od sidra prejšnjega dneva (~156 km cestne ocene).
+ */
+const GEO_CHAIN_KM = 120;
+/**
+ * Toleranca sidrne izbire: kandidat za sidro dneva N sme biti kvečjemu
+ * ANCHOR_TIER_MARGIN točk pod najboljšim kandidatom (≈ utež enega redkega
+ * interesa) — znotraj te tolerance zmaga bližina, nad njo zmaga kakovost.
+ */
+const ANCHOR_TIER_MARGIN = 2.0;
+
 function hhmm(min: number): string {
   const h = Math.floor(min / 60);
   const m = min % 60;
@@ -434,6 +463,50 @@ function hhmm(min: number): string {
 /** Preslikava budget ravni (€=1 … €€€=3). */
 export function budgetTier(b: Budget): number {
   return b.length;
+}
+
+// ---------------------------------------------------------------------------
+// GEO KOHERENCA — uteži interesov (IDF po korpusu) + tipska afiniteta
+// (QA U1 2026-10-11: „vikend ob jezeru" je začel v Murski Soboti, ker je
+// besedilno omenila vse tri želje; Bled JE jezero po tipu in izgubi)
+// ---------------------------------------------------------------------------
+
+/**
+ * IDF utež interesa po korpusu 38 destinacij: REDI interes (»jezero« —
+ * zadetkov malo) razločuje destinacije bolj kot VSEPOVEDEN (»kolo« —
+ * zadetkov povsod). Deterministično: fiksni korpus → fiksne uteži.
+ * Glajenje ln(1 + N/(df+1)) drži df=0 končno (tak interes ne zadene ničesar).
+ */
+export function interestIdfWeight(df: number, corpusN: number): number {
+  return Math.log(1 + corpusN / (df + 1));
+}
+
+/**
+ * TIPSKA AFINITETA: če TIP destinacije sam ujame interes (typeLabel sl/en,
+ * ključ tipa ali sinonim — npr. »jezero« → lake), se utež interesa
+ * PODVOJI. „Destinacija JE jezero" > „destinacija OMEMBJE jezero"
+ * (Murska Sobota je mesto, ki omenja kolesarske poti ob jezeru; Bled je
+ * jezero). Deterministično, brez ugibanj — čisti kanon podatkov.
+ */
+export function typeAffinityMatches(d: Destination, interestRaw: string): boolean {
+  const interest = normText(interestRaw);
+  if (!interest) return false;
+  const names = new Set<string>([
+    d.type,
+    normText(typeLabel(d.type, "sl")),
+    normText(typeLabel(d.type, "en")),
+  ]);
+  if (names.has(interest)) return true;
+  for (const syn of SYNONYMS_N.get(interest) ?? []) {
+    if (names.has(syn)) return true;
+    const stem = stemWord(syn);
+    if (stem.length >= 3) {
+      for (const n of names) {
+        if (n.startsWith(stem)) return true;
+      }
+    }
+  }
+  return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -466,15 +539,36 @@ export function buildItinerary(query: PlannerQuery): ItineraryPlan {
     const { blob, tokens } = blobs.get(d.id) ?? { blob: "", tokens: [] };
     const matched = interests.filter((i) => interestMatches(tokens, blob, i));
     const seasonFit = query.season ? d.bestSeason.includes(query.season) : false;
+    // IDF uteženi zadetki + tipska afiniteta (×2) — redki interesi
+    // razločujejo močneje; tip destinacije podvoji utež svojega interesa.
+    let weighted = 0;
+    for (const i of matched) {
+      const w = interestIdfWeight(dfMap.get(i) ?? 0, DESTINATIONS.length);
+      weighted += typeAffinityMatches(d, i) ? w * 2 : w;
+    }
     return {
       dest: d,
       matched,
       seasonFit,
-      score: matched.length * 3 + (seasonFit ? 2 : 0) + d.rating / 10,
+      score: weighted + (seasonFit ? 2 : 0) + d.rating / 10,
     };
   };
 
   const regionOk = (d: Destination) => !query.region || d.region === query.region;
+
+  // IDF statistika po CELOTNEM korpusu (ne filtriranem naboru) — fiksna,
+  // deterministična in stabilna ne glede na filtre poizvedbe. Izračunana
+  // PRED ocenjevanjem (score jo uporablja).
+  const dfMap = new Map<string, number>();
+  for (const interest of interests) {
+    if (dfMap.has(interest)) continue;
+    let n = 0;
+    for (const d of DESTINATIONS) {
+      const { blob, tokens } = blobs.get(d.id) ?? { blob: "", tokens: [] };
+      if (interestMatches(tokens, blob, interest)) n++;
+    }
+    dfMap.set(interest, n);
+  }
 
   let pool = DESTINATIONS.filter((d) => regionOk(d) && inBudget(d)).map(score);
   if (pool.length < query.days * 2 && query.budget) {
@@ -489,14 +583,44 @@ export function buildItinerary(query: PlannerQuery): ItineraryPlan {
       b.score - a.score || b.dest.rating - a.dest.rating || a.dest.id.localeCompare(b.dest.id)
   );
 
-  // 2) SESTAVA DNI: sidro (najboljša neuporabljena) + najbližji sosedje
-  //    iz vrha urejene liste (razpršitev tipov, časovni okvir 09:00–19:00).
+  // 2) SESTAVA DNI: GEO VERIŽENJE SIDROV — dan 1 prevzame najboljšega
+  //    kandidata; sidro dneva N se izbere med kandidati znotraj
+  //    ANCHOR_TIER_MARGIN od vrha, ki so znotraj GEO_CHAIN_KM od sidra
+  //    prejšnjega dne (koherentna pot); če takih ni, pošteno prevzamemo
+  //    vrh lestvice (dolgo vožnjo razkrijemo v geoHop opombi).
+  //    Sosedi dneva ostajajo po starem kanonu (≤ 100 km od sidra).
   const used = new Set<string>();
   const daysOut: Destination[][] = [];
+  const geoHops: { day: number; km: number }[] = [];
+  let prevAnchor: Candidate | undefined;
 
   for (let dayIdx = 0; dayIdx < query.days; dayIdx++) {
-    const anchor = sorted.find((c) => !used.has(c.dest.id));
-    if (!anchor) break;
+    const unusedSorted = sorted.filter((c) => !used.has(c.dest.id));
+    if (unusedSorted.length === 0) break;
+
+    let anchor: Candidate;
+    if (dayIdx === 0 || !prevAnchor) {
+      anchor = unusedSorted[0];
+    } else {
+      const topScore = unusedSorted[0].score;
+      const tier = unusedSorted.filter(
+        (c) => c.score >= topScore - ANCHOR_TIER_MARGIN
+      );
+      const near = tier.filter(
+        (c) => haversineKm(prevAnchor!.dest.coords, c.dest.coords) <= GEO_CHAIN_KM
+      );
+      if (near.length > 0) {
+        anchor = near[0]; // najvišje ocenjeni v radiju (tier je že urejen)
+      } else {
+        // Iskren fallback: želje so geografsko razpršene — zapiši preskok.
+        anchor = unusedSorted[0];
+        geoHops.push({
+          day: dayIdx + 1,
+          km: round5(roadKm(prevAnchor.dest.coords, anchor.dest.coords)),
+        });
+      }
+    }
+    prevAnchor = anchor;
 
     const dayList: Destination[] = [anchor.dest];
     used.add(anchor.dest.id);
@@ -608,6 +732,7 @@ export function buildItinerary(query: PlannerQuery): ItineraryPlan {
       season: query.season,
       budget: query.budget,
       budgetRelaxed,
+      geoHops,
     }),
     meta: {
       interests,
@@ -635,6 +760,7 @@ function buildCoverageNote(args: {
   season?: Season;
   budget?: Budget;
   budgetRelaxed: boolean;
+  geoHops?: { day: number; km: number }[];
 }): string {
   const { lang, interests, pool, selected, days, requestedDays } = args;
   const parts: string[] = [];
@@ -675,6 +801,18 @@ function buildCoverageNote(args: {
   }
   if (days.length < requestedDays) {
     parts.push(PLANNER_MSG.onlyDays[lang](days.length, requestedDays));
+  }
+  // GEO KOHERENCA (QA U1): povezanost dni razkrijemo iskreno — bodisi
+  // potrdimo veriženje bodisi priznamo preskok med dnevoma z razdaljo.
+  if (days.length > 1) {
+    const hops = args.geoHops ?? [];
+    if (hops.length === 0) {
+      parts.push(PLANNER_MSG.geoChain[lang]());
+    } else {
+      for (const h of hops) {
+        parts.push(PLANNER_MSG.geoHop[lang](h.day, h.km));
+      }
+    }
   }
   days.forEach((d, i) => {
     if (d.length === 1) {
@@ -767,7 +905,8 @@ export type GeoRuleId =
   | "long_gap"
   | "duplicate_stop"
   | "missing_coords"
-  | "missing_time";
+  | "missing_time"
+  | "day_hop";
 
 export interface GeoValidationIssue {
   day: number;
@@ -812,6 +951,7 @@ const GEO_MSG = {
   duplicate: { sl: (n: string) => `${n} je v istem dnevu dvakrat.`, en: (n: string) => `${n} appears twice in the same day.`, it: (n: string) => `${n} compare due volte nello stesso giorno.`, de: (n: string) => `${n} kommt zweimal am selben Tag vor.`, fr: (n: string) => `${n} apparaît deux fois le même jour.`, es: (n: string) => `${n} aparece dos veces el mismo día.` },
   missingCoords: { sl: (n: string) => `${n}: koordinate niso znane — razdalje ni mogoče preveriti.`, en: (n: string) => `${n}: coordinates unknown — distances cannot be checked.`, it: (n: string) => `${n}: coordinate sconosciute — le distanze non si possono verificare.`, de: (n: string) => `${n}: Koordinaten unbekannt — Entfernungen können nicht geprüft werden.`, fr: (n: string) => `${n} : coordonnées inconnues — les distances ne peuvent pas être vérifiées.`, es: (n: string) => `${n}: coordenadas desconocidas — no se pueden comprobar las distancias.` },
   missingTime: { sl: (n: string) => `${n}: ura ni znana — urnika ni mogoče preveriti.`, en: (n: string) => `${n}: time unknown — the schedule cannot be checked.`, it: (n: string) => `${n}: ora sconosciuta — l'orario non si può verificare.`, de: (n: string) => `${n}: Zeit unbekannt — der Zeitplan kann nicht geprüft werden.`, fr: (n: string) => `${n} : heure inconnue — l'horaire ne peut pas être vérifié.`, es: (n: string) => `${n}: hora desconocida — no se puede comprobar el horario.` },
+  dayHop: { sl: (a: string, b: string, km: number) => `Preskok med dnevi: ${a} → ${b} je ~${km} km (udobno je do 120 km cestne ocene) — razmislite o prenočišču bližje.`, en: (a: string, b: string, km: number) => `Hop between days: ${a} → ${b} is ~${km} km (comfortable is up to 120 km road estimate) — consider staying closer overnight.`, it: (a: string, b: string, km: number) => `Salto tra i giorni: ${a} → ${b} è ~${km} km (comodo fino a 120 km stimati su strada) — valuta un pernottamento più vicino.`, de: (a: string, b: string, km: number) => `Sprung zwischen Tagen: ${a} → ${b} sind ~${km} km (komfortabel sind bis zu 120 km Straßenschätzung) — erwäge eine nähere Übernachtung.`, fr: (a: string, b: string, km: number) => `Saut entre les jours : ${a} → ${b} fait ~${km} km (confortable jusqu'à 120 km d'estimation routière) — envisage un hébergement plus proche.`, es: (a: string, b: string, km: number) => `Salto entre días: ${a} → ${b} son ~${km} km (cómodo hasta 120 km de estimación por carretera) — considera alojarte más cerca.` },
 } as const;
 
 export function validatePlanGeo(plan: ItineraryPlan, locale?: PlannerLang): GeoValidation {
@@ -911,6 +1051,24 @@ export function validatePlanGeo(plan: ItineraryPlan, locale?: PlannerLang): GeoV
       activityMinutes: activity,
       loadMinutes: load,
     });
+
+    // GEO KOHERENCA (QA U1): preskok MED dnevi — zadnji postanek dneva N
+    // → prvi postanek dneva N+1. Notranje noge pokriva zgornja zanka; ta
+    // presledek je prej ostajal NEOPOZORAN (Rogaška Slatina → Bled ~200 km).
+    const nextDay = plan.days[dayIdx + 1];
+    const last = stops[stops.length - 1];
+    const first = nextDay?.[0];
+    if (nextDay && first && last?.coords && first.coords) {
+      const hopKm = round5(roadKm(last.coords, first.coords));
+      if (hopKm > 120) {
+        issues.push({
+          day,
+          level: "warn",
+          rule: "day_hop",
+          message: GEO_MSG.dayHop[lang](last.name, first.name, hopKm),
+        });
+      }
+    }
   });
 
   const worst: GeoValidation["worst"] = issues.some((i) => i.level === "error")

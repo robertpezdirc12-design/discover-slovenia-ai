@@ -830,11 +830,15 @@ export function HomeView() {
                   </p>
                   {p.commissionable ? (
                     <>
+                      {/* POLIR8 (2.35.0): whitespace-normal h-auto — dolga oznaka
+                          („Odpri pri Viator (Tripadvisor)“ min 275 px) je
+                          razširila kartico na 313 px > 288 px @320 (WCAG 1.4.10);
+                          min-h-8 ohrani minimalno višino tap-target. */}
                       <Button
                         asChild
                         size="sm"
                         variant="outline"
-                        className="mt-4 w-full font-semibold tap-target"
+                        className="mt-4 w-full whitespace-normal h-auto min-h-8 font-semibold tap-target"
                       >
                         {/* Vodeni klik skozi lastni API (izpis klika + 302);
                             rel="sponsored" je obvezen za provizijske povezave. */}

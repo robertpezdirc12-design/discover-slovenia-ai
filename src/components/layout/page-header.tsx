@@ -26,7 +26,12 @@ export function PageHeader({
           {kicker}
         </p>
       )}
-      <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-balance sm:text-4xl">
+      {/* POLIR8 (2.35.0): break-words — dolge enobesedne nemške sestavljenke
+          („Nutzungsbedingungen" 368 px → 64 px preliva, „Datenschutzerklärung"
+          → 57 px @320) se prelomijo namesto da raznesejo stran; ena sprememba
+          pokrije VSE PageHeader klicatelje; na širokih zaslonih se nič ne
+          spremeni (break-words se aktivira SAMO ob prekoračitvi). */}
+      <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-balance break-words sm:text-4xl">
         {title}
       </h1>
       {lead && (

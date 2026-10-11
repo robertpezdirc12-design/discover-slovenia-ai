@@ -393,8 +393,21 @@ export function DestinationDetail({ d }: { d: Destination }) {
                         <p className="truncate text-sm font-bold">{p.name}</p>
                       </div>
                     </div>
-                    <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1">
-                      <Button asChild size="sm" variant="outline" className="font-semibold">
+                    {/* POLIR8 (2.35.0): shrink-0 je preprečeval skrčenje vrstice,
+                        nowrap gumb „Leti do …“ (510 px) je raznesel stran pri
+                        390 px (161 px preliva) — min-w-0 dovoli skrčenje,
+                        whitespace-normal h-auto preglane nowrap/h-8 osnovo
+                        (tailwind-merge), min-h-8 ohrani minimalno višino.
+                        EMPIRIČNO (@390): gumbu je treba pripeti tudi shrink
+                        (preglase shrink-0 iz Button osnove — sicer flex-wrap
+                        vrstica gumb (369 px) samodejno ne skrči). */}
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="font-semibold whitespace-normal h-auto min-h-8 shrink"
+                      >
                         {/* Vodeni klik skozi lastni API (zapis klika + 302);
                             rel="sponsored" je obvezen za provizijske povezave. */}
                         <a

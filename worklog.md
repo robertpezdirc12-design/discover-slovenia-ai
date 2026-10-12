@@ -45,3 +45,21 @@ Work Log:
 Stage Summary:
 - Dokazano: za "delo tukaj" (clone/analyze/push/PR) potreben bodisi fine-grained PAT (Contents+Pull requests: RW, samo ta repo) bodisi začasno javni repozitorij (samo branje → patch, ne push).
 - Vse vsebine (koda + GitHub teksti) so pripravljene vnaprej; po prejemu dostopa je postopek en korak.
+
+---
+Task ID: POLIR15-PROD (faza 4: produkcija na GitHubu)
+Agent: Z.ai Code (glavni orkestrator)
+Task: Uporabnik pošiljal GitHub žeton → POLIR15 implementiran NA PRAVI KODI repozitorija discover-slovenia-ai, push, PR #36, komentar na issue #34.
+
+Work Log:
+- Žeton preverjen (user robertpezdirc12-design, push: true, repo privaten, default branch main).
+- Clone + analiza prave kode: main 39967a3 (2.41.0, POLIR14/PR #33); lokalizirane ciljne datoteke — travel-map.tsx (2163 vrstic, preklop order-3 NI sticky), zemljevid/view.tsx (skeleton brez vrstic nad zemljevidom), personal-home-section.tsx (useSession → return null do "authenticated" = vstavitev ~1400 px), page.tsx/home-view.tsx (hero i18n prek lokalnih slovarjev), i18n-pick kanon (sl resnica).
+- Implementacija NA PRAVI KODI: (a) ovoj mape `relative z-0 isolate` + preklop `max-lg:sticky top-2 z-30 bg-background/95 backdrop-blur-sm shadow-sm`; (b) NOV src/lib/seasonal-hero.ts (MMDD okna z ovitkom, SI mikro-dogodki, 6 jezikov, toPickLocale validator) + page.tsx Promise.all(session, sezona) + home-view `seasonal?.kicker ?? t("heroKicker")`; (c) personalAuthed prop + PersonalHomeSkeleton (glava + 6 kartic h-[132px] + naloge) v SSR za prijavljene; (d) skeleton zrcali vrstice iskanje/čipi/preklop/plasti (h-11/h-9, mt-4/mt-3, grid mt-4).
+- Zaklepi: NOV tests/polir15.test.ts (14 testov: enote resolverjev + source-contract) + posodobljena p1d ⑤ in map-mobile-first ⑨; bump 2.41.0 → 2.42.0 (package.json, health, footer, sw.js, README, verzijski testi); repo worklog.md vnos.
+- VRATA LOKALNO: bun install 896 pk, tsc 0, eslint 0, bun test 1971/1971 PASS.
+- Git: branch feat/polir15-2.42.0, commit ccfe918 (17 datotek, +652/−25), push uspešen.
+- PR #36 odprt (Closes #34) + komentar na issue #34; CI "lint + typecheck + test + prisma + build + smoke (bun)" → SUCCESS, mergeable_state: clean.
+
+Stage Summary:
+- POLIR15 cikel POPOLNOSTI zaključen na pravem repozitoriju: raziskava ✅ specifikacija ✅ implementacija ✅ produkcija (push + PR #36 + CI zeleno) ✅
+- Ostaja uporabnikovo: merge PR #36 (GitHub) → Vercel deploy → Lighthouse CLS run za (c)/(d); priporočena rotacija žetona (objavljen v klepetu).

@@ -23,7 +23,11 @@ const TravelMap = dynamic(() => import("@/components/map/travel-map"), {
   loading: () => (
     <div className="mx-auto w-full max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
       <div className="mt-8 grid gap-4 lg:grid-cols-[1fr_340px]">
-        <Skeleton className="h-[62vh] min-h-80 rounded-xl sm:h-[70vh] lg:h-[calc(100dvh-15rem)] lg:min-h-[540px]" />
+        {/* POLIR12 (2.39.0): višina skeleta v svh enotah — ZRCALI višino
+            zemljevida (MapContainer v travel-map.tsx): svh = stabilen
+            najmanjši viewport, ob naložitvi Leafleta ni skoka postavitve
+            (pariteta zaklenjena s testom ④ stable-viewport-heights). */}
+        <Skeleton className="h-[62svh] min-h-80 rounded-xl sm:h-[70svh] lg:h-[calc(100svh-15rem)] lg:min-h-[540px]" />
         <div className="space-y-2">
           <Skeleton className="h-4 w-40" />
           {Array.from({ length: 10 }).map((_, i) => (

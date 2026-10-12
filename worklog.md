@@ -223,3 +223,21 @@ Stage Summary:
 - PR #40: https://github.com/robertpezdirc12-design/discover-slovenia-ai/pull/40 (ODPRT, čaka zeleno CI → uporabnik mora preveriti Actions kvoto/billing: Settings → Billing → Actions)
 - Komentarji: #38 status (issuecomment-6132732225), #35 raziskava (issuecomment-6132732445), #40 CI dokazi (issuecomment-6132796736)
 - Naslednji koraki: (1) uporabnik reši Actions kvoto → rerun CI → merge PR #40; (2) P0 verifikacija preostalih 15 dogodkov ob obnovi SDK kvote; (3) P1 načrtovalnik + Playwright E2E; (4) P2 dostopnost
+
+---
+Task ID: R35-PUSH+P0-3
+Agent: Z.ai Code (glavni orkestrator)
+Task: Push pregled vseh klonov (kaj ni na GitHubu) + nadaljevanje izboljšav: P0 dogodki 3. serija (festival-soca, blejski-danovski) + CI incident round 2.
+
+Work Log:
+- PUSH AUDIT: vsi 3 kloni (polir15-repo, dsa-repo, polir15-target) — lokalni branchi so VSI na GitHubu (ls-remote potrdil e458bb5 = origin/feat/r35-seo-p0-dogodki-2.44.0; dsa-repo 7273eaa = merged PR #39; polir15-target 69c9b4a = origin/polir15). „Unpushed“ videz je bil samo stale refspec (remote.origin.fetch je sledil samo main) — popravljen na +refs/heads/* + fetch --prune. Nič za pushati.
+- CI INCIDENT round 2: rerun attempt 3 (run 38309256151) in nov push (78bf024, run 38313197967) OBI padeta v 2–3 s z 0 koraki — GitHub Actions kvota/billing še vedno izčrpana (prejšnja zelena: main 19:08). Zunanja odvisnost: uporabnik mora preveriti Settings → Billing → Actions, potem rerun.
+- SDK kvota (web_search/page_reader) še vedno 429 → P0 3. serija prek curl prve roke: nacionalni register e-občina (tolmin.si instanca, eo_id=137 izpiski nacionalnega pogleda): Soča/Soca/Tolminator/blejski/danovski/koline/opankarija = 0; postojna.si eo_id=105 „jamski“ = 0; bled.si RSS (1554 novic) brez omenjenih dogodkov; obcina-bled.si anti-bot; Wikipedia MetalDays prebrana (Tolminator = Tolmin, 2023–present, July, sotočje Soče/Tolminke, naslednik MetalDays 2004–2022).
+- IMPLEMENTACIJA (polir15-repo, commit 78bf024 na PR #40 branchi): festival-soca → „Tolminator — metal festival na sotočju Soče in Tolminke“ (glasba, mesec 7, source en.wikipedia.org/wiki/MetalDays, verifiedAt 2026-10-13, brez website — organizator nedosegljiv, dateUnconfirmed); blejski-danovski-festival → not_found z dokazi v komentarju (zapis ostane, kanon ④b); +5 testnih zaklepov ⑤a–⑤e v tests/events-p0-qa38.test.ts; repo worklog dopolnjen.
+- VERIFIKACIJA: bun test 2019/2019 (17728 expect), tsc --noEmit 0, eslint 0.
+- GITHUB KOMUNIKACIJA: komentar na #38 (issuecomment-6133273966), PR #40 body dopolnjen s sekcijo 3. serije.
+
+Stage Summary:
+- Nič ni ostalo nepushano — vsi lokalni commiti so na GitHubu; edini „manjkajoč“ push je bil stale-refspec artefakt.
+- PR #40 zdaj nosi P0 1.+2.+3. serijo + P1 SEO (2.44.0), 2 commita čakanja na zeleni CI; CI blokada je 100 % infrastrukturna (Actions kvota), ne kodo.
+- Naslednji koraki po zelenem CI: merge PR #40 → komentar/obvestilo na #38; nato P1 načrtovalnik/E2E ali P2 dostopnost; verifikacija preostalih ~12 dogodkov ob obnovi SDK kvote (vsi 2027 termini, organizatorji še ne objavljajo).

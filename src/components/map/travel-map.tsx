@@ -1544,11 +1544,19 @@ export default function TravelMap() {
           saasfactor kanon (raziskava §6.1): „list-versus-map toggle should
           be persistent and easy to switch“ — seznam je bil prej 472 px
           pod pragom prvega zaslona, zdaj je 1 dejanje stran. Aktivni gumb
-          variant="default", neaktivni "outline"; stanje v aria-pressed. */}
+          variant="default", neaktivni "outline"; stanje v aria-pressed.
+          POLIR15-a (2.42.0): vrstica je STICKY pod glavo (top-16 = h-16
+          glave) — ob globokem drsenju po seznamu (ali pod zemljevidom) je
+          preklop VEDNO dosegljiv z 1 dejanjem (prej: scroll nazaj na vrh).
+          bg-background je obvezen: vrstica lebdi nad drseno vsebino;
+          pb-2 prekrije vsebino v reži med gumboma. Z-index 30 je dovolj,
+          ker je zemljevid zdaj v lastnem stacking kontekstu (izolacija
+          spodaj) — Leafletove pane (z 400) in kontrole (z 800–1000) ne
+          morejo več prekrite vrstice. */}
       <div
         role="group"
         aria-label={t("viewToggleLabel")}
-        className="mt-3 flex gap-2 max-lg:order-3 lg:hidden"
+        className="sticky top-16 z-30 mt-3 flex gap-2 bg-background pb-2 max-lg:order-3 lg:hidden"
       >
         <Button
           type="button"
@@ -1864,10 +1872,16 @@ export default function TravelMap() {
             svh ≡ vh (ničelna vizualna sprememba, ista podporna okna). */}
         {/* POLIR14: ovoj zemljevida se na mobilnem v pogledu „list“
             skrije (max-lg:hidden) — seznam zasede prvi zaslon; namizje
-            (lg+) sploh ne pozna preklopa (razred se ne aktivira). */}
+            (lg+) sploh ne pozna preklopa (razred se ne aktivira).
+            POLIR15-a (2.42.0): relative z-0 isolate — Leaflet pane (z 400)
+            in kontrole (z 800–1000) bežijo iz vsebinskega toka kar nad
+            sticky preklop (z 30) in glavo (z 40); isolate zapre nov
+            stacking kontekst, tako da vse Leafletove plasti ostanejo
+            ZNOTRAJ ovoja (z 0 glede na starša). Leaflet CSS se NE
+            spreminja — izolacija je čisto na strani ovoja. */}
         <div
           className={cn(
-            "overflow-hidden rounded-xl border shadow-sm",
+            "relative z-0 isolate overflow-hidden rounded-xl border shadow-sm",
             mobileView === "list" && "max-lg:hidden"
           )}
           role="region"

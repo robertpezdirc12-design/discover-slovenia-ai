@@ -735,7 +735,12 @@ export function SharedTripView({ shareId }: { shareId: string }) {
           {/* ── Zavihek POT ─────────────────────────────────────────── */}
           <TabsContent value="pot" className="mt-4 space-y-6">
             <div className="flex flex-wrap gap-3 print:hidden">
-              <Button onClick={() => onAddAll(plan)} className="tap-target font-semibold">
+              {/* POLIR11: whitespace-normal text-left + shrink — dolg prevod (it
+                  „Aggiungi l'intero viaggio al mio viaggio“) se ovije namesto
+                  preliva @320/360; shrink preglasi osnovni shrink-0 Buttona v
+                  flex-wrap vrstici (kanon POLIR8 — drugače gumb ostane
+                  max-content). */}
+              <Button onClick={() => onAddAll(plan)} className="tap-target font-semibold whitespace-normal text-left shrink">
                 <Plus className="size-4" aria-hidden="true" />
                 {pick(l, L.addAll)}
               </Button>
@@ -1046,7 +1051,12 @@ export function SharedTripView({ shareId }: { shareId: string }) {
 
           {/* Akcije (ne tiskajo) */}
           <div className="mt-6 flex flex-wrap gap-3 print:hidden">
-            <Button onClick={() => onAddAll(localPlan)} className="tap-target font-semibold">
+            {/* POLIR11: whitespace-normal text-left + shrink — dolg prevod (it
+                „Aggiungi l'intero viaggio al mio viaggio“) se ovije namesto
+                preliva @320/360; shrink preglasi osnovni shrink-0 Buttona v
+                flex-wrap vrstici (kanon POLIR8 — drugače gumb ostane
+                max-content). */}
+            <Button onClick={() => onAddAll(localPlan)} className="tap-target font-semibold whitespace-normal text-left shrink">
               <Plus className="size-4" aria-hidden="true" />
               {pick(l, L.addAll)}
             </Button>

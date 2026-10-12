@@ -195,7 +195,12 @@ export default function OwnerPrijavaPage() {
           <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
             {pick(l, L.demoBody)}
           </p>
-          <Button asChild variant="outline" size="sm" className="mt-4 font-semibold">
+          {/* POLIR11: whitespace-normal text-left — dolg prevod (es „Formulario
+              de solicitud para proveedores“) se ovije namesto preliva @320/360
+              (kanon POLIR7). Gumb leži v BLOČNEM vsebniku (p-5), kjer
+              fit-content samodejno ovije besedilo — osnovni shrink-0 Buttona
+              tu ni v igri (velja samo za fleksibilne vrstice). */}
+          <Button asChild variant="outline" size="sm" className="mt-4 font-semibold whitespace-normal text-left">
             <Link href="/za-ponudnike">{pick(l, L.providersCta)}</Link>
           </Button>
         </CardContent>

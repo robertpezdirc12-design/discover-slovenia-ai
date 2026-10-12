@@ -17,6 +17,12 @@ import { jsonldScriptHtml, softwareApplicationJsonLd } from "@/lib/jsonld";
  * brezplačno). Inline skripta nosi CSP nonce z zahteve (middleware
  * postavi x-nonce — brez nonca bi jo produkcjska CSP blokirala;
  * enak kanon kot next-themes v [locale]/layout.tsx).
+ *
+ * POLIR10 (2.37.0): suppressHydrationWarning na ld+json skripti utiša
+ * hidracijsko primerjavo PER-ZAHTEVNEGA atributa nonce (odjemalec ima v
+ * flight podatkih prazen niz; vsebina skripte je deterministična in se
+ * ne razlikuje) — enak kanon kot <html> za next-themes v layoutu;
+ * nonce atribut OSTANE v izpisanem HTML (produkcjska CSP zahteva ga).
  */
 export async function generateMetadata({
   params,
@@ -41,6 +47,7 @@ export default async function HomePage({
       <script
         type="application/ld+json"
         nonce={nonce}
+        suppressHydrationWarning
         dangerouslySetInnerHTML={{
           __html: jsonldScriptHtml(softwareApplicationJsonLd(locale)),
         }}

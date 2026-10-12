@@ -536,7 +536,15 @@ const CATEGORY_ICONS: Record<
  */
 const BOOKING_PARTNERS = providersPublicDTO();
 
-export function HomeView() {
+export function HomeView({
+  nextStepDismissed = false,
+}: {
+  /** POLIR13 (2.40.0): sejni dismiss zrcaljen v piškotek
+   *  dai:next-step-dismissed — strežniški starš (page.tsx) ga prebere s
+   *  cookies() in kartico izpusti ŽE v SSR (ni rezervacije prostora, ni
+   *  premika vsebine po ponovnem nalaganju v isti seji). */
+  nextStepDismissed?: boolean;
+}) {
   const l = useLocale();
   const router = useRouter();
   const { toast } = useToast();
@@ -672,10 +680,15 @@ export function HomeView() {
         </div>
       </section>
 
-      {/* ======== PROAKTIVNI POMOČNIK — naslednji smiseln korak (issue #1) ======== */}
-      {nextStepReady && (
+      {/* ======== PROAKTIVNI POMOČNIK — naslednji smiseln korak (issue #1) ========
+          POLIR13 (2.40.0): vrata so ZDAJ strežniška (piškotek
+          dai:next-step-dismissed, ne več nextStepReady) + kartica se izriše
+          NEVIDNA že v SSR in se razkrije ob `ready` (prop) — rezervacija
+          prostora po web.dev kanonu „Reserve space for late-loading
+          content“ (vstavitev 379 px po hidraciji je povzročala CLS 0,161). */}
+      {!nextStepDismissed && (
         <div className="mx-auto w-full max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
-          <NextStepCard ctx={nextStepCtx} surface="home" />
+          <NextStepCard ctx={nextStepCtx} surface="home" ready={nextStepReady} />
         </div>
       )}
 

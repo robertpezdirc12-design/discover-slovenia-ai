@@ -22,13 +22,19 @@ const TravelMap = dynamic(() => import("@/components/map/travel-map"), {
   ssr: false,
   loading: () => (
     <div className="mx-auto w-full max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
-      <div className="mt-8 grid gap-4 lg:grid-cols-[1fr_340px]">
+      {/* POLIR14 (2.41.0): ožji zgornji odmik skeleta na mobilnem (mt-4) —
+          zrcali stisnjeno glavo strani (pt-6); podniz mreže ⑭-style
+          (grid gap-4 lg:grid-cols-[1fr_340px]) ostaja. Skelet seznama je
+          na mobilnem skrit (hidden lg:block) — mapa-first pariteta: pod
+          zemljevidnim skeletom NI skeleta seznama, ker seznam na mobilnem
+          privzeto ni viden (preklop v travel-map). */}
+      <div className="mt-4 lg:mt-8 grid gap-4 lg:grid-cols-[1fr_340px]">
         {/* POLIR12 (2.39.0): višina skeleta v svh enotah — ZRCALI višino
             zemljevida (MapContainer v travel-map.tsx): svh = stabilen
             najmanjši viewport, ob naložitvi Leafleta ni skoka postavitve
             (pariteta zaklenjena s testom ④ stable-viewport-heights). */}
         <Skeleton className="h-[62svh] min-h-80 rounded-xl sm:h-[70svh] lg:h-[calc(100svh-15rem)] lg:min-h-[540px]" />
-        <div className="space-y-2">
+        <div className="hidden space-y-2 lg:block">
           <Skeleton className="h-4 w-40" />
           {Array.from({ length: 10 }).map((_, i) => (
             <Skeleton key={i} className="h-13 w-full rounded-lg" />
@@ -71,15 +77,27 @@ export default function MapPage() {
   ];
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 sm:pt-10 lg:px-8">
+      {/* POLIR14 (2.41.0): MOBILNA GLAVA ZEMLJEVIDA — zemljevid najprej.
+          Raziskava §3.3 (izmerjeno na produkciji): glava + kontrolna plast
+          sta prej zasedla ~87 % prvega zaslona @390×844 (zemljevid šele na
+          y=735, seznam 472 px pod pragom). Zdaj: ožji odmik (pt-6), kicker
+          skrit na mobilnem, opis 2 vrstici, 3-stolpčna statistika ≥sm —
+          namizje (sm+) IDENTIČNO današnjemu. */}
       <PageHeader
         kicker={pick(l, L.kicker)}
         title={pick(l, L.title)}
         lead={pick(l, L.lead)}
+        kickerClassName="hidden sm:block"
+        leadClassName="line-clamp-2 sm:line-clamp-none"
       />
 
-      {/* Statistika nabora (oblika po mirror produkcije) */}
-      <dl className="mt-6 grid grid-cols-3 gap-3">
+      {/* Statistika nabora (oblika po mirror produkcije)
+          POLIR14 (2.41.0): 3-stolpčne kartice samo ≥sm — na mobilnem jih
+          nadomesti kompaktna vrstica pod zemljevidom (glej pod <TravelMap/>);
+          vsebina ostaja v DOM (hidden, ne pogojni izris — 0 hidracijskih
+          razlik). Zaklep grid-cols-3 ostaja (test ⑬ mobile-overflow). */}
+      <dl className="mt-6 hidden grid-cols-3 gap-3 sm:grid">
         {stats.map((s) => (
           <div
             key={s.label}
@@ -100,6 +118,12 @@ export default function MapPage() {
 
       {/* Polen Leaflet zemljevid (klientno nalaganje brez SSR) */}
       <TravelMap />
+      {/* POLIR14 (2.41.0): kompaktna statistična vrstica POD zemljevidom —
+          mobilni nadomestek 3-stolpčnih kartic (te so ≥sm): ena vrstica,
+          ločilo „·“, besedila se lahko prelomijo (duh break-words). */}
+      <p className="mt-6 text-center text-xs text-muted-foreground sm:hidden">
+        {DESTINATIONS.length} {pick(l, L.statDest)} · 20 {pick(l, L.statRegions)} · {AVG_RATING.toFixed(1)} {pick(l, L.statRating)}
+      </p>
     </div>
   );
 }

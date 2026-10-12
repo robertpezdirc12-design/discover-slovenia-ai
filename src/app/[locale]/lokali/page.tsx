@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { LokaliExplorer } from "@/components/lokali-explorer";
-import { alternatesFor } from "@/lib/hreflang";
+import { pageMetadata } from "@/lib/page-metadata";
 
 /**
  * /lokali — B2B imenik lokalnih ponudnikov (hoteli, restavracije,
@@ -13,7 +13,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return { alternates: alternatesFor(locale, "/lokali") };
+  return pageMetadata(locale, "/lokali");
 }
 
 export default function LokaliPage() {

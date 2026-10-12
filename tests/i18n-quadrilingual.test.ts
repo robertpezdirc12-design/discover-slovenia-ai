@@ -118,13 +118,16 @@ const PAGES_WITHOUT_HREFLANG: readonly string[] = [
 ];
 
 describe("i18n-quadrilingual ②: hreflang pokritost strani", () => {
-  test("vseh 36 strani vsebuje alternatesFor( (36 = dolžina seznama)", async () => {
+  test("vseh 36 strani izjavlja hreflang (alternatesFor( ali pageMetadata() P1 2.44.0)", async () => {
     expect(PAGES_WITH_HREFLANG.length).toBe(36);
     for (const path of PAGES_WITH_HREFLANG) {
       const code = await Bun.file(path).text();
+      // P1 SEO (2.44.0): statične strani kličejo pageMetadata(), ki
+      // INTERNO sestavi alternatesFor — hreflang izjava ostane obvezna.
+      const declares = code.includes("alternatesFor(") || code.includes("pageMetadata(");
       expect(
-        code.includes("alternatesFor("),
-        `${path} mora vsebovati alternatesFor(`
+        declares,
+        `${path} mora vsebovati alternatesFor( ali pageMetadata(`
       ).toBe(true);
     }
   });

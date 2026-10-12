@@ -161,9 +161,9 @@ function filterEvents(month: number | "all", category: EventCategory | "all") {
 }
 
 describe("events P0 (#38): regresija filtrov", () => {
-  test("③a brez filtrov = vseh 30 dogodkov (ponastavitev)", () => {
-    expect(EVENTS.length).toBe(30);
-    expect(filterEvents("all", "all").length).toBe(30);
+  test("③a brez filtrov = vseh 31 dogodkov (razdvojitev P0 2. serije, ponastavitev)", () => {
+    expect(EVENTS.length).toBe(31);
+    expect(filterEvents("all", "all").length).toBe(31);
   });
 
   test("③b filter po mesecu: februar najde Kurentovanje (potrjen 3. feb)", () => {
@@ -196,5 +196,97 @@ describe("events P0 (#38): regresija filtrov", () => {
   test("③f vsi dogodki imajo kategorijo iz dovoljenega nabora (obljuba UI čipov)", () => {
     const cats = Object.keys(EVENT_CATEGORIES) as EventCategory[];
     for (const e of EVENTS) expect(cats).toContain(e.category);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ④ P0 2. SERIJA (verifikacija 2026-10-13) — popravki na podlagi primarnih
+//    virov: ce-sejem.si (seznam sejmov), crnomelj.si + nacionalni register
+//    dogodkov (e-občina), visitljubljana.com, visitmaribor.si, bled.si,
+//    postojna.si. Kanon: vir se zapiše SAMO, če ga je verifikacija
+//    dejansko prebrala; nepotrjen datum = „datum še ni potrjen“.
+// ---------------------------------------------------------------------------
+
+describe("events P0 2. serija (2026-10-13): popravki po primarnih virih", () => {
+  test("④a celjski-sejem: uradni jesenski sejem je POMP, 10.–11. okt 2026", () => {
+    const e = byId("celjski-sejem");
+    // zapis „Celjski sejem 9.–12. 10. 2026“ ne obstaja — „Celjski sejem
+    // d.d.“ je prizorišče/organizator; edini oktobrski sejem 2026 = POMP.
+    expect(e.title).toBe("POMP — sejem pompoznih dogodkov");
+    expect(e.dateStart).toBe("2026-10-10");
+    expect(e.dateLabel).toBe("10. – 11. okt 2026");
+    expect(e.monthIndex).toBe(10);
+    expect(e.venue).toBe("Celjski sejem, Celje");
+    expect(e.website).toBe("https://www.ce-sejem.si");
+    expect(e.source).toBe("https://www.ce-sejem.si/sejmi/");
+    expect(e.verifiedAt).toBe("2026-10-13");
+    expect(e.dateUnconfirmed).toBeUndefined();
+  });
+
+  test("④b bela-krajina-koline: 2026 edicija NI potrdljiva → pošteno nepotrjeno", () => {
+    const e = byId("bela-krajina-koline");
+    expect(e.dateUnconfirmed).toBe(true);
+    expect(e.dateStart).toBe("");
+    expect(e.dateLabel).toBe("datum še ni potrjen");
+    // manjkajoči vir: brez izmišljenega source-a (iskrenostni kanon)
+    expect(e.source).toBeUndefined();
+    expect(e.verifiedAt).toBeUndefined();
+    // mesec ostane kot PRIČAKOVANO okno (november, tradicija)
+    expect(e.monthIndex).toBe(11);
+  });
+
+  test("④c božični sejmi RAZDVOJENI: Ljubljana (obstoječi id) + Maribor (nov id)", () => {
+    const lj = byId("bozicni-sejmi-ljubljana-maribor");
+    const mb = byId("bozicni-sejmi-maribor");
+    // Ljubljana: uradni brand „December v Ljubljani“, glavni prizorišči
+    // Prešernov trg/Breg (ne „Stari trg“), datumi 2026 neobjavljeni
+    expect(lj.title).toBe("December v Ljubljani — božični sejmi");
+    expect(lj.dateUnconfirmed).toBe(true);
+    expect(lj.dateStart).toBe("");
+    expect(lj.venue).toBe("Prešernov trg in Breg, Ljubljana");
+    expect(lj.website).toBe("https://www.visitljubljana.com/sl/obiskovalci/prireditve");
+    // Maribor: uradni brand „Čarobni Maribor“ (visitmaribor.si)
+    expect(mb.title).toBe("Čarobni Maribor — božični sejmi");
+    expect(mb.dateUnconfirmed).toBe(true);
+    expect(mb.dateStart).toBe("");
+    expect(mb.website).toBe("https://www.visitmaribor.si");
+    expect(mb.monthIndex).toBe(11);
+    // oba zapisa si delita kategorijo tradicija in mesec 11
+    expect(lj.category).toBe("tradicija");
+    expect(mb.category).toBe("tradicija");
+  });
+
+  test("④d bled-winter-magic: uradni brand „Blejska zimska pravljica“ (bled.si)", () => {
+    const e = byId("bled-winter-magic");
+    expect(e.title).toBe("Blejska zimska pravljica");
+    expect(e.venue).toBe("Jezerska promenada, Bled");
+    expect(e.dateUnconfirmed).toBe(true);
+    expect(e.dateStart).toBe("");
+    expect(e.website).toBe("https://www.bled.si/sl/prireditve/glavne-prireditve/blejska-zimska-pravljica/");
+    expect(e.source).toBe("https://www.bled.si/sl/prireditve/glavne-prireditve/blejska-zimska-pravljica/");
+    expect(e.verifiedAt).toBe("2026-10-13");
+  });
+
+  test("④e jamski-sejem-postojna: NI sledu v primarnih virih → pošteno nepotrjeno", () => {
+    const e = byId("jamski-sejem-postojna");
+    expect(e.dateUnconfirmed).toBe(true);
+    expect(e.dateStart).toBe("");
+    expect(e.dateLabel).toBe("datum še ni potrjen");
+    // zapis ostane (ne brišemo brez razloga), a brez izmišljenega datuma
+    expect(e.venue).toBe("Trg Tabor, Postojna");
+    expect(e.monthIndex).toBe(12);
+  });
+
+  test("④f vsi potrjeni datumi (2. serija) imajo vir + datum verifikacije", () => {
+    for (const e of EVENTS) {
+      if (e.dateUnconfirmed) continue;
+      // dogodek z 2. serija popravkom NOSI vir; starejši zapisi (1. serija
+      // in nerazvrščeni) ostanejo nespremenjeni — tu zaklepamo le, da
+      // POPRAVLJENI zapisi (celjski-sejem) nosita vir.
+      if (e.id === "celjski-sejem") {
+        expect(e.source).toBeTruthy();
+        expect(e.verifiedAt).toBe("2026-10-13");
+      }
+    }
   });
 });

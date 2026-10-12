@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { alternatesFor } from "@/lib/hreflang";
+import { pageMetadata } from "@/lib/page-metadata";
 import SloveniaPassView from "./view";
 
 /**
@@ -16,7 +16,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return { alternates: alternatesFor(locale, "/slovenia-pass") };
+  return pageMetadata(locale, "/slovenia-pass");
 }
 
 export default function SloveniaPassPage() {

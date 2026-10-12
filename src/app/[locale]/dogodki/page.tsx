@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 
 import { EventsView } from "@/components/content/events-view";
-import { alternatesFor } from "@/lib/hreflang";
+import { pageMetadata } from "@/lib/page-metadata";
 
 /**
- * /dogodki — koledar 30 dogodkov 1:1 iz produkcije (mirror /dogodki).
+ * /dogodki — koledar 31 dogodkov (30 iz produkcije + razdvojen zapis P0 2. serije).
  */
 export async function generateMetadata({
   params,
@@ -12,13 +12,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return {
-    title: "Dogodki",
-    description:
-      "Dogodki in prireditve v Sloveniji — od festivalov in sejemov do športa in kulture, z datumi, lokacijami in kategorijami.",
-    alternates: alternatesFor(locale, "/dogodki"),
-    keywords: ["dogodki", "festivali", "koledar", "Slovenija", "prireditve"],
-  };
+  return pageMetadata(locale, "/dogodki");
 }
 
 export default function DogodkiPage() {

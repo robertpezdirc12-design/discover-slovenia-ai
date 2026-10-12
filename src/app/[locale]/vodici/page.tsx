@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
 
 import { GuidesView } from "@/components/content/guides-view";
-import { alternatesFor } from "@/lib/hreflang";
+import { pageMetadata } from "@/lib/page-metadata";
 
 /**
  * /vodici — vodiči in nasveti (22 road-trip vodnikov + 16 člankov).
@@ -14,14 +13,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "meta" });
-  return {
-    title: "Vodiči",
-    description:
-      "Vodiči in nasveti za Slovenijo — zimski vodniki, krožna potovanja, jadranski road tripovi in zgodbe urednikov.",
-    alternates: alternatesFor(locale, "/vodici"),
-    keywords: ["vodiči", "road trip", "Slovenija", "itinererji", t("title")],
-  };
+  return pageMetadata(locale, "/vodici");
 }
 
 export default function VodiciPage() {

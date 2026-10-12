@@ -48,7 +48,7 @@ function eventCountLabel(l: string, n: number): string {
 }
 
 /**
- * /dogodki — koledar 30 dogodkov 1:1 iz produkcije: filtri po mesecu in
+ * /dogodki — koledar 31 dogodkov (30 iz produkcije + razdvojen zapis P0 2. serije): filtri po mesecu in
  * kategoriji, mesečne skupine, kartice z datumom, lokacijo, vstopnino,
  * uradno spletno stranjo in povezavo na destinacijo.
  */

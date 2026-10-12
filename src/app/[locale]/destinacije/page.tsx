@@ -3,7 +3,7 @@ import { Suspense } from "react";
 
 import { DestinationsExplorer } from "@/components/destinations-explorer";
 import { Skeleton } from "@/components/ui/skeleton";
-import { alternatesFor } from "@/lib/hreflang";
+import { pageMetadata } from "@/lib/page-metadata";
 
 /**
  * /destinacije — raziskovalka vseh 38 destinacij.
@@ -16,7 +16,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return { alternates: alternatesFor(locale, "/destinacije") };
+  return pageMetadata(locale, "/destinacije");
 }
 
 export default function DestinationsPage() {

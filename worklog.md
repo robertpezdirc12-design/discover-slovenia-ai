@@ -2826,3 +2826,22 @@ Stage Summary:
 - P0 1. serija oddana: 2 popolnoma potrjena dogodka, 6 dodatno preverjenih (termin neobjavljen → pošteno nepotrjen), 4 mrtve domene odstranjene, 1 vinarna-zamenjava popravljena
 - Ostanek za naslednjo serijo v #38: sistematična verifikacija preostalih ~19 dogodkov (okarina, trnfest, cviček, bučke, olivni, solinarstvo, Bled dogodki, porabje, kmečki ohcet, …) + P1 načrtovalnik/SEO + P2 dostopnost
 - Sledi: PR → CI → merge → komentar na #38
+
+---
+Task ID: R35-P1SEO+P0-2 (2.44.0)
+Agent: Z.ai Code (glavni orkestrator)
+Task: Raziskava benchmark najboljših NTO strani + odprtokodnih SDK-jev (#35), P1 SEO metapodatki (unikatni naslovi/opisi po straneh) in P0 dogodki 2. serija (verifikacija pri primarnih virih).
+
+Work Log:
+- RAZISKAVA R-3-a (benchmark): MySwitzerland, VisitNorway, austria.info, slovenia.info, Croatia.hr — vsi imajo unikaten <title> per stran (vzorca „Tema | Znamka" ali uredniški); opisi 120–212 zn; OG 1200×630; slovenia.info anti-vzorci (prazen opis, podvojen brand, canonical na homepage); Event JSON-LD ima samo MySwitzerland; pravi planer NI na nobeni od 5.
+- RAZISKAVA R-4-b (SDK, #35): zaklad 12 m — Leaflet 1.9.4 OSTANE (BSD-2, 42 KB), ploščice OpenFreeMap (0 EUR, komercialno OK), Valhalla (MIT) self-host za routing, lastna optimizacija postankov (greedy + 2-opt), Photon za geokodiranje; ZAVRNITI: OR-Tools, GraphHopper, OTP (0/5 GTFS pokritosti), tile.openstreetmap.org v produkciji, partner API-ji (samo affiliate deep-links).
+- P1 SEO IMPLEMENTACIJA: nov src/lib/page-metadata.ts — SEO_PAGES slovar (18 statičnih strani × 6 jezikov, naslov ≤38 zn + opis 100–160 zn po vzorcu „Tema · Discover Slovenia AI") + pageMetadata() (title/description/alternates/OG/twitter; OG_LOCALES enoten vir); 18 page.tsx preklopljenih; layout.tsx uvaža OG_LOCALES; dinamični strani (destinacija, vodiči) ostanejo nespremenjene (že unikatne).
+- P0 DOGODKI 2. SERIJA (verifikacija 2026-10-13): celjski-sejem POPRAVLJEN („Celjski sejem 9.–12. 10. 2026" ne obstaja — uradni jesenski sejem je POMP 10.–11. 10. 2026, ce-sejem.si/sejmi/); božični sejmi RAZDVOJENI (Ljubljana „December v Ljubljani" z obstoječim id + NOV zapis „Čarobni Maribor"); bled-winter-magic preimenovan v uradni „Blejska zimska pravljica" (bled.si, Jezerska promenada); bela-krajina-koline in jamski-sejem-postojna pošteno nepotrjena (0 zadetkov v primarnih virih). 15 dogodkov ostaja za verifikacijo (SDK kvota izčrpana — izrecno brez lažnega source/verifiedAt).
+- TESTI: nov tests/seo-metadata.test.ts (16 zaklepov: polnost 6 jezikov, unikatnost, dolžine, OG/twitter sestava, source-contract 18 page.tsx, dinamični naslovi); tests/events-p0-qa38.test.ts + 6 zaklepov ④a–④f; i18n-quadrilingual ② na nov kanon (alternatesFor ALI pageMetadata); FR register (tu-oblika) ohranjen.
+- VERZIJA 2.44.0: package.json, health, sw.js, footer, README, p2-data-plane, pwa-sw.
+- MERILA: bun test 2014/2014 (17553 expect), tsc --noEmit 0, eslint 0.
+
+Stage Summary:
+- P1 SEO: enak naslov na vseh straneh → 18 unikatnih 6-jezičnih naslovov+opisov z OG/twitter; anti-vzorci benchmarka programsko zaklenjeni (podvojen brand, prazen opis).
+- P0: 5 popravkov z dokazi, 2 not_found pošteno nepotrjeni, 1 razdvojitev (30 → 31 dogodkov); 15 dogodkov še brez source (izrecno oznaka, ne lažna verifikacija).
+- Raziskava #35 dostavljena kot komentar na issue (zaklad + licence ODbL).

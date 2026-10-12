@@ -15,7 +15,7 @@
 import type { Destination } from "./slovenia-data";
 
 // ============================================================================
-// DOGODKI — 30 dogodkov 1:1 iz produkcjske strani /dogodki
+// DOGODKI — 31 dogodkov (30 iz produkcije + 1 razdvojen zapis P0 2. serije 2.44.0)
 // ============================================================================
 
 export type EventCategory =
@@ -542,27 +542,37 @@ export const EVENTS: CommunityEvent[] = [
   },
   {
     id: "celjski-sejem",
+    // ID OSTANE (stara shranjena potovanja se referencirajo nanj);
+    // vsebina popravljena: „Celjski sejem 9.–12. 10. 2026“ NE OBSTAJA —
+    // uradni jesenski sejem na prizorišču je POMP (10.–11. 10. 2026),
+    // potrjeno na organizatorjevem seznamu sejmov (verifikacija 2026-10-13).
     monthIndex: 10,
-    category: "tradicija",
-    title: "Celjski sejem",
-    dateStart: "2026-10-09",
-    dateLabel: "9. – 12. okt 2026",
+    category: "kultura",
+    title: "POMP — sejem pompoznih dogodkov",
+    dateStart: "2026-10-10",
+    dateLabel: "10. – 11. okt 2026",
     venue: "Celjski sejem, Celje",
     price: "euro",
     featured: false,
-    website: "https://www.celjski-sejem.si",
+    website: "https://www.ce-sejem.si",
     image: "/content/celjski-sejem.jpg",
     description:
-      "Tradicionalni celjski sejem z razstavo obrti, kmetijstva, domačih izdelkov in vozil. Spremljevalni program z glasbo, degustacijami in animacijami za otroke na sejmišču.",
+      "POMP je sejem za poroke in pompozne dogodke na Celjskem sejmu: poročne lokacije, gostinstvo, foto in video storitve, dekoracija ter ponudniki za vse vrste praznovanj.",
     destSlug: "celje",
+    source: "https://www.ce-sejem.si/sejmi/",
+    verifiedAt: "2026-10-13",
   },
   {
     id: "bela-krajina-koline",
     monthIndex: 11,
     category: "tradicija",
     title: "Bela krajina koline in opankarija",
-    dateStart: "2026-11-22",
-    dateLabel: "22. nov 2026",
+    // P0 2. serija (2026-10-13): edicije 22. 11. 2026 NI bilo mogoče
+    // potrditi pri nobenem primarnem viru (iskalnik občine Črnomelj in
+    // nacionalni register dogodkov = 0 zadetkov) — pošteno nepotrjeno.
+    dateStart: "",
+    dateLabel: "datum še ni potrjen",
+    dateUnconfirmed: true,
     venue: "Stari trg, Črnomelj",
     price: "euro2",
     featured: false,
@@ -572,33 +582,64 @@ export const EVENTS: CommunityEvent[] = [
     destSlug: "crnomelj",
   },
   {
+    // ID OSTANE (zgodovinski — zapis je obsegal dve mesti; P0 2. serija
+    // je RAZDVOJENA: Ljubljana tu, Maribor kot ločen zapis spodaj).
     id: "bozicni-sejmi-ljubljana-maribor",
     monthIndex: 11,
     category: "tradicija",
-    title: "Božični sejmi v Ljubljani in Mariboru",
-    dateStart: "2026-11-29",
-    dateLabel: "29. nov – 31. dec 2026",
-    venue: "Stari trg, Ljubljana in Maribor",
+    title: "December v Ljubljani — božični sejmi",
+    // P0 2. serija (2026-10-13): datumi za 2026 niso še uradno objavljeni
+    // (ljubljana.si + visitljubljana.com brez napovedi sejmov).
+    dateStart: "",
+    dateLabel: "datum še ni potrjen",
+    dateUnconfirmed: true,
+    venue: "Prešernov trg in Breg, Ljubljana",
     price: "free",
     featured: true,
-    website: "https://www.ljubljana.si",
+    website: "https://www.visitljubljana.com/sl/obiskovalci/prireditve",
     image: "/content/bozicni-sejmi.jpg",
     description:
-      "Romantični božični sejmi s stojnicami z ročnimi izdelki, medenimi piškoti, kuhanim vinom in prešanim sokom. Srednjeveški starem mestnem jedru Ljubljane in Maribora zasvetita z vencev in dišečimi jelkami.",
+      "Romantični božični sejmi s stojnicami z ročnimi izdelki, medenimi piškoti, kuhanim vinom in prešanim sokom. Srednjeveško staro mestno jedro Ljubljane zasveti z venci in dišečimi jelkami.",
     destSlug: "ljubljana",
+  },
+  {
+    // P0 2. serija (2026-10-13): NOV zapis po razdvojitvi — uradni brand
+    // „Čarobni Maribor“ (visitmaribor.si); datumi za 2026 še neobjavljeni.
+    id: "bozicni-sejmi-maribor",
+    monthIndex: 11,
+    category: "tradicija",
+    title: "Čarobni Maribor — božični sejmi",
+    dateStart: "",
+    dateLabel: "datum še ni potrjen",
+    dateUnconfirmed: true,
+    venue: "Maribor",
+    price: "free",
+    featured: false,
+    website: "https://www.visitmaribor.si",
+    image: "/content/maribor.jpg",
+    description:
+      "Čarobni Maribor prinaša praznično vasico z božičnimi sejmi, kuhanim vinom in programom za otroke v starem mestnem jedru ob Dravi.",
+    destSlug: "maribor",
   },
   {
     id: "bled-winter-magic",
     monthIndex: 12,
     category: "tradicija",
-    title: "Bled Winter Magic — božična vasica",
-    dateStart: "2026-12-01",
-    dateLabel: "1. – 31. dec 2026",
-    venue: "Obala Blejskega jezera, Bled",
+    // P0 2. serija (2026-10-13): uradni brand na bled.si je „Blejska
+    // zimska pravljica“ (ne „Bled Winter Magic“); lokacija Jezerska
+    // promenada; datumi za 2026 še neobjavljeni (program „od začetka
+    // decembra do začetka januarja“).
+    title: "Blejska zimska pravljica",
+    dateStart: "",
+    dateLabel: "datum še ni potrjen",
+    dateUnconfirmed: true,
+    venue: "Jezerska promenada, Bled",
     price: "free",
     featured: true,
-    website: "https://www.bled.si",
+    website: "https://www.bled.si/sl/prireditve/glavne-prireditve/blejska-zimska-pravljica/",
     image: "/content/bled-winter-magic.jpg",
+    source: "https://www.bled.si/sl/prireditve/glavne-prireditve/blejska-zimska-pravljica/",
+    verifiedAt: "2026-10-13",
     description:
       "Romantična božična vasica ob Blejskem jezeru z lesenimi hišicami, ročnimi izdelki, medenimi piškoti, kuhanim vinom in prešanim sokom. Razsvetljeni blejski otok z zvezdami in dišeča jelka.",
     destSlug: "bled",
@@ -608,8 +649,13 @@ export const EVENTS: CommunityEvent[] = [
     monthIndex: 12,
     category: "tradicija",
     title: "Jamski sejem Postojna",
-    dateStart: "2026-12-13",
-    dateLabel: "13. – 14. dec 2026",
+    // P0 2. serija (2026-10-13): prireditev 13.–14. 12. 2026 NI bilo
+    // mogoče potrditi (nacionalni register dogodkov in postojna.si
+    // brez sledu) — pošteno nepotrjeno, zapis ostane (ne brišemo brez
+    // razloga), datum pa nikoli ne izmišljen.
+    dateStart: "",
+    dateLabel: "datum še ni potrjen",
+    dateUnconfirmed: true,
     venue: "Trg Tabor, Postojna",
     price: "free",
     featured: true,

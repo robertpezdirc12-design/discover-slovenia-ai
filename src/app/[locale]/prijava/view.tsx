@@ -434,7 +434,13 @@ export default function PrijavaPage() {
             <p className="text-sm font-semibold">{pick(l, L.providersTitle)}</p>
             <p className="mt-1 text-sm text-muted-foreground">{pick(l, L.providersBody)}</p>
           </div>
-          <Button asChild variant="outline" size="sm" className="min-h-11 shrink-0 font-semibold">
+          {/* POLIR11: whitespace-normal text-left + shrink — dolgi prevodi (fr
+              „Portail des propriétaires“) se ovijejo namesto da raznesejo
+              vrstico @320/360. Osnova Buttona (button.tsx) ima poleg
+              whitespace-nowrap TUDI shrink-0 — v fleksibilni vrstici se
+              preklop whitespace-normal sam po sebi NE izvede, gumb ostane
+              max-content (kanon POLIR8): shrink preglasi osnovni shrink-0. */}
+          <Button asChild variant="outline" size="sm" className="min-h-11 font-semibold whitespace-normal text-left shrink">
             <Link href="/owner/prijava">{pick(l, L.providersCta)}</Link>
           </Button>
         </CardContent>

@@ -156,8 +156,10 @@ export function MobileTabBar() {
             </SheetTrigger>
             <SheetContent
               side="bottom"
-              className="max-h-[75vh] overflow-y-auto rounded-t-2xl p-0 safe-area-bottom"
+              className="max-h-[75dvh] overflow-y-auto rounded-t-2xl p-0 safe-area-bottom"
             >
+              {/* POLIR11: dvh namesto vh — dolgi list „Več" se ne skrije več za
+                  mobilno naslovno vrstico brskalnika (enako vh na namizju). */}
               <div className="sticky top-0 border-b bg-background p-4">
                 <SheetTitle className="text-left text-base font-bold">
                   {pick(l, L.moreMenu)}

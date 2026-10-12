@@ -105,3 +105,21 @@ Stage Summary:
 - PR #36 odprt in CI-zelen: https://github.com/robertpezdirc12-design/discover-slovenia-ai/pull/36 (head 1ea1c57, 20 datotek)
 - Komentar na issue #34: https://github.com/robertpezdirc12-design/discover-slovenia-ai/issues/34#issuecomment-6130142180 (obseg: UX/CLS podskupina oddana, P0/P1/P2 ostanki jasno navedeni)
 - VARNOST: žeton izpostavljen v pogovoru — uporabniku ukazano PREKLICATI (revoke) po zaključku; v .git/config ni ostal.
+
+---
+Task ID: POLIR15 (faza 6: neodvisna revizija PR #36 + verifikacijski komentar)
+Agent: Z.ai Code (glavni orkestrator)
+Task: Nadaljevanje po uporabnikovem "odlicno nadaljuj" — preverba dejanskega stanja na GitHubu, neodvisna revizija PR #36 (kanon) in objava verifikacijskega komentarja.
+
+Work Log:
+- Preverjen stanje PR-jev: PR #37 closed (nekonsolidiran, veja izbrisana — dvojnika uspešno umaknjena), PR #36 OPEN z vejo feat/polir15-2.42.0, head 1ea1c57, 20 datotek (+967/-138), mergeable: true / clean.
+- CI na 1ea1c57: 3/3 SUCCESS (sync; lint+test po sync; lint+typecheck+test+prisma+build+smoke bun). Vercel preview zgrajen (i-feel-slovenia-git-fea-…).
+- Revizija kode po točkah: (a) preklop max-lg:sticky top-16 z-30 + ovoj relative z-0 isolate — Leaflet CSS nespremenjen, r2 popravek top-2→top-16 potrjen; (b) seasonal-hero.ts čist modul (MMDD ovitok + kurentovanje/december/martinovanje), SSR enkrat → prop, data-testid="seasonal-badge", ?sezona= whitelist, 6 jezikov; (c) session-gate.ts cache(getServerSession) fail-closed → prop gate, sekca že v SSR HTML ali trajno odsotna (useSession vstavljanje odstranjeno); (d) skelet zemljevida + 3 novi testni moduli.
+- LAŽNI ALARM razčiščen: "MICRO_BADGEicroEvent]" v izhodu je bil artefakt prikaza terminala (grep/awk); od -c bajtno dokazal veljaven vir MICRO_BADGE[microEvent]; node --check oddanega JS = 0. Noben popavek NI bil potreben — v repo ni pushano (pravilno: CI zelen, ni razloga za prazne commite).
+- Preverjen: telo PR #36 vsebuje "Closes #34" ⇒ merge avtomatsko zapre issue #34.
+- Objava neodvisne verifikacijske revizije na PR #36 (4/4 točke potrdjene s kodnimi dokazi + CI stanje + opcijska prihodnja opomba o vizualni sezonski plasti).
+
+Stage Summary:
+- PR #36 potrjen kot zdrav kanon: CI 3/3 zeleno, mergeable clean, 4/4 POLIR15 točk implementiranih po specifikaciji.
+- Verifikacijski komentar: https://github.com/robertpezdirc12-design/discover-slovenia-ai/pull/36#issuecomment-6130316858
+- Naslednji korak je uporabnikov: merge PR #36 (zapre #34) + PREKLIC žetona ghp_… (Settings → Developer settings → Tokens).

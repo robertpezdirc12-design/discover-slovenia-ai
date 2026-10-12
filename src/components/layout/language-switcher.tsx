@@ -23,8 +23,13 @@ import { cn } from "@/lib/utils";
  *
  * Kanon: locale-zavedajoči router iz @/i18n/navigation obdrži pot;
  * DropdownMenu je tipkovnico dostopen in mobili prijazen (≥44px postavke).
+ *
+ * POLIR9 (WCAG 1.4.3): prop `overHero` — ko glava (domov, @scroll 0)
+ * sedi na zelenem heroju, tabletka preklopi na stekleno belo obliko
+ * (text-primary na bg-background/60 nad herojem je padel na 3,41:1,
+ * izmerjeno s piksli); sicer ostane običajna oblika na svetli podlagi.
  */
-export function LanguageSwitcher() {
+export function LanguageSwitcher({ overHero = false }: { overHero?: boolean }) {
   const locale = useLocale();
   const pathname = usePathname();
   const router = useRouter();
@@ -55,8 +60,12 @@ export function LanguageSwitcher() {
       <DropdownMenuTrigger
         aria-label={label}
         className={
-          "inline-flex h-9 items-center gap-1.5 rounded-full border border-border/70 bg-background/60 px-3 text-xs font-bold tracking-wide transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none " +
-          (locale === "sl" ? "text-primary" : "text-foreground")
+          "inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-bold tracking-wide transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none " +
+          (overHero
+            ? // nad herojem: bela steklena tabletka (≥ 4,5:1 v obeh temah)
+              "border-white/40 bg-white/10 text-white hover:bg-white/20"
+            : "border-border/70 bg-background/60 hover:bg-accent " +
+              (locale === "sl" ? "text-primary" : "text-foreground"))
         }
       >
         <Languages className="size-4" aria-hidden="true" />

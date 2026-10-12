@@ -579,7 +579,14 @@ export function HomeView() {
   return (
     <div className="w-full">
       {/* ======== HERO ======== */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-[#1e4f2d] text-white">
+      {/* POLIR9 (WCAG 1.4.3): -mt-16 zavleče hero pod prozorno sticky glavo
+          (h-16) — glava z belo pisavo sedi na zelenem, ne na belem telesu
+          (živa napaka: nevidna glava @scroll 0, svetla tema). py-16/24
+          absorbira 64 px glave, zato vsebina (kicker/h1/uvod/iskalnik) ostane
+          pod glavo. Temne stopnje gradienta: svetli --primary (oklch 0.586)
+          bi belo besedilo spodnesel na ~2–2,9:1 — izrecne temnozelene stopnje
+          držijo ≥ 4,5:1 (via #0e5c28 = 8,15:1 za čisto belo). */}
+      <section className="relative -mt-16 overflow-hidden bg-gradient-to-br from-primary via-primary to-[#1e4f2d] text-white dark:from-[#0b4d20] dark:via-[#0e5c28] dark:to-[#063615]">
         {/* Dekorativni vzorec (radialne lise, brez zunanjih slik) */}
         <div
           aria-hidden="true"

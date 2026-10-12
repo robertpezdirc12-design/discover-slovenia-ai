@@ -57,7 +57,10 @@
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  /* POLIR9 (WCAG 1.4.3): 0.556 (siva #737373) je padla na 4,37:1 na belem —
+     0.525 (#6a6a6a) drži ≥ 4,5:1 na belem (5,40), bg-muted (4,96),
+     primary/5 % (≈4,8) in primary/10 % (≈4,6). Temni blok nič (7,66 ✓). */
+  --muted-foreground: oklch(0.525 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);

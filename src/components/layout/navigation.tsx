@@ -87,8 +87,10 @@ export function Navigation() {
   const t = <K extends keyof typeof L>(k: K) => pick(l, L[k]);
 
   const isHome = pathname === "/";
-  // Nad herojem je glava prozorna SAMO na domači strani (podstrani nimajo
-  // fotografskega heroja — bela pisava na belem ozadju bi bila nevidna).
+  // Nad herojem je glava prozorna SAMO na domači strani — od POLIR9 (WCAG
+  // 1.4.3) se hero zavleče pod glavo z -mt-16, zato bela pisava sedi na
+  // zelenem heroju (prej je glava visela nad BELO stranjo = nevidna, živa
+  // napaka). Podstrani nimajo fotografskega heroja — tam takoj steklena megla.
   const overHero = isHome && !scrolled;
   const glass = scrolled || !isHome;
 
@@ -168,7 +170,10 @@ export function Navigation() {
             <span
               className={cn(
                 "hidden text-[10px] font-semibold tracking-[0.18em] uppercase sm:block",
-                overHero ? "text-white/70" : "text-muted-foreground"
+                // POLIR9 (WCAG 1.4.3): /80 namesto /70 — vzorčenje pikslov je
+                // izmerilo 4,47:1 (10 px, temna tema, lise + gradient); /80
+                // drži ≥ 4,5 z rezervo v obeh temah.
+                overHero ? "text-white/80" : "text-muted-foreground"
               )}
             >
               {t("tagline")}
@@ -252,7 +257,7 @@ export function Navigation() {
           {/* P1-C (issue #3 §10): zvonček obvestil — samo prijavljenim. */}
           <NotificationBell />
           <div className="hidden sm:block">
-            <LanguageSwitcher />
+            <LanguageSwitcher overHero={overHero} />
           </div>
           <ThemeToggle />
 

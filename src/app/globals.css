@@ -120,3 +120,19 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* POLIR15 — prilagojen drsnik za sezname (vidnost + tanki robovi) */
+.nice-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted-foreground) transparent;
+}
+.nice-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.nice-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in oklch, var(--muted-foreground) 40%, transparent);
+  border-radius: 8px;
+}
+.nice-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}

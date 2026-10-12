@@ -40,9 +40,11 @@
  *     na namizju (0 vizualne spremembe). 6 mest: mobile-tab-bar, ui/drawer
  *     (×2), reservation-import-dialog, trip-reservations, admin, partner.
  *
- *  IZVEN OBSEGA (namerno, zaklep spodaj): zemljevidi h-[62vh]/h-[70vh]
- *  (travel-map, zemljevid/view) in hero max-h-[46vh] (destination-detail) —
- *  LAYOUT bloki, ne overlay; POLIR12 kandidat, ločena revizija.
+ *  IZVEN OBSEGA (namerno): zemljevidi h-[62svh]/h-[70svh] (travel-map,
+ *  zemljevid/view) in hero max-h-[46svh] (destination-detail) — LAYOUT
+ *  bloki, ne overlay. POLIR12 (2.39.0) jih je PRESTAVIL na svh (stabilen
+ *  najmanjši viewport); zaklep ⑬/⑭ sledi novemu stanju, polni pogodbi
+ *  pa je prevzela tests/stable-viewport-heights.test.ts.
  *
  *  Ta datoteka: SOURCE-CONTRACT + DEFENZIVNA statična preverba (vzorec
  *  mobile-overflow.test.ts) — UI komponente se NE importujejo (0 omrežja,
@@ -287,18 +289,22 @@ describe("POLIR11 C: vh → dvh modernizacija overlay straž", () => {
   });
 });
 
-// ── ⑥ ZAKLEP IZVEN OBSEGA: layout bloki ostajajo vh (POLIR12 kandidat) ──────
+// ── ⑥ ZAKLEP IZVEN OBSEGA: layout bloki (svh od POLIR12 2.39.0) ────────────
 
-describe("POLIR11: zaklep izven-obsega — zemljevid/hero LAYOUT bloki so NEDOTAKNJENI", () => {
-  test("⑬ travel-map + zemljevid/view še vedno vsebujeta h-[62vh] in h-[70vh] (layout, ne overlay)", () => {
-    expect(ZEMLJEVID_MAPA).toContain("h-[62vh]");
-    expect(ZEMLJEVID_MAPA).toContain("h-[70vh]");
-    expect(ZEMLJEVID_STRAN).toContain("h-[62vh]");
-    expect(ZEMLJEVID_STRAN).toContain("h-[70vh]");
+describe("POLIR11: zaklep izven-obsega — zemljevid/hero LAYOUT bloki (svh od POLIR12)", () => {
+  test("⑬ travel-map + zemljevid/view nosita h-[62svh] in h-[70svh] (POLIR12 vh→svh; layout, ne overlay)", () => {
+    // POLIR11 je te bloke pustila pri stari enoti velikega viewporta
+    // (izven obsega); POLIR12 (2.39.0) jih je prestavila na svh — zaklep
+    // sledi novemu stanju (stabilen najmanjši viewport), polni pogodbi
+    // pa je prevzela tests/stable-viewport-heights.test.ts (①–⑧).
+    expect(ZEMLJEVID_MAPA).toContain("h-[62svh]");
+    expect(ZEMLJEVID_MAPA).toContain("h-[70svh]");
+    expect(ZEMLJEVID_STRAN).toContain("h-[62svh]");
+    expect(ZEMLJEVID_STRAN).toContain("h-[70svh]");
   });
 
-  test("⑭ destination-detail hero ohranja max-h-[46vh] (aspect 21/9 layout)", () => {
-    expect(DESTINACIJA).toContain("max-h-[46vh]");
+  test("⑭ destination-detail hero nosi max-h-[46svh] (POLIR12; aspect 21/9 layout)", () => {
+    expect(DESTINACIJA).toContain("max-h-[46svh]");
   });
 });
 

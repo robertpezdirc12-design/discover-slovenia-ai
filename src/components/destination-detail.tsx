@@ -244,8 +244,13 @@ export function DestinationDetail({ d }: { d: Destination }) {
 
   return (
     <article className="w-full">
-      {/* Hero slika */}
-      <div className="relative aspect-[21/9] max-h-[46vh] w-full overflow-hidden bg-muted">
+      {/* Hero slika — POLIR12 (2.39.0): zgornja meja v svh enotah (prej
+          enota velikega viewporta) — svh = delež najmanjšega stabilnega
+          viewporta: pri VIDNI naslovni vrstici (iOS Safari / Chrome
+          Android) hero ne zajema več površine pod vrstico; dvh zavrnjen
+          (WebKit #266835 — jank na tokovnih blokih); v brezglavem
+          brskalniku svh ≡ vh (cap nespremenjen). */}
+      <div className="relative aspect-[21/9] max-h-[46svh] w-full overflow-hidden bg-muted">
         <Image
           src={d.image}
           alt={`${d.name} — ${d.tagline}`}

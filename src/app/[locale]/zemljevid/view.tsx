@@ -17,22 +17,57 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { pick } from "@/lib/i18n-pick";
 import { DESTINATIONS } from "@/lib/slovenia-data";
 
-/** Nalagalni ovoj — Skeleton v višini zemljevida (brez skoka postavitve). */
+/** Nalagalni ovoj — skelet s POLNO STRUKTURNO PARITETO (POLIR15-d). */
 const TravelMap = dynamic(() => import("@/components/map/travel-map"), {
   ssr: false,
   loading: () => (
     <div className="mx-auto w-full max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
-      {/* POLIR14 (2.41.0): ožji zgornji odmik skeleta na mobilnem (mt-4) —
-          zrcali stisnjeno glavo strani (pt-6); podniz mreže ⑭-style
-          (grid gap-4 lg:grid-cols-[1fr_340px]) ostaja. Skelet seznama je
-          na mobilnem skrit (hidden lg:block) — mapa-first pariteta: pod
-          zemljevidnim skeletom NI skeleta seznama, ker seznam na mobilnem
-          privzeto ni viden (preklop v travel-map). */}
-      <div className="mt-4 lg:mt-8 grid gap-4 lg:grid-cols-[1fr_340px]">
-        {/* POLIR12 (2.39.0): višina skeleta v svh enotah — ZRCALI višino
-            zemljevida (MapContainer v travel-map.tsx): svh = stabilen
-            najmanjši viewport, ob naložitvi Leafleta ni skoka postavitve
-            (pariteta zaklenjena s testom ④ stable-viewport-heights). */}
+      {/* POLIR15-d (2.42.0): skelet zrcali VSE nadzorne vrstice travel-map
+          v ISTEM vrstnem redu in z ISTIMI višinami/odmiki — ob prikazu
+          prave komponente se ne vstavi NOBEN nov blok (CLS ≈ 0):
+          namizje (lg+): iskanje h-11 (lg:mt-8) → čipi h-9 (mt-3) →
+            plasti h-11 (mt-3, NAD zemljevidom po DOM) → mreža;
+          mobilni (<lg, fleks kolona travel-map): iskanje (order-1) →
+            čipi (order-2) → preklop (order-3, sticky kot prava vrstica) →
+            mreža (order-4) → plasti (order-5, POD zemljevidom) → legenda
+            (order-7). Prej: skelet je imel SAMO zemljevid + seznam —
+            ob naložitvi se je nad zemljevidom vstavilo 3 vrstice
+            (iskanje/čipi/plasti) + legenda pod njim = ~230 px premika. */}
+      {/* 1) Iskanje + regija (travel-map: grid-cols-[1fr_auto], h-11) */}
+      <div
+        aria-hidden="true"
+        className="mt-4 grid grid-cols-[1fr_auto] gap-3 lg:mt-8 md:grid-cols-[1fr_auto_auto]"
+      >
+        <Skeleton className="h-11 rounded-md" />
+        <Skeleton className="h-11 w-36 rounded-md md:w-56" />
+      </div>
+      {/* 2) Čipi tipov (travel-map: trak h-9 + pb-1, mt-3) */}
+      <div aria-hidden="true" className="mt-3 flex gap-2 overflow-hidden pb-1">
+        {Array.from({ length: 9 }).map((_, i) => (
+          <Skeleton
+            key={i}
+            className={`h-9 shrink-0 rounded-full ${i % 2 === 0 ? "w-24" : "w-16"}`}
+          />
+        ))}
+      </div>
+      {/* 3) Preklop — samo <lg, STICKY pod glavo (zrcali POLIR15-a v
+          travel-map: sticky top-16 z-30 bg-background pb-2) */}
+      <div
+        aria-hidden="true"
+        className="mt-3 flex gap-2 bg-background pb-2 max-lg:sticky max-lg:top-16 max-lg:z-30 lg:hidden"
+      >
+        <Skeleton className="h-11 flex-1 rounded-md" />
+        <Skeleton className="h-11 flex-1 rounded-md" />
+      </div>
+      {/* 4) Plasti — namizje NAD zemljevidom (DOM vrstni red, lg:flex) */}
+      <div aria-hidden="true" className="mt-3 hidden gap-2 lg:flex">
+        <Skeleton className="h-11 w-28 shrink-0 rounded-full" />
+        <Skeleton className="h-11 w-32 shrink-0 rounded-full" />
+        <Skeleton className="h-11 w-28 shrink-0 rounded-full" />
+      </div>
+      {/* 5) Mreža zemljevida + seznam — višine ZRCALI MapContainer
+          (POLIR12 svh pariteta, nespremenjeno). */}
+      <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_340px]">
         <Skeleton className="h-[62svh] min-h-80 rounded-xl sm:h-[70svh] lg:h-[calc(100svh-15rem)] lg:min-h-[540px]" />
         <div className="hidden space-y-2 lg:block">
           <Skeleton className="h-4 w-40" />
@@ -41,6 +76,13 @@ const TravelMap = dynamic(() => import("@/components/map/travel-map"), {
           ))}
         </div>
       </div>
+      {/* 6) Plasti — mobilni POD zemljevidom (max-lg:order-5) */}
+      <div aria-hidden="true" className="mt-3 flex gap-2 lg:hidden">
+        <Skeleton className="h-11 w-28 shrink-0 rounded-full" />
+        <Skeleton className="h-11 w-32 shrink-0 rounded-full" />
+      </div>
+      {/* 7) Legenda (travel-map: mt-4, p-4, ~2 vrstice na mobilnem) */}
+      <Skeleton aria-hidden="true" className="mt-4 h-28 rounded-xl" />
     </div>
   ),
 });

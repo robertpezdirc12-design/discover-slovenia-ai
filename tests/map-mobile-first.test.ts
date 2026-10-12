@@ -248,9 +248,11 @@ describe("POLIR14 B: statistika /zemljevid", () => {
       kompaktnaIdx,
       "kompaktna vrstica mora biti ZA <TravelMap v datoteki"
     ).toBeGreaterThan(zemljevidIdx);
-    // skelet: ožji odmik na mobilnem + skelet seznama skrit (mapa-first)
+    // skelet: POLIR15-d (2.42.0) — mreža zemljevida/seznama zrcali višine
+    // (svh pariteta POLIR12, nespremenjena); nadzorne vrstice nad mrežo
+    // pokriva nov kontrakt ⑫ v tests/polir15.test.ts.
     expect(STRAN).toContain(
-      '"mt-4 lg:mt-8 grid gap-4 lg:grid-cols-[1fr_340px]"'
+      '"mt-4 grid gap-4 lg:grid-cols-[1fr_340px]"'
     );
     expect(STRAN).toContain('className="hidden space-y-2 lg:block"');
   });

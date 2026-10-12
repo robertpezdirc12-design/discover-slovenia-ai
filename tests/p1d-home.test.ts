@@ -49,14 +49,23 @@ describe("p1d [source-contract]: /api/trips razširitev", () => {
 // ── ② Osebna sekcija domov: gost/prijavljen + zasebnost ─────────────────────
 
 describe("p1d [source-contract]: osebna sekcija domov", () => {
-  test("④ se izriše SAMO prijavljenim (status authenticated)", async () => {
+  test("④ se izriše SAMO prijavljenim — vrata STREŽNIŠKA (POLIR15-c: SSR seja, brez useSession odložbe)", async () => {
+    // POLIR15-c: vrata so preseljena s klienta (useSession/status) na
+    // strežnik (page.tsx: cache(getServerSession) → sessionName → HomeView);
+    // invarianta „samo prijavljenim“ ostane, le kanon je drug.
     const code = await src(PERSONAL);
-    expect(code).toContain('status !== "authenticated"');
+    // komponenta NE več sprašuje seje klientno (0 čakanja statusa = 0 CLS):
+    expect(code).not.toContain('from "next-auth/react"');
+    expect(code).toContain('export function PersonalHomeSection({ name }: { name: string })');
+    // strežniški starš (page.tsx) je edini vir vrat:
+    const home = await src("src/app/[locale]/page.tsx");
+    expect(home).toContain("const getSession = cache(() => getServerSession(authOptions));");
+    expect(home).toContain("sessionName={sessionName}");
   });
 
-  test("⑤ vgrajena v HomeView za javnim Discoverjem (NextStep ostaja)", async () => {
+  test("⑤ vgrajena v HomeView za javnim Discoverjem (NextStep ostaja, vrata po imenu)", async () => {
     const home = await src(HOME);
-    expect(home).toContain("<PersonalHomeSection />");
+    expect(home).toContain("{sessionName && <PersonalHomeSection name={sessionName} />}");
     expect(home).toContain('NextStepCard ctx={nextStepCtx} surface="home"');
   });
 

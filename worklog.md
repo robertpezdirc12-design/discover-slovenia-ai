@@ -2805,3 +2805,24 @@ Stage Summary:
 - Vse 4 točke POLIR15 implementirane + testno zaklenjene + E2E preverjene; 0 AI; Leaflet CSS nespremenjen; namizje (lg+) nespremenjeno na /zemljevid, gostje nedotaknjeni na /
 - Nova zmožnost: sezonski hero z izvornim SI koledarjem mikro-dogodkov (ST kanon) — vsota sezona+dogodek kot pripoved
 - CWV: /zemljevid CLS ≈ 0,023 → ≈ 0 (strukturarna rezervacija), domov: brez vstavljanja osebne sekce po hidraciji
+
+---
+Task ID: QA P0 dogodki (issue #34 → #38)
+Agent: Z.ai Code (glavni, cikel raziskava → verifikacija pri virih → implementacija → testi)
+Task: P0 zanesljivost podatkov o dogodkih (1. serija) — pregled vseh 30 dogodkov, verifikacija imenovanih primerov pri primarnih virih, pošteno ravnanje z nepotrjenimi datumi, regresijski testi.
+
+Work Log:
+- Prenos obsega iz #34 (zaprt z merge-om POLIR15) v sledilni issue #38; P0 = 1. serija (5 imenovanih dogodkov + programski pregled vseh 30)
+- Verifikacija pri primarnih virih (2026-10-12): kurentovanje.net (Kurentovanje 2027 = 3.–9. februar — POTRJENO), ljubljanamarathon.si (NLB 30. maraton = 17.–18. okt 2026 — izmišljeni „25. maj 2027“ popravljen), vinska-vigred.si (Vinska vigred = Metlika, Bela krajina, maj — 44. izdaja 15.–17. maj 2026; prej napačno „Lent, Maribor, marec“), planica.si (uradni naziv „FIS finale svetovnega pokala v smučarskih skokih“; termini 2027 neobjavljeni), jurjevanje.si (62. izdaja = 22.–28. JUNIJ 2026, Draga in Črnomelj — prej napačno april), pivoincvetje.si (termini 2027 neobjavljeni), sloski.si/dogodki (Zlati lisjak 2027 ni na koledarju), ljubljanafestival.si (zimski festival 2027 neobjavljen)
+- DNS preverba domen: zlati-lisjak.si, festivalsoca.si, festivalblejskihdni.si NE obstajajo (mrtve povezave odstranjene); vinskavigred.si je VINARNA Vina Šturm (ne festival) — zamenjano z uradno vinska-vigred.si; ljubljanskimaraton.si → kanon ljubljanamarathon.si
+- Nov model CommunityEvent: dateUnconfirmed (izmišljeni datum NIKOLI ne ostane v kanonu — dateStart = „“, dateLabel = „datum še ni potrjen“; monthIndex = pričakovano okno po dokumentirani zgodovini organizatorja), source (primarni vir, ki ga je verifikacija dejansko brala), verifiedAt
+- UI (events-view.tsx): nepotrjen datum = pošten napis (6 jezikov) namesto <time> + razlagalna opomba o pričakovanem oknu; potrjeni datum nespremenjen
+- 8 dogodkov označenih dateUnconfirmed (zimski festival, Zlati lisjak, Vigred, Planica, Festival Soča, Blejski danovski, Jurjevanje, Pivo in cvetje); 2 popolnoma potrjena (Kurentovanje, maraton)
+- Testi: nov tests/events-p0-qa38.test.ts (14 zaklepov: potrditvi primarnih virov, poštenost nepotrjenih, sledljivost virov, mrtve domene, regresija filtrov — mesec/kategorija/ponastavitev/prelom leta); content-data.test.ts posodobljen (ISO datum ALI prazen pri nepotrjenem; mesec se ujema le pri potrjenih; mrtve domene)
+- Verifikacija: bun test 1992 pass / 0 fail (16381 expect), tsc --noEmit 0, eslint 0
+- Verzija 2.43.0 (package.json, health, sw.js, footer, README, p2-data-plane, pwa-sw)
+
+Stage Summary:
+- P0 1. serija oddana: 2 popolnoma potrjena dogodka, 6 dodatno preverjenih (termin neobjavljen → pošteno nepotrjen), 4 mrtve domene odstranjene, 1 vinarna-zamenjava popravljena
+- Ostanek za naslednjo serijo v #38: sistematična verifikacija preostalih ~19 dogodkov (okarina, trnfest, cviček, bučke, olivni, solinarstvo, Bled dogodki, porabje, kmečki ohcet, …) + P1 načrtovalnik/SEO + P2 dostopnost
+- Sledi: PR → CI → merge → komentar na #38

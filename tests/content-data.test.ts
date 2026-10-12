@@ -45,11 +45,20 @@ describe("content-data: dogodki (/dogodki)", () => {
     }
   });
 
-  test("datum začetka je ISO datum (koledar prihodnje sezone 2026/27)", () => {
+  test("datum začetka je ISO datum (koledar prihodnje sezone 2026/27) ali prazen pri nepotrjenem", () => {
     for (const e of EVENTS) {
-      expect(e.dateStart).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-      // Sezonski koledar: dogodki od oktobra 2026 naprej (zimski festivali 2027)
-      expect(e.dateStart >= "2026-10-01").toBe(true);
+      if (e.dateUnconfirmed) {
+        // QA #34→#38: nepotrjen datum = PRAZEN niz (izmišljenega datuma ni).
+        expect(e.dateStart).toBe("");
+        expect(e.dateLabel).toContain("ni potrjen");
+        // mesec ostane kot pričakovano okno (validen 1–12)
+        expect(e.monthIndex).toBeGreaterThanOrEqual(1);
+        expect(e.monthIndex).toBeLessThanOrEqual(12);
+      } else {
+        expect(e.dateStart).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+        // Sezonski koledar: dogodki od oktobra 2026 naprej (zimski festivali 2027)
+        expect(e.dateStart >= "2026-10-01").toBe(true);
+      }
     }
   });
 
@@ -67,11 +76,27 @@ describe("content-data: dogodki (/dogodki)", () => {
     }
   });
 
-  test("mesec se ujema z datumom (monthIndex 1–12)", () => {
+  test("mesec se ujema z datumom (monthIndex 1–12; nepotrjeni brez ISO datuma)", () => {
     for (const e of EVENTS) {
       expect(e.monthIndex).toBeGreaterThanOrEqual(1);
       expect(e.monthIndex).toBeLessThanOrEqual(12);
-      expect(e.monthIndex).toBe(new Date(e.dateStart).getMonth() + 1);
+      if (!e.dateUnconfirmed) {
+        expect(e.monthIndex).toBe(new Date(e.dateStart).getMonth() + 1);
+      }
+    }
+  });
+
+  test("spletne povezave dogodkov so https in brez MRTVIH domen (QA #34→#38)", () => {
+    // Domene, ki jih verifikacija 2026-10-12 ni našla (DNS nedosegljive) —
+    // regresijski zaklep, da se ne vrnejo v kanon.
+    const DEAD_DOMAINS = ["zlati-lisjak.si", "festivalsoca.si", "festivalblejskihdni.si", "vinskavigred.si"];
+    for (const e of EVENTS) {
+      if (e.website) {
+        expect(e.website).toMatch(/^https:\/\//);
+        for (const dead of DEAD_DOMAINS) {
+          expect(e.website.includes(dead)).toBe(false);
+        }
+      }
     }
   });
 });

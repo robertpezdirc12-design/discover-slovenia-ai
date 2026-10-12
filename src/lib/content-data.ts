@@ -62,24 +62,37 @@ export const EVENT_MONTHS: { index: number; sl: string; en: string; it: string; 
 ];
 
 export interface CommunityEvent {
-  /** Kratek ID (dodajanje v mojo pot: kind "event"). */
+  /** Kratek ID (dodajanje v moje pot: kind "event"). id se NE spreminja —
+   *  obstoječa shranjena potovanja se referencirajo nanj (dogodek/{id}). */
   id: string;
   monthIndex: number;
   category: EventCategory;
   title: string;
-  /** ISO datum začetka (prvi dan) — iz <time dateTime> v produkciji. */
+  /** ISO datum začetka (prvi dan) — iz <time dateTime> v produkciji.
+   *  QA #34/#38: PRAZEN niz, kadar je `dateUnconfirmed` — izmišljenega
+   *  datuma nikoli ne zapisujemo (iskrenostni kanon). */
   dateStart: string;
-  /** Prirojen prikaz datuma, kot v produkciji (npr. „8. – 18. feb 2027"). */
+  /** Prirojen prikaz datuma, kot v produkciji (npr. „8. – 18. feb 2027").
+   *  Pri `dateUnconfirmed` = pošten napis „datum še ni potrjen“. */
   dateLabel: string;
   venue: string;
   price: EventPrice;
   featured: boolean;
-  /** Uradna spletna stran dogodka (zunanja; samo kjer jo produkcija navaja). */
+  /** Uradna spletna stran dogodka (zunanja; samo kjer jo produkcija navaja).
+   *  QA #34/#38: mrtve domene so odstranjene (preverjeno z dostopnostjo). */
   website?: string;
   image: string;
   description: string;
   /** Destinacija iz nabora 38, na katero se dogodek navezuje (neobvezno). */
   destSlug?: string;
+  /** QA P0 (#34→#38): datum ZA CIKLOV LETO še ni uradno objavljen — UI prikaže
+   *  „datum še ni potrjen“ namesto izmišljenega datuma. monthIndex ostane
+   *  kot PRIČAKOVANO okno po dokumentirani zgodovini organizatorja. */
+  dateUnconfirmed?: boolean;
+  /** Primarni vir (organizator), ki ga je zadnja verifikacija dejansko brala. */
+  source?: string;
+  /** Datum zadnje verifikacije pri primarnem viru (ISO). */
+  verifiedAt?: string;
 }
 
 export const EVENTS: CommunityEvent[] = [
@@ -88,8 +101,10 @@ export const EVENTS: CommunityEvent[] = [
     monthIndex: 1,
     category: "glasba",
     title: "Ljubljanski zimski festival",
-    dateStart: "2027-01-15",
-    dateLabel: "15. – 26. jan 2027",
+    // QA #34→#38 (verifikacija 2026-10-12): ljubljanafestival.si za januar
+    // 2027 še NE objavlja terminov — izmišljeni „15. – 26. jan 2027“ odstranjen.
+    dateStart: "",
+    dateLabel: "datum še ni potrjen",
     venue: "Cankarjev dom, Ljubljana",
     price: "euro2",
     featured: false,
@@ -98,22 +113,32 @@ export const EVENTS: CommunityEvent[] = [
     description:
       "Vrhunski mednarodni glasbeni festival z diskografijami klasične in komorne glasbe v Cankarjevem domu, operi in ljubljanskih cerkvah. Tradicija, ki sega v leto 1952.",
     destSlug: "ljubljana",
+    dateUnconfirmed: true,
+    source: "https://www.ljubljanafestival.si",
+    verifiedAt: "2026-10-12",
   },
   {
     id: "zlati-lisjak-smucanje",
     monthIndex: 1,
     category: "sport",
-    title: "Zlati lisjak — svetovni pokal v smučanju",
-    dateStart: "2027-01-18",
-    dateLabel: "18. – 19. jan 2027",
+    title: "Zlati lisjak — svetovni pokal v alpskem smučanju",
+    // QA #34→#38 (verifikacija 2026-10-12): sloski.si ne navaja terminov
+    // 2027 (preverjena sekcija dogodkov) — izmišljeni „18. – 19. jan 2027“
+    // odstranjen; mesec 1 = pričakovano januarsko okno po zgodovini dirke.
+    dateStart: "",
+    dateLabel: "datum še ni potrjen",
     venue: "Smučišče Mariborsko Pohorje, Maribor",
     price: "euro",
     featured: false,
-    website: "https://www.zlati-lisjak.si",
+    // zlati-lisjak.si NE OBSTAJA (domena nedosegljiva, preverjeno 2026-10-12)
+    // — mrtva povezava odstranjena; uradni vir je Smučarska zveza Slovenije.
     image: "/content/zlati-lisjak-maribor.jpg",
     description:
       "Tradicionalno tekmovanje svetovnega pokala v ženskem veleslalomu na Pohorju. Najboljše smučarke sveta se pomerijo na progi Golden Fox pred tisoči gledalcev ob pogorju.",
     destSlug: "maribor",
+    dateUnconfirmed: true,
+    source: "https://www.sloski.si",
+    verifiedAt: "2026-10-12",
   },
   {
     id: "blejski-zimski-plavalni-memorial",
@@ -136,8 +161,9 @@ export const EVENTS: CommunityEvent[] = [
     monthIndex: 2,
     category: "tradicija",
     title: "Kurentovanje — Pustni karneval Ptuj",
-    dateStart: "2027-02-08",
-    dateLabel: "8. – 18. feb 2027",
+    // QA #34→#38 (POTRJENO 2026-10-12, kurentovanje.net: „3.-9. februar 2027“).
+    dateStart: "2027-02-03",
+    dateLabel: "3. – 9. feb 2027",
     venue: "Stari mestni trg, Ptuj",
     price: "free",
     featured: true,
@@ -146,6 +172,8 @@ export const EVENTS: CommunityEvent[] = [
     description:
       "Največji pustni karneval v Sloveniji in eden najpomembnejših etnografskih festivalov v Evropi. Povorka kurentov — starodavnih bitij z rdečimi jeziki in kravjimi zvonci — preganja zimo skozi stare ulice Ptuja.",
     destSlug: "ptuj",
+    source: "https://www.kurentovanje.net",
+    verifiedAt: "2026-10-12",
   },
   {
     id: "smucarski-dnevi-ribnica-pohorje",
@@ -163,60 +191,82 @@ export const EVENTS: CommunityEvent[] = [
     destSlug: "dravograd",
   },
   {
+    // QA #34→#38 (verifikacija 2026-10-12, vinska-vigred.si): dogodek je v
+    // METLIKI v Beli krajini (44. izdaja: 15.–17. maj 2026), NE v Mariboru in
+    // ne v marcu — lokacija, mesec in povezava popravljeni po primarnem viru.
+    // id ostane (shranjena potovanja se referencirajo nanj).
     id: "vinska-vigred-maribor",
-    monthIndex: 3,
+    monthIndex: 5,
     category: "hrana",
-    title: "Vinska vigred — festival vina",
-    dateStart: "2027-03-14",
-    dateLabel: "14. – 16. mar 2027",
-    venue: "Lent, Maribor",
+    title: "Vinska vigred — največji vinski festival",
+    dateStart: "",
+    dateLabel: "datum še ni potrjen",
+    venue: "Metlika, Bela krajina",
     price: "euro",
     featured: true,
-    website: "https://www.vinskavigred.si",
+    website: "https://www.vinska-vigred.si",
     image: "/content/vinska-vigred-maribor.jpg",
     description:
-      "Največji festival vina v Sloveniji v Mariboru z več kot 200 vinarji iz vseh slovenskih regij. Degustacije, delavnice, kulinarika in glasba ob Dravi.",
-    destSlug: "maribor",
+      "Največji vinski festival v Sloveniji v Metliki v Beli krajini — trije dnevi vina, tradicije in glasbe. Vinski plac na Mestnem trgu s pokušinami metliške črnine, izbor najboljše belokranjske pogače in svečana izbira kraljice metliške črnine.",
+    destSlug: "crnomelj",
+    dateUnconfirmed: true,
+    source: "https://www.vinska-vigred.si",
+    verifiedAt: "2026-10-12",
   },
   {
     id: "planica-nordic-festival",
     monthIndex: 3,
     category: "sport",
-    title: "Planica Nordic Festival",
-    dateStart: "2027-03-21",
-    dateLabel: "21. – 23. mar 2027",
+    // QA #34→#38 (verifikacija 2026-10-12, planica.si): uradni naziv dogodka
+    // je „FIS finale svetovnega pokala v smučarskih skokih“ (Planica 2026 je
+    // imela 4 tekmovalne dneve); termini za 2027 še NISO objavljeni —
+    // izmišljeni „21. – 23. mar 2027“ odstranjen; mesec 3 = pričakovano
+    // pomladansko okno finała po zgodovini organizatorja.
+    title: "Planica — FIS finale svetovnega pokala",
+    dateStart: "",
+    dateLabel: "datum še ni potrjen",
     venue: "Planica, Kranjska Gora",
     price: "euro2",
     featured: true,
     website: "https://www.planica.si",
     image: "/content/planica-nordic-festival.jpg",
     description:
-      "Svetovni pokal v smučarskih poletih v slavni Planici pod Poncami. Najboljši skakalci sveta letijo preko 240 metrov na največji skakalnici na svetu, ob strani pa tekmovanja v nordijskem teku in biatlonu.",
+      "FIS finale svetovnega pokala v smučarskih poletih v slavni Planici pod Poncami. Najboljši skakalci sveta letijo preko 240 metrov na največji skakalnici na svetu, ob strani pa tekmovanja v nordijskem teku in biatlonu.",
+    dateUnconfirmed: true,
+    source: "https://www.planica.si",
+    verifiedAt: "2026-10-12",
   },
   {
     id: "blejski-danovski-festival",
     monthIndex: 4,
     category: "glasba",
     title: "Blejski danovski festival",
-    dateStart: "2027-04-10",
-    dateLabel: "10. – 13. apr 2027",
+    // QA #34→#38 (verifikacija 2026-10-12): festivalblejskihdni.si NE OBSTAJA
+    // (domena nedosegljiva) — mrtva povezava odstranjena; termin za 2027 ni
+    // nikjer uradno objavljen — izmišljeni „10. – 13. apr 2027“ odstranjen.
+    dateStart: "",
+    dateLabel: "datum še ni potrjen",
     venue: "Blejski grad, Bled",
     price: "euro2",
     featured: false,
-    website: "https://www.festivalblejskihdni.si",
     image: "/content/blejski-danovski-festival.jpg",
     description:
       "Mednarodni komorni glasbeni festival na Bledu z vrhunskimi koncerti v Blejskem gradu, na blejskem otoku in v cerkvah. Slovenski glasbeniki skupaj z mednarodnimi gosti v romantični alpski kulisi.",
     destSlug: "bled",
+    dateUnconfirmed: true,
   },
   {
+    // QA #34→#38 (verifikacija 2026-10-12, jurjevanje.si): 62. Jurjevanje je
+    // bilo 22.–28. JUNIJ 2026 na „Jurjevanjski Draga in Črnomelj“ — mesec
+    // popravljen (april → junij), lokacija po uradnem viru; termin za 2027
+    // še ni objavljen — izmišljeni „22. – 23. apr 2027“ odstranjen.
     id: "jurjevanje-bela-krajina",
-    monthIndex: 4,
+    monthIndex: 6,
     category: "tradicija",
     title: "Jurjevanje v Beli krajini",
-    dateStart: "2027-04-22",
-    dateLabel: "22. – 23. apr 2027",
-    venue: "Stari trg, Črnomelj",
+    dateStart: "",
+    dateLabel: "datum še ni potrjen",
+    venue: "Draga in Črnomelj, Bela krajina",
     price: "free",
     featured: false,
     website: "https://www.jurjevanje.si",
@@ -224,38 +274,49 @@ export const EVENTS: CommunityEvent[] = [
     description:
       "Najstarejši folklorni festival v Sloveniji, ki praznuje pomlad in belokranjsko tradicijo. Povorka pisanic, tradicionalni plesi v belokranjskih nošah in glasba steljnikov v Črnomlju.",
     destSlug: "crnomelj",
+    dateUnconfirmed: true,
+    source: "https://www.jurjevanje.si",
+    verifiedAt: "2026-10-12",
   },
   {
     id: "festival-soca",
     monthIndex: 5,
     category: "sport",
     title: "Festival Soča",
-    dateStart: "2027-05-23",
-    dateLabel: "23. – 25. maj 2027",
+    // QA #34→#38 (verifikacija 2026-10-12): festivalsoca.si NE OBSTAJA
+    // (domena nedosegljiva) — mrtva povezava odstranjena; termin za 2027 ni
+    // uradno objavljen — izmišljeni „23. – 25. maj 2027“ odstranjen.
+    dateStart: "",
+    dateLabel: "datum še ni potrjen",
     venue: "Bovec in Tolmin",
     price: "euro2",
     featured: false,
-    website: "https://www.festivalsoca.si",
     image: "/content/festival-soca.jpg",
     description:
       "Športno-glasbeni festival ob smaragdni Soči z raftingom, kajakaštvom, canyoningom in adrenalinskimi izzivi čez dan. Zvečer ob reki tonejo toni alternative, reggaeja in world musica.",
     destSlug: "reka-soca",
+    dateUnconfirmed: true,
   },
   {
     id: "ljubljanski-maraton",
-    monthIndex: 5,
+    monthIndex: 10,
     category: "sport",
     title: "Ljubljanski maraton",
-    dateStart: "2027-05-25",
-    dateLabel: "25. maj 2027",
+    // QA #34→#38 (POTRJENO 2026-10-12, ljubljanamarathon.si): „NLB 30th
+    // Ljubljana Marathon — Saturday 17th and Sunday 18th October 2026“ —
+    // izmišljeni „25. maj 2027“ popravljen na uradne datume (oktober, ne maj).
+    dateStart: "2026-10-17",
+    dateLabel: "17. – 18. okt 2026",
     venue: "Slovenska cesta, Ljubljana",
     price: "euro2",
     featured: true,
-    website: "https://www.ljubljanskimaraton.si",
+    website: "https://ljubljanamarathon.si",
     image: "/content/ljubljanski-maraton.jpg",
     description:
       "Mednarodni maraton v Ljubljani z razdaljami 10 km, pol maratona in maratona. Tisoči tekačev iz vse Evrope tečejo skozi staro mestno jedro, ob Ljubljanici in po Tivoliju.",
     destSlug: "ljubljana",
+    source: "https://ljubljanamarathon.si",
+    verifiedAt: "2026-10-12",
   },
   {
     id: "bled-days-kremsnita",
@@ -278,8 +339,11 @@ export const EVENTS: CommunityEvent[] = [
     monthIndex: 6,
     category: "festival",
     title: "Pivo in cvetje Laško",
-    dateStart: "2027-06-13",
-    dateLabel: "13. – 15. jun 2027",
+    // QA #34→#38 (verifikacija 2026-10-12, pivoincvetje.si): termini za 2027
+    // še niso objavljeni — izmišljeni „13. – 15. jun 2027“ odstranjen;
+    // mesec 6 = pričakovano junijsko okno po zgodovini festivala.
+    dateStart: "",
+    dateLabel: "datum še ni potrjen",
     venue: "Center, Laško",
     price: "euro",
     featured: true,
@@ -287,6 +351,9 @@ export const EVENTS: CommunityEvent[] = [
     image: "/content/pivo-in-cvetje-lasko.jpg",
     description:
       "Največji festival piva in cvetja v Sloveniji v Laškem. Več kot 50.000 obiskovalcev, pivska tržnica, koncerti domačih in tujih izvajalcev, razstava cvetja in ognjemet.",
+    dateUnconfirmed: true,
+    source: "https://www.pivoincvetje.si",
+    verifiedAt: "2026-10-12",
   },
   {
     id: "porabje-lendava",

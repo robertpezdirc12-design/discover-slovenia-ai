@@ -42,7 +42,9 @@ import {
   Check,
   Fuel,
   Heart,
+  List,
   Loader2,
+  Map as MapIcon,
   MapPin,
   RotateCw,
   Route,
@@ -947,6 +949,12 @@ export default function TravelMap() {
   const [type, setType] = React.useState<"all" | DestinationType>("all");
   const [region, setRegion] = React.useState<string>("all");
   const [activeId, setActiveId] = React.useState<string | null>(null);
+  // ── POLIR14 (2.41.0): mobilni preklop pogleda „Zemljevid ⇄ Seznam“ ──
+  // Privzeto „map“ — zemljevid je NAMEN strani (raziskava §3.3: prej je
+  // bil zemljevid šele na y=735 od 844 px prvega zaslona @390×844, seznam
+  // pa 472 px pod pragom; saasfactor kanon „list-vs-map toggle should be
+  // persistent and easy to switch“ — vrstica je vedno prisoten, lg:hidden).
+  const [mobileView, setMobileView] = React.useState<"map" | "list">("map");
 
   // ── Plasti (FAZA 3 / 51-b): Lokali (pins API) + Pot (OSRM route) ────
   const [lokaliOn, setLokaliOn] = React.useState(false);
@@ -987,6 +995,14 @@ export default function TravelMap() {
   const mapRef = React.useRef<L.Map | null>(null);
   const markerRefs = React.useRef<Record<string, L.Marker | null>>({});
   const itemRefs = React.useRef<Record<string, HTMLButtonElement | null>>({});
+
+  // ── POLIR14 (2.41.0): Leaflet display:none past — skrit zemljevid
+  // (max-lg:hidden v pogledu „list“) ima velikost 0; ob POVRATKU na „map“
+  // je treba velikost izmeriti na novo, sicer zemljevid ostane siv
+  // (prazne ploščice — invalidateSize je uradno Leaflet zdravilo). ────
+  React.useEffect(() => {
+    if (mobileView === "map") mapRef.current?.invalidateSize();
+  }, [mobileView]);
 
   const L10n = {
     searchLabel: {
@@ -1065,6 +1081,10 @@ export default function TravelMap() {
       fr: "Carte des destinations Discover Slovenia",
       es: "Mapa de destinos de Discover Slovenia",
     },
+    // ── POLIR14 (2.41.0): mobilni preklop pogleda Zemljevid ⇄ Seznam ──
+    mapView: { sl: "Zemljevid", en: "Map", it: "Mappa", de: "Karte", fr: "Carte", es: "Mapa" },
+    listView: { sl: "Seznam", en: "List", it: "Elenco", de: "Liste", fr: "Liste", es: "Lista" },
+    viewToggleLabel: { sl: "Preklop pogleda", en: "Switch view", it: "Cambia vista", de: "Ansicht wechseln", fr: "Changer de vue", es: "Cambiar vista" },
     add: { sl: "Dodaj v mojo pot", en: "Add to my trip", it: "Aggiungi al mio viaggio", de: "Zu meiner Reise hinzufügen", fr: "Ajouter à mon voyage", es: "Añadir a mi viaje" },
     added: { sl: "V moji poti", en: "In my trip", it: "Nel mio viaggio", de: "In meiner Reise", fr: "Dans mon voyage", es: "En mi viaje" },
     more: { sl: "Več", en: "More", it: "Dettagli", de: "Mehr", fr: "Plus", es: "Más" },
@@ -1398,9 +1418,20 @@ export default function TravelMap() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
-      {/* ── Nadzorna vrstica: iskanje + regija + ponastavitev ─────────── */}
-      <div className="mt-8 grid gap-3 md:grid-cols-[1fr_auto_auto]">
+    <div className="mx-auto w-full max-w-7xl px-4 pb-12 sm:px-6 lg:px-8 max-lg:flex max-lg:flex-col">
+      {/* POLIR14 (2.41.0): MOBILNA GLAVA ZEMLJEVIDA — zemljevid najprej.
+          Root postane na <lg FLEX STOLPEC + vrstni red razredov (order-1…7):
+          iskanje → čipi → preklop → ZEMLJEVID/SEZNAM → plasti → pasice →
+          legenda (raziskava §3.3/§6.1: zemljevid ≥ 55 % prvega zaslona,
+          seznam dosegljiv z 1 dejanjem, vsi filtri odkriti z afordanco).
+          Namizje (lg+) NI fleks — bločna postavitev po DOM = IDENTIČNO
+          današnjemu (plasti NAD zemljevidom, split view). */}
+      {/* ── Nadzorna vrstica: iskanje + regija + ponastavitev ─────── */}
+      {/* POLIR14: iskanje in regija v ENI vrstici na mobilnem
+          (grid-cols-[1fr_auto]); reset gumb čez celo vrstico (col-span-2).
+          mt-4 namesto mt-8 na mobilnem — vsaka vrstica nad zemljevidom je
+          draga; namizje (md/lg) IDENTIČNO (lg:mt-8). */}
+      <div className="mt-4 grid grid-cols-[1fr_auto] gap-3 md:grid-cols-[1fr_auto_auto] lg:mt-8 max-lg:order-1">
         <div className="relative">
           <Search
             className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
@@ -1416,7 +1447,7 @@ export default function TravelMap() {
           />
         </div>
         <Select value={region} onValueChange={setRegion}>
-          <SelectTrigger className="h-11 md:w-56" aria-label={t("regionFilter")}>
+          <SelectTrigger className="h-11 w-36 md:w-56" aria-label={t("regionFilter")}>
             <SelectValue placeholder={t("allRegions")} />
           </SelectTrigger>
           <SelectContent className="max-h-72">
@@ -1429,7 +1460,14 @@ export default function TravelMap() {
           </SelectContent>
         </Select>
         {hasFilters ? (
-          <Button type="button" variant="outline" onClick={reset} className="h-11">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={reset}
+            // POLIR14: na mobilnem čez celo drugo vrstico (col-span-2),
+            // md+ nespremenjeno (en sam stolpec — md:col-span-1).
+            className="h-11 col-span-2 md:col-span-1"
+          >
             <X className="size-4" aria-hidden="true" />
             {t("reset")}
           </Button>
@@ -1444,55 +1482,104 @@ export default function TravelMap() {
       </div>
 
       {/* ── Čipi tipov (vodoravno drsenje na mobilnem) ────────────────── */}
+      {/* POLIR14: trak je OVIT v relativni ovoj — (a) mt-3 se preseli z
+          traku na ovoj (trak ohrani čiste drsne razrede), (b) fade
+          afordanca na desnem robu namiga, da se trak nadaljuje desno
+          (raziskava §3.3: zadnji čipi so bili skriti BREZ namiga). */}
+      <div className="relative mt-3 max-lg:order-2">
+        <div
+          role="group"
+          aria-label={t("allTypes")}
+          className="scrollbar-slim flex gap-2 overflow-x-auto pb-1"
+        >
+          <button
+            type="button"
+            onClick={() => setType("all")}
+            aria-pressed={type === "all"}
+            className={cn(
+              "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+              type === "all"
+                ? "border-primary bg-primary text-primary-foreground"
+                : "bg-background hover:border-primary/40 hover:text-primary"
+            )}
+          >
+            {t("allTypes")}
+          </button>
+          {(Object.keys(DEST_TYPES) as DestinationType[]).map((ty) => {
+            const active = type === ty;
+            return (
+              <button
+                key={ty}
+                type="button"
+                onClick={() => setType(active ? "all" : ty)}
+                aria-pressed={active}
+                className={cn(
+                  "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  active
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "bg-background hover:border-primary/40 hover:text-primary"
+                )}
+              >
+                <span
+                  aria-hidden="true"
+                  className="size-2.5 rounded-full"
+                  style={{ backgroundColor: TYPE_COLORS[ty] }}
+                />
+                {typeLabel(ty, l)}
+              </button>
+            );
+          })}
+        </div>
+        {/* POLIR14: fade afordanca — gradient proti ozadju na desnem robu
+            traku namiga, da se čipi nadaljujejo desno (raziskava §4.1
+            „skriti čipi brez namiga“); ne prestreza dotikov
+            (pointer-events-none), na namizju skrita (lg:hidden). */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-background to-transparent lg:hidden"
+        />
+      </div>
+
+      {/* ── POLIR14: VZTRAJEN preklop „Zemljevid ⇄ Seznam“ (samo <lg) ──
+          saasfactor kanon (raziskava §6.1): „list-versus-map toggle should
+          be persistent and easy to switch“ — seznam je bil prej 472 px
+          pod pragom prvega zaslona, zdaj je 1 dejanje stran. Aktivni gumb
+          variant="default", neaktivni "outline"; stanje v aria-pressed. */}
       <div
         role="group"
-        aria-label={t("allTypes")}
-        className="scrollbar-slim mt-3 flex gap-2 overflow-x-auto pb-1"
+        aria-label={t("viewToggleLabel")}
+        className="mt-3 flex gap-2 max-lg:order-3 lg:hidden"
       >
-        <button
+        <Button
           type="button"
-          onClick={() => setType("all")}
-          aria-pressed={type === "all"}
-          className={cn(
-            "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-            type === "all"
-              ? "border-primary bg-primary text-primary-foreground"
-              : "bg-background hover:border-primary/40 hover:text-primary"
-          )}
+          variant={mobileView === "map" ? "default" : "outline"}
+          aria-pressed={mobileView === "map"}
+          onClick={() => setMobileView("map")}
+          className="h-11 flex-1"
         >
-          {t("allTypes")}
-        </button>
-        {(Object.keys(DEST_TYPES) as DestinationType[]).map((ty) => {
-          const active = type === ty;
-          return (
-            <button
-              key={ty}
-              type="button"
-              onClick={() => setType(active ? "all" : ty)}
-              aria-pressed={active}
-              className={cn(
-                "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                active
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "bg-background hover:border-primary/40 hover:text-primary"
-              )}
-            >
-              <span
-                aria-hidden="true"
-                className="size-2.5 rounded-full"
-                style={{ backgroundColor: TYPE_COLORS[ty] }}
-              />
-              {typeLabel(ty, l)}
-            </button>
-          );
-        })}
+          <MapIcon className="size-4" aria-hidden="true" />
+          {t("mapView")}
+        </Button>
+        <Button
+          type="button"
+          variant={mobileView === "list" ? "default" : "outline"}
+          aria-pressed={mobileView === "list"}
+          onClick={() => setMobileView("list")}
+          className="h-11 flex-1"
+        >
+          <List className="size-4" aria-hidden="true" />
+          {t("listView")}
+        </Button>
       </div>
 
       {/* ── Plasti: Lokali + Pot (FAZA 3 / 51-b) ─────────────────────── */}
+      {/* POLIR14: plasti dobijo na mobilnem max-lg:order-5 — POD
+          zemljevidom (legendi podoben pas ob svojih stikalih); namizje:
+          DOM vrstni red = plasti NAD zemljevidom, nespremenjeno. */}
       <div
         role="group"
         aria-label={t("layersLabel")}
-        className="mt-3 flex flex-wrap items-center gap-2"
+        className="mt-3 flex flex-wrap items-center gap-2 max-lg:order-5"
       >
         <button
           type="button"
@@ -1718,14 +1805,17 @@ export default function TravelMap() {
       {/* ── POI (OSM živo) — iskreni pasici (P0-C) ─────────────────────
           Obe sta AMBER (dostojni, ne rdeči): prevelik pogled je namerna
           omejitev javnega vira (hint za približavo), nedosegljivost pa
-          je v peskovniku pričakovano stanje — sloj deluje v produkciji. */}
+          je v peskovniku pričakovano stanje — sloj deluje v produkciji.
+          POLIR14: pasici na mobilnem POD plastmi (max-lg:order-6, ob
+          svojih stikalih) — brez tega bi v fleks koloni roota skočili
+          NAD iskanje (privzeti order:0 pred order-1…5). */}
       {poiOn && poiTooBig && !poiLoading && (
         <motion.div
           role="status"
           initial={reduceMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.18, ease: "easeOut" }}
-          className="mt-3 rounded-lg border border-amber-500/50 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950/40"
+          className="mt-3 rounded-lg border border-amber-500/50 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950/40 max-lg:order-6"
         >
           <p className="flex items-center gap-2 text-xs font-semibold text-amber-900 dark:text-amber-200">
             <MapPin className="size-3.5 shrink-0" aria-hidden="true" />
@@ -1739,7 +1829,7 @@ export default function TravelMap() {
           initial={reduceMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.18, ease: "easeOut" }}
-          className="mt-3 flex flex-col items-start gap-2 rounded-lg border border-amber-500/50 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950/40 sm:flex-row sm:items-center sm:justify-between"
+          className="mt-3 flex flex-col items-start gap-2 rounded-lg border border-amber-500/50 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950/40 sm:flex-row sm:items-center sm:justify-between max-lg:order-6"
         >
           <p className="flex items-start gap-2 text-xs font-medium text-amber-900 dark:text-amber-200">
             <MapPin className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
@@ -1757,7 +1847,11 @@ export default function TravelMap() {
       )}
 
       {/* ── Zemljevid + stranski seznam ──────────────────────────────── */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_340px]">
+      {/* POLIR14: mreža dobi max-lg:order-4 — na mobilnem ZA preklopnim
+          pasom (zemljevid čim višje v prvem zaslonu); podniz mreže
+          (grid gap-4 lg:grid-cols-[1fr_340px]) OSTAJA — zaklep ⑭
+          reflow-320; namizje nespremenjeno (split view). */}
+      <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_340px] max-lg:order-4">
         {/* Zemljevid — a11y oznaka na ovojnem elementu (MapContainer ne
             sprejema ARIA atributov v tipih react-leaflet).
             POLIR12 (2.39.0): višina zemljevida v svh enotah (mobilni
@@ -1768,8 +1862,14 @@ export default function TravelMap() {
             skrčeno); dinamična enota je zavrnjena (WebKit #266835 — jank
             med drsenjem na tokovnih blokih); v brezglavem brskalniku
             svh ≡ vh (ničelna vizualna sprememba, ista podporna okna). */}
+        {/* POLIR14: ovoj zemljevida se na mobilnem v pogledu „list“
+            skrije (max-lg:hidden) — seznam zasede prvi zaslon; namizje
+            (lg+) sploh ne pozna preklopa (razred se ne aktivira). */}
         <div
-          className="overflow-hidden rounded-xl border shadow-sm"
+          className={cn(
+            "overflow-hidden rounded-xl border shadow-sm",
+            mobileView === "list" && "max-lg:hidden"
+          )}
           role="region"
           aria-label={t("mapLabel")}
         >
@@ -1955,7 +2055,10 @@ export default function TravelMap() {
             dovoljeval skrčitve (FR/IT/ES 3–4 px @360, do 44 px @320);
             truncate veriga (li > button > span.min-w-0 > span.truncate)
             prevzame delo, živi dokaz: minWidth 0 → preliv 4 → 0. */}
-        <aside aria-label={t("listTitle")} className="min-w-0">
+        <aside
+          aria-label={t("listTitle")}
+          className={cn("min-w-0", mobileView === "map" && "max-lg:hidden")}
+        >
           <p className="mb-2 text-xs font-bold tracking-[0.12em] text-muted-foreground uppercase">
             {t("listTitle")} · {t("count")(results.length)}
           </p>
@@ -2019,8 +2122,11 @@ export default function TravelMap() {
         </aside>
       </div>
 
-      {/* ── Legenda tipov + attribution ──────────────────────────────── */}
-      <div className="mt-4 flex flex-col gap-3 rounded-xl border bg-card/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* ── Legenda tipov + attribution ──────────────────────── */}
+      {/* POLIR14: legenda na mobilnem zadnja (max-lg:order-7) — kot na
+          namizju (DOM konec = mobilni konec); brez razreda bi v fleks
+          koloni roota skočila na VRH (privzeti order:0 pred order-1…6). */}
+      <div className="mt-4 flex flex-col gap-3 rounded-xl border bg-card/60 p-4 sm:flex-row sm:items-center sm:justify-between max-lg:order-7">
         <div>
           <p className="text-xs font-bold tracking-[0.12em] text-muted-foreground uppercase">
             {t("legend")}

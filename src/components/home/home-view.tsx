@@ -12,22 +12,28 @@ import {
   Flower2,
   Fuel,
   Landmark,
+  Leaf,
   Milestone,
   Mountain,
   MountainSnow,
+  PartyPopper,
   Plane,
   Sailboat,
   Search,
   Send,
   ShieldCheck,
   Smartphone,
+  Snowflake,
   Sparkles,
+  Sun,
   Ticket,
   TrainFront,
   Trees,
   UtensilsCrossed,
   Waves,
+  Wine,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useLocale } from "next-intl";
 import * as React from "react";
 
@@ -40,6 +46,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useRouter } from "@/i18n/navigation";
+import type { SeasonVariant, SeasonalHeroInfo } from "@/lib/seasonal-hero";
 // Rezervacijski register (ČIST modul, brez env — varen za klienta; gorivo ni
 // provizijsko: črpalke so odprti podatki, zato ne vodijo na partnerja).
 import {
@@ -536,14 +543,36 @@ const CATEGORY_ICONS: Record<
  */
 const BOOKING_PARTNERS = providersPublicDTO();
 
+/** POLIR15-b: ikona sezonskega namiga po varianti (lucide, brez slik — 0 CLS). */
+const SEASON_ICONS: Record<SeasonVariant, LucideIcon> = {
+  winter: Snowflake,
+  december: Sparkles,
+  kurentovanje: PartyPopper,
+  spring: Flower2,
+  summer: Sun,
+  martinovanje: Wine,
+  autumn: Leaf,
+};
+
 export function HomeView({
   nextStepDismissed = false,
+  seasonHero,
+  sessionName,
 }: {
   /** POLIR13 (2.40.0): sejni dismiss zrcaljen v piškotek
    *  dai:next-step-dismissed — strežniški starš (page.tsx) ga prebere s
    *  cookies() in kartico izpusti ŽE v SSR (ni rezervacije prostora, ni
    *  premika vsebine po ponovnem nalaganju v isti seji). */
   nextStepDismissed?: boolean;
+  /** POLIR15-b (2.42.0): sezonska varianta heroja — izračuna strežnik
+   *  (getHeroVariant, page.tsx) in poda serializiran prop (0 hidracijskih
+   *  razlik); namig je del SSR HTML-a (0 CLS). */
+  seasonHero?: SeasonalHeroInfo;
+  /** POLIR15-c (2.42.0): ime prijavljenega iz SSR seje (getServerSession v
+   *  page.tsx) — vrata za osebno ploščo so zdaj STREŽNIŠKA (skeleton se
+   *  izriše ŽE v SSR; prej je useSession() v času statusa „loading“ vrnil
+   *  null in se je sekcija vstavila PO hidraciji = premik vsebine). */
+  sessionName?: string | null;
 }) {
   const l = useLocale();
   const router = useRouter();
@@ -610,6 +639,28 @@ export function HomeView({
           <p className="mt-4 max-w-2xl text-base text-white/85 sm:text-lg">
             {t("heroLead")}
           </p>
+
+          {/* POLIR15-b (2.42.0): sezonski namig — afiniteta po raziskavi
+              POLIR15 vrzel #3 (Švica: „Winter“ časovnica; Irska: „Home of
+              Halloween“): heroj je vpenjan v aktualno sezono. Varianto
+              izračuna STREŽNIK (getHeroVariant) — chip je del SSR HTML-a
+              (0 hidracijskih razlik, 0 CLS), vodi na /dogodki. */}
+          {seasonHero && (
+            <Link
+              href={seasonHero.href}
+              className="group mt-5 inline-flex max-w-full items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm font-medium text-white/90 transition-colors hover:border-white/40 hover:bg-white/20"
+            >
+              {(() => {
+                const SeasonIcon = SEASON_ICONS[seasonHero.variant];
+                return <SeasonIcon className="size-4 shrink-0" aria-hidden="true" />;
+              })()}
+              <span className="truncate">{pick(l, seasonHero.hint)}</span>
+              <ArrowRight
+                className="size-3.5 shrink-0 opacity-70 transition-transform group-hover:translate-x-0.5"
+                aria-hidden="true"
+              />
+            </Link>
+          )}
 
           {/* Iskanje */}
           <form
@@ -693,8 +744,12 @@ export function HomeView({
       )}
 
       {/* ======== P1-D (issue #3 §9): PERSONALIZIRANA DOMOV — samo prijavljeni
-           (gostjev javni Discover se nadaljuje nespremenjen spodaj) ======== */}
-      <PersonalHomeSection />
+           (gostjev javni Discover se nadaljuje nespremenjeno spodaj) ========
+           POLIR15-c (2.42.0): vrata so zdaj STREŽNIŠKA (sessionName iz
+           page.tsx) — skeleton plošče je del SSR HTML-a (0 premika ob
+           zaključku seje); prej je useSession() med „loading“ vrnil null
+           in se je celotna sekcija vstavila PO hidraciji. */}
+      {sessionName && <PersonalHomeSection name={sessionName} />}
 
       {/* ======== RAZIŠČI PO TEMAH ======== */}
       <section aria-labelledby="teme" className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8">

@@ -41,7 +41,6 @@ import {
   Sun,
   TriangleAlert,
 } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -247,13 +246,50 @@ type Lang = "sl" | "en";
 
 // ── Sekcija ─────────────────────────────────────────────────────────────────
 
-export function PersonalHomeSection() {
-  const { status } = useSession();
-  if (status !== "authenticated") return null;
-  return <PersonalBoard />;
+export function PersonalHomeSection({ name }: { name: string }) {
+  // POLIR15-c (2.42.0): vrata so STREŽNIŠKA — page.tsx preveri sejo prek
+  // cache(() => getServerSession(authOptions)) in ime poda kot prop;
+  // ta komponenta se zato izriše ŽE v SSR (skeleton v HTML-u, 0 premika).
+  // Prej: useSession() med statusom „loading“ vrnil null in se je celotna
+  // sekcija vstavila PO hidraciji (CLS za prijavljene).
+  return <PersonalBoard name={name} />;
 }
 
-function PersonalBoard() {
+/**
+ * POLIR15-c (2.42.0): skelet s STRUKTURNO PARITETO — zrcali glavo plošče
+ * (kicker + naslov + uvod), mrežo 6 kartic (prej samo 3 h-40) in
+ * polnoširino vrstico nalog (prej manjkala) — ob prehodu nalaganje →
+ * podatki se ne vstavi noben nov blok (ostane samo razlika višine kartic).
+ */
+function PersonalHomeSkeleton({ t }: { t: (k: LabelKey) => string }) {
+  return (
+    <section
+      aria-busy="true"
+      aria-label={t("title")}
+      className="mx-auto w-full max-w-7xl px-4 pt-8 sm:px-6 lg:px-8"
+    >
+      <div className="mb-4">
+        <p className="text-xs font-bold tracking-[0.18em] text-primary uppercase">
+          {t("kicker")}
+        </p>
+        <h2 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
+          {t("title")}
+        </h2>
+        <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">
+          {t("lead")}
+        </p>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-44 w-full" />
+        ))}
+      </div>
+      <Skeleton className="mt-4 h-44 w-full" />
+    </section>
+  );
+}
+
+function PersonalBoard({ name }: { name: string }) {
   const l = useLocale();
   const t = useCallback(
     <K extends LabelKey>(k: K): string => pick(l, L[k]),
@@ -313,19 +349,7 @@ function PersonalBoard() {
   }, [trips, today]);
 
   if (loading) {
-    return (
-      <section
-        aria-busy="true"
-        aria-label={t("title")}
-        className="mx-auto w-full max-w-7xl px-4 pt-8 sm:px-6 lg:px-8"
-      >
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[0, 1, 2].map((i) => (
-            <Skeleton key={i} className="h-40 w-full" />
-          ))}
-        </div>
-      </section>
-    );
+    return <PersonalHomeSkeleton t={t} />;
   }
 
   return (
@@ -339,6 +363,10 @@ function PersonalBoard() {
         </p>
         <h2 id="personal-home-title" className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
           {t("title")}
+          {/* POLIR15-c: osebni pozdrav z imenom iz SSR seje (page.tsx →
+              HomeView → ta komponenta) — ena vrstica, 0 višinske razlike
+              proti skeletu (naslov je v skeletu prisoten). */}
+          {name ? <span className="text-primary">, {name}</span> : null}
         </h2>
         <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">{t("lead")}</p>
       </div>

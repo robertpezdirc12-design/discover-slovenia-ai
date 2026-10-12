@@ -31,3 +31,17 @@ Stage Summary:
 - Vse štiri točke POLIR15 so implementirane in brskalniško preverjene; stran na / je referenčna demonstracija.
 - Produkcija na uporabnikovem repozitoriju: uporabnik prenese public/polir15.zip (Preview → Odpri v novem zavihku → /polir15.zip) in sledi README; direktni push na GitHub iz tega peskovnika ni mogoč (brez poverilnic).
 - Subagenti niso bili uporabljeni: vseh 8 datotek je tesno povezanih v eni strani (skupni uvozi, koordinirane višine), razdelitev bi povečala tveganje neuskljenosti.
+
+---
+Task ID: POLIR15-GH (priprava na produkcijo)
+Agent: Z.ai Code (glavni orkestrator)
+Task: Ponoven poskus dostopa do github.com/robertpezdirc12-design/discover-slovenia-ai in priprava GitHub paketa.
+
+Work Log:
+- Preverjena vidnost repozitorija: HTML stran vrne HTTP 404 (javna bi vrnila 200), anonimni git clone zahteva uporabniško ime → repozitorij je PRIVATEN; dostop brez poverilnic ni mogoč.
+- Sestavljen GITHUB-TEXT.md: komentar statusa za issue #34, commit serija (3 commiti, Refs #34), naslov + telo PR-ja (Closes #34).
+- Obnovljen public/polir15.zip (17 datotek: 8 izvornih + README + GITHUB-TEXT.md); prenos preverjen (HTTP 200).
+
+Stage Summary:
+- Dokazano: za "delo tukaj" (clone/analyze/push/PR) potreben bodisi fine-grained PAT (Contents+Pull requests: RW, samo ta repo) bodisi začasno javni repozitorij (samo branje → patch, ne push).
+- Vse vsebine (koda + GitHub teksti) so pripravljene vnaprej; po prejemu dostopa je postopek en korak.

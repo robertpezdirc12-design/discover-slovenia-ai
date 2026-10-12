@@ -29,6 +29,10 @@
  *     demo urejanje (~2607). Daljša vsebina (atestacije, de besede, napake
  *     omrežja) odreže dno BREZ drsenja — vzorec github.com/shadcn-ui/ui
  *     issue #16 (sprejeta rešitev = max-h + overflow-y-auto na vsebini).
+ *     DOPOLNILO ORKESTRATORJA (enak razred, živa matrika podagenta): nowrap
+ *     potrditvena gumba obeh modala (fr „Enregistrer comme confirmée"
+ *     min-content 251 px > 238 px okvirja @320 — 13 px horizontalne steze
+ *     ZNOTRAJ modala, vidna šele od overflow-y-auto) — isti POLIR7 kanon.
  *
  *  C. vh → dvh — 100vh na mobilnem vključuje površino pod naslovno vrstico
  *     brskalnika → dno „max-h-[NNvh]" overlayjev je lahko ZA vrstico. dvh
@@ -227,6 +231,26 @@ describe("POLIR11 B: navpična straža dialogov — max-h + overflow-y-auto", ()
     expect(stetje(REZERVACIJE, "max-h-[90dvh] overflow-y-auto sm:max-w-lg")).toBe(1);
     // stara vh oblika iskanja ne sme več obstajati
     expect(REZERVACIJE.includes("max-h-[90vh]")).toBe(false);
+  });
+
+  test("⑦b DOPOLNILO: potrditvena gumba obeh modala (submitConfirmation + submitDemoModify) se ovijeta (fr 13 px steza @320)", () => {
+    // fr „Enregistrer comme confirmée“ nosi min-content 251 px > 238 px
+    // vsebinskega okvirja @320×568 — od max-h/overflow-y-auto (⑦) je dialog
+    // drsen vsebnik, zato je steza postala merljiva; isti POLIR7 kanon
+    // prelomi vrstico in stezo zapre (orkestratorjevo dopolnilo 22-a).
+    // Oznaka gumba: onClick je pred className → rez od klica NAPREJ do „>“
+    const potrdiAt = REZERVACIJE.indexOf("void submitConfirmation()");
+    expect(potrdiAt).toBeGreaterThan(-1);
+    expect(REZERVACIJE.slice(potrdiAt, REZERVACIJE.indexOf(">", potrdiAt))).toContain(
+      'className="gap-1.5 whitespace-normal text-left"'
+    );
+    const demoAt = REZERVACIJE.indexOf("void submitDemoModify()");
+    expect(demoAt).toBeGreaterThan(-1);
+    expect(REZERVACIJE.slice(demoAt, REZERVACIJE.indexOf(">", demoAt))).toContain(
+      'className="gap-1.5 whitespace-normal text-left"'
+    );
+    // natanko 2 pojavitvi (oba modala), drugi gap-1.5 gumbi ostanejo na osnovi
+    expect(stetje(REZERVACIJE, 'className="gap-1.5 whitespace-normal text-left"')).toBe(2);
   });
 });
 

@@ -2050,7 +2050,7 @@ export function TripReservations({
                 size="sm"
                 onClick={() => void submitConfirmation()}
                 disabled={busy}
-                className="gap-1.5"
+                className="gap-1.5 whitespace-normal text-left"
               >
                 {busy ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -2695,7 +2695,7 @@ export function TripReservations({
                 size="sm"
                 onClick={() => void submitDemoModify()}
                 disabled={busy}
-                className="gap-1.5"
+                className="gap-1.5 whitespace-normal text-left"
               >
                 {busy ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />

@@ -1759,7 +1759,15 @@ export default function TravelMap() {
       {/* ── Zemljevid + stranski seznam ──────────────────────────────── */}
       <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_340px]">
         {/* Zemljevid — a11y oznaka na ovojnem elementu (MapContainer ne
-            sprejema ARIA atributov v tipih react-leaflet). */}
+            sprejema ARIA atributov v tipih react-leaflet).
+            POLIR12 (2.39.0): višina zemljevida v svh enotah (mobilni
+            različici + lg: kalkulacija) — svh = delež NAJMANJŠEGA stabilnega
+            viewporta: pri VIDNI naslovni vrstici (iOS Safari / Chrome
+            Android) spodnji rob zemljevida ne zajema več površine pod
+            vrstico (prejšnja enota velikega viewporta je merila z vrstico
+            skrčeno); dinamična enota je zavrnjena (WebKit #266835 — jank
+            med drsenjem na tokovnih blokih); v brezglavem brskalniku
+            svh ≡ vh (ničelna vizualna sprememba, ista podporna okna). */}
         <div
           className="overflow-hidden rounded-xl border shadow-sm"
           role="region"
@@ -1774,7 +1782,7 @@ export default function TravelMap() {
             ref={(m: L.Map | null) => {
               mapRef.current = m;
             }}
-            className="h-[62vh] min-h-80 w-full sm:h-[70vh] lg:h-[calc(100dvh-15rem)] lg:min-h-[540px]"
+            className="h-[62svh] min-h-80 w-full sm:h-[70svh] lg:h-[calc(100svh-15rem)] lg:min-h-[540px]"
           >
             <TileLayer
               url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -1958,7 +1966,13 @@ export default function TravelMap() {
               <p className="mt-1 text-sm text-muted-foreground">{t("emptyLead")}</p>
             </div>
           ) : (
-            <ul className="scrollbar-slim max-h-[62vh] list-none space-y-1.5 overflow-y-auto pr-1 sm:max-h-[70vh] lg:max-h-[calc(100dvh-16rem)]">
+            <ul className="scrollbar-slim max-h-[62svh] list-none space-y-1.5 overflow-y-auto pr-1 sm:max-h-[70svh] lg:max-h-[calc(100svh-16rem)]">
+              {/* POLIR12 (2.39.0): seznam v istih svh enotah kot zemljevid
+                  (mobilni max-h različici + lg: kalkulacija) — drsi v
+                  istem koraku z višino zemljevida (POLIR12 komentar pri
+                  MapContainerju zgoraj), stabilen najmanjši viewport brez
+                  rezanja pri vidni naslovni vrstici (iOS Safari /
+                  Chrome Android). */}
               {results.map((d) => {
                 const active = activeId === d.id;
                 return (

@@ -85,3 +85,23 @@ Stage Summary:
 - PR #36 (Closes #34) na 1ea1c57: POLIR15 (2.42.0) — vse 4 točke implementirane, testno zaklenjene (33 novih zaklepov), E2E preverjene; Leaflet CSS nespremenjen; i18n kanon ohranjen; 0 AI, 0 novih odvisnosti
 - URL: https://github.com/robertpezdirc12-design/discover-slovenia-ai/pull/36
 - VARNOST: GitHub žeton je bil izpostavljen v pogovoru — uporabniku ukazano preklicati (revoke) po potrditvi merge-a
+
+---
+Task ID: POLIR15 (faza 5: GitHub izvedba + konsolidacija)
+Agent: Z.ai Code (glavni orkestrator)
+Task: Izvedba vseh rezultatov POLIR15 v repozitorij robertpezdirc12-design/discover-slovenia-ai z uporabnikovim žetonom; konsolidacija dveh vzporednih PR-ov.
+
+Work Log:
+- Žeton preverjen (API 200), repo kloniran v /home/z/polir15-target (token samo v ukazih, remote URL poizčiščen).
+- Analiza realnega stanja: main @ 2.41.0 (POLIR14 že zlito); issue #34 = QA issue (P0 dogodki, P1 načrtovalnik/SEO, P2 dostopnost) — POLIR15 je UX/CLS podskupina.
+- 4 pečati prilagojeni na realno kodo: (a) travel-map.tsx sticky top-16 z-30 + relative z-0 isolate; (b) nov seasonal-hero.ts (MMDD + mikro-dogodki + ?season= whitelist, 6 jezikov) + SSR prop prek page.tsx; (c) cache(() => getServerSession(authOptions)) → sessionName prop, useSession odstranjen, skelet 6+1 kartic s pariteto + pozdrav z imenom; (d) zemljevid/view.tsx skelet zrcali 7 nadzornih vrstic.
+- Nov tests/polir15.test.ts (16 zaklepov) + kontrakti p1d ④⑤ in map-mobile-first ⑨ na nov kanon; verzija 2.42.0 (package.json, health, sw.js, footer, README, p2-data-plane, pwa-sw).
+- Merila: bun test 1959/0 (96 datotek), tsc --noEmit 0, eslint 0, next build uspešen (prisma generate + celoten manifest rut).
+- Branch polir15 → 3 commiti (Refs #34) → push → PR #37 + status komentar na issue #34 (iskreno "Refs", ne "Closes" — issue obsega še P0/P1/P2).
+- ODKRITJE: worklog razkriva, da je prejšnja inkarnacija že oddala PR #36 (feat/polir15-2.42.0, 2 commita, +967/-138, worklog.md po repo konvenciji) — CI vseh 3 preverjanj SUCCESS (lint+test, lint+typecheck+test+prisma+build+smoke, sync).
+- KONSOLIDACIJA: PR #37 zaprt kot dvojnik (komentar z neodvisno verifikacijo 1959/0 + build), remote branch polir15 izbrisana; PR #36 = enoten kanon. Token odstranjen iz git config.
+
+Stage Summary:
+- PR #36 odprt in CI-zelen: https://github.com/robertpezdirc12-design/discover-slovenia-ai/pull/36 (head 1ea1c57, 20 datotek)
+- Komentar na issue #34: https://github.com/robertpezdirc12-design/discover-slovenia-ai/issues/34#issuecomment-6130142180 (obseg: UX/CLS podskupina oddana, P0/P1/P2 ostanki jasno navedeni)
+- VARNOST: žeton izpostavljen v pogovoru — uporabniku ukazano PREKLICATI (revoke) po zaključku; v .git/config ni ostal.

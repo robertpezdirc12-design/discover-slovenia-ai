@@ -244,6 +244,14 @@ export const EVENTS: CommunityEvent[] = [
     // QA #34→#38 (verifikacija 2026-10-12): festivalblejskihdni.si NE OBSTAJA
     // (domena nedosegljiva) — mrtva povezava odstranjena; termin za 2027 ni
     // nikjer uradno objavljen — izmišljeni „10. – 13. apr 2027“ odstranjen.
+    // P0 3. serija (2026-10-13): ime prireditve NI sledljivo nigdej —
+    // nacionalni register dogodkov (e-občina /DobiDogodke) za „blejski“ in
+    // „danovski“ vrne 0 zadetkov; RSS bled.si (1554 novic, prebrano) ne
+    // omenja „danovskega festivala“ niti komornega glasbenega festivala na
+    // Bledu; koledar prireditev na bled.si domači strani ga tudi ne pozna
+    // (realni Bled dogodki: Narodnozabavna hit parada, triatlon, šah).
+    // Zapis ostane po kanonu ④b („ne brišemo brez razloga“), a BREZ vira,
+    // datuma in povezave, dokler ni kaj potrditi.
     dateStart: "",
     dateLabel: "datum še ni potrjen",
     venue: "Blejski grad, Bled",
@@ -280,22 +288,37 @@ export const EVENTS: CommunityEvent[] = [
   },
   {
     id: "festival-soca",
-    monthIndex: 5,
-    category: "sport",
-    title: "Festival Soča",
-    // QA #34→#38 (verifikacija 2026-10-12): festivalsoca.si NE OBSTAJA
-    // (domena nedosegljiva) — mrtva povezava odstranjena; termin za 2027 ni
-    // uradno objavljen — izmišljeni „23. – 25. maj 2027“ odstranjen.
+    monthIndex: 7,
+    category: "glasba",
+    title: "Tolminator — metal festival na sotočju Soče in Tolminke",
+    // P0 3. serija (verifikacija 2026-10-13): zapis „Festival Soča“ NI
+    // sledljiv — festivalsoca.si NE OBSTAJA (že 2026-10-12), nacionalni
+    // register dogodkov (e-občina /DobiDogodke) za ključne besede
+    // „Soča“/„Soca“/„Tolminator“ vrne 0 zadetkov. Edini AKTIVNI glasbeni
+    // festival na Soči v Tolminu je Tolminator (od 2023, naslednik
+    // MetalDays 2004–2022 na ISTEM prizorišču sotočja) — korekcija na
+    // realni dogodek po vzorcu celjski-sejem → POMP. Vir: Wikipedia
+    // MetalDays (dejansko prebrana): „Since 2023 a new festival called
+    // Tolminator has been held in Tolmin. The location is the same …“;
+    // seznam metal festivalov: „Tolminator | Tolmin | 2023–present | July“.
+    // Termin 2027 NI objavljen; stran organizatorja (tolminator.si) je iz
+    // peskovnika nedosegljiva — povezave NE izmišljujemo (kanon ①d).
+    // Zgodovinski kontekst: opis zapisa (reggae/alternative) je ustrezal
+    // ugasnjenemu Soča Reggae Riversplashu (2000-ih), ne obstoječi
+    // prireditvi — izmišljeni „23. – 25. maj 2027“ je bil odstranjen že
+    // 2026-10-12.
     dateStart: "",
     dateLabel: "datum še ni potrjen",
-    venue: "Bovec in Tolmin",
+    venue: "Sotočje Soče in Tolminke, Tolmin",
     price: "euro2",
     featured: false,
     image: "/content/festival-soca.jpg",
     description:
-      "Športno-glasbeni festival ob smaragdni Soči z raftingom, kajakaštvom, canyoningom in adrenalinskimi izzivi čez dan. Zvečer ob reki tonejo toni alternative, reggaeja in world musica.",
+      "Največji metal festival na Slovenskem se od 2023 goduje na sotočju Soče in Tolminke, na prizorišču, kjer je več kot dve desetletji potekal MetalDays. Trije dnevi na obrežjih smaragdne reke z brezkončnim kampom in festivalskimi plažami.",
     destSlug: "reka-soca",
     dateUnconfirmed: true,
+    source: "https://en.wikipedia.org/wiki/MetalDays",
+    verifiedAt: "2026-10-13",
   },
   {
     id: "ljubljanski-maraton",

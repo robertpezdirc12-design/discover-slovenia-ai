@@ -290,3 +290,99 @@ describe("events P0 2. serija (2026-10-13): popravki po primarnih virih", () => 
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// ⑤ P0 3. SERIJA (verifikacija 2026-10-13, SDK kvota izčrpana → curl pri
+//    primarnih virih): nacionalni register dogodkov (e-občina
+//    /DobiDogodke — instanca tolmin.si, ključne besede „Soča“/„Soca“/
+//    „Tolminator“/„blejski“/„danovski“/„koline“/„opankarija“/„jamski“ =
+//    0 zadetkov), postojna.si register (eo_id=105, „jamski“ = 0),
+//    bled.si RSS (1554 novic) + koledar na domači strani, Wikipedia
+//    MetalDays/Tolminator (dejansko prebrana). Kanon nespremenjen:
+//    vir se zapiše SAMO, če ga je verifikacija dejansko brala.
+// ---------------------------------------------------------------------------
+
+describe("events P0 3. serija (2026-10-13): korekcija + ponovna sledljivost", () => {
+  test("⑤a festival-soca: korigiran na REALNI Tolminator (Tolmin, julij, metal)", () => {
+    const e = byId("festival-soca");
+    // fiktivni „Festival Soča“ (sport/reggae, maj) ne obstaja — edini
+    // aktivni glasbeni festival na Soči v Tolminu je Tolminator (od 2023
+    // na istem prizorišču kot MetalDays 2004–2022), vzorec ④a.
+    expect(e.title).toBe("Tolminator — metal festival na sotočju Soče in Tolminke");
+    expect(e.title).toContain("Tolminator");
+    expect(e.category).toBe("glasba"); // NE „sport“ več
+    expect(e.monthIndex).toBe(7); // julij (seznam metal festivalov: „July“)
+    expect(e.venue).toContain("Tolmin");
+    expect(e.venue).toContain("Sotočje");
+    // termin 2027 neobjavljen → pošteno nepotrjen (kanon ②)
+    expect(e.dateUnconfirmed).toBe(true);
+    expect(e.dateStart).toBe("");
+    expect(e.dateLabel).toBe("datum še ni potrjen");
+    // vir dejansko prebran: Wikipedia MetalDays (Tolminator od 2023)
+    expect(e.source).toBe("https://en.wikipedia.org/wiki/MetalDays");
+    expect(e.verifiedAt).toBe("2026-10-13");
+    // organizatorjeva stran (tolminator.si) nedosegljiva → brez povezave
+    expect(e.website).toBeUndefined();
+    // destinacija ostane Soča (Tolmin je pokrit z vodičem reka-soca)
+    expect(e.destSlug).toBe("reka-soca");
+  });
+
+  test("⑤b blejski-danovski-festival: ime NI sledljivo (register + bled.si) → pošteno nepotrjeno", () => {
+    const e = byId("blejski-danovski-festival");
+    expect(e.dateUnconfirmed).toBe(true);
+    expect(e.dateStart).toBe("");
+    expect(e.dateLabel).toBe("datum še ni potrjen");
+    // not_found kanon ④b: brez izmišljenega source-a in povezave
+    expect(e.source).toBeUndefined();
+    expect(e.verifiedAt).toBeUndefined();
+    expect(e.website).toBeUndefined();
+    // mesec = pričakovano okno (april, po izmišljenem terminu), ostane
+    expect(e.monthIndex).toBe(4);
+    expect(e.destSlug).toBe("bled");
+  });
+
+  test("⑤c ponovna verifikacija registra (2026-10-13): koline/jamski/božični/blejski → datumi ostanejo prazni", () => {
+    // vsi izrecno ponovno preverjeni prek e-občina /DobiDogodke (0 zadetkov)
+    const RECHECKED = [
+      "bela-krajina-koline",
+      "jamski-sejem-postojna",
+      "bozicni-sejmi-ljubljana-maribor",
+      "bozicni-sejmi-maribor",
+      "blejski-danovski-festival",
+      "festival-soca",
+    ];
+    for (const id of RECHECKED) {
+      const e = byId(id);
+      expect(e.dateUnconfirmed).toBe(true);
+      expect(e.dateStart).toBe("");
+      expect(e.dateLabel).toBe("datum še ni potrjen");
+    }
+    // koline: vir ostane NEDEFINIRAN (zaklep ④b ne sme biti oslabjen)
+    expect(byId("bela-krajina-koline").source).toBeUndefined();
+    expect(byId("jamski-sejem-postojna").source).toBeUndefined();
+  });
+
+  test("⑤d nedosegljive/mrtve domene (3. serija) se ne vrnejo v kanon", () => {
+    const dead = ["tolminator.si", "festival-soca.com", "festivalsoca.si", "festivalblejskihdni.si"];
+    for (const e of EVENTS) {
+      if (e.website) {
+        for (const d of dead) expect(e.website.includes(d)).toBe(false);
+      }
+    }
+    // vire prav tako ne kažemo na mrtve domene
+    for (const e of EVENTS) {
+      if (e.source) {
+        for (const d of dead) expect(e.source.includes(d)).toBe(false);
+      }
+    }
+  });
+
+  test("⑤e Tolminator vsebinska zahteva: omenja nasledništvo MetalDays + lokacijo sotočja", () => {
+    const e = byId("festival-soca");
+    expect(e.description).toContain("MetalDays");
+    expect(e.description).toContain("sotočju");
+    // opis ne sme več trditi reggae/alternative (ugasnjeni Riversplash)
+    expect(e.description.toLowerCase()).not.toContain("reggae");
+    expect(e.description.toLowerCase()).not.toContain("rafting");
+  });
+});

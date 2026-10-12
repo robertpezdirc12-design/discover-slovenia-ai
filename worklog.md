@@ -2845,3 +2845,20 @@ Stage Summary:
 - P1 SEO: enak naslov na vseh straneh → 18 unikatnih 6-jezičnih naslovov+opisov z OG/twitter; anti-vzorci benchmarka programsko zaklenjeni (podvojen brand, prazen opis).
 - P0: 5 popravkov z dokazi, 2 not_found pošteno nepotrjeni, 1 razdvojitev (30 → 31 dogodkov); 15 dogodkov še brez source (izrecno oznaka, ne lažna verifikacija).
 - Raziskava #35 dostavljena kot komentar na issue (zaklad + licence ODbL).
+
+---
+Task ID: R35-P0-3 (2.44.0, dopolnitev)
+Agent: Z.ai Code (glavni orkestrator)
+Task: P0 dogodki 3. serija — verifikacija zapisa „Festival Soča“ in „Blejski danovski festival“ pri primarnih virih (SDK kvota 429 → curl: e-občina /DobiDogodke, postojna.si, bled.si RSS, Wikipedia).
+
+Work Log:
+- SDK (web_search/page_reader) še vedno 429 — preklop na curl: nacionalni register dogodkov prek instance tolmin.si/DobiDogodke (ključne besede Soča/Soca/Tolminator/blejski/danovski/koline/opankarija = VSE 0 zadetkov), postojna.si/DobiDogodke eo_id=105 („jamski“ = 0), bled.si RSS (1554 novic — 0 omemb „danovskega festivala“/komornega festivala; realni Bled dogodki: Narodnozabavna hit parada 14. 11. 2026, triatlon, šahovski festival), bled.si domača stran (koledar), obcina-bled.si (anti-bot zid), tolminator.si + festivalbled.si + bovec.com (DNS/HTTP 000 — nedosegljivo, povezav NE izmišljujemo).
+- WIKIPEDIA (dejansko prebrana, en.wikipedia.org): MetalDays = Sotočje, Tolmin (med Tolminko in Sočo) 2004–2022, Velenje 2023, uradno ukinjen 2024; „Since 2023 a new festival called Tolminator has been held in Tolmin. The location is the same …“; seznam metal festivalov: „Tolminator | Tolmin | 2023–present | July“.
+- KOREKCIJA festival-soca (vzorec ④a celjski-sejem→POMP): fiktivni „Festival Soča“ (sport, maj, reggae/rafting — opis je ustrezal ugasnjenemu Soča Reggae Riversplashu) → REALNI „Tolminator — metal festival na sotočju Soče in Tolminke“ (glasba, mesec 7, venue Sotočje Soče in Tolminke; brez website — organizator nedosegljiv; source = en.wikipedia.org/wiki/MetalDays, verifiedAt 2026-10-13, dateUnconfirmed ostaja — termin 2027 neobjavljen). ID ostane (zgodovinski, vzorec razdvojitve).
+- blejski-danovski-festival: ime NI sledljivo nigdej (register 0 + bled.si RSS 0 + koledar 0 + domena mrtva) → zapis ostane po kanonu ④b (ne brišemo), polni dokazi v komentarju zapisa, BREZ source/website/datuma.
+- TESTI: tests/events-p0-qa38.test.ts + ⑤a–⑤e (5 novih zaklepov: korekcija Tolminator z vsemi polji, sledljivost blejskega, ponovna verifikacija 6 registrov, mrtve domene tudi v source, vsebinska zahteva opisa).
+- MERILA: bun test 2019/2019 (17728 expect), tsc --noEmit 0, eslint 0. Verzija ostane 2.44.0 (isti PR #40).
+
+Stage Summary:
+- P0 3. serija: 1 korekcija na realni dogodek (Tolminator z Wikipedia virom), 1 not_found z dokazi (blejski-danovski), 6 registrov ponovno preverjenih prve roke; 31 dogodkov (13 še vedno pošteno nepotrjenih, 18 potrjenih/datiranih).
+- Omejitve: tolminator.si/bovec.com iz peskovnika nedosegljiva (DNS 000) — povezave ne dodane; bozicni sejmi (visitljubljana/visitmaribor) ostajajo brez source (Maribor TCP-nedosegljiv, Ljubljana register 0 — dokazi v komentarjih iz 2. serije).

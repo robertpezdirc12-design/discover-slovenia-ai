@@ -6,15 +6,26 @@ import { cn } from "@/lib/utils";
  */
 export function PageHeader({
   kicker,
+  kickerClassName,
   title,
   lead,
+  leadClassName,
   center = false,
   children,
   className,
 }: {
   kicker?: string;
+  /** POLIR14 (2.41.0): opcijski dopustni razredi vrstice kicker (cn spoj
+   *  z osnovo — npr. „hidden sm:block" na /zemljevid skrije vejico nad
+   *  naslovom na mobilnem, kjer je vsaka vrstica prvega zaslona draga).
+   *  Privzeto nedoločeno = 0 sprememb za VSE ostale klicatelje. */
+  kickerClassName?: string;
   title: string;
   lead?: string;
+  /** POLIR14 (2.41.0): opcijski dopustni razredi opisa (lead) — cn spoj z
+   *  osnovo (npr. „line-clamp-2 sm:line-clamp-none" na /zemljevid stisne
+   *  opis na 2 vrstici na mobilnem; vsebina ostane v DOM za namizje). */
+  leadClassName?: string;
   center?: boolean;
   children?: React.ReactNode;
   className?: string;
@@ -22,7 +33,12 @@ export function PageHeader({
   return (
     <div className={cn("w-full", center && "text-center", className)}>
       {kicker && (
-        <p className="text-xs font-bold tracking-[0.18em] text-primary uppercase">
+        <p
+          className={cn(
+            "text-xs font-bold tracking-[0.18em] text-primary uppercase",
+            kickerClassName
+          )}
+        >
           {kicker}
         </p>
       )}
@@ -38,7 +54,8 @@ export function PageHeader({
         <p
           className={cn(
             "mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg",
-            center && "mx-auto"
+            center && "mx-auto",
+            leadClassName
           )}
         >
           {lead}

@@ -225,8 +225,13 @@ describe("POLIR8 A: povezave noge (DE 14 px preliva na VSEH straneh @320)", () =
 
 describe("POLIR8 A: stranski seznam zemljevida (FR/IT/ES 3–4 px @360, do 44 px @320)", () => {
   test("⑬ aside vsebuje min-w-0 (živi dokaz iz raziskave: minWidth 0 → preliv 4 → 0 px)", () => {
+    // POLIR14 (2.41.0): aside je dobil pogojni max-lg:hidden (mobilni
+    // preklop „Zemljevid ⇄ Seznam“ — skrivanje na STARŠU, ul razred ostaja
+    // statičen); min-w-0 zaklep POLIR8 ostaja v novi cn() obliki.
     expect(
-      MAP.includes('<aside aria-label={t("listTitle")} className="min-w-0">')
+      MAP.includes(
+        '<aside\n          aria-label={t("listTitle")}\n          className={cn("min-w-0", mobileView === "map" && "max-lg:hidden")}\n        >'
+      )
     ).toBe(true);
   });
 

@@ -204,7 +204,14 @@ describe("POLIR7 A: break-words na oznaki statistike (zemljevid)", () => {
   });
 
   test("⑬ statistika ostaja 3-stolpčna (grid-cols-3) — popravek defenziven", () => {
-    expect(ZEMLJEVID.includes('className="mt-6 grid grid-cols-3 gap-3"')).toBe(true);
+    // POLIR14 (2.41.0): 3-stolpčna statistika je zdaj ≥sm (hidden … sm:grid —
+    // na mobilnem zemljevid sije, kartice pa se izrišejo od sm naprej);
+    // mobilni nadomestek je kompaktna vrstica POD zemljevidom (view.tsx,
+    // sm:hidden z ločilom „·“). Zaklep grid-cols-3 ostaja — defenziven
+    // popravek, ne preoblikovanje (precedens POLIR12 ⑬/⑭).
+    expect(
+      ZEMLJEVID.includes('className="mt-6 hidden grid-cols-3 gap-3 sm:grid"')
+    ).toBe(true);
   });
 });
 

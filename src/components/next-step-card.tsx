@@ -172,10 +172,17 @@ export function NextStepCard({
   ctx,
   surface = "home",
   className,
+  ready,
 }: {
   ctx: NextStepContext;
   surface?: NextStepSurface;
   className?: string;
+  /** POLIR13 (2.40.0): ali se je kontekst (lokalne shrambe + seja) že
+   *  ustalil. Do takrat je kartica NEVIDNA (visibility:hidden) — SSR že
+   *  izriše prostor zanjo, da vstavitev po hidraciji ne porine vsebine
+   *  navzdol (CLS 0,161/0,239/0,231 → ≈ 0; web.dev „Reserve space for
+   *  late-loading content"). */
+  ready: boolean;
 }) {
   const l = useLocale();
   const reduceMotion = useReducedMotion();
@@ -206,6 +213,15 @@ export function NextStepCard({
     } catch {
       /* tiho — kartico vseeno skrijemo za to sejo */
     }
+    // POLIR13 (2.40.0): sejni piškotek kot STREŽNIŠKO BERLJIV zrcal
+    // sessionStorage zastavice — naslednji SSR nalaganje kartico IZPUSTI
+    // (brez rezervacije prostora, brez premika vsebine). Brez max-age =
+    // sejen (izpade ob zaključku brskalnika); tiho ob napaki, isti kanon.
+    try {
+      document.cookie = "dai:next-step-dismissed=1; path=/; SameSite=Lax";
+    } catch {
+      /* tiho — sessionStorage zrcal že pokriva to sejo */
+    }
     window.dispatchEvent(new CustomEvent(DISMISS_EVENT));
   };
 
@@ -235,6 +251,10 @@ export function NextStepCard({
       <AnimatePresence>
         {!dismissed && (
           <motion.div
+            // POLIR13 (2.40.0): invisible (visibility:hidden) do `ready` —
+            // prostor za kartico je rezerviran ŽE v SSR (CLS ≈ 0), ni
+            // interaktivna in ni v a11y drevesu, dokler kontekst ni ustrejen.
+            className={!ready ? "invisible" : undefined}
             initial={reduceMotion ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: reduceMotion ? 0 : -4 }}

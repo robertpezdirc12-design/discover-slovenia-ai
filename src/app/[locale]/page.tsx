@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 import { HomeView } from "@/components/home/home-view";
 import { alternatesFor } from "@/lib/hreflang";
@@ -41,9 +41,15 @@ export default async function HomePage({
   const { locale } = await params;
   // CSP nonce (middleware → x-nonce) — enak mehanizem kot v layoutu.
   const nonce = (await headers()).get("x-nonce") ?? "";
+  // POLIR13 (2.40.0): sejni piškotek dai:next-step-dismissed (zrcal
+  // sessionStorage ob dismissu) preberemo na strežniku in kartico izpustimo
+  // ŽE v SSR — po ponovnem nalaganju v isti seji je ni (0 px premika).
+  // Strani so že dinamične (headers() za nonce) ⇒ 0 dodatnega stroška.
+  const nextStepDismissed =
+    (await cookies()).get("dai:next-step-dismissed")?.value === "1";
   return (
     <>
-      <HomeView />
+      <HomeView nextStepDismissed={nextStepDismissed} />
       <script
         type="application/ld+json"
         nonce={nonce}

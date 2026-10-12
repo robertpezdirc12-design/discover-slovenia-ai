@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 
 import { TrznicaExplorer } from "@/components/trznica-explorer";
 import { alternatesFor } from "@/lib/hreflang";
@@ -20,6 +21,12 @@ export async function generateMetadata({
   return { alternates: alternatesFor(locale, "/trznica") };
 }
 
-export default function TrznicaPage() {
-  return <TrznicaExplorer />;
+export default async function TrznicaPage() {
+  // POLIR13 (2.40.0): sejni piškotek dai:next-step-dismissed (zrcal
+  // sessionStorage ob dismissu) preberemo na strežniku in next-step kartico
+  // izpustimo ŽE v SSR — po ponovnem nalaganju v isti seji je ni (0 px
+  // premika, CLS ≈ 0 tudi po dismissu).
+  const nextStepDismissed =
+    (await cookies()).get("dai:next-step-dismissed")?.value === "1";
+  return <TrznicaExplorer nextStepDismissed={nextStepDismissed} />;
 }

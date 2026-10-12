@@ -93,7 +93,15 @@ const SHELF_GROUPS = [
   { id: "commercial", sl: "Partnerji", en: "Partners", it: "Partner", de: "Partner", fr: "Partenaires", es: "Socios" },
 ] as const;
 
-export function TrznicaExplorer() {
+export function TrznicaExplorer({
+  nextStepDismissed = false,
+}: {
+  /** POLIR13 (2.40.0): sejni dismiss zrcaljen v piškotek
+   *  dai:next-step-dismissed — strežniški starš (page.tsx) ga prebere s
+   *  cookies() in kartico izpusti ŽE v SSR (ni rezervacije prostora, ni
+   *  premika vsebine po ponovnem nalaganju v isti seji). */
+  nextStepDismissed?: boolean;
+}) {
   const l = useLocale();
   const { toast } = useToast();
   const tripItems = useMyTripList();
@@ -185,10 +193,15 @@ export function TrznicaExplorer() {
         </div>
       </PageHeader>
 
-      {/* ── NEXT-STEP: naslednji smiseln korak glede na stanje (issue #1) ── */}
-      {nextStepReady && (
+      {/* ── NEXT-STEP: naslednji smiseln korak glede na stanje (issue #1) ──
+         POLIR13 (2.40.0): vrata so strežniška (piškotek
+         dai:next-step-dismissed, ne več nextStepReady) + kartica se izriše
+         NEVIDNA že v SSR in se razkrije ob `ready` (prop) — rezervacija
+         prostora po web.dev kanonu „Reserve space for late-loading
+         content“ (vstavitev po hidraciji je povzročala CLS 0,231). */}
+      {!nextStepDismissed && (
         <div className="mt-8">
-          <NextStepCard ctx={nextStepCtx} surface="market" />
+          <NextStepCard ctx={nextStepCtx} surface="market" ready={nextStepReady} />
         </div>
       )}
 

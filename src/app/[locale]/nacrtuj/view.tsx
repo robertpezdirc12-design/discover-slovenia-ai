@@ -707,16 +707,29 @@ const NL_EXAMPLES: ReadonlyArray<{
 // Stran
 // ---------------------------------------------------------------------------
 
-export default function PlanPage() {
+export default function PlanPage({
+  nextStepDismissed = false,
+}: {
+  /** POLIR13 (2.40.0): sejni dismiss zrcaljen v piškotek
+   *  dai:next-step-dismissed — strežniški starš (page.tsx) ga prebere s
+   *  cookies() in kartico izpusti ŽE v SSR (ni rezervacije prostora, ni
+   *  premika vsebine po ponovnem nalaganju v isti seji). */
+  nextStepDismissed?: boolean;
+}) {
   const l = useLocale();
   const { ctx: nextStepCtx, ready: nextStepReady } = useNextStepContext();
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
       <PageHeader kicker={pick(l, L.kicker)} title={pick(l, L.title)} lead={pick(l, L.lead)} />
-      {nextStepReady && (
+      {/* POLIR13 (2.40.0): vrata so strežniška (piškotek
+          dai:next-step-dismissed, ne več nextStepReady) + kartica se izriše
+          NEVIDNA že v SSR in se razkrije ob `ready` (prop) — rezervacija
+          prostora po web.dev kanonu „Reserve space for late-loading
+          content“ (vstavitev 347 px po hidraciji je povzročala CLS 0,239). */}
+      {!nextStepDismissed && (
         <div className="mt-8">
-          <NextStepCard ctx={nextStepCtx} surface="plan" />
+          <NextStepCard ctx={nextStepCtx} surface="plan" ready={nextStepReady} />
         </div>
       )}
       <Suspense fallback={<PlannerSkeleton />}>

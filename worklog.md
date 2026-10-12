@@ -63,3 +63,25 @@ Work Log:
 Stage Summary:
 - POLIR15 cikel POPOLNOSTI zaključen na pravem repozitoriju: raziskava ✅ specifikacija ✅ implementacija ✅ produkcija (push + PR #36 + CI zeleno) ✅
 - Ostaja uporabnikovo: merge PR #36 (GitHub) → Vercel deploy → Lighthouse CLS run za (c)/(d); priporočena rotacija žetona (objavljen v klepetu).
+
+---
+Task ID: 5 (gh-1..gh-6)
+Agent: Z.ai Code (glavni)
+Task: Izvedba POLIR15 v repozitoriju robertpezdirc12-design/discover-slovenia-ai z GitHub žetonom (issue #34) — klon, analiza realne kode, prilagoditev 4 patchev, testi, E2E, push, PR #36.
+
+Work Log:
+- Žeton preverjen (API 200, private repo, default main); klon v /home/z/polir15-repo (2.41.0, POLIR13/14 že zlita)
+- Analiza realne strukture: home-view.tsx (978 vrstic, hero gradient + PersonalHomeSection), personal-home-section.tsx (987, useSession klientna vrata = 2 premika), travel-map.tsx (2162, POLIR14 mobilna glava), zemljevid/view.tsx (skelet samo mapa+seznam), auth.ts (next-auth v4 JWT), hišni testi SOURCE-CONTRACT (readFileSync + statične preverbe), verzioniranje na 6 mestih
+- POLIR15-a: travel-map.tsx — ovoj mape `relative z-0 isolate` (Leaflet CSS nespremenjen), preklop `max-lg:sticky max-lg:top-16 max-lg:z-30 max-lg:bg-background`
+- POLIR15-b: nov src/lib/seasonal-hero.ts (čist, 0 uvozov) — MMDD okna + mikro-dogodki (martinovanje/kurentovanje/december), 6 jezikov; page.tsx searchParams ?sezona= QA kavelj; home-view.tsx čip nad kickerjem
+- POLIR15-c: nov src/lib/session-gate.ts (cache getServerSession, fail-closed); page.tsx → personalGate → PersonalHomeSection({ gate }); useSession odstranjen; nov PersonalBoardSkeleton strukturno identičen plošči (realni naslovi + 6 kartic + realni idle Vreme/V bližini + nalogovna kartica)
+- POLIR15-d: zemljevid/view.tsx skelet zrcali celotno drevo TravelMap (order-1…7, isti odmiki, višina mape = dobesedno isti razredni niz kot MapContainer + legenda)
+- Testi: 3 novi datoteke (33 zaklepov) + posodobljeni p1d-home ④/⑤, map-mobile-first ⑨, p2-data-plane (verzija), pwa-sw (verzija); bump 2.42.0 (package.json, health, sw.js, footer, README)
+- Verifikacija: bun test 1976/0, tsc 0, eslint 0; E2E @390×844: čip „Jeseni v Sloveniji“ v SSR, ?sezona=winter → „Zima“, sticky ujet pri y=64 (computed sticky/64/30) in klikaben med lepljenjem; @1440×900 split view nespremenjen; prijava (registracija Ana) → plošča „Dobrodošel nazaj“ iz SSR skeleta (aria-busy v HTML); 0 konzolnih napak
+- ODKRITJE: prejšnja inkarnacija je že pognala commit ccfe918 + PR #36 + komentar na #34 — vendar s napako (sticky top-2 se zatakne ZA glavo h-16/z-40). Združitev: force-with-lease push moje izboljšane 2-commit serije (a604cc2 + 1ea1c57) na isti branch → PR #36 osvežen (telo r2 + komentar), issue #34 dopolnjen
+- CI na PR: „lint + test (po sync)“ success, build+smoke v teku ob zaključku poročila
+
+Stage Summary:
+- PR #36 (Closes #34) na 1ea1c57: POLIR15 (2.42.0) — vse 4 točke implementirane, testno zaklenjene (33 novih zaklepov), E2E preverjene; Leaflet CSS nespremenjen; i18n kanon ohranjen; 0 AI, 0 novih odvisnosti
+- URL: https://github.com/robertpezdirc12-design/discover-slovenia-ai/pull/36
+- VARNOST: GitHub žeton je bil izpostavljen v pogovoru — uporabniku ukazano preklicati (revoke) po potrditvi merge-a

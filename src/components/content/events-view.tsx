@@ -103,6 +103,24 @@ export function EventsView() {
     website: { sl: "Spletna stran", en: "Website", it: "Sito web", de: "Webseite", fr: "Site web", es: "Sitio web" },
     exploreDest: { sl: "Razišči destinacijo", en: "Explore the destination", it: "Esplora la destinazione", de: "Destination entdecken", fr: "Explorer la destination", es: "Explora el destino" },
     dateTitle: { sl: "Datum dogodka", en: "Event date", it: "Data dell’evento", de: "Veranstaltungsdatum", fr: "Date de l’événement", es: "Fecha del evento" },
+    // QA P0 (#34→#38): pošten prikaz za dogodke brez uradno objavljenega
+    // termina — izmišljen datum nikoli ni prikazan (iskrenostni kanon).
+    unconfirmedDate: {
+      sl: "datum še ni potrjen",
+      en: "date not yet confirmed",
+      it: "data non ancora confermata",
+      de: "Datum noch nicht bestätigt",
+      fr: "date pas encore confirmée",
+      es: "fecha aún sin confirmar",
+    },
+    unconfirmedNote: {
+      sl: "Datum bo objavljen, ko ga potrdi organizator — pričakovano okno glej po mesecu.",
+      en: "The date will be published once confirmed by the organizer — see the month for the expected window.",
+      it: "La data sarà pubblicata quando confermata dall’organizzatore — consulta il mese per la finestra prevista.",
+      de: "Das Datum wird veröffentlicht, sobald der Veranstalter es bestätigt — das erwartete Zeitfenster siehe Monat.",
+      fr: "La date sera publiée une fois confirmée par l’organisateur — voir le mois pour la période prévue.",
+      es: "La fecha se publicará cuando la confirme el organizador — consulte el mes para la ventana prevista.",
+    },
     venueTitle: { sl: "Lokacija", en: "Location", it: "Luogo", de: "Ort", fr: "Lieu", es: "Lugar" },
     priceTitle: { sl: "Vstopnina", en: "Admission", it: "Ingresso", de: "Eintritt", fr: "Entrée", es: "Entrada" },
     featured: { sl: "Izpostavljeno", en: "Featured", it: "In evidenza", de: "Empfohlen", fr: "En vedette", es: "Destacado" },
@@ -254,6 +272,8 @@ export function EventsView() {
                                 {e.title}
                               </h4>
                               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                                {/* QA P0 (#34→#38): potrjen datum = <time>; nepotrjen =
+                                    pošten napis brez izmišljenega datuma (ni <time dateTime>). */}
                                 <span
                                   className="inline-flex items-center gap-1.5"
                                   title={pick(l, L.dateTitle)}
@@ -262,9 +282,15 @@ export function EventsView() {
                                     className="size-4 text-primary"
                                     aria-hidden="true"
                                   />
-                                  <time dateTime={e.dateStart} className="font-medium text-foreground/80">
-                                    {e.dateLabel}
-                                  </time>
+                                  {e.dateUnconfirmed ? (
+                                    <span className="font-medium text-foreground/70 italic">
+                                      {pick(l, L.unconfirmedDate)}
+                                    </span>
+                                  ) : (
+                                    <time dateTime={e.dateStart} className="font-medium text-foreground/80">
+                                      {e.dateLabel}
+                                    </time>
+                                  )}
                                 </span>
                                 <span
                                   className="inline-flex items-center gap-1.5"
@@ -286,6 +312,11 @@ export function EventsView() {
                               <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">
                                 {e.description}
                               </p>
+                              {e.dateUnconfirmed && (
+                                <p className="text-xs text-muted-foreground/80">
+                                  {pick(l, L.unconfirmedNote)}
+                                </p>
+                              )}
                               <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-1">
                                 <AddToTripButton
                                   refId={`dogodek/${e.id}`}

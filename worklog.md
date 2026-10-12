@@ -123,3 +123,22 @@ Stage Summary:
 - PR #36 potrjen kot zdrav kanon: CI 3/3 zeleno, mergeable clean, 4/4 POLIR15 točk implementiranih po specifikaciji.
 - Verifikacijski komentar: https://github.com/robertpezdirc12-design/discover-slovenia-ai/pull/36#issuecomment-6130316858
 - Naslednji korak je uporabnikov: merge PR #36 (zapre #34) + PREKLIC žetona ghp_… (Settings → Developer settings → Tokens).
+
+---
+Task ID: QA38-P0 (faza 1: merge PR #36 + follow-up issue #38 + P0 dogodki 1. serija)
+Agent: Z.ai Code (glavni orkestrator)
+Task: Merge PR #36 (po uporabnikovem ukazu), prenos ostankov #34 v sledilni issue #38, izvedba P0 dogodkov (1. serija): verifikacija pri primarnih virih, popravki podatkov, regresijski testi, PR #39.
+
+Work Log:
+- MERGE PR #36: API PUT merge (metoda merge commit, kot pri #33/#32) — commit 63d0b17; issue #34 avtomatsko zaprt (reason: completed); main @ 2.42.0
+- KONSOLIDACIJA: #34 je obsegal več kot POLIR15 — ustvarjen sledilni issue #38 (P0 dogodki / P1 načrtovalnik+SEO / P2 dostopnost, prenos 1:1) + zaključni komentar na #34 z jasnim obsegom zaprtja
+- P0 RAZISKAVA (spletni viri, 2026-10-12): page_reader na 7 primarnih virih + DNS preverba 11 domen. Ugotovitve: Kurentovanje 2027 = 3.–9. feb (POTRJENO); maraton = 17.–18. okt 2026 („25. maj 2027“ izmišljen); Vinska vigred = Metlika/maj („Lent Maribor/marec“ napačno; vinskavigred.si = vinarna Šturm!); Planica = FIS finale (2027 neobjavljen); Jurjevanje = junij (ne april); zlati-lisjak.si, festivalsoca.si, festivalblejskihdni.si = mrtve domene
+- IMPLEMENTACIJA: content-data.ts — nov model dateUnconfirmed/source/verifiedAt; 8 dogodkov pošteno nepotrjenih (dateStart "", „datum še ni potrjen“), 2 potrjena z datumom; events-view.tsx — pošten 6-jezični prikaz + opomba o oknu; testi: nov events-p0-qa38.test.ts (14 zaklepov) + posodobljen content-data.test.ts (ISO ALI prazen; mesec le pri potrjenih; mrtve domene; filtri/prelom leta)
+- HIŠNA KONVENCIJA: verzija 2.43.0 na vseh mestih (package.json, health, sw.js, footer, README, p2-data-plane, pwa-sw); worklog.md vnos v repozitoriju; 2 commita (feature + VERZIJA bump) na veji fix/qa38-p0-dogodki-2.43.0
+- VERIFIKACIJA: bun test 1992/0 (16381 expect, 99 datotek), tsc --noEmit 0, eslint 0; napaka „1c fail“ = test išče nominativ „Metlika“ namesto mestnika „Metliki“ — popravljeno na case-insensitive koren „metlik“
+- PUSH + PR #39 (Refs #38 — issue ostaja odprt) + status komentar na #38
+
+Stage Summary:
+- main @ 2.42.0 (POLIR15 zlito), issue #34 zaprt z dokumentiranim obsegom
+- Issue #38 = nadzorni seznam ostankov; PR #39 = P0 dogodki 1. serija (2 potrjena, 8 pošteno nepotrjenih, 4 mrtve domene, regresijska mreža), CI pending
+- Varnost: žeton še vedno v pogovoru — po merge-u PR #39 uporabniku priporočeno preklicati

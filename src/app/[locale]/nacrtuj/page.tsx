@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 
 import { alternatesFor } from "@/lib/hreflang";
 import PlanView from "./view";
@@ -19,6 +20,12 @@ export async function generateMetadata({
   return { alternates: alternatesFor(locale, "/nacrtuj") };
 }
 
-export default function PlanPage() {
-  return <PlanView />;
+export default async function PlanPage() {
+  // POLIR13 (2.40.0): sejni piškotek dai:next-step-dismissed (zrcal
+  // sessionStorage ob dismissu) preberemo na strežniku in next-step kartico
+  // izpustimo ŽE v SSR — po ponovnem nalaganju v isti seji je ni (0 px
+  // premika, CLS ≈ 0 tudi po dismissu).
+  const nextStepDismissed =
+    (await cookies()).get("dai:next-step-dismissed")?.value === "1";
+  return <PlanView nextStepDismissed={nextStepDismissed} />;
 }

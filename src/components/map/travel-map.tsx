@@ -1540,15 +1540,21 @@ export default function TravelMap() {
         />
       </div>
 
-      {/* ── POLIR14: VZTRAJEN preklop „Zemljevid ⇄ Seznam“ (samo <lg) ──
+      {/* ── POLIR15 (2.42.0): VZTRAJEN preklop „Zemljevid ⇄ Seznam“ (samo <lg) ──
           saasfactor kanon (raziskava §6.1): „list-versus-map toggle should
           be persistent and easy to switch“ — seznam je bil prej 472 px
           pod pragom prvega zaslona, zdaj je 1 dejanje stran. Aktivni gumb
-          variant="default", neaktivni "outline"; stanje v aria-pressed. */}
+          variant="default", neaktivni "outline"; stanje v aria-pressed.
+          POLIR15-a (2.42.0): vrstica je ZDAJ STICKY (top-16 = pod sticky
+          glavo h-16, z-30 = nad zemljevidom z-0, pod glavo z-40) z neprosojnim
+          ozadjem — ko zemljevid drsi pod njo, preklop OSTANE dosegljiv
+          (nazaj na seznam = 1 dejanje kadar koli; zgled Wanderlog/Švica:
+          preklop kot persistentna glava pogleda). Višina vrstice NI
+          spremenjena (0 odmikov, 0 premika postavitve). */}
       <div
         role="group"
         aria-label={t("viewToggleLabel")}
-        className="mt-3 flex gap-2 max-lg:order-3 lg:hidden"
+        className="mt-3 flex gap-2 max-lg:sticky max-lg:top-16 max-lg:z-30 max-lg:bg-background max-lg:order-3 lg:hidden"
       >
         <Button
           type="button"
@@ -1865,9 +1871,17 @@ export default function TravelMap() {
         {/* POLIR14: ovoj zemljevida se na mobilnem v pogledu „list“
             skrije (max-lg:hidden) — seznam zasede prvi zaslon; namizje
             (lg+) sploh ne pozna preklopa (razred se ne aktivira). */}
+        {/* POLIR15-a (2.42.0): `relative z-0 isolate` — mapa dobi LASTEN
+            stacking context: Leafletovi notranji z-indexi (pane ~400,
+            kontrole ~800–1000) prej »pobegnejo« v koreninski kontekst in
+            prekrijejo sticky glavo (z-40) ter sticky preklop (z-30), ko
+            zemljevid drsi pod njiju. Izolacija JIH ZAKLENE noter — Leaflet
+            CSS OSTANE NESPREMJEN (0 hakerskih prepisov, kanon prilagoditve
+            zemljevidov); namizna split view in popups/tooltips so
+            nespremenjeni (vsi ostanejo znotraj ovoja, ki je že overflow-hidden). */}
         <div
           className={cn(
-            "overflow-hidden rounded-xl border shadow-sm",
+            "relative z-0 isolate overflow-hidden rounded-xl border shadow-sm",
             mobileView === "list" && "max-lg:hidden"
           )}
           role="region"

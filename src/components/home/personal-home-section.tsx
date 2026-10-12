@@ -40,8 +40,8 @@ import {
   Route,
   Sun,
   TriangleAlert,
+  type LucideIcon,
 } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -247,9 +247,16 @@ type Lang = "sl" | "en";
 
 // ── Sekcija ─────────────────────────────────────────────────────────────────
 
-export function PersonalHomeSection() {
-  const { status } = useSession();
-  if (status !== "authenticated") return null;
+/**
+ * POLIR15-c (2.42.0): vrata so STREŽNIŠKA (prop `gate` iz page.tsx —
+ * getSessionGate: cache getServerSession, fail-closed). Prej je klientni
+ * status seje med „loading“ renderiral NIČ in sekco vstavil šele po
+ * hidraciji — dva premika vsebine pod sekco. Zdaj je sekca pri prijavljenih
+ * ŽE v SSR HTML (skelet strukturno identičen plošči) oziroma trajno odsotna
+ * pri gostih (0 klientne vode, javni Discover se nadaljuje nespremenjen).
+ */
+export function PersonalHomeSection({ gate = false }: { gate?: boolean }) {
+  if (!gate) return null;
   return <PersonalBoard />;
 }
 
@@ -313,19 +320,16 @@ function PersonalBoard() {
   }, [trips, today]);
 
   if (loading) {
-    return (
-      <section
-        aria-busy="true"
-        aria-label={t("title")}
-        className="mx-auto w-full max-w-7xl px-4 pt-8 sm:px-6 lg:px-8"
-      >
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[0, 1, 2].map((i) => (
-            <Skeleton key={i} className="h-40 w-full" />
-          ))}
-        </div>
-      </section>
-    );
+    // POLIR15-c (2.42.0): skelet je STRUKTUORNO IDENTIČEN plošči (isti
+    // naslovni blok z realnimi statičnimi besedili, ista mreža, iste kartice
+    // z realnimi naslovi, ista nalogovna kartica) — rezervacija prostora po
+    // web.dev kanonu „Reserve space for late-loading content“: podatki
+    // (4 API klici) zamenjajo samo telesa kartic, vložišče pod sekco NE
+    // premaknejo. Telesa skeletov sledijo obliki PRAZNEGA stanja
+    // (najpogostejši primer: svež račun); dolgi seznami živijo v omejenih
+    // drsnih vsebnikih (max-h-24/max-h-40) ⇒ preostali primanjkljaj je
+    // omejen (≤ višina kartice).
+    return <PersonalBoardSkeleton t={t} />;
   }
 
   return (
@@ -362,6 +366,125 @@ function PersonalBoard() {
     </section>
   );
 }
+
+// ── 0) SKELET — strukturno identičen plošči (POLIR15-c, CLS 0) ──────────────
+
+/** Kartica skeleta: REALEN naslov (statičen i18n) + skelet telesa. */
+function SkeletonCard({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon: LucideIcon;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card aria-hidden="true">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Icon className="size-5 text-primary" aria-hidden="true" />
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>{children}</CardContent>
+    </Card>
+  );
+}
+
+/**
+ * Skelet osebne plošče — ZRCALI PersonalBoard: isti naslovni blok (realna
+ * statična besedila — t() je determinističen), ista mreža, 6 kartic z realnimi
+ * naslovi, nalogovna kartica. Vreme/V bližini izriseta svoji REALNI idle
+ * stanji (deterministični statični besedili — ni premika).
+ */
+function PersonalBoardSkeleton({ t }: { t: (k: LabelKey) => string }) {
+  return (
+    <section
+      aria-busy="true"
+      aria-label={t("title")}
+      className="mx-auto w-full max-w-7xl px-4 pt-8 sm:px-6 lg:px-8"
+    >
+      <div className="mb-4">
+        <p className="text-xs font-bold tracking-[0.18em] text-primary uppercase">
+          {t("kicker")}
+        </p>
+        <h2 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
+          {t("title")}
+        </h2>
+        <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">
+          {t("lead")}
+        </p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {/* 1) Nadaljuj pot — prazno stanje: naslov vrstice + meta + gumb. */}
+        <SkeletonCard title={t("continueTitle")} icon={Route}>
+          <div className="space-y-2.5">
+            <Skeleton className="h-5 w-2/3" />
+            <Skeleton className="h-5 w-1/2" />
+            <Skeleton className="h-10 w-36 rounded-md" />
+          </div>
+        </SkeletonCard>
+        {/* 2) Obvestila — prazno stanje: besedilo brez gumba. */}
+        <SkeletonCard title={t("alertsTitle")} icon={Bell}>
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-3/4" />
+          </div>
+        </SkeletonCard>
+        {/* 3) Spremljanja — prazno stanje: besedilo brez gumba. */}
+        <SkeletonCard title={t("watchTitle")} icon={ListChecks}>
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-3/4" />
+          </div>
+        </SkeletonCard>
+        {/* 4) Vreme naslednje pote — REALNA komponenta (brez pote = idle,
+            deterministično statično besedilo — 0 premika). */}
+        <WeatherCard upcoming={null} t={t} l="sl" />
+        {/* 5) Ideje zate — realen opis + prazno stanje (besedilo + gumb). */}
+        <Card aria-hidden="true">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Lightbulb className="size-5 text-primary" aria-hidden="true" />
+              {t("ideasTitle")}
+            </CardTitle>
+            <CardDescription>
+              {
+                "Deterministično iz tvojih preferenc (0-AI) — z razlogom."
+              }
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2.5">
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-5 w-2/3" />
+              <Skeleton className="h-10 w-32 rounded-md" />
+            </div>
+          </CardContent>
+        </Card>
+        {/* 6) V bližini — REALNA komponenta (idle = statično besedilo + gumb,
+            0 premika; GPS teče šele ob kliku, zasebnost nespremenjena). */}
+        <NearbyCard t={t} l="sl" />
+      </div>
+
+      {/* Nalogovna kartica — realen naslov + prazno stanje (ena vrstica). */}
+      <Card className="mt-4" aria-hidden="true">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <CheckCircle2 className="size-5 text-primary" aria-hidden="true" />
+            {t("tasksTitle")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-5 w-2/3" />
+        </CardContent>
+      </Card>
+    </section>
+  );
+}
+
 
 // ── 1) NADALJUJ POT ─────────────────────────────────────────────────────────
 

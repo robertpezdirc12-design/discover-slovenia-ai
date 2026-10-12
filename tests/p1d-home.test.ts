@@ -49,14 +49,20 @@ describe("p1d [source-contract]: /api/trips razširitev", () => {
 // ── ② Osebna sekcija domov: gost/prijavljen + zasebnost ─────────────────────
 
 describe("p1d [source-contract]: osebna sekcija domov", () => {
-  test("④ se izriše SAMO prijavljenim (status authenticated)", async () => {
+  test("④ se izriše SAMO prijavljenim (POLIR15-c: strežniška vrata gate prop)", async () => {
     const code = await src(PERSONAL);
-    expect(code).toContain('status !== "authenticated"');
+    // POLIR15-c (2.42.0): vrata so ZDAJ STREŽNIŠKA (prop gate iz page.tsx —
+    // getSessionGate: cache getServerSession, fail-closed); zaklep ④ iz
+    // P1-D posodobljen — useSession klientni status ni več vir vrata
+    // (vstavljanje sekce po hidraciji = 2 premika vsebine).
+    expect(code).toContain("if (!gate) return null;");
+    expect(code).not.toContain("useSession()");
   });
 
   test("⑤ vgrajena v HomeView za javnim Discoverjem (NextStep ostaja)", async () => {
     const home = await src(HOME);
-    expect(home).toContain("<PersonalHomeSection />");
+    // POLIR15-c (2.42.0): sekca dobi strežniška vrata (personalGate).
+    expect(home).toContain("<PersonalHomeSection gate={personalGate} />");
     expect(home).toContain('NextStepCard ctx={nextStepCtx} surface="home"');
   });
 

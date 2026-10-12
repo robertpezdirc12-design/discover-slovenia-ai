@@ -248,9 +248,16 @@ describe("POLIR14 B: statistika /zemljevid", () => {
       kompaktnaIdx,
       "kompaktna vrstica mora biti ZA <TravelMap v datoteki"
     ).toBeGreaterThan(zemljevidIdx);
-    // skelet: ožji odmik na mobilnem + skelet seznama skrit (mapa-first)
+    // skelet: POLIR15-d (2.42.0) — strukturno identičen CELOTNEMU TravelMap:
+    // vrstica iskanja nosi glavni odmik (mt-4 / lg:mt-8), mreža zemljevida
+    // sledi z mt-4 (za preklopnim pasom), mapa+seznam order-4, legenda
+    // order-7 → ob naložitvi Leafleta NI vstavljanja kontrolnih vrstic
+    // (prej CLS ≈ 0,023; zaklep ⑨ iz POLIR14 posodobljen na novo strukturo).
     expect(STRAN).toContain(
-      '"mt-4 lg:mt-8 grid gap-4 lg:grid-cols-[1fr_340px]"'
+      '"mt-4 grid grid-cols-[1fr_auto] gap-3 md:grid-cols-[1fr_auto_auto] lg:mt-8 max-lg:order-1"'
+    );
+    expect(STRAN).toContain(
+      '"mt-4 grid gap-4 lg:grid-cols-[1fr_340px] max-lg:order-4"'
     );
     expect(STRAN).toContain('className="hidden space-y-2 lg:block"');
   });

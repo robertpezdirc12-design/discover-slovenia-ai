@@ -2786,3 +2786,22 @@ Stage Summary:
 - Zavestne odločitve dokumentirane: style-src 'unsafe-inline' (Tailwind/Leaflet/chart), [locale] dinamično izrisovanje (zahteva nonce — SSG nemogoč), korenska 404 mila degradacija
 - Od §9 ostajata SAMO opcijski nizki: skupna shramba rate limitov (ob rasti) + ignoreBuildErrors (po stabilizaciji)
 - Sledi: PR → CI → merge → komentar na issue #2
+
+---
+Task ID: POLIR15 (issue #34)
+Agent: Z.ai Code (glavni, cikel raziskava → specifikacija → implementacija → verifikacija)
+Task: POLIR15 (2.42.0) — štiri kandidate iz issue #34: (a) sticky preklop nad Leafletom (z-index nasprotje), (b) sezonska afiniteta heroja (vrzel #3), (c) PersonalHomeSection CLS za prijavljene, (d) CLS skeleta zemljevida (0,023 → 0).
+
+Work Log:
+- Raziskava: Leaflet 1.9 z-index arhitektura (pane ~200–400, kontrole ~800–1000 pobegnejo stacking contextu), sezonski koledar kampanj Švice (myswitzerland.com) + Tourism Ireland »Home of Halloween«, web.dev »Reserve space for late-loading content« (POLIR13 kanon)
+- POLIR15-a: ovoj zemljevida v travel-map.tsx dobi `relative z-0 isolate` (lasten stacking context — Leaflet CSS NESPREMJEN, 0 prepisov v globals.css); preklopna vrstica »Zemljevid ⇄ Seznam« zdaj `max-lg:sticky max-lg:top-16 max-lg:z-30 max-lg:bg-background` (drsi pod glavo h-16, mapa pod njo, višina vrstice nespremenjena = 0 CLS)
+- POLIR15-b: nov čist modul src/lib/seasonal-hero.ts (0 uvozov, 0 AI): MMDD okna z ovitkom čez leto (zima 1.12.–15.3.) + izvorni SI mikro-dogodki (martinovanje 8.–14.11., kurentovanje 2.–5.2., december 1.–26.12.), 6-jezični čipi; page.tsx razreši varianto ENKRAT na strežniku (+ QA kavelj ?sezona=) in poda prop — 0 hidracijske razlike
+- POLIR15-c: nov src/lib/session-gate.ts — getSessionGate = cache(getServerSession) (JWT = 0 db klicev, fail-closed = gost); page.tsx → personalGate prop → PersonalHomeSection({ gate }); useSession odstranjen iz odločanja; nov PersonalBoardSkeleton strukturno identičen plošči (realni statični naslovi, 6 kartic, realni idle Vreme/V bližini, nalogovna kartica) — sekca je ŽE v SSR (prijavljeni) oziroma trajno odsotna (gostje)
+- POLIR15-d: skelet v zemljevid/view.tsx zrcali CELOTNO drevo TravelMap (order-1…7: iskanje+regija, čipi, preklop, plasti, mapa+seznam, legenda; isti odmiki mt-4/mt-3; višina mape = dobesedno isti razredni niz kot MapContainer) — prej so se kontrolne vrstice vstavile ob naložitvi Leafleta (CLS ≈ 0,023)
+- Testi: 3 novi datoteke (seasonal-hero 13 enotskih; map-sticky-cls 10 source-contract; personal-home-cls 10 source-contract) = 33 novih zaklepov; posodobljena zaklepa p1d-home ④/⑤ (useSession → strežniška vrata) in map-mobile-first ⑨ (nov skelet)
+- Verifikacija: bun test 1976 pass / 0 fail (16017 expect); tsc --noEmit 0; eslint 0; E2E brskalnik @390×844: sezonski čip »Jeseni v Sloveniji« v SSR, ?sezona=winter → »Zima v Sloveniji«, sticky preklop ujet pri y=64 (computed: sticky/64px/30) in klikaben med lepljenjem (preklop v Seznam takojšen), namizje @1440×900 nespremenjeno (split view, preklop hidden), prijava → osebna plošča iz SSR skeleta (aria-busy v HTML, brez vstavljanja po hidraciji); 0 konzolnih napak
+
+Stage Summary:
+- Vse 4 točke POLIR15 implementirane + testno zaklenjene + E2E preverjene; 0 AI; Leaflet CSS nespremenjen; namizje (lg+) nespremenjeno na /zemljevid, gostje nedotaknjeni na /
+- Nova zmožnost: sezonski hero z izvornim SI koledarjem mikro-dogodkov (ST kanon) — vsota sezona+dogodek kot pripoved
+- CWV: /zemljevid CLS ≈ 0,023 → ≈ 0 (strukturarna rezervacija), domov: brez vstavljanja osebne sekce po hidraciji

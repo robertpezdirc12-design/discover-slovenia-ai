@@ -17,6 +17,12 @@ import { jsonldScriptHtml, touristDestinationJsonLd } from "@/lib/jsonld";
  * kanon, geo = realne koordinate, image = realna fotografija). Inline
  * skripta nosi CSP nonce z zahteve (middleware → x-nonce; brez nonca bi
  * jo produkcjska CSP blokirala — enak kanon kot layout/next-themes).
+ *
+ * POLIR10 (2.37.0): suppressHydrationWarning na ld+json skripti utiša
+ * hidracijsko primerjavo PER-ZAHTEVNEGA atributa nonce (odjemalec ima v
+ * flight podatkih prazen niz; vsebina skripte je deterministična in se
+ * ne razlikuje) — enak kanon kot <html> za next-themes v layoutu;
+ * nonce atribut OSTANE v izpisanem HTML (produkcjska CSP zahteva ga).
  */
 
 interface Props {
@@ -60,6 +66,7 @@ export default async function DestinationPage({ params }: Props) {
       <script
         type="application/ld+json"
         nonce={nonce}
+        suppressHydrationWarning
         dangerouslySetInnerHTML={{
           __html: jsonldScriptHtml(touristDestinationJsonLd(d, locale)),
         }}

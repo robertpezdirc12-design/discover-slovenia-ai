@@ -51,7 +51,7 @@
 "use strict";
 
 /** Verzija service workerja — usklajena s package.json ob izdaji. */
-const SW_VERSION = "2.36.0";
+const SW_VERSION = "2.37.0";
 
 /** Predpona imen predpomnilnikov (čistilni kriterij ob activate). */
 const CACHE_PREFIX = "dsa";

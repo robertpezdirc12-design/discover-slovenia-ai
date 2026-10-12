@@ -17,22 +17,54 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { pick } from "@/lib/i18n-pick";
 import { DESTINATIONS } from "@/lib/slovenia-data";
 
-/** Nalagalni ovoj — Skeleton v višini zemljevida (brez skoka postavitve). */
+/** Nalagalni ovoj — skelet STRUKTUORNO IDENTIČEN TravelMap (POLIR15-d).
+ *
+ * POLIR15-d (2.42.0): skelet je prej rezerviral SAMO zemljevid + seznam —
+ * nadzorne vrstice (iskanje+regija, čipi, preklop, plasti) in legenda so se
+ * VSTAVILI ob razrešitvi dinamičnega uvoza (vse pod njimi se premakne:
+ * izmerjeno CLS ≈ 0,023 na /zemljevid). Zdaj skelet ZRCALI celotno drevo
+ * TravelMap po vrstnem redu DOM in mobilnih order razredih (order-1…7):
+ * iskanje → čipi → preklop (<lg) → plasti → mapa+seznam → legenda, z ISTIMI
+ * odmiki (mt-4/mt-3) in ISTIMI višinami (h-11/h-9/h-13/svh) — ob naložitvi
+ * Leafleta NI vstavljanja, NI premika (web.dev „Reserve space for
+ * late-loading content“). Višina zemljevida je dobesedno ISTI niz razredov
+ * kot MapContainer v travel-map.tsx (svh enote, POLIR12). */
 const TravelMap = dynamic(() => import("@/components/map/travel-map"), {
   ssr: false,
   loading: () => (
-    <div className="mx-auto w-full max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
-      {/* POLIR14 (2.41.0): ožji zgornji odmik skeleta na mobilnem (mt-4) —
-          zrcali stisnjeno glavo strani (pt-6); podniz mreže ⑭-style
-          (grid gap-4 lg:grid-cols-[1fr_340px]) ostaja. Skelet seznama je
-          na mobilnem skrit (hidden lg:block) — mapa-first pariteta: pod
-          zemljevidnim skeletom NI skeleta seznama, ker seznam na mobilnem
-          privzeto ni viden (preklop v travel-map). */}
-      <div className="mt-4 lg:mt-8 grid gap-4 lg:grid-cols-[1fr_340px]">
-        {/* POLIR12 (2.39.0): višina skeleta v svh enotah — ZRCALI višino
-            zemljevida (MapContainer v travel-map.tsx): svh = stabilen
-            najmanjši viewport, ob naložitvi Leafleta ni skoka postavitve
-            (pariteta zaklenjena s testom ④ stable-viewport-heights). */}
+    <div
+      aria-busy="true"
+      className="mx-auto w-full max-w-7xl px-4 pb-12 sm:px-6 lg:px-8 max-lg:flex max-lg:flex-col"
+    >
+      {/* order-1: iskanje + regija (+ prostor ponovitve/md+ števec). */}
+      <div className="mt-4 grid grid-cols-[1fr_auto] gap-3 md:grid-cols-[1fr_auto_auto] lg:mt-8 max-lg:order-1">
+        <Skeleton className="h-11 w-full rounded-md" />
+        <Skeleton className="h-11 w-36 rounded-md md:w-56" />
+        <Skeleton className="hidden h-11 w-28 rounded-md md:block" />
+      </div>
+      {/* order-2: čipi tipov (drsenje — višina 36 + pb-1 je neodvisna od št. čipov). */}
+      <div className="relative mt-3 max-lg:order-2" aria-hidden="true">
+        <div className="flex gap-2 overflow-hidden pb-1">
+          <Skeleton className="h-9 w-28 shrink-0 rounded-full" />
+          <Skeleton className="h-9 w-32 shrink-0 rounded-full" />
+          <Skeleton className="h-9 w-24 shrink-0 rounded-full" />
+          <Skeleton className="h-9 w-36 shrink-0 rounded-full" />
+        </div>
+      </div>
+      {/* order-3: preklop „Zemljevid ⇄ Seznam“ (samo <lg, sticky vrstica). */}
+      <div className="mt-3 flex gap-2 max-lg:order-3 lg:hidden" aria-hidden="true">
+        <Skeleton className="h-11 flex-1 rounded-md" />
+        <Skeleton className="h-11 flex-1 rounded-md" />
+      </div>
+      {/* order-5: plasti (Lokali/Bencinske/POI) — na mobilnem POD zemljevidom. */}
+      <div className="mt-3 flex flex-wrap items-center gap-2 max-lg:order-5" aria-hidden="true">
+        <Skeleton className="h-11 w-32 shrink-0 rounded-full" />
+        <Skeleton className="h-11 w-36 shrink-0 rounded-full" />
+        <Skeleton className="h-11 w-28 shrink-0 rounded-full" />
+      </div>
+      {/* order-4: mapa + seznam — višina mape = DOBESEDNO isti razredni niz
+          kot MapContainer (travel-map.tsx) → 0 px premika ob naložitvi. */}
+      <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_340px] max-lg:order-4">
         <Skeleton className="h-[62svh] min-h-80 rounded-xl sm:h-[70svh] lg:h-[calc(100svh-15rem)] lg:min-h-[540px]" />
         <div className="hidden space-y-2 lg:block">
           <Skeleton className="h-4 w-40" />
@@ -40,6 +72,11 @@ const TravelMap = dynamic(() => import("@/components/map/travel-map"), {
             <Skeleton key={i} className="h-13 w-full rounded-lg" />
           ))}
         </div>
+      </div>
+      {/* legenda (order-7) — rezervacija prostora (leži pod prelomom prvega
+          zaslona na vseh velikostih, vseeno jo zrcalimo za 0 premika noge). */}
+      <div className="mt-4 max-lg:order-7" aria-hidden="true">
+        <Skeleton className="h-40 w-full rounded-xl sm:h-20" />
       </div>
     </div>
   ),

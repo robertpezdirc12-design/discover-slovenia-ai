@@ -55,6 +55,10 @@ import {
   getFeaturedDestinations,
   type DestinationType,
 } from "@/lib/slovenia-data";
+// POLIR15-b (2.42.0): sezonska varianta heroja razrešena na STREŽNIKU
+// (page.tsx → prop) — klient nikoli ne računa datuma sam (0 hidracijske
+// razlike ob polnoči/robu okna).
+import type { HeroSeasonalVariant } from "@/lib/seasonal-hero";
 
 /** Ikone tipov (Razišči po temah). */
 const TYPE_ICONS: Record<DestinationType, React.ComponentType<{ className?: string }>> = {
@@ -538,12 +542,22 @@ const BOOKING_PARTNERS = providersPublicDTO();
 
 export function HomeView({
   nextStepDismissed = false,
+  personalGate = false,
+  seasonalHero = null,
 }: {
   /** POLIR13 (2.40.0): sejni dismiss zrcaljen v piškotek
    *  dai:next-step-dismissed — strežniški starš (page.tsx) ga prebere s
    *  cookies() in kartico izpusti ŽE v SSR (ni rezervacije prostora, ni
    *  premika vsebine po ponovnem nalaganju v isti seji). */
   nextStepDismissed?: boolean;
+  /** POLIR15-c (2.42.0): STREŽNIŠKA vrata osebne domov (getSessionGate —
+   *  cache getServerSession) — sekca je ŽE v SSR (prijavljeni) oziroma
+   *  trajno odsotna (gostje); prej je useSession() na klientu vstavljal
+   *  sekco šele po razrešitvi statusa (dva premika vsebine). */
+  personalGate?: boolean;
+  /** POLIR15-b (2.42.0): sezonska varianta heroja (badge čip) razrešena
+   *  na strežniku; null = brez čipa (defenzivno — page.tsx vedno poda). */
+  seasonalHero?: HeroSeasonalVariant | null;
 }) {
   const l = useLocale();
   const router = useRouter();
@@ -601,7 +615,20 @@ export function HomeView({
           className="pointer-events-none absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_20%_20%,white_0,transparent_12%),radial-gradient(circle_at_80%_60%,white_0,transparent_16%)]"
         />
         <div className="relative mx-auto flex w-full max-w-7xl flex-col items-center px-4 py-16 text-center sm:px-6 sm:py-24 lg:px-8">
-          <p className="text-xs font-bold tracking-[0.22em] text-white/80 uppercase">
+          {/* POLIR15-b (2.42.0): SEZONSKI ČIP nad kickerjem — sezonska
+              afiniteta po vzoru Švice (sezonski koledar kampanj) in Irske
+              (dogodek kot pripovedovalec): ST MMDD okna + izvorni SI
+              mikro-dogodki (martinovanje/kurentovanje/december) razrešeni
+              na strežniku. Statičen SSR = 0 CLS (višino absorbira py-16/24). */}
+          {seasonalHero && (
+            <p
+              data-testid="seasonal-badge"
+              className="inline-flex items-center rounded-full border border-white/30 bg-white/10 px-3.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/90"
+            >
+              {pick(l, seasonalHero.badge)}
+            </p>
+          )}
+          <p className="mt-3 text-xs font-bold tracking-[0.22em] text-white/80 uppercase">
             {t("heroKicker")}
           </p>
           <h1 className="mt-3 max-w-3xl text-4xl font-bold tracking-tight text-balance sm:text-5xl lg:text-6xl">
@@ -693,8 +720,12 @@ export function HomeView({
       )}
 
       {/* ======== P1-D (issue #3 §9): PERSONALIZIRANA DOMOV — samo prijavljeni
-           (gostjev javni Discover se nadaljuje nespremenjen spodaj) ======== */}
-      <PersonalHomeSection />
+           (gostjev javni Discover se nadaljuje nespremenjen spodaj).
+           POLIR15-c (2.42.0): vrata so ZDAJ STREŽNIŠKA (personalGate —
+           getSessionGate v page.tsx); sekca je ŽE v SSR HTML ali trajno
+           odsotna — brez useSession „loading“ faze in brez vstavljanja po
+           hidraciji (0 premika vsebine pod sekco). ======== */}
+      <PersonalHomeSection gate={personalGate} />
 
       {/* ======== RAZIŠČI PO TEMAH ======== */}
       <section aria-labelledby="teme" className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8">

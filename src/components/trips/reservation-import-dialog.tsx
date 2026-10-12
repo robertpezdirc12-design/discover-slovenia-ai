@@ -242,7 +242,9 @@ export function ReservationImportDialog({
           {pick(l, L.trigger)}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-2xl">
+        {/* POLIR11: dvh namesto vh — uvoz rezervacije ne sega več pod mobilno
+            naslovno vrstico brskalnika (enako vh na namizju). */}
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ClipboardPaste className="size-5 text-primary" aria-hidden="true" />

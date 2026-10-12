@@ -734,7 +734,8 @@ function ListingEditorDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
+        {/* POLIR11: dvh namesto vh (enako vh na namizju). */}
         <DialogHeader>
           <DialogTitle>{isEdit ? t("editTitle") : t("newTitle")}</DialogTitle>
           <DialogDescription>{isEdit ? t("editDesc") : t("newDesc")}</DialogDescription>

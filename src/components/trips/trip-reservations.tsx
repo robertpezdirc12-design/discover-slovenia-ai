@@ -1974,7 +1974,10 @@ export function TripReservations({
             if (!open) closeConfirmModal();
           }}
         >
-          <DialogContent className="sm:max-w-md">
+          {/* POLIR11: največja višina 90 dvh + notranje drsenje — atestacija z
+              opombo doseže 100 % uporabne višine @320 (0 rezerve) → odrezano
+              dno brez drsenja (shadcn-ui/ui #16); dvh po §3 raziskave. */}
+          <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <TicketCheck className="size-5 text-primary" aria-hidden="true" />
@@ -2047,7 +2050,7 @@ export function TripReservations({
                 size="sm"
                 onClick={() => void submitConfirmation()}
                 disabled={busy}
-                className="gap-1.5"
+                className="gap-1.5 whitespace-normal text-left"
               >
                 {busy ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -2072,7 +2075,7 @@ export function TripReservations({
             if (!open) closeSearchModal();
           }}
         >
-          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <TicketCheck className="size-5 text-primary" aria-hidden="true" />
@@ -2604,7 +2607,9 @@ export function TripReservations({
             if (!open) setDemoEdit(null);
           }}
         >
-          <DialogContent className="sm:max-w-md">
+          {/* POLIR11: največja višina 90 dvh + notranje drsenje — enaka
+              straža kot potrditveni modal (shadcn-ui/ui #16). */}
+          <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <FlaskConical
@@ -2690,7 +2695,7 @@ export function TripReservations({
                 size="sm"
                 onClick={() => void submitDemoModify()}
                 disabled={busy}
-                className="gap-1.5"
+                className="gap-1.5 whitespace-normal text-left"
               >
                 {busy ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />

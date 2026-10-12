@@ -252,7 +252,11 @@ export function CheckoutModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      {/* POLIR11: največja višina 85 dvh + notranje drsenje — dolga vsebina
+          zaključka nakupa drsi ZNOTRAJ dialoga namesto da se odreže dno
+          (shadcn-ui/ui #16); dvh namesto vh — mobilna vrstica brskalnika
+          ne ukrade več spodnjega robu (enako vh na namizju). */}
+      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>{t("description")}</DialogDescription>

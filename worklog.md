@@ -260,3 +260,22 @@ Stage Summary:
 - PR #40 zdaj: P1 SEO + P0 dogodki 1./2./3. serija + P2 dostopnost/besedila (3 commiti, 2.44.0) — čaka ZELEN CI (kvota/billing = uporabniška stran), potem merge.
 - E2E prvič izvedena v peskovniku na uporabnikovem repozitoriju (dev :3100 + agent-browser) — ponovljiv postopek: prisma generate + db:push + bunx next dev -p 3100.
 - Ostalo za #38 po merge-u: P1 Playwright E2E suite + JSON-LD Event schema + ~12 nepotrjenih dogodkov (2027, organizatorji ne objavljajo) + pravne strani vsebinski lektorat (ločen prehod).
+
+---
+Task ID: R35-P1-E2E-JSONLD
+Agent: Z.ai Code (glavni orkestrator)
+Task: Nadaljevanje („odlično nadaljuj") — CI kvota še vedno mrtva (4. zaporedna serija) → preostanek #38 brez kvotnih odvisnosti: Event JSON-LD (/dogodki) + Playwright E2E zlata pot, 2.45.0, commit c1786fd (+bb78b89 worklog) na PR #40.
+
+Work Log:
+- CI AUDIT: run 38348854611 (bce3ae1) + 38351301368 (c1786fd) padeta z 0 koraki — GitHub Actions kvota/billing še vedno izčrpana (zadnja zelena main 19:08 prejšnjega dne); odvisnost ostaja na uporabniški strani (Settings → Billing → Actions).
+- EVENT JSON-LD: src/lib/jsonld.ts + eventsJsonLd(events, locale) — schema.org Event @graph IZKLJUČNO za potrjene datume (18/31; dateUnconfirmed NIKOLI v strukturiranih podatkih — iskrenostni kanon); brez endDate, brez offers, isAccessibleForFree samo za „free", location Place 1:1 + SI (addressLocality se ne ugiba), url po hreflang konvenciji; /dogodki/page.tsx injekcija s CSP nonce; kanarček hydration-nonce zavesten update 2→3 skripti; +6 zaklepov ⑲–㉔ v tests/jsonld-schema.test.ts.
+- PLAYWRIGHT E2E: @playwright/test 1.64 devDep + playwright.config.ts (webServer next dev :3100, reuse izven CI) + e2e/golden-path.e2e.ts + script `e2e`; bun test ne pokaže *.e2e.ts (2033/2033 ostane).
+- E2E ITERACIJE (4 teke do zeleno): (1) regex /V mojo pot/ ujel tudi „Dodaj v mojo pot" → exact ime; (2) dai:last-plan se zapiše šele ob Shrani (ne ob generaciji) → test klikne Shrani; (3) addInitScript je pometal dai:* na VSAKI navigaciji → oznaka dai:e2e-seen (enkrat na kontekst); (4) refId destinacije = slug „bled", ne „destinacija/bled". Rezultat: 2/2 passed (~45 s) — zlata pot + determinizem (isti fingerprint 4cdd15a0; savedAt obvoj pričakovano drugačen).
+- VERIFIKACIJA: bun test 2033/2033 (17960 expect), tsc 0, eslint 0, playwright 2/2; živo curl+agent-browser :3100: /dogodki = 18 Eventov v @graph, nepotrjeni izključeni, nonce prisoten, izris čist (screenshot), title „Dogodki v Sloveniji · Discover Slovenia AI".
+- VERZIJA 2.45.0 na 7 mestih (package.json, health, sw.js, footer, README, p2-data-plane, pwa-sw); README: E2E dokumentacija v Razvoju.
+- GITHUB: push c1786fd + bb78b89 (worklog) na PR #40 (4+1 commitov); PR body dopolnjen (sekcija 2.45.0); komentar na #38 (issuecomment-6138917938).
+
+Stage Summary:
+- PR #40 zdaj: P1 SEO + P0 dogodki 1./2./3. serija + P2 dostopnost + Event JSON-LD + Playwright E2E (2.45.0) — čaka ZELEN CI (uporabnik: Settings → Billing → Actions → rerun).
+- Merila sprejemanja #38: „E2E pot od dodajanja destinacije do napredka v »Na poti« uspe" = ZESENJENO in avtomatizirano; „Vse tri hitre prednastavitve delujejo konsistentno" = determinizem zaklenjen E2E.
+- Preostanek #38 po merge-u: verifikacija ~12 dogodkov 2027 (SDK kvota), pravne strani lektorat (ločen prehod), mobilni E2E projekt (lahko), CI E2E job (ob rešeni kvoti).

@@ -2932,3 +2932,24 @@ Stage Summary:
 ### Stanje
 - CI/kvota: GitHub Actions še vedno pada z 0 koraki (5. serija), SDK web_search/page_reader še vedno 429 → ta prehod je bil 100 % brez kvotnih odvisnosti
 - preostanek #38: verifikacija ~12 dogodkov 2027 (SDK kvota), CI E2E job (Actions kvota), merge PR #40 (Actions kvota)
+
+## 2.47.0 — E2E v CI + regresijski testi filtrov destinacij (2026-10-13, issue #38)
+
+### Kontekst
+- CI (Actions kvota) 6. serija padcev z 0 koraki + SDK web_search 429 → izbran preostanek #38 BREZ kvotnih odvisnosti.
+- Merilo #38 „Filtri dogodkov in destinacij imajo regresijske teste“: filtri dogodkov zaklenjeni (events-p0-qa38), filtri destinacij so bili pokriti SAMO brskalniško (E2E) — logika živa v useMemo odjemalec komponente.
+- Preostanek „CI E2E job (ob rešeni kvoti)“ — izvedeno zdaj, da ob obnovi kvote teče samodejno.
+
+### Spremembe
+- NOVO src/lib/destinations-filter.ts: filterDestinations (iskanje po name/tagline/description/highlights + regija + tip), activeRegionKeys (kanonski vrstni red REGIONS), hasActiveFilters — izvleček 1 : 1 iz destinations-explorer.tsx; komponenta zdaj samo kliče lib.
+- NOVO tests/destinations-filter.test.ts: 20 zaklepov ①–⑦ (rezanje iskalnega niza, velikost črk, iskanje po vseh 4 poljih, neznana regija/tip iz URL-ja → prazen rezultat, „all“, ohranjen vrstni red nabora (determinizem kartic/fingerprinta), aktivne regije, integriteta registra 38/21/9). Kanon iskanja „bled“ = [bled, vintgar] in „vintgarska“ = [bled, vintgar] (vintgar omenjen v poljih).
+- ci.yml: drugi job `e2e` (Playwright zlata pot + mobilni, vzporedno z „vrata“): sveža SQLite (/tmp/e2e.db), prisma generate + db push, playwright install --with-deps chromium, bun run e2e, artefakti playwright-report/ + test-results/ tudi ob padcu; kvotna opomba v glavi posodobljena (+~6 min/push). YAML validiran (past: dvopiče v imenu joba zahteva navedke).
+- Verzija 2.47.0 na 7 mestih; README: banner + razdelek „E2E v CI“.
+
+### Verifikacija
+- bun test 2080/2080 (18203 expect, 103 datotek), tsc 0, eslint 0, Playwright 10/10 (1.7 min).
+- Pouk: ReturnType<typeof genericFn> izgubi generični T (pomožnik ids → eksplicitno generičen <T extends { id: string }>).
+
+### Stanje
+- CI/kvota: GitHub Actions še vedno pada z 0 koraki (6. serija), SDK web_search še vedno 429 → tudi ta prehod 100 % brez kvotnih odvisnosti.
+- preostanek #38: verifikacija ~12 dogodkov 2027 (SDK kvota), merge PR #40 (Actions kvota; E2E job zdaj že definiran).

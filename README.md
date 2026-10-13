@@ -12,7 +12,7 @@
 > deterministični motor (/api/start-anywhere); z-ai-web-dev-sdk odstranjen —
 > kanon P1: 100 % deterministično, 0 AI modelov.
 
-**Verzija: 2.46.0 — P2 LEKTORAT PRAVNIH STRANI + MOBILNI E2E PROJEKT (2026-10-13, issue #38): /pogoji-uporabe — affiliate seznam 1:1 s kanonom registra (dodana Kiwi.com in Rentalcars.com, točno „Viator (Tripadvisor)“, Kiwitaxi izrecno kot prevozi), slike (Unsplash) ločene od zemljevidnih podatkov (© prispevavalci OpenStreetMap, ODbL), cene „€/mesec“ + „obračunava“; /politika-zasebnosti — GDPR katalog pravic popoln (omejitev obdelave + ugovor + prenosljivost, 6 jezikov), „se naročite na novice“; /zaupanje-in-varnost — „avtomatsko izračunano oceno profila“ (slovnična napaka), knjižno „lokal“ namesto „lokalce“; datumi na vseh 3 straneh posodobljeni, ker je bila vsebina dejansko pregledana in popravljena (kanon #38); mobilni Playwright projekt (Pixel 7 — dotik) s stalno preverbo vodoravnega preliva 5 strani × 320/375/390/768/1440, mobilni meni (Escape), dotik zlata pot (skrajšana) in uporabnost zemljevida; 27 novih zaklepov (legal-lektorat); 0 AI.
+**Verzija: 2.47.0 — E2E V CI + REGRESIJSKI TESTI FILTROV DESTINACIJ (2026-10-13, issue #38): Playwright E2E job kot drugi CI job (zlata pot + mobilni projekt na sveži SQLite bazi, Chromium z sistemskimi odvisnostmi, artefakti HTML poročila in sledi tudi ob padcu, +~6 min/push); logika filtrov destinacij (/destinacije: iskanje + regija + tip) izvlečena iz odjemalec komponente v src/lib/destinations-filter.ts (1 : 1 semantika) in zaklenjena s 20 regresijskimi zaklepi (tests/destinations-filter.test.ts: rezanje iskalnega niza, neobčutljivost na velikost črk, iskanje po name/tagline/description/highlights, neznana vrednost regije/tipa iz URL-ja → prazen rezultat, „all“ → brez omejitve, ohranjen vrstni red nabora, aktivne regije v kanonskem vrstnem redu REGIONS, integriteta registra 38 destinacij / 21 regij / 9 tipov); 0 AI.
 
 **Faza 2 (2.1.0):** skupnostne funkcije potovanja 1:1 iz izvorne kode (prijava,
 sodelovanje z vlogami/vabili/CAS, rezervacije, ankete, skupinski klepet z
@@ -151,6 +151,12 @@ uporabnost zemljevida (Leaflet vsebnik + zoom + OSM atribucija):
 ```bash
 bun run e2e:mobile        # samo mobilni projekt; bun run e2e = obe projekta
 ```
+
+**E2E v CI (2.47.0, issue #38)** — oba projekta tečeta tudi kot drugi job
+(`e2e`) v `.github/workflows/ci.yml`, vzporedno z „vrata“: sveža SQLite baza
+(`prisma db push` na /tmp/e2e.db), Playwright Chromium z sistemskimi
+odvisnostmi, artefakti (`playwright-report/`, `test-results/`) se naložijo
+tudi ob padcu; v CI je `reuseExistingServer` izklopljen, retries = 1.
 
 **Produkcija (PostgreSQL)** — priprava in prevezava:
 

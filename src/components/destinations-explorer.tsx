@@ -19,6 +19,11 @@ import {
 } from "@/components/ui/select";
 import { pick } from "@/lib/i18n-pick";
 import {
+  activeRegionKeys,
+  filterDestinations,
+  hasActiveFilters,
+} from "@/lib/destinations-filter";
+import {
   DEST_TYPES,
   DESTINATIONS,
   REGIONS,
@@ -120,30 +125,16 @@ export function DestinationsExplorer() {
   const [type, setType] = React.useState(searchParams.get("type") ?? "all");
 
   // Regije, ki dejansko nastopajo v naboru (kanonska vrstni red slovarja).
-  const activeRegions = React.useMemo(() => {
-    const present = new Set(DESTINATIONS.map((d) => d.region));
-    return Object.keys(REGIONS).filter((r) => present.has(r));
-  }, []);
+  // Logika filtra je izvlečena v @/lib/destinations-filter (2.47.0, #38:
+  // regresijski testi filtrov destinacij) — komponenta jo samo kliče.
+  const activeRegions = React.useMemo(() => activeRegionKeys(DESTINATIONS), []);
 
-  const results = React.useMemo(() => {
-    const needle = q.trim().toLowerCase();
-    return DESTINATIONS.filter((d) => {
-      if (region !== "all" && d.region !== region) return false;
-      if (type !== "all" && d.type !== type) return false;
-      if (
-        needle &&
-        !d.name.toLowerCase().includes(needle) &&
-        !d.tagline.toLowerCase().includes(needle) &&
-        !d.description.toLowerCase().includes(needle) &&
-        !d.highlights.some((h) => h.toLowerCase().includes(needle))
-      ) {
-        return false;
-      }
-      return true;
-    });
-  }, [q, region, type]);
+  const results = React.useMemo(
+    () => filterDestinations(DESTINATIONS, { q, region, type }),
+    [q, region, type],
+  );
 
-  const hasFilters = q.trim() !== "" || region !== "all" || type !== "all";
+  const hasFilters = hasActiveFilters({ q, region, type });
 
   const reset = () => {
     setQ("");

@@ -25,9 +25,9 @@
 # čas (sync.yml), CI pa je tiho miroval — ta vrata zdaj to mehansko
 # preprečujejo (source-contract test ci-smoke-contract).
 #
-# Kvota: zasebni repo = 2000 min/mes brezplačno; ta job (~5 min/push) +
-# sync (~1 min/push) + keep-warm (dispatch) — varno znotraj kvote pri
-# običajnem tempu pushanja. Če repo postane javen: neomejeno.
+# Kvota: zasebni repo = 2000 min/mes brezplačno; vrata (~5 min/push) +
+# E2E (~6 min/push, 2.47.0) + sync (~1 min/push) + keep-warm (dispatch) —
+# varno znotraj kvote pri običajnem tempu pushanja. Če repo postane javen: neomejeno.
 # =============================================================================
 
 name: CI (lint + typecheck + test + prisma + build + smoke)
@@ -139,4 +139,51 @@ jobs:
         with:
           name: ci-reports
           path: reports/
+          if-no-files-found: warn
+
+  # ── E2E (issue #38 P1/P2, 2.47.0) ─────────────────────────────────────────
+  # Playwright zlata pot (/destinacije → … → /na-poti, merilo „E2E pot od
+  # dodajanja destinacije do napredka v »Na poti« uspe“) + mobilni projekt
+  # (širine 320–1440, Pixel 7). Teče vzporedno z „vrata“ (ločen runner,
+  # port 3100 se ne tičeta); strežnik požene Playwrightov webServer
+  # (`bunx next dev -p 3100`) na sveži SQLite bazi — reuseExistingServer
+  # je v CI izklopljen (playwright.config.ts), retries = 1, forbidOnly.
+  # Artefakti (HTML poročilo + sledi ob padcu) se naložijo tudi ob padcu.
+  # Kvota: +~6 min/push (glej opombo o kvoti v glavi).
+  e2e:
+    name: "E2E (Playwright: zlata pot + mobilni)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: "file:/tmp/e2e.db"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Namestitev odvisnosti
+        run: bun install --frozen-lockfile
+
+      - name: Prisma generate + sveža SQLite baza za E2E
+        run: |
+          bunx prisma generate
+          rm -f /tmp/e2e.db /tmp/e2e.db-journal
+          bunx prisma db push --skip-generate
+
+      - name: Playwright Chromium (z sistemskimi odvisnostmi)
+        run: bunx playwright install --with-deps chromium
+
+      - name: E2E (zlata pot + mobilni projekt)
+        run: bun run e2e
+
+      - name: Artefakti (playwright-report + test-results — tudi ob padcu)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-reports
+          path: |
+            playwright-report/
+            test-results/
           if-no-files-found: warn

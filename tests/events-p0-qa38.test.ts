@@ -70,13 +70,20 @@ describe("events P0 (#38): potrditve primarnih virov", () => {
     expect(e.source).toBe("https://www.vinska-vigred.si");
   });
 
-  test("①d Planica: uradni naziv FIS finale + termin 2027 še brez objave", () => {
+  test("①d Planica: FIS finale SP 18.–21. marec 2027 (planica.si + sloski.si)", () => {
     const e = byId("planica-nordic-festival");
     expect(e.title).toBe("Planica — FIS finale svetovnega pokala");
     expect(e.website).toBe("https://www.planica.si");
-    expect(e.dateUnconfirmed).toBe(true);
-    expect(e.dateStart).toBe("");
+    // QA 3. serija (2026-10-13): planica.si objavila „Program 2027 —
+    // Planica bo med 18. in 21. marcem 2027“; sloski.si neodvisno potrdil.
+    expect(e.dateUnconfirmed).toBeUndefined();
+    expect(e.dateStart).toBe("2027-03-18");
+    expect(e.dateEnd).toBe("2027-03-21");
+    expect(e.dateLabel).toBe("18. – 21. mar 2027");
+    expect(e.monthIndex).toBe(3);
+    expect(e.venue).toBe("Planica, Kranjska Gora");
     expect(e.source).toBe("https://www.planica.si");
+    expect(e.verifiedAt).toBe("2026-10-13");
   });
 
   test("①e Jurjevanje: JUNIJ (62. izdaja 2026: 22.–28. junij) + lokacija po viru", () => {
@@ -85,6 +92,29 @@ describe("events P0 (#38): potrditve primarnih virov", () => {
     expect(e.venue).toContain("Črnomelj");
     expect(e.dateUnconfirmed).toBe(true);
     expect(e.source).toBe("https://www.jurjevanje.si");
+  });
+
+  test("①f Zlata lisica: 29.–30. jan 2027 na Podkorenu (sloski.si) — NI „Zlati lisjak“ in ni Maribor", () => {
+    const e = byId("zlati-lisjak-smucanje");
+    // QA 3. serija (2026-10-13, sloski.si — uradni koledar SP 2026/27):
+    // „Zlata lisica 29. – 30. 1. 2027 FIS svetovni pokal v alpskem smučanju
+    // za ženske“; povezava viru vodi na kranjskagora-worldcup.si → lokacija
+    // Podkoren/Kranjska Gora (do 2019 Maribor, od 2020 Podkoren).
+    expect(e.title).toContain("Zlata lisica");
+    expect(e.title).not.toContain("Zlati lisjak");
+    expect(e.dateUnconfirmed).toBeUndefined();
+    expect(e.dateStart).toBe("2027-01-29");
+    expect(e.dateEnd).toBe("2027-01-30");
+    expect(e.dateLabel).toBe("29. – 30. jan 2027");
+    expect(e.monthIndex).toBe(1);
+    expect(e.venue).toContain("Kranjska Gora");
+    expect(e.venue).not.toContain("Maribor");
+    expect(e.website).toBe("https://kranjskagora-worldcup.si");
+    expect(e.source).toBe("https://www.sloski.si");
+    expect(e.verifiedAt).toBe("2026-10-13");
+    // Kranjska Gora ni med 38 destinacijami → brez destSlug (ne „maribor“)
+    expect(e.destSlug).toBeUndefined();
+    expect(e.image).toBe("/content/zlata-lisica-golden-fox.jpg");
   });
 });
 
@@ -95,14 +125,15 @@ describe("events P0 (#38): potrditve primarnih virov", () => {
 describe("events P0 (#38): nepotrjeni datumi", () => {
   const UNCONFIRMED_IDS = [
     "ljubljanski-zimski-festival",
-    "zlati-lisjak-smucanje",
     "vinska-vigred-maribor",
-    "planica-nordic-festival",
     "festival-soca",
     "blejski-danovski-festival",
     "jurjevanje-bela-krajina",
     "pivo-in-cvetje-lasko",
   ];
+  // QA 3. serija (2026-10-13): „zlati-lisjak-smucanje“ (→ Zlata lisica,
+  // 29.–30. 1. 2027) in „planica-nordic-festival“ (→ 18.–21. 3. 2027)
+  // prešla med POTRJENE — glej ①d/①f.
 
   test("②a vsak nepotrjen dogodek: PRAZEN ISO datum + pošten napis + mesec 1–12", () => {
     expect(UNCONFIRMED_IDS.length).toBeGreaterThan(0);

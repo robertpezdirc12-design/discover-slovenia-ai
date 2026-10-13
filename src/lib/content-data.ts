@@ -127,24 +127,31 @@ export const EVENTS: CommunityEvent[] = [
     id: "zlati-lisjak-smucanje",
     monthIndex: 1,
     category: "sport",
-    title: "Zlati lisjak — svetovni pokal v alpskem smučanju",
-    // QA #34→#38 (verifikacija 2026-10-12): sloski.si ne navaja terminov
-    // 2027 (preverjena sekcija dogodkov) — izmišljeni „18. – 19. jan 2027“
-    // odstranjen; mesec 1 = pričakovano januarsko okno po zgodovini dirke.
-    dateStart: "",
-    dateLabel: "datum še ni potrjen",
-    venue: "Smučišče Mariborsko Pohorje, Maribor",
+    title: "Zlata lisica — svetovni pokal v alpskem smučanju za ženske",
+    // QA #34→#38 (1. serija 2026-10-12): izmišljeni „18. – 19. jan 2027“
+    // odstranjen, zapis neosten. QA 3. serija (POTRJENO 2026-10-13,
+    // sloski.si — uradni koledar SP 2026/27): uradno ime je „ZLATA LISICA“
+    // (NE „Zlati lisjak“), FIS svetovni pokal v alpskem smučanju za ženske,
+    // 29. – 30. 1. 2027; lokacija Podkoren/Kranjska Gora (povezava viru →
+    // kranjskagora-worldcup.si, domena dosegljiva) — Zlata lisica je na
+    // Mariborskem Pohorju potekala do 2019, od 2020 v Podkorenu.
+    // destSlug „maribor“ odstranjen (lokacija ni več Maribor; Kranjska Gora
+    // ni med 38 destinacijami). Zgodovinska fotografija dirke; slika s
+    // Podkorena sledi ob prekinitvi SDK kvote (image gen je bil 429).
+    dateStart: "2027-01-29",
+    dateEnd: "2027-01-30",
+    dateLabel: "29. – 30. jan 2027",
+    venue: "Podkoren, Kranjska Gora",
     price: "euro",
     featured: false,
-    // zlati-lisjak.si NE OBSTAJA (domena nedosegljiva, preverjeno 2026-10-12)
-    // — mrtva povezava odstranjena; uradni vir je Smučarska zveza Slovenije.
-    image: "/content/zlati-lisjak-maribor.jpg",
+    // zlati-lisjak.si NE OBSTAJA (domena nedosegljiva, preverjeno 2026-10-12);
+    // uradna stran dirke kranjskagora-worldcup.si (dosegljiva 2026-10-13).
+    website: "https://kranjskagora-worldcup.si",
+    image: "/content/zlata-lisica-golden-fox.jpg",
     description:
-      "Tradicionalno tekmovanje svetovnega pokala v ženskem veleslalomu na Pohorju. Najboljše smučarke sveta se pomerijo na progi Golden Fox pred tisoči gledalcev ob pogorju.",
-    destSlug: "maribor",
-    dateUnconfirmed: true,
+      "Zlata lisica (Golden Fox) — tradicionalna dirka svetovnega pokala v alpskem smučanju za ženske. Najboljše smučarke sveta se pomerijo na Podkorenu nad Kranjsko Goro; legendarno tekmovanje, ki ga je do 2019 gostil Maribor, se vrnilo v Zgornjesavsko dolino.",
     source: "https://www.sloski.si",
-    verifiedAt: "2026-10-12",
+    verifiedAt: "2026-10-13",
   },
   {
     id: "blejski-zimski-plavalni-memorial",
@@ -223,14 +230,16 @@ export const EVENTS: CommunityEvent[] = [
     id: "planica-nordic-festival",
     monthIndex: 3,
     category: "sport",
-    // QA #34→#38 (verifikacija 2026-10-12, planica.si): uradni naziv dogodka
-    // je „FIS finale svetovnega pokala v smučarskih skokih“ (Planica 2026 je
-    // imela 4 tekmovalne dneve); termini za 2027 še NISO objavljeni —
-    // izmišljeni „21. – 23. mar 2027“ odstranjen; mesec 3 = pričakovano
-    // pomladansko okno finała po zgodovini organizatorja.
+    // QA #34→#38 (1. serija 2026-10-12): izmišljeni „21. – 23. mar 2027“
+    // odstranjen. QA 3. serija (POTRJENO 2026-10-13, planica.si):
+    // „Program 2027 — Planica bo med 18. in 21. marcem 2027“; FIS finale
+    // SP v smučarskih skokih, četrtek 18. 3. kvalifikacije → nedelja 21. 3.
+    // finalna tekma; vstopnice v prodaji od 7. 10. 2026. Neodvisna
+    // potrditev tudi na sloski.si („Planica 18. – 21. 3. 2027“).
     title: "Planica — FIS finale svetovnega pokala",
-    dateStart: "",
-    dateLabel: "datum še ni potrjen",
+    dateStart: "2027-03-18",
+    dateEnd: "2027-03-21",
+    dateLabel: "18. – 21. mar 2027",
     venue: "Planica, Kranjska Gora",
     price: "euro2",
     featured: true,
@@ -238,9 +247,8 @@ export const EVENTS: CommunityEvent[] = [
     image: "/content/planica-nordic-festival.jpg",
     description:
       "FIS finale svetovnega pokala v smučarskih poletih v slavni Planici pod Poncami. Najboljši skakalci sveta letijo preko 240 metrov na največji skakalnici na svetu, ob strani pa tekmovanja v nordijskem teku in biatlonu.",
-    dateUnconfirmed: true,
     source: "https://www.planica.si",
-    verifiedAt: "2026-10-12",
+    verifiedAt: "2026-10-13",
   },
   {
     id: "blejski-danovski-festival",

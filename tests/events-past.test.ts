@@ -8,12 +8,13 @@
  *
  * Zaklenjena semantika:
  *  · `dateEnd` = ISO konec večdnevnega dogodka, izpolnjen IZKLJUČNO iz
- *    preverjenega razpona pri primarnem viru (2 zapisa; enodnevni brez);
+ *    preverjenega razpona pri primarnem viru (4 zapisa od 2.49.0:
+ *    Stara trta, POMP, Zlata lisica, Planica; enodnevni brez);
  *  · isEventPast: nepotrjen/prazen datum NIKOLI pretekli; zaključek ==
  *    danes → še teče; zaključek < danes → pretekli;
  *  · Event JSON-LD: `eventsJsonLd(events, locale, todayIso)` izključi
  *    zaključene (Google: ne označuj že zaključenih dogodkov); 2-argska
- *    forma (brez todayIso) ostane čisti podatkovni pogled (18 potrjenih).
+ *    forma (brez todayIso) ostane čisti podatkovni pogled (20 potrjenih).
  */
 
 import { describe, expect, test } from "bun:test";
@@ -110,15 +111,22 @@ describe("events-past (#38): živi kanon ob 2026-10-13", () => {
     expect(isEventPast(byId("kurentovanje-ptuj"), TODAY)).toBeFalse();
   });
 
-  test("③c nepotrjeni (13) niso nikoli pretekli", () => {
+  test("③c nepotrjeni (11) niso nikoli pretekli", () => {
     const unconfirmed = EVENTS.filter((e) => e.dateUnconfirmed);
-    expect(unconfirmed.length).toBe(13);
+    // 2.49.0: 13 → 11 (Zlata lisica + Planica potrjena s primarnima
+    // viroma, QA 3. serija 2026-10-13 — glej events-p0-qa38 ①d/①f).
+    expect(unconfirmed.length).toBe(11);
     expect(unconfirmed.every((e) => !isEventPast(e, TODAY))).toBeTrue();
   });
 
-  test("③d dateEnd sta izpolnjena IZKLJUČNO pri obeh preverjenih razponih", () => {
+  test("③d dateEnd izpolnjen IZKLJUČNO pri preverjenih razponih (4 zapisi)", () => {
     const withEnd = EVENTS.filter((e) => e.dateEnd !== undefined).map((e) => e.id);
-    expect(withEnd.sort()).toEqual(["celjski-sejem", "festival-stara-trta"]);
+    expect(withEnd.sort()).toEqual([
+      "celjski-sejem",
+      "festival-stara-trta",
+      "planica-nordic-festival",
+      "zlati-lisjak-smucanje",
+    ]);
   });
 });
 
@@ -135,16 +143,20 @@ describe("events-past (#38): Event JSON-LD izključitev zaključenih", () => {
     expect(names).not.toContain("POMP — sejem pompoznih dogodkov");
   });
 
-  test("④b 3-argska forma: prihodnji potrjeni ostanejo (maraton, Kurentovanje)", () => {
+  test("④b 3-argska forma: prihodnji potrjeni ostanejo (maraton, Kurentovanje, Zlata lisica, Planica)", () => {
     const graph = eventsJsonLd(EVENTS, "sl", TODAY)["@graph"];
-    expect(graph.length).toBe(16);
+    // 2.49.0: 16 → 18 (Zlata lisica 29.–30. 1. 2027 + Planica 18.–21. 3.
+    // 2027 prešli med potrjene prihodnje).
+    expect(graph.length).toBe(18);
     expect(graph.some((e) => e.startDate === "2026-10-17")).toBeTrue();
     expect(graph.some((e) => e.startDate === "2027-02-03")).toBeTrue();
+    expect(graph.some((e) => e.startDate === "2027-01-29")).toBeTrue();
+    expect(graph.some((e) => e.startDate === "2027-03-18")).toBeTrue();
   });
 
-  test("④c 2-argska forma (brez todayIso) NE filtrira zaključenih (18/31 kanon)", () => {
+  test("④c 2-argska forma (brez todayIso) NE filtrira zaključenih (20/31 kanon)", () => {
     const graph = eventsJsonLd(EVENTS, "sl")["@graph"];
-    expect(graph.length).toBe(18);
+    expect(graph.length).toBe(20);
   });
 });
 

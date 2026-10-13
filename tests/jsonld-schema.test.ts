@@ -3,10 +3,12 @@ import { describe, expect, test } from "bun:test";
 import { PICK_LOCALES } from "../src/lib/i18n-pick";
 import {
   JSONLD_SITE_ORIGIN,
+  eventsJsonLd,
   jsonldScriptHtml,
   softwareApplicationJsonLd,
   touristDestinationJsonLd,
 } from "../src/lib/jsonld";
+import { EVENTS } from "../src/lib/content-data";
 import { DESTINATIONS, getDestination } from "../src/lib/slovenia-data";
 
 /**
@@ -155,6 +157,99 @@ describe("jsonld [enote]: TouristDestination (/destinacija/[slug])", () => {
       expect(parsed.url).toBe(`${JSONLD_SITE_ORIGIN}/destinacija/${d.slug}`);
       expect(parsed.image).toBe(`${JSONLD_SITE_ORIGIN}${d.image}`);
     }
+  });
+});
+
+describe("jsonld [enote]: Event @graph (/dogodki, 2.45.0 — QA #38)", () => {
+  /** Potrjeni dogodki po kanonu podatkov (iskrenostni model #38). */
+  const confirmed = EVENTS.filter(
+    (e) => e.dateStart !== "" && !e.dateUnconfirmed
+  );
+  const unconfirmed = EVENTS.filter(
+    (e) => e.dateStart === "" || e.dateUnconfirmed
+  );
+
+  test("⑲ samo POTRJENI dogodki v @graph (kanonski zaklep 22/31, SDK serija 2.53.0)", () => {
+    const graph = eventsJsonLd(EVENTS, "sl")["@graph"];
+    // zaklep: potrditev/razveljavitev datuma zahteva zavesten test
+    // (2.49.0: 18 → 20; SDK serija 2026-10-13: 20 → 22 — december v
+    // Ljubljani 27. 11. 2026 + zimski festival 15. 2. 2027)
+    expect(graph.length).toBe(22);
+    expect(confirmed.length).toBe(22);
+    expect(unconfirmed.length).toBe(EVENTS.length - 22);
+    // noben nepotrjen zapis ne sme zaideti kot Event:
+    const names = graph.map((g) => g.name);
+    for (const u of unconfirmed) expect(names).not.toContain(u.title);
+    // vsak potrjen je prisoten (1:1 po vrstnem redu dogodkov):
+    expect(names).toEqual(confirmed.map((e) => e.title));
+  });
+
+  test("⑳ obvezna polja schema.org za VSE entitete (name/startDate/location/url/image/description)", () => {
+    const graph = eventsJsonLd(EVENTS, "sl")["@graph"];
+    for (const g of graph) {
+      expect(g["@type"]).toBe("Event");
+      expect(g.name.trim().length).toBeGreaterThan(0);
+      expect(g.startDate).toMatch(/^\d{4}-\d{2}-\d{2}$/); // ISO iz kanona
+      expect(g.location["@type"]).toBe("Place");
+      expect(g.location.name.trim().length).toBeGreaterThan(0);
+      expect(g.location.address).toEqual({
+        "@type": "PostalAddress",
+        addressCountry: "SI",
+      });
+      expect(g.url).toBe(`${JSONLD_SITE_ORIGIN}/dogodki`);
+      expect(g.image.startsWith(JSONLD_SITE_ORIGIN)).toBe(true);
+      expect(g.description.trim().length).toBeGreaterThan(0);
+    }
+  });
+
+  test("㉑ iskrenost: brez izmišljenega endDate in brez izmišljene cene", () => {
+    const json = JSON.stringify(eventsJsonLd(EVENTS, "sl"));
+    expect(json).not.toContain("endDate"); // podatki nimajo trajanja — ne ugibamo
+    expect(json).not.toContain('"offers"'); // euro/euro2 niso numerična cena
+    // isAccessibleForFree: true IZKLJUČNO za price "free":
+    const graph = eventsJsonLd(EVENTS, "sl")["@graph"];
+    const confirmedFree = confirmed.filter((e) => e.price === "free");
+    const freeCount = graph.filter(
+      (g) => (g as { isAccessibleForFree?: boolean }).isAccessibleForFree === true
+    ).length;
+    expect(freeCount).toBe(confirmedFree.length);
+    expect(freeCount).toBeGreaterThan(0);
+  });
+
+  test("㉒ url sledi hreflang konvenciji (sl brez predpone, en s predpono)", () => {
+    expect(eventsJsonLd(EVENTS, "sl")["@graph"][0].url).toBe(
+      `${JSONLD_SITE_ORIGIN}/dogodki`
+    );
+    expect(eventsJsonLd(EVENTS, "en")["@graph"][0].url).toBe(
+      `${JSONLD_SITE_ORIGIN}/en/dogodki`
+    );
+  });
+
+  test("㉓ determinizem + veljaven ubežen JSON round-trip", () => {
+    expect(JSON.stringify(eventsJsonLd(EVENTS, "sl"))).toBe(
+      JSON.stringify(eventsJsonLd(EVENTS, "sl"))
+    );
+    const html = jsonldScriptHtml(eventsJsonLd(EVENTS, "de"));
+    expect(html).not.toContain("</script>");
+    const parsed = JSON.parse(html) as ReturnType<typeof eventsJsonLd>;
+    // 2.49.0: 18 → 20; SDK serija 2026-10-13: 20 → 22 potrjenih
+    expect(parsed["@graph"].length).toBe(22);
+    expect(parsed["@graph"][0].name).toBe(confirmed[0].title);
+  });
+
+  test("㉔ stranska pogodba: /dogodki izriše ld+json skripto z nonce (enak kanon kot domača stran)", async () => {
+    const page = await Bun.file(
+      "src/app/[locale]/dogodki/page.tsx"
+    ).text();
+    expect(page).toContain('type="application/ld+json"');
+    expect(page).toContain("nonce={nonce}");
+    expect(page).toContain('(await headers()).get("x-nonce")');
+    // 2.48.0 (#38): stran poda SSR `todayIso` (Europe/Ljubljana) —
+    // zaključeni dogodki izključeni iz @graph + oznaka „pretekli dogodek“.
+    expect(page).toContain("eventsJsonLd(EVENTS, locale, todayIso)");
+    expect(page).toContain("<EventsView todayIso={todayIso} />");
+    expect(page).toContain("jsonldScriptHtml(");
+    expect(page).not.toContain("__html: JSON.stringify(");
   });
 });
 

@@ -14,6 +14,7 @@ import { ThemeProvider } from "@/components/layout/theme-provider";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { Toaster } from "@/components/ui/toaster";
 import { routing } from "@/i18n/routing";
+import { OG_LOCALES } from "@/lib/page-metadata";
 
 import "../globals.css";
 
@@ -38,16 +39,6 @@ export function generateStaticParams() {
  *  na vsako zahtevo, SSG HTML pa bi vseboval zastarelega (blokirane
  *  skripte). Kanon Next.js CSP vodic (issue #2 §9, PRODUCT-AUDIT). */
 export const dynamic = "force-dynamic";
-
-/** OG locale koda (html lang → Open Graph). */
-const OG_LOCALES: Record<string, string> = {
-  sl: "sl_SI",
-  en: "en_US",
-  it: "it_IT",
-  de: "de_DE",
-  fr: "fr_FR",
-  es: "es_ES",
-};
 
 export async function generateMetadata({
   params,

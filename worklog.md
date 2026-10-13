@@ -2826,3 +2826,262 @@ Stage Summary:
 - P0 1. serija oddana: 2 popolnoma potrjena dogodka, 6 dodatno preverjenih (termin neobjavljen → pošteno nepotrjen), 4 mrtve domene odstranjene, 1 vinarna-zamenjava popravljena
 - Ostanek za naslednjo serijo v #38: sistematična verifikacija preostalih ~19 dogodkov (okarina, trnfest, cviček, bučke, olivni, solinarstvo, Bled dogodki, porabje, kmečki ohcet, …) + P1 načrtovalnik/SEO + P2 dostopnost
 - Sledi: PR → CI → merge → komentar na #38
+
+---
+Task ID: R35-P1SEO+P0-2 (2.44.0)
+Agent: Z.ai Code (glavni orkestrator)
+Task: Raziskava benchmark najboljših NTO strani + odprtokodnih SDK-jev (#35), P1 SEO metapodatki (unikatni naslovi/opisi po straneh) in P0 dogodki 2. serija (verifikacija pri primarnih virih).
+
+Work Log:
+- RAZISKAVA R-3-a (benchmark): MySwitzerland, VisitNorway, austria.info, slovenia.info, Croatia.hr — vsi imajo unikaten <title> per stran (vzorca „Tema | Znamka" ali uredniški); opisi 120–212 zn; OG 1200×630; slovenia.info anti-vzorci (prazen opis, podvojen brand, canonical na homepage); Event JSON-LD ima samo MySwitzerland; pravi planer NI na nobeni od 5.
+- RAZISKAVA R-4-b (SDK, #35): zaklad 12 m — Leaflet 1.9.4 OSTANE (BSD-2, 42 KB), ploščice OpenFreeMap (0 EUR, komercialno OK), Valhalla (MIT) self-host za routing, lastna optimizacija postankov (greedy + 2-opt), Photon za geokodiranje; ZAVRNITI: OR-Tools, GraphHopper, OTP (0/5 GTFS pokritosti), tile.openstreetmap.org v produkciji, partner API-ji (samo affiliate deep-links).
+- P1 SEO IMPLEMENTACIJA: nov src/lib/page-metadata.ts — SEO_PAGES slovar (18 statičnih strani × 6 jezikov, naslov ≤38 zn + opis 100–160 zn po vzorcu „Tema · Discover Slovenia AI") + pageMetadata() (title/description/alternates/OG/twitter; OG_LOCALES enoten vir); 18 page.tsx preklopljenih; layout.tsx uvaža OG_LOCALES; dinamični strani (destinacija, vodiči) ostanejo nespremenjene (že unikatne).
+- P0 DOGODKI 2. SERIJA (verifikacija 2026-10-13): celjski-sejem POPRAVLJEN („Celjski sejem 9.–12. 10. 2026" ne obstaja — uradni jesenski sejem je POMP 10.–11. 10. 2026, ce-sejem.si/sejmi/); božični sejmi RAZDVOJENI (Ljubljana „December v Ljubljani" z obstoječim id + NOV zapis „Čarobni Maribor"); bled-winter-magic preimenovan v uradni „Blejska zimska pravljica" (bled.si, Jezerska promenada); bela-krajina-koline in jamski-sejem-postojna pošteno nepotrjena (0 zadetkov v primarnih virih). 15 dogodkov ostaja za verifikacijo (SDK kvota izčrpana — izrecno brez lažnega source/verifiedAt).
+- TESTI: nov tests/seo-metadata.test.ts (16 zaklepov: polnost 6 jezikov, unikatnost, dolžine, OG/twitter sestava, source-contract 18 page.tsx, dinamični naslovi); tests/events-p0-qa38.test.ts + 6 zaklepov ④a–④f; i18n-quadrilingual ② na nov kanon (alternatesFor ALI pageMetadata); FR register (tu-oblika) ohranjen.
+- VERZIJA 2.44.0: package.json, health, sw.js, footer, README, p2-data-plane, pwa-sw.
+- MERILA: bun test 2014/2014 (17553 expect), tsc --noEmit 0, eslint 0.
+
+Stage Summary:
+- P1 SEO: enak naslov na vseh straneh → 18 unikatnih 6-jezičnih naslovov+opisov z OG/twitter; anti-vzorci benchmarka programsko zaklenjeni (podvojen brand, prazen opis).
+- P0: 5 popravkov z dokazi, 2 not_found pošteno nepotrjeni, 1 razdvojitev (30 → 31 dogodkov); 15 dogodkov še brez source (izrecno oznaka, ne lažna verifikacija).
+- Raziskava #35 dostavljena kot komentar na issue (zaklad + licence ODbL).
+
+---
+Task ID: R35-P0-3 (2.44.0, dopolnitev)
+Agent: Z.ai Code (glavni orkestrator)
+Task: P0 dogodki 3. serija — verifikacija zapisa „Festival Soča“ in „Blejski danovski festival“ pri primarnih virih (SDK kvota 429 → curl: e-občina /DobiDogodke, postojna.si, bled.si RSS, Wikipedia).
+
+Work Log:
+- SDK (web_search/page_reader) še vedno 429 — preklop na curl: nacionalni register dogodkov prek instance tolmin.si/DobiDogodke (ključne besede Soča/Soca/Tolminator/blejski/danovski/koline/opankarija = VSE 0 zadetkov), postojna.si/DobiDogodke eo_id=105 („jamski“ = 0), bled.si RSS (1554 novic — 0 omemb „danovskega festivala“/komornega festivala; realni Bled dogodki: Narodnozabavna hit parada 14. 11. 2026, triatlon, šahovski festival), bled.si domača stran (koledar), obcina-bled.si (anti-bot zid), tolminator.si + festivalbled.si + bovec.com (DNS/HTTP 000 — nedosegljivo, povezav NE izmišljujemo).
+- WIKIPEDIA (dejansko prebrana, en.wikipedia.org): MetalDays = Sotočje, Tolmin (med Tolminko in Sočo) 2004–2022, Velenje 2023, uradno ukinjen 2024; „Since 2023 a new festival called Tolminator has been held in Tolmin. The location is the same …“; seznam metal festivalov: „Tolminator | Tolmin | 2023–present | July“.
+- KOREKCIJA festival-soca (vzorec ④a celjski-sejem→POMP): fiktivni „Festival Soča“ (sport, maj, reggae/rafting — opis je ustrezal ugasnjenemu Soča Reggae Riversplashu) → REALNI „Tolminator — metal festival na sotočju Soče in Tolminke“ (glasba, mesec 7, venue Sotočje Soče in Tolminke; brez website — organizator nedosegljiv; source = en.wikipedia.org/wiki/MetalDays, verifiedAt 2026-10-13, dateUnconfirmed ostaja — termin 2027 neobjavljen). ID ostane (zgodovinski, vzorec razdvojitve).
+- blejski-danovski-festival: ime NI sledljivo nigdej (register 0 + bled.si RSS 0 + koledar 0 + domena mrtva) → zapis ostane po kanonu ④b (ne brišemo), polni dokazi v komentarju zapisa, BREZ source/website/datuma.
+- TESTI: tests/events-p0-qa38.test.ts + ⑤a–⑤e (5 novih zaklepov: korekcija Tolminator z vsemi polji, sledljivost blejskega, ponovna verifikacija 6 registrov, mrtve domene tudi v source, vsebinska zahteva opisa).
+- MERILA: bun test 2019/2019 (17728 expect), tsc --noEmit 0, eslint 0. Verzija ostane 2.44.0 (isti PR #40).
+
+Stage Summary:
+- P0 3. serija: 1 korekcija na realni dogodek (Tolminator z Wikipedia virom), 1 not_found z dokazi (blejski-danovski), 6 registrov ponovno preverjenih prve roke; 31 dogodkov (13 še vedno pošteno nepotrjenih, 18 potrjenih/datiranih).
+- Omejitve: tolminator.si/bovec.com iz peskovnika nedosegljiva (DNS 000) — povezave ne dodane; bozicni sejmi (visitljubljana/visitmaribor) ostajajo brez source (Maribor TCP-nedosegljiv, Ljubljana register 0 — dokazi v komentarjih iz 2. serije).
+
+---
+Task ID: R35-P2-ACCESS (2.44.0, dopolnitev)
+Agent: Z.ai Code (glavni orkestrator)
+Task: P2 dostopnost + besedila (#38) — lektoriranje vidnih besedil, slovnični popravki paucal/mestnik, umik razvojne oznake iz noge, brskalniški preverbi (5 širin × 5 strani, tipkovnica, Escape, 3 prednastavitve).
+
+Work Log:
+- AUDIT oznak/obrazcev: načrtovalnik (nl-input, interests-custom, chip-search, days-stepper, region-select, season-select, budget-select), /kontakt (contact-name/email/message), /prijava (prijava-email/geslo, registracija-*), /vir-podatkov, dom (hero-search, newsletter-email) — VSE že imajo Label/htmlFor (prejšnji cikli). Sken ikonskih gumbov (heuristika po vseh src/*.tsx): 0 brez dostopnega imena (2 lažno pozitivna sta imala besedilo).
+- BESEDILA — „premočna ×1,3“ → „premočrtna razdalja ×1,3“ (12 mest v 7 datotekah: itinerary-engine, na-poti, potovanje, nacrtuj, shared-trip-view, go-gps, plan-map-data; + 3 testna imena/kanon plan-summary ㉖) — vsi drugi jeziki so imeli pravilno (straight-line/Luftlinie/…); sl edini napačen.
+- SLOVNICA: stopsWord.sl paucal (3/4 → „postanki“, prej „postankov“); draftSummary.sl isti paucal; NOV regionsWordIn (mestnik: „v 2 regijah“, prej imenovalni „v 2 regiji“) + call site preklopjen; regionsWord (imenovalnik) nespremenjen; dayStops varna (sproži se šele pri >4, kjer je „postankov“ pravilen).
+- NOGA: razvojna oznaka „Rekonstrukcija 2026-10-12“ odstranjena iz javnega prikaza (verzija v2.44.0 ostane); poreklo ostaja v worklogu in /vir-podatkov.
+- TESTI: nov tests/p2-dostopnost.test.ts (8 zaklepov: paucal, mestnik, iskrenost summary, ne-slo regije = regije, globalni sweep „premočna“, footer source-contract); plan-summary ㉖ kanon posodobljen na popravljeni niz; PLANNER_MSG izvožen (bralna površina za zaklepe).
+- BRSKALNIŠKA VERIFIKACIJA (dev strežnik :3100 + agent-browser): vodoravni preliv = 0 na VSEH kombinacijah 320/375/390/768/1440 × (domov, dogodki, nacrtuj, zemljevid, kontakt) — 24/24 čisto; focus-visible ring (focus-green: ring-2 ring-ring) prisoten; skip-link „Preskoči na vsebino“; mobilni meni „Odpri meni“ (aria-expanded) se zapre z Escape; zemljevid uporaben na 320 (brez preliva); footer lepljiv (mt-auto, starševski layout nespremenjen); VSE 3 hitre prednastavitve delujejo — živi izpisi: „4 postanki v 2 regijah“, „2 postanka v 1 regiji“ (dual + mestnik), „premočrtna razdalja ×1,3“ — stari nizi nikjer.
+- Ohlapne opombe (niso blokatorji): Radix DialogContent brez Description (opozorilo, dostopno ime je prisotno; ni reproducirljivo izolirano), LCP slika na /dogodki brez loading=eager (perf, ne a11y), enkratna hidracijska napaka med HMR urejanjem — na čistih nalaganjih 0 napak.
+- MERILA: bun test 2027/2027 (17761 expect, 101 datotek), tsc --noEmit 0, eslint 0. Verzija ostane 2.44.0 (isti PR #40).
+
+Stage Summary:
+- P2 dostopnost/besedila (#38) zaključena v kodi: 12 besedilnih popravkov, 2 slovnični razredi (paucal + mestnik), 1 umik razvojne oznake, 8 novih regresijskih zaklepov; brskalniški preverbi 24/24 brez preliva, tipkovnica/Escape/fokus čisto, 3/3 prednastavitve konsistentne.
+- Pravne strani (/pogoji-uporaba, /politika-zasebnosti, /zaupanje-in-varnost): datumi NE spremenjeni (vsebina v tem prehodu ni bila vsebinsko lektorirana — kanon iz #38: datum samo ob dejanskem pregledu).
+- Ostalo za #38: CI/merge PR #40 (kvota), P1 načrtovalnik E2E (Playwright suite), JSON-LD Event schema, preostali ~12 dogodkov (2027 termini).
+
+---
+
+## 2.45.0 — Event JSON-LD /dogodki + Playwright E2E zlata pot (2026-10-13, issue #38 P1)
+
+### Event JSON-LD (vzor MySwitzerland, benchmark #35 R-5-c2a)
+- src/lib/jsonld.ts: eventsJsonLd(events, locale) — schema.org Event @graph IZKLJUČNO za potrjene datume (18/31); dateUnconfirmed NIKOLI v strukturiranih podatkih (iskrenostni kanon #38)
+- brez endDate (podatki nimajo trajanja), brez offers (euro/euro2 niso numerična cena), isAccessibleForFree izključno za "free", location = Place 1:1 + addressCountry SI (addressLocality se NE ugiba — heterogeni venue formati), url po hreflang konvenciji
+- /dogodki/page.tsx: skripta ld+json s CSP nonce (isti kanon kot domača stran)
+- testi: +6 zaklepov ⑲–㉔; kanarček hydration-nonce zavesten update 2→3 ld+json skripti (+dogodki)
+
+### Playwright E2E (P1 ponovljivost)
+- playwright.config.ts (webServer next dev :3100, reuse izven CI) + e2e/golden-path.e2e.ts + script e2e (devDep @playwright/test)
+- zlata pot: /destinacije → iskanje Bled → Gorenjska → Jezero → Bled → Dodaj v mojo pot → /moja-potovanja → prednastavitev (en klik = načrt) → Shrani v Moja pot → /potovanje → Zaženi na poti → /na-poti Opravljeno → napredek → Preskoči → osvežitev → POTOVANJE ZAKLJUČENO
+- determinizem: prednastavitev ×2 → isti fingerprint plana (4cdd15a0); savedAt obvoj se razlikuje (pričakovano)
+- pouk iz izvedbe: dai:last-plan se zapiše šele ob Shrani/Go; init-skripta za čiščenje dai:* teče ENKRAT na kontekst (oznaka), sicer pomete stanje poti
+- izvedba v peskovniku: bunx playwright test → 2/2 passed (~45 s, Chromium 1.64)
+
+### Merila
+- bun test 2033/2033 (17960 expect), tsc --noEmit 0, eslint 0, playwright 2/2
+- verzija 2.45.0 na vseh 7 mestih; E2E dokumentiran v README (Razvoj)
+- živa verifikacija /dogodki (curl + agent-browser): 18 Eventov v grau, nepotrjeni izključeni, nonce prisoten, izris čist
+
+### Stanje
+- commit c1786fd pushan na PR #40 (4. commit; CI še vedno pada na kvoti — 0 korakov, BlobNotFound v 2–3 s)
+- komentar na #38 (issuecomment-6138917938); PR #40 body dopolnjen
+- preostanek #38: verifikacija ~12 dogodkov 2027 (SDK kvota) + pravne strani lektorat (ločen prehod) + mobilni E2E projekt (lahko)
+
+---
+
+## 2.46.0 (2026-10-13, issue #38 P2) — P2 lektorat pravnih strani + mobilni E2E projekt
+
+### Lektorat pravnih strani (#38 P2: „Preglej pravne strani …; datum posodobitve spremeni samo, če je bila vsebina dejansko pregledana in posodobljena“)
+- /pogoji-uporabe: affiliate seznam 1:1 s kanonom registra affiliate-providers.ts (brez nekomercialnega osm-fuel plasta) — DODANA Kiwi.com in Rentalcars.com (prej manjkala!), točno ime „Viator (Tripadvisor)“, Kiwitaxi izrecno ločen kot PREVOZI (kanon supply/providers/kiwitaxi: rezervacija = zunanja affiliate povezava); IP sekcija: slike (Unsplash) ločene od zemljevidnih podatkov (© prispevavalci OpenStreetMap, licenca ODbL) — prej mešani zapis „(Unsplash, OpenStreetMap)“; B2B: „€149/mesec“, „€499/mesec“, „se obračunava mesečno“ (nedelesknjižni glagol); vseh 6 jezikov
+- /politika-zasebnosti: GDPR katalog pravic dopolnjen na popolnega (vpogled, popravek, izbris, OMEJITEV OBDELAVE, UGOVOR, PRENOSLJIVOST) — prej 4 od 6; „prenosa“ → „prenosljivosti“; „Če se naročite na novice (newsletter)“ namesto „prijavite na newsletter“; 6 jezikov
+- /zaupanje-in-varnost: „avtomatsko izračunan oceni profil“ → „avtomatsko izračunano oceno profila“ (slovnična napaka), knjižno „lokal“ namesto neknjižnega „lokalce“ (usklajeno z odstavkom „vsak lokal“), „premium boosta“ brez vezaja
+- DATUMI: updated="2026-10-13" na VSEH 3 straneh — vsebina je bila dejansko pregledana in popravljena (kanon #38 izrecno dovoljuje spremembo datuma šele tedaj)
+
+### Mobilni E2E projekt (#38 P2: „Pri širinah 320, 375, 390, 768 in 1440 px …“)
+- nov projekt `chromium-mobile` (Pixel 7: hasTouch, isMobile, mobilni UA) — ločitev per-projekt prek testIgnore/testMatch (desktop izključi e2e/mobile.e2e.ts, mobilni projekt teče IZKLJUČNO nanj; zlata pot se ne podvaja)
+- e2e/mobile.e2e.ts (8 testov): ① vodoravni preliv 5 strani (/ , /destinacije, /nacrtuj, /dogodki, /moja-potovanja) × 5 širin — avtomatizacija ročne 24/24 preverbe iz 2.44.0; ② mobilni meni: odpri → Escape zapre → navigacija prek menija; ③ zlata pot na dotiku (skrajšana: iskanje Bled → Dodaj v mojo pot → /moja-potovanja); ④ zemljevid @ 390: Leaflet vsebnik + zoom + OSM atribucija
+- POUK IZ IZVEDBE (2 pasti): (a) glob `*.mobile.e2e.ts` NE ujame `mobile.e2e.ts` (zahteva predpono pred .mobile) — pravilen vzorec `**/mobile.e2e.ts`; (b) `*/` znotraj blokovnega komentarja (npr. zapis globa `**/…`) ZAKLJUČI komentar → BABEL_PARSE_ERROR — v prozi se glob zapiše besedilno; (c) majhen /dev/shm v vsebniškem okolju sesuje Chromium tab („Page crashed“) → `--disable-dev-shm-usage` + en test na širino (svež tab, čista akumulacija pomnilnika)
+
+### Merila
+- bun test 2060/2060 (18089 expect, 102 datoteke) — +27 zaklepov (tests/legal-lektorat.test.ts: register 1:1, ODbL, cene, GDPR 6 pravic × 6 jezikov, slovnica, datumi, strukturna pariteta); tsc 0; eslint 0; Playwright 10/10 (2 desktop + 8 mobilnih)
+- verzija 2.46.0 (package.json, health, sw.js, footer, README, p2-data-plane, pwa-sw); script `e2e:mobile`; README: mobilni E2E dokumentiran
+
+### Stanje
+- CI/kvota: GitHub Actions še vedno pada z 0 koraki (5. serija), SDK web_search/page_reader še vedno 429 → ta prehod je bil 100 % brez kvotnih odvisnosti
+- preostanek #38: verifikacija ~12 dogodkov 2027 (SDK kvota), CI E2E job (Actions kvota), merge PR #40 (Actions kvota)
+
+## 2.47.0 — E2E v CI + regresijski testi filtrov destinacij (2026-10-13, issue #38)
+
+### Kontekst
+- CI (Actions kvota) 6. serija padcev z 0 koraki + SDK web_search 429 → izbran preostanek #38 BREZ kvotnih odvisnosti.
+- Merilo #38 „Filtri dogodkov in destinacij imajo regresijske teste“: filtri dogodkov zaklenjeni (events-p0-qa38), filtri destinacij so bili pokriti SAMO brskalniško (E2E) — logika živa v useMemo odjemalec komponente.
+- Preostanek „CI E2E job (ob rešeni kvoti)“ — izvedeno zdaj, da ob obnovi kvote teče samodejno.
+
+### Spremembe
+- NOVO src/lib/destinations-filter.ts: filterDestinations (iskanje po name/tagline/description/highlights + regija + tip), activeRegionKeys (kanonski vrstni red REGIONS), hasActiveFilters — izvleček 1 : 1 iz destinations-explorer.tsx; komponenta zdaj samo kliče lib.
+- NOVO tests/destinations-filter.test.ts: 20 zaklepov ①–⑦ (rezanje iskalnega niza, velikost črk, iskanje po vseh 4 poljih, neznana regija/tip iz URL-ja → prazen rezultat, „all“, ohranjen vrstni red nabora (determinizem kartic/fingerprinta), aktivne regije, integriteta registra 38/21/9). Kanon iskanja „bled“ = [bled, vintgar] in „vintgarska“ = [bled, vintgar] (vintgar omenjen v poljih).
+- ci.yml: drugi job `e2e` (Playwright zlata pot + mobilni, vzporedno z „vrata“): sveža SQLite (/tmp/e2e.db), prisma generate + db push, playwright install --with-deps chromium, bun run e2e, artefakti playwright-report/ + test-results/ tudi ob padcu; kvotna opomba v glavi posodobljena (+~6 min/push). YAML validiran (past: dvopiče v imenu joba zahteva navedke).
+- Verzija 2.47.0 na 7 mestih; README: banner + razdelek „E2E v CI“.
+
+### Verifikacija
+- bun test 2080/2080 (18203 expect, 103 datotek), tsc 0, eslint 0, Playwright 10/10 (1.7 min).
+- Pouk: ReturnType<typeof genericFn> izgubi generični T (pomožnik ids → eksplicitno generičen <T extends { id: string }>).
+
+### Stanje
+- CI/kvota: GitHub Actions še vedno pada z 0 koraki (6. serija), SDK web_search še vedno 429 → tudi ta prehod 100 % brez kvotnih odvisnosti.
+- preostanek #38: verifikacija ~12 dogodkov 2027 (SDK kvota), merge PR #40 (Actions kvota; E2E job zdaj že definiran).
+
+## 2.48.0 — pretekli dogodki jasno označeni + LOKALNI BUILD/SMOKE (2026-10-13, issue #38)
+
+### Kontekst
+- CI (Actions kvota, 7. serija) + SDK web_search (429) še vedno mrtva → izbrana naslednja ne-kvotna zahteva #38: „Pretekle dogodke odstrani iz privzetega seznama prihodnjih dogodkov oziroma jih jasno prikaži kot pretekle“ + ZAKLJUČEK edinega ne-preverjenega lokalnega vrata (build + smoke).
+
+### Spremembe
+- content-data.ts: NOVO polje CommunityEvent.dateEnd? (izpolnjeno IZKLJUČNO iz preverjenih razponov: Stara trta 2026-10-12, POMP 2026-10-11) + čista pomočnika eventEndIso (dateEnd ?? dateStart) in isEventPast (nepotrjen/prazen NIKOLI pretekli; zaključek == danes → še teče; < danes → pretekli).
+- events-view.tsx: prop todayIso? (SSR) + Badge „pretekli dogodek“ (6 jezikov, variant outline) — oznaka namesto brisanja (kanon sledljivosti).
+- dogodki/page.tsx: todayIso = Intl en-CA + timeZone Europe/Ljubljana (NE UTC) — 0 hidracijskih razlik; prop v EventsView + 3-argski eventsJsonLd.
+- jsonld.ts: eventsJsonLd(events, locale, todayIso?) — zaključeni izključeni iz @graph (Google smernice); 2-argska forma ostane čisti podatkovni pogled.
+- NOVO tests/events-past.test.ts: 16 zaklepov ①–⑤ (eventEndIso, semantika z fiksnim TODAY=2026-10-13 — datumsko neodvisno, živi kanon: natanko 2 pretekla, 13 nepotrjenih nikoli, dateEnd samo pri 2, JSON-LD 16/18 dvojna forma, pogodba strani).
+- tests/jsonld-schema.test.ts: pogodba ㉔ posodobljena (3-argski klic + <EventsView todayIso .../>).
+- Verzija 2.48.0 na 7 mestih + README banner.
+
+### Verifikacija (VSA 6 CI vrat lokalno — prvič za ta PR)
+- bun test 2096/2096 (18235 expect, 104 datotek), tsc 0, eslint 0, prisma generate/db push ✓
+- BUILD: next build standalone ✓ (Next.js 16.1.3)
+- MIGRATION SAFETY: sveža SQLite iz praznega stanja brez --accept-data-loss ✓
+- SMOKE: 19/19 preverb zelenih na standalone strežniku :3100 (9 strani, health status/version/checks 2.48.0 ≡ package.json, destinations 38, go 302/400 fail-closed, 4 cron 401 fail-closed) — reports/smoke.txt + smoke-report.json
+- Živo: /dogodki izriše „pretekli dogodek“ natanko 2×; @graph = 16 Eventov (Stara trta + POMP izključena, Kurentovanje vključeno)
+- Playwright 10/10 (2. tek; 1. tek = ostanek :3100 strežnika po smoke-u — artefakt okolja, ponovljen čisto)
+- Pouk: peskovnik ubije odzadnje procese ob koncu orodjarsega klica → strežnik + smoke MORAJO teči v istem klicu (kot v ci.yml); pkill za seboj.
+
+### Stanje
+- Vsa 6 vrat ci.yml LOKALNO zelena za glavo PR #40 (2.48.0) — edina preostanka v #38 sta še vedno kvotna: verifikacija ~11 dogodkov 2027 (SDK) + merge na zeleni CI (Actions).
+
+## 2.49.0 — verifikacija 2027 dogodkov s primarnimi viri (2026-10-13, issue #38)
+
+### Kontekst
+- CI (Actions kvota, 8. serija 0-korakov padcev tudi za f835de7) + SDK web_search/image-gen (429) še vedno mrtva → NASLEDNJA POT: direkten HTTP dostop do uradnih virov organizatorjev CURL (brez SDK) — in je uspela: 2 od 5 P0 primerov POTRJENA.
+
+### Spremembe
+- content-data.ts, 2 zapisa:
+  - planica-nordic-festival: POTRJENO planica.si „Program 2027 — Planica bo med 18. in 21. marcem 2027“ → dateStart 2027-03-18, dateEnd 2027-03-21, dateLabel „18. – 21. mar 2027“, dateUnconfirmed odstranjen, verifiedAt 2026-10-13; neodvisna potrditev sloski.si; vstopnice od 7. 10. 2026.
+  - zlati-lisjak-smucanje (id NE spremenjen): P0 popravek IMENA (uradno „Zlata lisica“, ne „Zlati lisjak“) in LOKACIJE (Podkoren/Kranjska Gora, ne Mariborsko Pohorje — do 2019 Maribor, od 2020 Podkoren); dateStart 2027-01-29, dateEnd 2027-01-30; destSlug „maribor“ odstranjen (Kranjska Gora ni med 38 destinacijami); NOVA website kranjskagora-worldcup.si (HTTP 200); source ostaja sloski.si; slika git mv → zlata-lisica-golden-fox.jpg (zgodovinska fotografija; Podkoren slika ob prekinitvi kvote — image gen 429).
+- Dvojni vir za Planico: planica.si („Četrtek, 18. marec 2027 10.00 Kvalifikacije … Nedelja, 21. marec 2027“) + sloski.si („Planica 18. – 21. 3. 2027“).
+- Ostali viri preverjeni BREZ 2027: vinska-vigred.si (Cloudflare izaiv), jurjevanje.si, pivoincvetje.si, bled.si, visitljubljana.com, postojna.si; nedosegljive domene: ljubljanafestival.si, tolminator.si, visitmaribor.si.
+- Testi: NOV ①f (Zlata lisica: ime/lokacija/datumi/vir/slika + destSlug undefined) + posodobljeni ①d Planica, ② UNCONFIRMED_IDS (8 → 6), ③c (13 → 11), ③d (dateEnd 2 → 4 zapisi), ④b (16 → 18 + nova startDate), ④c (18 → 20), ⑲ (20/31), ㉓ (20).
+- Verzija 2.49.0 na 7 mestih + README banner.
+
+### Verifikacija
+- bun test 2097/2097 (18276 expect, 104 datotek), tsc 0, eslint 0.
+- Živi izris (začasni dev strežnik :3200): /dogodki izriše „Zlata lisica“ 7×, „Zlati lisjak“ 0×, novi datumi, JSON-LD 2027-01-29 + 2027-03-18, „datum še ni potrjen“ točno 11×, „pretekli dogodek“ točno 2× (regresija 2.48.0 nedotrajana).
+- Pouk: (a) pri urejanju zapisa prilagodi CEL blok — `dateUnconfirmed: true` in `verifiedAt` so sedeli globlje v zapisu in so prvi run dali 7 padov; (b) commit z večvrstičnim sporočilom prek `git commit -F` (narekovaji v -m jurijo); (c) peskovnik znova ubil ozadnje procese → živi smoke v ISTEM klicu.
+
+### Stanje
+- Kanon zdaj: 20 potrjenih / 11 nepotrjenih; preostanek #38 ČISTO kvoten: 9 nepotrjenih 2027 (SDK web_search 429) + zeleni CI/merge PR #40 (Actions kvota). GitHub: #38 komentar 6143529693; PR #40 body dopolnjen.
+
+## 2.50.0 — dokument #35: balkanska platforma brez AI (2026-10-13)
+
+### Kontekst
+- #38 čisto izčrpan za ne-kvotna dela (2.49.0); uporabnik z „odlicno nadaljuj“ odobril ponujeni naslednji korak: izvedljivi načrt #35. Raziskavni komentar (6132732445) je pokrival SDK matriko, a dokument docs/research/balkan-platform-no-ai.md (12 poglavij iz meril sprejemanja) ŠE NE obstaja — to je bil manjkajoči rezultat.
+
+### Spremembe
+- NOVO docs/research/balkan-platform-no-ai.md: 12 poglavij — povzetek; repo-pregled s trdimi dokazi (deluje: deterministicni engine 1937 vrstic, Leaflet+CSP, 27 Prisma modelov, 2097 testov; nepopolno: geokodiranje/routing/i18n vsebine; manjka: ploscice prod, Valhalla, vecdrzavni model, Provider katalog; podvajanje izrecno izloceno); primerjalna matrika SDK; podatkovni viri + ODbL; pokritost 5 drzav (GTFS 0/5); podatkovni model Provider + postopek verifikacije (OSM = VEČNO unverified do potrditve); partner API-ji vse [nepotrjeno]; arhitektura na obstoječem engine; faze 1–6 (faza 1 = OpenFreeMap swap, reverzibilna); stroški znani 0 EUR ločeni od [nepotrjenih] ponudb; register 10 tveganj; viri z datumi.
+- curl-potrditve 2026-10-13: Valhalla COPYING = MIT; Photon LICENSE = Apache-2.0; MapLibre LICENSE.txt = BSD-3; OpenFreeMap „completely free, no limits“; podatki.gov.si CKAN = 0 GTFS.
+- Verzija 2.50.0 na 7 mestih + README banner. 0 produkcijskih sprememb vedenja.
+
+### Verifikacija
+- bun test 2097/2097 (18276 expect), tsc 0, eslint 0.
+- GitHub: #35 komentar 6143809470; commit 07f1f9e potisnjen v PR #40.
+
+### Stanje
+- #35 zaključen (predlog zaprtja ob merge-u #40); odločitev lastnika: faza 1 (OpenFreeMap swap), ODbL pravni pregled pred fazo 4, Viator pilot ob obsegu.
+- Kvote še vedno mrtve (Actions 8. serija, SDK 429) — oboje neovira tega prehoda (curl + lokalna vrata).
+
+---
+Task ID: R38-E2E-PREVIEW (2.51.0)
+Agent: Z.ai Code (glavni orkestrator)
+Task: Issue #38 — E2E verifikacija deployed artefakta na Vercel preview-u (ne-kvotna pot, ko sta Actions in SDK izčrpani).
+
+Work Log:
+- Kvoti ponovno preverjeni: GitHub Actions 9. serija 0-korakov padcev (runa za b8f0dad/07f1f9e, tudi E2E job); SDK web_search 429. Ni novih odgovorov lastnika na #38/#35/#40.
+- NOVA POT: Vercel preview deployment na PR #40 deluje NEODVISNO od Actions kvote — commit status za b8f0dad = Vercel success; curl preview URL potrjuje v2.50.0.
+- Živi preview verificiran (curl): /dogodki izrisuje Planica 18.–21. mar 2027, Zlata lisica + Podkoren, kranjskagora-worldcup.si povezavo, 11× „datum še ni potrjen“, 2× pretekli dogodek, NIČ „lisjak“ ostankov; P1 SEO naslovi unikatni na /destinacije, /nacrtuj, /dozivetja, /lokali, /trznica, /vodici, /zemljevid, /en.
+- playwright.config.ts: podpora `E2E_BASE_URL` (remote način — webServer se ne zažene, navigationTimeout/actionTimeout/expect timeout sproščeni, 1 retry za tranzientne mrežne napake).
+- Prvi oddaljeni tek: 4/10 padov (deterministično) — diagnoza: ERR_ABORTED ob `load` prek počasnega proxyja + klik tekmuje s hidracijo/soft-nav („element was detached“, opcija padе pred prikazom).
+- e2e/nav.ts (nov): gotoTrdo (domcontentloaded + 1 retry + networkidle v remote načinu) + ustaliSe (networkidle po fill-u); vpeljano v golden-path.e2e.ts in mobile.e2e.ts (vsi goto/fill/reload točke). Lokalno = no-op (obnašanje nespremenjeno).
+- 2. oddaljeni tek: 10/10 PASSED proti živemu Vercel preview-u (2.5 min). Lokalni tek: 10/10 (1.9 min) — brez regresije.
+- Verzija 2.51.0 (7 datotek); vrata: tsc 0, eslint 0, bun test 2097/2097 (18276 expect).
+
+Stage Summary:
+- Issue #38: DEPLOYED ARTEFAKT je zdaj end-to-end verificiran na pravem hostingu (Vercel preview, v2.50.0 → commit b8f0dad): zlata pot + mobilni paket + vsebina dogodkov + SEO. E2E proti preview-ju je zdaj stalen vzorec (`E2E_BASE_URL=… bunx playwright test`).
+- Preostanek #40 merge-a = IZKLJUČNO GitHub Actions kvota (9. serija; uporabnik: Billing → Actions → rerun). SDK kvota še 429 → 9 nepotrjenih 2027 dogodkov + Podkoren slika ostajata čakalca.
+
+---
+## R38-SINHRONIZACIJA-PLATFORM (2.52.x) — 2026-10-13
+
+Agent: Z.ai Code (glavni orkestrator). Kontekst: peskovniški reset izgubil lokalni klon in GitHub žeton; žetona obnovljena (GitLab klasični PAT + GitHub lastniški).
+
+Work Log:
+- GitLab zrcalo (markec-group1/discover-slovenia-ai): **prvi uspešen push celotne feature branche** `feat/r35-seo-p0-dogodki-2.44.0` @ cb78d15 (9 commitov, 2.44.0→2.52.0); push samodejno kreiral pipeline 2943046833.
+- GitLab CI diagnoza do definitive meje: API-trigger + materializacija jobov blokirana z računskimi vrati **„Identity verification is required in order to run CI jobs"** (account-wide: potrjeno na zrcalu in 2. projektu lastnika; 3 pipeline z 0 jobi; shared runnerji stale/inactive). Self-hosted runner (id 57360920) registriran in avtenticiran (HTTP 204) — ne pomaga, ker jobi sploh ne nastanejo.
+- **CI Lint (GitLab API): 7 vrat VALID** — lint, typecheck, test, prisma-validate, build, smoke, **e2e**; ko lastnik zaključi Identity Verification, pipeline požene brez YAML napak.
+- **E2E proti živemu Vercel preview-u v2.52.0 (cb78d15): 10/10** (2.7 min): zlata pot + determinizem + mobilni paket (5 prelomov, meni, dotik, Leaflet). Health: `{"status":"ok","version":"2.52.0"}`; /dogodki: Planica 18.–21. mar, Zlata lisica/Podkoren ×7, unikatni SEO titles.
+- Kvotne preverbe: GitHub Actions še 0-korakov (2 joba, 0 korakov, run 38390975189); SDK web_search še 429 → 9 nepotrjenih 2027 dogodkov + Podkoren slika ostajata čakalca.
+- Vercel produkcija: v2.43.0 (= main @ 01e2147); prevezava na 2.52.0 sledi merge-u PR #40 (mergeable: true).
+
+Stage Summary:
+- Platforme usklajene na cb78d15 / v2.52.0: GitHub PR #40 = GitLab zrcalo = Vercel preview. Deployed artefakt je end-to-end verificiran (vsebina + E2E 10/10 + health).
+- Preostanek je čisto lastniško/kvoten: (1) GitLab Identity Verification → retry pipeline 2943046833 → zeleni 7-vratni tek; (2) GitHub Actions kvota (Billing → rerun); (3) merge PR #40; (4) SDK kvota → 9 dogodkov + Podkoren slika.
+
+---
+## R38-ACTIONS-ZELEN (2.52.x 4. del) — 2026-10-13
+
+Agent: Z.ai Code (glavni orkestrator).
+
+Work Log:
+- **GitHub Actions kvota obnovljena — PRVI ZELENI CI TEK PR #40** (po 10 kvotnih 0-korakov serijah): run 38420968256 = CI 6 vrat (2 joba: 20 + 11 korakov, vklj. E2E zlata pot + mobilni) ✅ + run 38420962280 = dvosmerna sinhronizacija GitLab↔GitHub ✅ (head 0cd3120a).
+- GitLab zrcalo: ustvarjen **MR !1** (feat/r35-seo-p0-dogodki-2.44.0 → main) — zrcalo pripravljeno do zadnjega klika; pipeline čaka Identity Verification (CI Lint 7 vrat že VALID, self-hosted runner 57360920 registriran).
+- Kvotne preverbe: SDK web_search še 429 (9 nepotrjenih 2027 dogodkov + Podkoren slika); GitLab IV še ne izvedena.
+- #38 komentar 6149113075 (mejnik Actions zelena) + PR body dodatek.
+
+Stage Summary:
+- PR #40 je zdaj 100 % CI-zelen na GitHubu (lokalna vrata + Actions 6 vrat + E2E + deployed preview 10/10). Merge ovire na GitHub strani: NIČ. Preostanek #38: GitLab IV (pariteta) + SDK kvota (vsebina) + merge klik.
+
+---
+## R38-SDK-SERIJA (2.53.0) — 2026-10-13
+
+Agent: Z.ai Code (glavni orkestrator). Kontekst: SDK kvota se je obnovila (prvi uspešni web_search po 2 dneh 429).
+
+Work Log:
+- **SDK verifikacijska serija** (3 kroga web_search + 4 page_reader): ciljno preverjanje 11 nepotrjenih dogodkov.
+- **POTRDITEV ①: December v Ljubljani 2026/27** — uradna stran visitljubljana.com objavlja „Začetek prešernosti s prižigom lučk: 27. 11. 2026“ → bozicni-sejmi-ljubljana-maribor: dateStart 2026-11-27, „od 27. nov 2026“, mesec 11 ostaja, URL strani december-v-ljubljani kot website+source.
+- **POTRDITEV ②: Ljubljanski zimski festival 2027** — 10. izdaja je v FEBRUARJU (ne januarju!): prvi potrjeni termin 15. 2. 2027, 19.30, Cankarjev dom (Eventim uradna prodaja: Simfonični orkester RTV SLO; neodvisno glasbenamatica.si „10. zimski Festival Ljubljana … 15. februar 2027“; TicketSwap 10. 2.) → monthIndex 1 → 2, dateStart 2027-02-15, „od 15. feb 2027“.
+- **Ostaja pošteno nepotrjeno (9)**: Čarobni Maribor (uradni vir še ne objavlja; agregator 27.11. NI primarni vir), Blejska zimska pravljica (uradno okno dec–jan, brez programskega datuma), jamski sejem, koline + 5 poletnih 2027. Bled: page_reader potrdil okno „od začetka decembra do začetka januarja“ (okno ≠ program).
+- Kanon posodobljen: 20/31 → **22/31 potrjenih**; @graph zaklepi (④b 18→20, ④c/⑲/㉓ 20→22), ③c 11→9 nepotrjenih; RECHECKED/UNCONFIRMED seznama usklajena.
+- Verzija 2.53.0 (7 mest). Vrata: tsc 0, eslint 0, **bun test 2097/2097** (18298 expect).
+
+Stage Summary:
+- Število potrjenih dogodkov: 20 → 22; nepotrjenih: 11 → 9. Dve zmaki vsebinski potrditvi s primarnimi viri prek SDK. Preostanek #38 vsebinsko: 9 nepotrjenih (objave pričakovane novembra) + Podkoren slika (ni blokirana — preverba pokazala, da ni ločene postavke v kodi).

@@ -23,7 +23,8 @@
  * skripto blokirala — zaklep POLIR6 ostaja nedotaknjen).
  *
  * Ta datoteka: SOURCE-CONTRACT popravljenih strani + defenzivni zaklepi
- * (natanko 2 ld+json skripti v src/, obe z utišanjem) + regresija layouta
+ * (natanko 3 ld+json skripti v src/, vsaka z utišanjem; 2.45.0: + /dogodki
+ * Event @graph — QA #38) + regresija layouta
  * + čistost JSON vsebine (per-zahtevni nonce živi SAMO v atributu).
  * UI komponente se NE importuje (0 omrežja, 0 DOM, 0 AI) — ista dvojna
  * plast kot reflow-320.test.ts / jsonld-schema.test.ts.
@@ -47,6 +48,11 @@ const PAGE_DOMOV = readFileSync(
 
 const PAGE_DESTINACIJA = readFileSync(
   join(import.meta.dir, "../src/app/[locale]/destinacija/[slug]/page.tsx"),
+  "utf8"
+);
+
+const PAGE_DOGODKI = readFileSync(
+  join(import.meta.dir, "../src/app/[locale]/dogodki/page.tsx"),
   "utf8"
 );
 
@@ -134,21 +140,23 @@ describe("POLIR10: destinacija ([locale]/destinacija/[slug]/page.tsx) — ld+jso
 // ── ③ KANON NONCE: middleware → x-nonce → headers() (zaklep vzorca) ────────
 
 describe("POLIR10: kanon nonce (nextjs.org CSP vodnik — middleware → glava → stran)", () => {
-  test("③ obe strani bereta nonce iz (await headers()).get(\"x-nonce\") ?? \"\" (isti vzorec kot layout)", () => {
+  test("③ vse tri strani berejo nonce iz (await headers()).get(\"x-nonce\") ?? \"\" (isti vzorec kot layout)", () => {
     const kanon = '(await headers()).get("x-nonce") ?? ""';
     expect(PAGE_DOMOV).toContain(kanon);
     expect(PAGE_DESTINACIJA).toContain(kanon);
+    expect(PAGE_DOGODKI).toContain(kanon); // 2.45.0 (#38): Event @graph
     // nonce se NE sme odstraniti (produkcjska CSP bi blokirala skripto) —
     // zaklep POLIR6 (glave ≡ skripte) ostaja nedotaknjen:
     expect(PAGE_DOMOV).toContain("nonce={nonce}");
     expect(PAGE_DESTINACIJA).toContain("nonce={nonce}");
+    expect(PAGE_DOGODKI).toContain("nonce={nonce}");
   });
 });
 
-// ── ④ DEFENZIVNO: natanko 2 ld+json skripti v celem src/, obe z utišanjem ───
+// ── ④ DEFENZIVNO: natanko 3 ld+json skripti v celem src/, vsaka z utišanjem ───
 
-describe("POLIR10: defenzivni zaklep — NATANKO 2 ld+json skripti v src/, VSAKA z utišanjem", () => {
-  test("④ hoja po vsem src/ poišče natanko 2 ld+json elementa, oba z nonce + suppressHydrationWarning (nobena nova brez utišanja)", () => {
+describe("POLIR10: defenzivni zaklep — NATANKO 3 ld+json skripti v src/, VSAKA z utišanjem", () => {
+  test("④ hoja po vsem src/ poišče natanko 3 ld+json elementa, vsi z nonce + suppressHydrationWarning (nobena nova brez utišanja)", () => {
     const najdeni: { datoteka: string; element: string }[] = [];
     for (const pot of srcDatoteke(SRC_KOREN)) {
       const cisto = brezBlokovnihKomentarjev(readFileSync(pot, "utf8"));
@@ -158,8 +166,9 @@ describe("POLIR10: defenzivni zaklep — NATANKO 2 ld+json skripti v src/, VSAKA
         }
       }
     }
-    // NATANKO 2 ld+json skripti v celotnem src/ (domov + destinacija):
-    expect(najdeni.length).toBe(2);
+    // NATANKO 3 ld+json skripti v celotnem src/ (domov + destinacija + dogodki;
+    // 2.45.0 #38: nova skripta zahteva zavesten update tega zaklepa):
+    expect(najdeni.length).toBe(3);
     // vsaka ima tako utišanje KOT nonce (utrežena hidracija + CSP živ):
     for (const { datoteka, element } of najdeni) {
       expect(element, datoteka).toContain("suppressHydrationWarning");
@@ -171,6 +180,7 @@ describe("POLIR10: defenzivni zaklep — NATANKO 2 ld+json skripti v src/, VSAKA
       .sort();
     expect(poti).toEqual([
       "app/[locale]/destinacija/[slug]/page.tsx",
+      "app/[locale]/dogodki/page.tsx",
       "app/[locale]/page.tsx",
     ]);
   });

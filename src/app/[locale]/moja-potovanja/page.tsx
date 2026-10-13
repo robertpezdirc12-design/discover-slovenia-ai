@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { alternatesFor } from "@/lib/hreflang";
+import { pageMetadata } from "@/lib/page-metadata";
 import MyTripsView from "./view";
 
 /**
@@ -16,7 +16,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return { alternates: alternatesFor(locale, "/moja-potovanja") };
+  return pageMetadata(locale, "/moja-potovanja");
 }
 
 export default function MyTripsPage() {

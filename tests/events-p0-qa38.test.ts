@@ -70,13 +70,20 @@ describe("events P0 (#38): potrditve primarnih virov", () => {
     expect(e.source).toBe("https://www.vinska-vigred.si");
   });
 
-  test("①d Planica: uradni naziv FIS finale + termin 2027 še brez objave", () => {
+  test("①d Planica: FIS finale SP 18.–21. marec 2027 (planica.si + sloski.si)", () => {
     const e = byId("planica-nordic-festival");
     expect(e.title).toBe("Planica — FIS finale svetovnega pokala");
     expect(e.website).toBe("https://www.planica.si");
-    expect(e.dateUnconfirmed).toBe(true);
-    expect(e.dateStart).toBe("");
+    // QA 3. serija (2026-10-13): planica.si objavila „Program 2027 —
+    // Planica bo med 18. in 21. marcem 2027“; sloski.si neodvisno potrdil.
+    expect(e.dateUnconfirmed).toBeUndefined();
+    expect(e.dateStart).toBe("2027-03-18");
+    expect(e.dateEnd).toBe("2027-03-21");
+    expect(e.dateLabel).toBe("18. – 21. mar 2027");
+    expect(e.monthIndex).toBe(3);
+    expect(e.venue).toBe("Planica, Kranjska Gora");
     expect(e.source).toBe("https://www.planica.si");
+    expect(e.verifiedAt).toBe("2026-10-13");
   });
 
   test("①e Jurjevanje: JUNIJ (62. izdaja 2026: 22.–28. junij) + lokacija po viru", () => {
@@ -86,6 +93,29 @@ describe("events P0 (#38): potrditve primarnih virov", () => {
     expect(e.dateUnconfirmed).toBe(true);
     expect(e.source).toBe("https://www.jurjevanje.si");
   });
+
+  test("①f Zlata lisica: 29.–30. jan 2027 na Podkorenu (sloski.si) — NI „Zlati lisjak“ in ni Maribor", () => {
+    const e = byId("zlati-lisjak-smucanje");
+    // QA 3. serija (2026-10-13, sloski.si — uradni koledar SP 2026/27):
+    // „Zlata lisica 29. – 30. 1. 2027 FIS svetovni pokal v alpskem smučanju
+    // za ženske“; povezava viru vodi na kranjskagora-worldcup.si → lokacija
+    // Podkoren/Kranjska Gora (do 2019 Maribor, od 2020 Podkoren).
+    expect(e.title).toContain("Zlata lisica");
+    expect(e.title).not.toContain("Zlati lisjak");
+    expect(e.dateUnconfirmed).toBeUndefined();
+    expect(e.dateStart).toBe("2027-01-29");
+    expect(e.dateEnd).toBe("2027-01-30");
+    expect(e.dateLabel).toBe("29. – 30. jan 2027");
+    expect(e.monthIndex).toBe(1);
+    expect(e.venue).toContain("Kranjska Gora");
+    expect(e.venue).not.toContain("Maribor");
+    expect(e.website).toBe("https://kranjskagora-worldcup.si");
+    expect(e.source).toBe("https://www.sloski.si");
+    expect(e.verifiedAt).toBe("2026-10-13");
+    // Kranjska Gora ni med 38 destinacijami → brez destSlug (ne „maribor“)
+    expect(e.destSlug).toBeUndefined();
+    expect(e.image).toBe("/content/zlata-lisica-golden-fox.jpg");
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -94,15 +124,19 @@ describe("events P0 (#38): potrditve primarnih virov", () => {
 
 describe("events P0 (#38): nepotrjeni datumi", () => {
   const UNCONFIRMED_IDS = [
-    "ljubljanski-zimski-festival",
-    "zlati-lisjak-smucanje",
     "vinska-vigred-maribor",
-    "planica-nordic-festival",
     "festival-soca",
     "blejski-danovski-festival",
     "jurjevanje-bela-krajina",
     "pivo-in-cvetje-lasko",
   ];
+  // QA 3. serija (2026-10-13): „zlati-lisjak-smucanje“ (→ Zlata lisica,
+  // 29.–30. 1. 2027) in „planica-nordic-festival“ (→ 18.–21. 3. 2027)
+  // prešla med POTRJENE — glej ①d/①f.
+  // SDK serija (2026-10-13): „ljubljanski-zimski-festival“ → POTRJEN
+  // (15. 2. 2027, Eventim + glasbenamatica.si) — mesec popravljen jan → feb;
+  // „bozicni-sejmi-ljubljana-maribor“ (Ljubljana del) → POTRJEN začetek
+  // 27. 11. 2026 (uradna stran visitljubljana.com). Maribor ostaja nepotrjen.
 
   test("②a vsak nepotrjen dogodek: PRAZEN ISO datum + pošten napis + mesec 1–12", () => {
     expect(UNCONFIRMED_IDS.length).toBeGreaterThan(0);
@@ -161,9 +195,9 @@ function filterEvents(month: number | "all", category: EventCategory | "all") {
 }
 
 describe("events P0 (#38): regresija filtrov", () => {
-  test("③a brez filtrov = vseh 30 dogodkov (ponastavitev)", () => {
-    expect(EVENTS.length).toBe(30);
-    expect(filterEvents("all", "all").length).toBe(30);
+  test("③a brez filtrov = vseh 31 dogodkov (razdvojitev P0 2. serije, ponastavitev)", () => {
+    expect(EVENTS.length).toBe(31);
+    expect(filterEvents("all", "all").length).toBe(31);
   });
 
   test("③b filter po mesecu: februar najde Kurentovanje (potrjen 3. feb)", () => {
@@ -196,5 +230,199 @@ describe("events P0 (#38): regresija filtrov", () => {
   test("③f vsi dogodki imajo kategorijo iz dovoljenega nabora (obljuba UI čipov)", () => {
     const cats = Object.keys(EVENT_CATEGORIES) as EventCategory[];
     for (const e of EVENTS) expect(cats).toContain(e.category);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ④ P0 2. SERIJA (verifikacija 2026-10-13) — popravki na podlagi primarnih
+//    virov: ce-sejem.si (seznam sejmov), crnomelj.si + nacionalni register
+//    dogodkov (e-občina), visitljubljana.com, visitmaribor.si, bled.si,
+//    postojna.si. Kanon: vir se zapiše SAMO, če ga je verifikacija
+//    dejansko prebrala; nepotrjen datum = „datum še ni potrjen“.
+// ---------------------------------------------------------------------------
+
+describe("events P0 2. serija (2026-10-13): popravki po primarnih virih", () => {
+  test("④a celjski-sejem: uradni jesenski sejem je POMP, 10.–11. okt 2026", () => {
+    const e = byId("celjski-sejem");
+    // zapis „Celjski sejem 9.–12. 10. 2026“ ne obstaja — „Celjski sejem
+    // d.d.“ je prizorišče/organizator; edini oktobrski sejem 2026 = POMP.
+    expect(e.title).toBe("POMP — sejem pompoznih dogodkov");
+    expect(e.dateStart).toBe("2026-10-10");
+    expect(e.dateLabel).toBe("10. – 11. okt 2026");
+    expect(e.monthIndex).toBe(10);
+    expect(e.venue).toBe("Celjski sejem, Celje");
+    expect(e.website).toBe("https://www.ce-sejem.si");
+    expect(e.source).toBe("https://www.ce-sejem.si/sejmi/");
+    expect(e.verifiedAt).toBe("2026-10-13");
+    expect(e.dateUnconfirmed).toBeUndefined();
+  });
+
+  test("④b bela-krajina-koline: 2026 edicija NI potrdljiva → pošteno nepotrjeno", () => {
+    const e = byId("bela-krajina-koline");
+    expect(e.dateUnconfirmed).toBe(true);
+    expect(e.dateStart).toBe("");
+    expect(e.dateLabel).toBe("datum še ni potrjen");
+    // manjkajoči vir: brez izmišljenega source-a (iskrenostni kanon)
+    expect(e.source).toBeUndefined();
+    expect(e.verifiedAt).toBeUndefined();
+    // mesec ostane kot PRIČAKOVANO okno (november, tradicija)
+    expect(e.monthIndex).toBe(11);
+  });
+
+  test("④c božični sejmi RAZDVOJENI: Ljubljana (obstoječi id) + Maribor (nov id)", () => {
+    const lj = byId("bozicni-sejmi-ljubljana-maribor");
+    const mb = byId("bozicni-sejmi-maribor");
+    // Ljubljana: uradni brand „December v Ljubljani“, glavni prizorišči
+    // Prešernov trg/Breg (ne „Stari trg“); SDK serija (2026-10-13): začetek
+    // sezone 2026/27 POTRJEN — prižig lučk 27. 11. 2026 (uradna stran).
+    expect(lj.title).toBe("December v Ljubljani — božični sejmi");
+    expect(lj.dateUnconfirmed).toBeUndefined();
+    expect(lj.dateStart).toBe("2026-11-27");
+    expect(lj.dateLabel).toBe("od 27. nov 2026");
+    expect(lj.monthIndex).toBe(11);
+    expect(lj.source).toContain("visitljubljana.com");
+    expect(lj.verifiedAt).toBe("2026-10-13");
+    expect(lj.venue).toBe("Prešernov trg in Breg, Ljubljana");
+    expect(lj.website).toBe("https://www.visitljubljana.com/sl/obiskovalci/prireditve/prireditve-v-ljubljani/december-v-ljubljani");
+    // Maribor: uradni brand „Čarobni Maribor“ (visitmaribor.si)
+    expect(mb.title).toBe("Čarobni Maribor — božični sejmi");
+    expect(mb.dateUnconfirmed).toBe(true);
+    expect(mb.dateStart).toBe("");
+    expect(mb.website).toBe("https://www.visitmaribor.si");
+    expect(mb.monthIndex).toBe(11);
+    // oba zapisa si delita kategorijo tradicija in mesec 11
+    expect(lj.category).toBe("tradicija");
+    expect(mb.category).toBe("tradicija");
+  });
+
+  test("④d bled-winter-magic: uradni brand „Blejska zimska pravljica“ (bled.si)", () => {
+    const e = byId("bled-winter-magic");
+    expect(e.title).toBe("Blejska zimska pravljica");
+    expect(e.venue).toBe("Jezerska promenada, Bled");
+    expect(e.dateUnconfirmed).toBe(true);
+    expect(e.dateStart).toBe("");
+    expect(e.website).toBe("https://www.bled.si/sl/prireditve/glavne-prireditve/blejska-zimska-pravljica/");
+    expect(e.source).toBe("https://www.bled.si/sl/prireditve/glavne-prireditve/blejska-zimska-pravljica/");
+    expect(e.verifiedAt).toBe("2026-10-13");
+  });
+
+  test("④e jamski-sejem-postojna: NI sledu v primarnih virih → pošteno nepotrjeno", () => {
+    const e = byId("jamski-sejem-postojna");
+    expect(e.dateUnconfirmed).toBe(true);
+    expect(e.dateStart).toBe("");
+    expect(e.dateLabel).toBe("datum še ni potrjen");
+    // zapis ostane (ne brišemo brez razloga), a brez izmišljenega datuma
+    expect(e.venue).toBe("Trg Tabor, Postojna");
+    expect(e.monthIndex).toBe(12);
+  });
+
+  test("④f vsi potrjeni datumi (2. serija) imajo vir + datum verifikacije", () => {
+    for (const e of EVENTS) {
+      if (e.dateUnconfirmed) continue;
+      // dogodek z 2. serija popravkom NOSI vir; starejši zapisi (1. serija
+      // in nerazvrščeni) ostanejo nespremenjeni — tu zaklepamo le, da
+      // POPRAVLJENI zapisi (celjski-sejem) nosita vir.
+      if (e.id === "celjski-sejem") {
+        expect(e.source).toBeTruthy();
+        expect(e.verifiedAt).toBe("2026-10-13");
+      }
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ⑤ P0 3. SERIJA (verifikacija 2026-10-13, SDK kvota izčrpana → curl pri
+//    primarnih virih): nacionalni register dogodkov (e-občina
+//    /DobiDogodke — instanca tolmin.si, ključne besede „Soča“/„Soca“/
+//    „Tolminator“/„blejski“/„danovski“/„koline“/„opankarija“/„jamski“ =
+//    0 zadetkov), postojna.si register (eo_id=105, „jamski“ = 0),
+//    bled.si RSS (1554 novic) + koledar na domači strani, Wikipedia
+//    MetalDays/Tolminator (dejansko prebrana). Kanon nespremenjen:
+//    vir se zapiše SAMO, če ga je verifikacija dejansko brala.
+// ---------------------------------------------------------------------------
+
+describe("events P0 3. serija (2026-10-13): korekcija + ponovna sledljivost", () => {
+  test("⑤a festival-soca: korigiran na REALNI Tolminator (Tolmin, julij, metal)", () => {
+    const e = byId("festival-soca");
+    // fiktivni „Festival Soča“ (sport/reggae, maj) ne obstaja — edini
+    // aktivni glasbeni festival na Soči v Tolminu je Tolminator (od 2023
+    // na istem prizorišču kot MetalDays 2004–2022), vzorec ④a.
+    expect(e.title).toBe("Tolminator — metal festival na sotočju Soče in Tolminke");
+    expect(e.title).toContain("Tolminator");
+    expect(e.category).toBe("glasba"); // NE „sport“ več
+    expect(e.monthIndex).toBe(7); // julij (seznam metal festivalov: „July“)
+    expect(e.venue).toContain("Tolmin");
+    expect(e.venue).toContain("Sotočje");
+    // termin 2027 neobjavljen → pošteno nepotrjen (kanon ②)
+    expect(e.dateUnconfirmed).toBe(true);
+    expect(e.dateStart).toBe("");
+    expect(e.dateLabel).toBe("datum še ni potrjen");
+    // vir dejansko prebran: Wikipedia MetalDays (Tolminator od 2023)
+    expect(e.source).toBe("https://en.wikipedia.org/wiki/MetalDays");
+    expect(e.verifiedAt).toBe("2026-10-13");
+    // organizatorjeva stran (tolminator.si) nedosegljiva → brez povezave
+    expect(e.website).toBeUndefined();
+    // destinacija ostane Soča (Tolmin je pokrit z vodičem reka-soca)
+    expect(e.destSlug).toBe("reka-soca");
+  });
+
+  test("⑤b blejski-danovski-festival: ime NI sledljivo (register + bled.si) → pošteno nepotrjeno", () => {
+    const e = byId("blejski-danovski-festival");
+    expect(e.dateUnconfirmed).toBe(true);
+    expect(e.dateStart).toBe("");
+    expect(e.dateLabel).toBe("datum še ni potrjen");
+    // not_found kanon ④b: brez izmišljenega source-a in povezave
+    expect(e.source).toBeUndefined();
+    expect(e.verifiedAt).toBeUndefined();
+    expect(e.website).toBeUndefined();
+    // mesec = pričakovano okno (april, po izmišljenem terminu), ostane
+    expect(e.monthIndex).toBe(4);
+    expect(e.destSlug).toBe("bled");
+  });
+
+  test("⑤c ponovna verifikacija registra (2026-10-13): koline/jamski/božični-MB/blejski → datumi ostanejo prazni", () => {
+    // vsi izrecno ponovno preverjeni prek e-občina /DobiDogodke (0 zadetkov);
+    // SDK serija (2026-10-13): ljubljanski del božičnih sejmov POTRJEN
+    // (27. 11. 2026, visitljubljana.com) — iz seznama izločen, Maribor ostane.
+    const RECHECKED = [
+      "bela-krajina-koline",
+      "jamski-sejem-postojna",
+      "bozicni-sejmi-maribor",
+      "blejski-danovski-festival",
+      "festival-soca",
+    ];
+    for (const id of RECHECKED) {
+      const e = byId(id);
+      expect(e.dateUnconfirmed).toBe(true);
+      expect(e.dateStart).toBe("");
+      expect(e.dateLabel).toBe("datum še ni potrjen");
+    }
+    // koline: vir ostane NEDEFINIRAN (zaklep ④b ne sme biti oslabjen)
+    expect(byId("bela-krajina-koline").source).toBeUndefined();
+    expect(byId("jamski-sejem-postojna").source).toBeUndefined();
+  });
+
+  test("⑤d nedosegljive/mrtve domene (3. serija) se ne vrnejo v kanon", () => {
+    const dead = ["tolminator.si", "festival-soca.com", "festivalsoca.si", "festivalblejskihdni.si"];
+    for (const e of EVENTS) {
+      if (e.website) {
+        for (const d of dead) expect(e.website.includes(d)).toBe(false);
+      }
+    }
+    // vire prav tako ne kažemo na mrtve domene
+    for (const e of EVENTS) {
+      if (e.source) {
+        for (const d of dead) expect(e.source.includes(d)).toBe(false);
+      }
+    }
+  });
+
+  test("⑤e Tolminator vsebinska zahteva: omenja nasledništvo MetalDays + lokacijo sotočja", () => {
+    const e = byId("festival-soca");
+    expect(e.description).toContain("MetalDays");
+    expect(e.description).toContain("sotočju");
+    // opis ne sme več trditi reggae/alternative (ugasnjeni Riversplash)
+    expect(e.description.toLowerCase()).not.toContain("reggae");
+    expect(e.description.toLowerCase()).not.toContain("rafting");
   });
 });

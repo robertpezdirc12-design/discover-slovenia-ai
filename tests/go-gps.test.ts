@@ -6,7 +6,7 @@
  *  - haversine po kanonu geo-distance izvirnika (R = 6371); Ljubljana→Bled
  *    ≈ 46,9 km premočno (cestna ocena ×1,3 ≈ 61 km; realna OSRM pot je
  *    ~77 km — ocena je pošteno razkrita kot približek, nikoli izmišljena);
- *  - ETA = premočna ×1,3 pri ~55 km/h (neveljaven vhod → 0, nikoli izmislek);
+ *  - ETA = premočrtna ×1,3 pri ~55 km/h (neveljaven vhod → 0, nikoli izmislek);
  *  - odklon brez routeCoords NI izmišljen: baza "straight", odklon 0
  *    (razkrito); s polilinijo pa point-to-segment, prag OFF_ROUTE_KM = 3 km;
  *  - roundedPrivacy: 4 decimale (~11 m) — edina oblika, ki zapusti klienta;

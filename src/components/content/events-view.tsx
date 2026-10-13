@@ -16,6 +16,7 @@ import {
   EVENT_MONTHS,
   EVENT_PRICE_LABEL,
   EVENTS,
+  isEventPast,
   type EventCategory,
 } from "@/lib/content-data";
 import { getDestination } from "@/lib/slovenia-data";
@@ -48,11 +49,11 @@ function eventCountLabel(l: string, n: number): string {
 }
 
 /**
- * /dogodki — koledar 30 dogodkov 1:1 iz produkcije: filtri po mesecu in
+ * /dogodki — koledar 31 dogodkov (30 iz produkcije + razdvojen zapis P0 2. serije): filtri po mesecu in
  * kategoriji, mesečne skupine, kartice z datumom, lokacijo, vstopnino,
  * uradno spletno stranjo in povezavo na destinacijo.
  */
-export function EventsView() {
+export function EventsView({ todayIso }: { todayIso?: string }) {
   const l = useLocale();
   const [month, setMonth] = React.useState<number | "all">("all");
   const [category, setCategory] = React.useState<EventCategory | "all">("all");
@@ -124,6 +125,18 @@ export function EventsView() {
     venueTitle: { sl: "Lokacija", en: "Location", it: "Luogo", de: "Ort", fr: "Lieu", es: "Lugar" },
     priceTitle: { sl: "Vstopnina", en: "Admission", it: "Ingresso", de: "Eintritt", fr: "Entrée", es: "Entrada" },
     featured: { sl: "Izpostavljeno", en: "Featured", it: "In evidenza", de: "Empfohlen", fr: "En vedette", es: "Destacado" },
+    // #38 (2.48.0): „Pretekle dogodke odstrani iz privzetega seznama
+    // prihodnjih dogodkov oziroma jih jasno prikaži kot pretekle“ —
+    // izbrana JE oznaka (ne brisanje): sledljivost zapisa in vira ostane
+    // (kanon „ne briši podatkov brez razloga“). todayIso podaja SSR prop.
+    pastEvent: {
+      sl: "pretekli dogodek",
+      en: "past event",
+      it: "evento passato",
+      de: "vergangene Veranstaltung",
+      fr: "événement passé",
+      es: "evento pasado",
+    },
     enNote: {
       sl: "",
       en: "Content note: the event calendar is canonically Slovenian (production source); an English content overlay is not yet available.",
@@ -263,6 +276,11 @@ export function EventsView() {
                             <div className="flex min-w-0 flex-1 flex-col gap-2 p-4 sm:p-5">
                               <div className="flex flex-wrap items-center gap-1.5">
                                 {e.featured && <Badge>{pick(l, L.featured)}</Badge>}
+                                {todayIso !== undefined && isEventPast(e, todayIso) && (
+                                  <Badge variant="outline" className="text-muted-foreground">
+                                    {pick(l, L.pastEvent)}
+                                  </Badge>
+                                )}
                                 <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
                                   <CatIcon className="size-3" aria-hidden="true" />
                                   {pick(l, EVENT_CATEGORIES[e.category])}

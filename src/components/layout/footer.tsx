@@ -58,7 +58,9 @@ export function Footer() {
       es: "Enlaces de afiliados — ganamos una comisión en las reservas.",
     },
     footerNav: { sl: "Navigacija v nogi", en: "Footer navigation", it: "Navigazione a piè di pagina", de: "Fußzeilen-Navigation", fr: "Navigation de pied de page", es: "Navegación del pie de página" },
-    reconstruction: { sl: "Rekonstrukcija", en: "Reconstruction", it: "Ricostruzione", de: "Rekonstruktion", fr: "Reconstruction", es: "Reconstrucción" },
+    // P2 (#38): razvojna oznaka ob verziji (beseda + datum razvoja) umaknjena
+    // iz javnega prikaza — podatkovno poreklo ostaja dokumentirano v
+    // repozitoriju (worklog + /vir-podatkov), obiskovalcu ni namenjena.
   } as const;
 
   const t = <K extends keyof typeof L>(k: K) => pick(l, L[k]);
@@ -168,7 +170,7 @@ export function Footer() {
             © 2026 Discover Slovenia AI. {t("madeIn")}. {t("affiliate")}
           </p>
           <p className="font-mono">
-            v2.43.0 · {t("reconstruction")} 2026-10-12
+            v2.53.0
           </p>
         </div>
       </div>

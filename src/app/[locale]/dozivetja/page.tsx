@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { ExperiencesView } from "@/components/content/experiences-view";
-import { alternatesFor } from "@/lib/hreflang";
+import { pageMetadata } from "@/lib/page-metadata";
 
 /**
  * /dozivetja — tipi doživetij 1:1 iz produkcije (mirror /dozivetja).
@@ -12,13 +12,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return {
-    title: "Doživetja",
-    description:
-      "Pohodništvo, vodne avanture, kultura, kulinarika in skriti biseri — doživetja neposredno pri preverjenih lokalnih ponudnikih.",
-    alternates: alternatesFor(locale, "/dozivetja"),
-    keywords: ["doživetja", "izkušnje", "pohodništvo", "rafting", "Slovenija"],
-  };
+  return pageMetadata(locale, "/dozivetja");
 }
 
 export default function DozivetjaPage() {

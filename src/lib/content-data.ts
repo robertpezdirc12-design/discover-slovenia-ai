@@ -15,7 +15,7 @@
 import type { Destination } from "./slovenia-data";
 
 // ============================================================================
-// DOGODKI — 30 dogodkov 1:1 iz produkcjske strani /dogodki
+// DOGODKI — 31 dogodkov (30 iz produkcije + 1 razdvojen zapis P0 2. serije 2.44.0)
 // ============================================================================
 
 export type EventCategory =
@@ -72,6 +72,12 @@ export interface CommunityEvent {
    *  QA #34/#38: PRAZEN niz, kadar je `dateUnconfirmed` — izmišljenega
    *  datuma nikoli ne zapisujemo (iskrenostni kanon). */
   dateStart: string;
+  /** ISO datum konca (zadnji dan) za VEČDNEVNE dogodke s preverjenim
+   *  razponom (2.48.0, #38 „pretekle dogodke jasno prikaži“). Izpolnjen
+   *  IZKLJUČNO iz preverjene `dateLabel` range vrednosti pri primarnem
+   *  viru; za enodnevne dogodke ostane neizpolnjen (= dateStart).
+   *  Uporablja ga isEventPast (zaključek dogodka). */
+  dateEnd?: string;
   /** Prirojen prikaz datuma, kot v produkciji (npr. „8. – 18. feb 2027").
    *  Pri `dateUnconfirmed` = pošten napis „datum še ni potrjen“. */
   dateLabel: string;
@@ -98,13 +104,17 @@ export interface CommunityEvent {
 export const EVENTS: CommunityEvent[] = [
   {
     id: "ljubljanski-zimski-festival",
-    monthIndex: 1,
+    monthIndex: 2,
     category: "glasba",
     title: "Ljubljanski zimski festival",
-    // QA #34→#38 (verifikacija 2026-10-12): ljubljanafestival.si za januar
-    // 2027 še NE objavlja terminov — izmišljeni „15. – 26. jan 2027“ odstranjen.
-    dateStart: "",
-    dateLabel: "datum še ni potrjen",
+    // SDK verifikacijska serija (2026-10-13): 10. Zimski festival Ljubljana
+    // je v FEBRUARJU 2027 — prvi potrjeni termin 15. 2. 2027, 19.30, Cankarjev
+    // dom (Eventim, uradna prodaja: Simfonični orkester RTV Slovenija;
+    // neodvisno glasbenamatica.si: „10. zimski Festival Ljubljana … 15. februar
+    // 2027“). Izmišljeni „15. – 26. jan 2027“ (odstranjen 2.44.0) se ne vrača —
+    // zapisuje se izključno potrjeni termin; mesec popravljen jan → feb.
+    dateStart: "2027-02-15",
+    dateLabel: "od 15. feb 2027",
     venue: "Cankarjev dom, Ljubljana",
     price: "euro2",
     featured: false,
@@ -113,32 +123,38 @@ export const EVENTS: CommunityEvent[] = [
     description:
       "Vrhunski mednarodni glasbeni festival z diskografijami klasične in komorne glasbe v Cankarjevem domu, operi in ljubljanskih cerkvah. Tradicija, ki sega v leto 1952.",
     destSlug: "ljubljana",
-    dateUnconfirmed: true,
-    source: "https://www.ljubljanafestival.si",
-    verifiedAt: "2026-10-12",
+    source: "https://www.eventim.si/en/event/zimski-festival-simfonicni-orkester-rtv-slovenija-cankarjev-dom-2218",
+    verifiedAt: "2026-10-13",
   },
   {
     id: "zlati-lisjak-smucanje",
     monthIndex: 1,
     category: "sport",
-    title: "Zlati lisjak — svetovni pokal v alpskem smučanju",
-    // QA #34→#38 (verifikacija 2026-10-12): sloski.si ne navaja terminov
-    // 2027 (preverjena sekcija dogodkov) — izmišljeni „18. – 19. jan 2027“
-    // odstranjen; mesec 1 = pričakovano januarsko okno po zgodovini dirke.
-    dateStart: "",
-    dateLabel: "datum še ni potrjen",
-    venue: "Smučišče Mariborsko Pohorje, Maribor",
+    title: "Zlata lisica — svetovni pokal v alpskem smučanju za ženske",
+    // QA #34→#38 (1. serija 2026-10-12): izmišljeni „18. – 19. jan 2027“
+    // odstranjen, zapis neosten. QA 3. serija (POTRJENO 2026-10-13,
+    // sloski.si — uradni koledar SP 2026/27): uradno ime je „ZLATA LISICA“
+    // (NE „Zlati lisjak“), FIS svetovni pokal v alpskem smučanju za ženske,
+    // 29. – 30. 1. 2027; lokacija Podkoren/Kranjska Gora (povezava viru →
+    // kranjskagora-worldcup.si, domena dosegljiva) — Zlata lisica je na
+    // Mariborskem Pohorju potekala do 2019, od 2020 v Podkorenu.
+    // destSlug „maribor“ odstranjen (lokacija ni več Maribor; Kranjska Gora
+    // ni med 38 destinacijami). Zgodovinska fotografija dirke; slika s
+    // Podkorena sledi ob prekinitvi SDK kvote (image gen je bil 429).
+    dateStart: "2027-01-29",
+    dateEnd: "2027-01-30",
+    dateLabel: "29. – 30. jan 2027",
+    venue: "Podkoren, Kranjska Gora",
     price: "euro",
     featured: false,
-    // zlati-lisjak.si NE OBSTAJA (domena nedosegljiva, preverjeno 2026-10-12)
-    // — mrtva povezava odstranjena; uradni vir je Smučarska zveza Slovenije.
-    image: "/content/zlati-lisjak-maribor.jpg",
+    // zlati-lisjak.si NE OBSTAJA (domena nedosegljiva, preverjeno 2026-10-12);
+    // uradna stran dirke kranjskagora-worldcup.si (dosegljiva 2026-10-13).
+    website: "https://kranjskagora-worldcup.si",
+    image: "/content/zlata-lisica-golden-fox.jpg",
     description:
-      "Tradicionalno tekmovanje svetovnega pokala v ženskem veleslalomu na Pohorju. Najboljše smučarke sveta se pomerijo na progi Golden Fox pred tisoči gledalcev ob pogorju.",
-    destSlug: "maribor",
-    dateUnconfirmed: true,
+      "Zlata lisica (Golden Fox) — tradicionalna dirka svetovnega pokala v alpskem smučanju za ženske. Najboljše smučarke sveta se pomerijo na Podkorenu nad Kranjsko Goro; legendarno tekmovanje, ki ga je do 2019 gostil Maribor, se vrnilo v Zgornjesavsko dolino.",
     source: "https://www.sloski.si",
-    verifiedAt: "2026-10-12",
+    verifiedAt: "2026-10-13",
   },
   {
     id: "blejski-zimski-plavalni-memorial",
@@ -217,14 +233,16 @@ export const EVENTS: CommunityEvent[] = [
     id: "planica-nordic-festival",
     monthIndex: 3,
     category: "sport",
-    // QA #34→#38 (verifikacija 2026-10-12, planica.si): uradni naziv dogodka
-    // je „FIS finale svetovnega pokala v smučarskih skokih“ (Planica 2026 je
-    // imela 4 tekmovalne dneve); termini za 2027 še NISO objavljeni —
-    // izmišljeni „21. – 23. mar 2027“ odstranjen; mesec 3 = pričakovano
-    // pomladansko okno finała po zgodovini organizatorja.
+    // QA #34→#38 (1. serija 2026-10-12): izmišljeni „21. – 23. mar 2027“
+    // odstranjen. QA 3. serija (POTRJENO 2026-10-13, planica.si):
+    // „Program 2027 — Planica bo med 18. in 21. marcem 2027“; FIS finale
+    // SP v smučarskih skokih, četrtek 18. 3. kvalifikacije → nedelja 21. 3.
+    // finalna tekma; vstopnice v prodaji od 7. 10. 2026. Neodvisna
+    // potrditev tudi na sloski.si („Planica 18. – 21. 3. 2027“).
     title: "Planica — FIS finale svetovnega pokala",
-    dateStart: "",
-    dateLabel: "datum še ni potrjen",
+    dateStart: "2027-03-18",
+    dateEnd: "2027-03-21",
+    dateLabel: "18. – 21. mar 2027",
     venue: "Planica, Kranjska Gora",
     price: "euro2",
     featured: true,
@@ -232,9 +250,8 @@ export const EVENTS: CommunityEvent[] = [
     image: "/content/planica-nordic-festival.jpg",
     description:
       "FIS finale svetovnega pokala v smučarskih poletih v slavni Planici pod Poncami. Najboljši skakalci sveta letijo preko 240 metrov na največji skakalnici na svetu, ob strani pa tekmovanja v nordijskem teku in biatlonu.",
-    dateUnconfirmed: true,
     source: "https://www.planica.si",
-    verifiedAt: "2026-10-12",
+    verifiedAt: "2026-10-13",
   },
   {
     id: "blejski-danovski-festival",
@@ -244,6 +261,14 @@ export const EVENTS: CommunityEvent[] = [
     // QA #34→#38 (verifikacija 2026-10-12): festivalblejskihdni.si NE OBSTAJA
     // (domena nedosegljiva) — mrtva povezava odstranjena; termin za 2027 ni
     // nikjer uradno objavljen — izmišljeni „10. – 13. apr 2027“ odstranjen.
+    // P0 3. serija (2026-10-13): ime prireditve NI sledljivo nigdej —
+    // nacionalni register dogodkov (e-občina /DobiDogodke) za „blejski“ in
+    // „danovski“ vrne 0 zadetkov; RSS bled.si (1554 novic, prebrano) ne
+    // omenja „danovskega festivala“ niti komornega glasbenega festivala na
+    // Bledu; koledar prireditev na bled.si domači strani ga tudi ne pozna
+    // (realni Bled dogodki: Narodnozabavna hit parada, triatlon, šah).
+    // Zapis ostane po kanonu ④b („ne brišemo brez razloga“), a BREZ vira,
+    // datuma in povezave, dokler ni kaj potrditi.
     dateStart: "",
     dateLabel: "datum še ni potrjen",
     venue: "Blejski grad, Bled",
@@ -280,22 +305,37 @@ export const EVENTS: CommunityEvent[] = [
   },
   {
     id: "festival-soca",
-    monthIndex: 5,
-    category: "sport",
-    title: "Festival Soča",
-    // QA #34→#38 (verifikacija 2026-10-12): festivalsoca.si NE OBSTAJA
-    // (domena nedosegljiva) — mrtva povezava odstranjena; termin za 2027 ni
-    // uradno objavljen — izmišljeni „23. – 25. maj 2027“ odstranjen.
+    monthIndex: 7,
+    category: "glasba",
+    title: "Tolminator — metal festival na sotočju Soče in Tolminke",
+    // P0 3. serija (verifikacija 2026-10-13): zapis „Festival Soča“ NI
+    // sledljiv — festivalsoca.si NE OBSTAJA (že 2026-10-12), nacionalni
+    // register dogodkov (e-občina /DobiDogodke) za ključne besede
+    // „Soča“/„Soca“/„Tolminator“ vrne 0 zadetkov. Edini AKTIVNI glasbeni
+    // festival na Soči v Tolminu je Tolminator (od 2023, naslednik
+    // MetalDays 2004–2022 na ISTEM prizorišču sotočja) — korekcija na
+    // realni dogodek po vzorcu celjski-sejem → POMP. Vir: Wikipedia
+    // MetalDays (dejansko prebrana): „Since 2023 a new festival called
+    // Tolminator has been held in Tolmin. The location is the same …“;
+    // seznam metal festivalov: „Tolminator | Tolmin | 2023–present | July“.
+    // Termin 2027 NI objavljen; stran organizatorja (tolminator.si) je iz
+    // peskovnika nedosegljiva — povezave NE izmišljujemo (kanon ①d).
+    // Zgodovinski kontekst: opis zapisa (reggae/alternative) je ustrezal
+    // ugasnjenemu Soča Reggae Riversplashu (2000-ih), ne obstoječi
+    // prireditvi — izmišljeni „23. – 25. maj 2027“ je bil odstranjen že
+    // 2026-10-12.
     dateStart: "",
     dateLabel: "datum še ni potrjen",
-    venue: "Bovec in Tolmin",
+    venue: "Sotočje Soče in Tolminke, Tolmin",
     price: "euro2",
     featured: false,
     image: "/content/festival-soca.jpg",
     description:
-      "Športno-glasbeni festival ob smaragdni Soči z raftingom, kajakaštvom, canyoningom in adrenalinskimi izzivi čez dan. Zvečer ob reki tonejo toni alternative, reggaeja in world musica.",
+      "Največji metal festival na Slovenskem se od 2023 goduje na sotočju Soče in Tolminke, na prizorišču, kjer je več kot dve desetletji potekal MetalDays. Trije dnevi na obrežjih smaragdne reke z brezkončnim kampom in festivalskimi plažami.",
     destSlug: "reka-soca",
     dateUnconfirmed: true,
+    source: "https://en.wikipedia.org/wiki/MetalDays",
+    verifiedAt: "2026-10-13",
   },
   {
     id: "ljubljanski-maraton",
@@ -530,6 +570,7 @@ export const EVENTS: CommunityEvent[] = [
     category: "tradicija",
     title: "Festival Stara trta",
     dateStart: "2026-10-03",
+    dateEnd: "2026-10-12",
     dateLabel: "3. – 12. okt 2026",
     venue: "Lent, Maribor",
     price: "euro",
@@ -542,27 +583,38 @@ export const EVENTS: CommunityEvent[] = [
   },
   {
     id: "celjski-sejem",
+    // ID OSTANE (stara shranjena potovanja se referencirajo nanj);
+    // vsebina popravljena: „Celjski sejem 9.–12. 10. 2026“ NE OBSTAJA —
+    // uradni jesenski sejem na prizorišču je POMP (10.–11. 10. 2026),
+    // potrjeno na organizatorjevem seznamu sejmov (verifikacija 2026-10-13).
     monthIndex: 10,
-    category: "tradicija",
-    title: "Celjski sejem",
-    dateStart: "2026-10-09",
-    dateLabel: "9. – 12. okt 2026",
+    category: "kultura",
+    title: "POMP — sejem pompoznih dogodkov",
+    dateStart: "2026-10-10",
+    dateEnd: "2026-10-11",
+    dateLabel: "10. – 11. okt 2026",
     venue: "Celjski sejem, Celje",
     price: "euro",
     featured: false,
-    website: "https://www.celjski-sejem.si",
+    website: "https://www.ce-sejem.si",
     image: "/content/celjski-sejem.jpg",
     description:
-      "Tradicionalni celjski sejem z razstavo obrti, kmetijstva, domačih izdelkov in vozil. Spremljevalni program z glasbo, degustacijami in animacijami za otroke na sejmišču.",
+      "POMP je sejem za poroke in pompozne dogodke na Celjskem sejmu: poročne lokacije, gostinstvo, foto in video storitve, dekoracija ter ponudniki za vse vrste praznovanj.",
     destSlug: "celje",
+    source: "https://www.ce-sejem.si/sejmi/",
+    verifiedAt: "2026-10-13",
   },
   {
     id: "bela-krajina-koline",
     monthIndex: 11,
     category: "tradicija",
     title: "Bela krajina koline in opankarija",
-    dateStart: "2026-11-22",
-    dateLabel: "22. nov 2026",
+    // P0 2. serija (2026-10-13): edicije 22. 11. 2026 NI bilo mogoče
+    // potrditi pri nobenem primarnem viru (iskalnik občine Črnomelj in
+    // nacionalni register dogodkov = 0 zadetkov) — pošteno nepotrjeno.
+    dateStart: "",
+    dateLabel: "datum še ni potrjen",
+    dateUnconfirmed: true,
     venue: "Stari trg, Črnomelj",
     price: "euro2",
     featured: false,
@@ -572,33 +624,67 @@ export const EVENTS: CommunityEvent[] = [
     destSlug: "crnomelj",
   },
   {
+    // ID OSTANE (zgodovinski — zapis je obsegal dve mesti; P0 2. serija
+    // je RAZDVOJENA: Ljubljana tu, Maribor kot ločen zapis spodaj).
     id: "bozicni-sejmi-ljubljana-maribor",
     monthIndex: 11,
     category: "tradicija",
-    title: "Božični sejmi v Ljubljani in Mariboru",
-    dateStart: "2026-11-29",
-    dateLabel: "29. nov – 31. dec 2026",
-    venue: "Stari trg, Ljubljana in Maribor",
+    title: "December v Ljubljani — božični sejmi",
+    // SDK verifikacijska serija (2026-10-13): uradna stran visitljubljana.com
+    // objavlja začetek sezone 2026/27 — „Začetek prešernosti s prižigom lučk:
+    // 27. 11. 2026“. Potrjen je IZKLJUČNO začetek (konec sezone brez uradnega
+    // razpona → brez dateEnd po kanonu); sejmi na Prešernovem trgu in Bregu.
+    dateStart: "2026-11-27",
+    dateLabel: "od 27. nov 2026",
+    venue: "Prešernov trg in Breg, Ljubljana",
     price: "free",
     featured: true,
-    website: "https://www.ljubljana.si",
+    website: "https://www.visitljubljana.com/sl/obiskovalci/prireditve/prireditve-v-ljubljani/december-v-ljubljani",
     image: "/content/bozicni-sejmi.jpg",
     description:
-      "Romantični božični sejmi s stojnicami z ročnimi izdelki, medenimi piškoti, kuhanim vinom in prešanim sokom. Srednjeveški starem mestnem jedru Ljubljane in Maribora zasvetita z vencev in dišečimi jelkami.",
+      "Romantični božični sejmi s stojnicami z ročnimi izdelki, medenimi piškoti, kuhanim vinom in prešanim sokom. Srednjeveško staro mestno jedro Ljubljane zasveti z venci in dišečimi jelkami.",
     destSlug: "ljubljana",
+    source: "https://www.visitljubljana.com/sl/obiskovalci/prireditve/prireditve-v-ljubljani/december-v-ljubljani",
+    verifiedAt: "2026-10-13",
+  },
+  {
+    // P0 2. serija (2026-10-13): NOV zapis po razdvojitvi — uradni brand
+    // „Čarobni Maribor“ (visitmaribor.si); datumi za 2026 še neobjavljeni.
+    id: "bozicni-sejmi-maribor",
+    monthIndex: 11,
+    category: "tradicija",
+    title: "Čarobni Maribor — božični sejmi",
+    dateStart: "",
+    dateLabel: "datum še ni potrjen",
+    dateUnconfirmed: true,
+    venue: "Maribor",
+    price: "free",
+    featured: false,
+    website: "https://www.visitmaribor.si",
+    image: "/content/maribor.jpg",
+    description:
+      "Čarobni Maribor prinaša praznično vasico z božičnimi sejmi, kuhanim vinom in programom za otroke v starem mestnem jedru ob Dravi.",
+    destSlug: "maribor",
   },
   {
     id: "bled-winter-magic",
     monthIndex: 12,
     category: "tradicija",
-    title: "Bled Winter Magic — božična vasica",
-    dateStart: "2026-12-01",
-    dateLabel: "1. – 31. dec 2026",
-    venue: "Obala Blejskega jezera, Bled",
+    // P0 2. serija (2026-10-13): uradni brand na bled.si je „Blejska
+    // zimska pravljica“ (ne „Bled Winter Magic“); lokacija Jezerska
+    // promenada; datumi za 2026 še neobjavljeni (program „od začetka
+    // decembra do začetka januarja“).
+    title: "Blejska zimska pravljica",
+    dateStart: "",
+    dateLabel: "datum še ni potrjen",
+    dateUnconfirmed: true,
+    venue: "Jezerska promenada, Bled",
     price: "free",
     featured: true,
-    website: "https://www.bled.si",
+    website: "https://www.bled.si/sl/prireditve/glavne-prireditve/blejska-zimska-pravljica/",
     image: "/content/bled-winter-magic.jpg",
+    source: "https://www.bled.si/sl/prireditve/glavne-prireditve/blejska-zimska-pravljica/",
+    verifiedAt: "2026-10-13",
     description:
       "Romantična božična vasica ob Blejskem jezeru z lesenimi hišicami, ročnimi izdelki, medenimi piškoti, kuhanim vinom in prešanim sokom. Razsvetljeni blejski otok z zvezdami in dišeča jelka.",
     destSlug: "bled",
@@ -608,8 +694,13 @@ export const EVENTS: CommunityEvent[] = [
     monthIndex: 12,
     category: "tradicija",
     title: "Jamski sejem Postojna",
-    dateStart: "2026-12-13",
-    dateLabel: "13. – 14. dec 2026",
+    // P0 2. serija (2026-10-13): prireditev 13.–14. 12. 2026 NI bilo
+    // mogoče potrditi (nacionalni register dogodkov in postojna.si
+    // brez sledu) — pošteno nepotrjeno, zapis ostane (ne brišemo brez
+    // razloga), datum pa nikoli ne izmišljen.
+    dateStart: "",
+    dateLabel: "datum še ni potrjen",
+    dateUnconfirmed: true,
     venue: "Trg Tabor, Postojna",
     price: "free",
     featured: true,
@@ -1373,4 +1464,30 @@ export const THINGS_TO_DO_INTRO: Record<string, string> = {
 
 export function thingsToDoIntro(slug: string): string | undefined {
   return THINGS_TO_DO_INTRO[slug];
+}
+
+/**
+ * Konec dogodka v ISO obliki — `dateEnd` za preverjene večdnevne
+ * dogodke, sicer `dateStart` (enodnevni dogodek). Pomočnik za
+ * isEventPast (#38: „Pretekle dogodke … jasno prikaži kot pretekle“).
+ */
+export function eventEndIso(e: CommunityEvent): string {
+  return e.dateEnd && e.dateEnd !== "" ? e.dateEnd : e.dateStart;
+}
+
+/**
+ * Ali je dogodek ZAKLJUČEN ob danem dnevu (`todayIso`, ISO „YYYY-MM-DD“).
+ *
+ * Semantika (#38, iskrenostni kanon):
+ *  · nepotrjen/prazen datum → NIKOLI „pretekli“ (ne ugibamo iz monthIndex);
+ *  · zaključek == danes → ŠE TEČE (ne pretekli);
+ *  · zaključek < danes → pretekli (za večdnevne z dateEnd; za enodnevne
+ *    po dateStart).
+ * `todayIso` podaja strežnik (SSR prop — 0 hidracijskih razlik,
+ * deterministično per build/zahteva, kanon POLIR15-b).
+ */
+export function isEventPast(e: CommunityEvent, todayIso: string): boolean {
+  if (e.dateUnconfirmed || e.dateStart === "") return false;
+  const end = eventEndIso(e);
+  return end !== "" && end < todayIso;
 }

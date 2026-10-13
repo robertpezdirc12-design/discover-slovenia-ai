@@ -5,15 +5,22 @@ import { useLocale } from "next-intl";
 import { LegalPage, type LegalSection } from "@/components/layout/legal-page";
 import { pick } from "@/lib/i18n-pick";
 
-/** Besedilo 1:1 iz produkcije (production-mirror/zaupanje-in-varnost). */
+/**
+ * Besedilo iz produkcije (production-mirror/zaupanje-in-varnost) + lektorat
+ * 2.46.0 (2026-10-13, issue #38 P2): „avtomatsko izračunan oceni profil“ →
+ * „avtomatsko izračunano oceno profila“ (slovnična napaka), knjižno „lokal“
+ * namesto neknjižnega „lokalce“ (usklajeno z naslednjim odstavkom „vsak
+ * lokal“), „premium boosta“ brez vezaja. Datum posodobljen, ker je bila
+ * vsebina dejansko pregledana in popravljena.
+ */
 const SL: LegalSection[] = [
   {
     id: "partnerji",
     heading: "Kako preverjamo partnerje",
     paragraphs: [
-      "Admin odobritev: vsak lokal mora biti ročno odobren s strani naše ekipe, preden je objavljen. Preverjamo pravilnost kontaktov, ustreznost kategorije, kakovost slik in opisa. Nepotrjeni lokalci niso vidni uporabnikom in AI jih ne more priporočati.",
-      "Partner Quality Score (0–100): vsak lokal ima avtomatsko izračunan oceni profil iz 7 signalov — popolnost profila (30 %), kakovost fotografij (15 %), kakovost opisa (15 %), AI tagi (10 %), admin verifikacija (10 %), ocene (10 %), svežina podatkov (10 %). Znaki: Verified (Q > 40), Premium (plačnik), Featured (Q > 90 + Premium + Verified).",
-      "VLM preverba slik: vse slike na platformi so preverjene z Vision Language Modelom — ujemanje z imenom lokalca, odsotnost vodnih žigov, kakovost in ustreznost vsebine.",
+      "Admin odobritev: vsak lokal mora biti ročno odobren s strani naše ekipe, preden je objavljen. Preverjamo pravilnost kontaktov, ustreznost kategorije, kakovost slik in opisa. Nepotrjeni lokali niso vidni uporabnikom in AI jih ne more priporočati.",
+      "Partner Quality Score (0–100): vsak lokal dobi avtomatsko izračunano oceno profila iz 7 signalov — popolnost profila (30 %), kakovost fotografij (15 %), kakovost opisa (15 %), AI tagi (10 %), admin verifikacija (10 %), ocene (10 %), svežina podatkov (10 %). Znaki: Verified (Q > 40), Premium (plačnik), Featured (Q > 90 + Premium + Verified).",
+      "VLM preverba slik: vse slike na platformi so preverjene z Vision Language Modelom — ujemanje z imenom lokala, odsotnost vodnih žigov, kakovost in ustreznost vsebine.",
     ],
   },
   {
@@ -21,8 +28,8 @@ const SL: LegalSection[] = [
     heading: "Kako deluje AI ranking",
     paragraphs: [
       "AI priporočila temeljijo na 5 dimenzijah z jasnimi utežmi. Plačilo ne more kupiti prvega mesta:",
-      "① Ujemanje z uporabnikovim iskanjem (destinacija, interesi, kategorija) — 60 %. ② Kakovost profila lokalca (0–100). ③ Ocene uporabnikov (0–5 zvezdic). ④ Geografska bližina drugim lokacijam v itinererju. ⑤ Maksimalno 5 % boost za plačane partnerje — ne more preseči relevantnosti.",
-      "Pravilo: AI nikoli ne priporoča slabega lokalca samo zato, ker plača. Lokalci z oceno pod 3,5 ne dobijo premium boost-a. Relevantnost (60 %) vedno dominira nad Premium (5 %).",
+      "① Ujemanje z uporabnikovim iskanjem (destinacija, interesi, kategorija) — 60 %. ② Kakovost profila lokala (0–100). ③ Ocene uporabnikov (0–5 zvezdic). ④ Geografska bližina drugim lokacijam v itinererju. ⑤ Maksimalno 5 % boost za plačane partnerje — ne more preseči relevantnosti.",
+      "Pravilo: AI nikoli ne priporoča slabega lokala samo zato, ker plača. Lokali z oceno pod 3,5 ne dobijo premium boosta. Relevantnost (60 %) vedno dominira nad Premium (5 %).",
     ],
   },
   {
@@ -261,7 +268,7 @@ export default function TrustSafetyPage() {
         fr: "Confiance et sécurité",
         es: "Confianza y seguridad",
       })}
-      updated="2025"
+      updated="2026-10-13"
       intro={pick(l, {
         sl: "Kako preverjamo partnerje, kako deluje AI ranking in kako varujemo tvoje podatke.",
         en: "How we verify partners, how AI ranking works and how we protect your data.",

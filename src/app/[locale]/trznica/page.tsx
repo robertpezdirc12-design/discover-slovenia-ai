@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 
 import { TrznicaExplorer } from "@/components/trznica-explorer";
-import { alternatesFor } from "@/lib/hreflang";
+import { pageMetadata } from "@/lib/page-metadata";
 
 /**
  * /trznica — tržnica lokalnih izdelkov in doživetij. Vsebuje:
@@ -18,7 +18,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return { alternates: alternatesFor(locale, "/trznica") };
+  return pageMetadata(locale, "/trznica");
 }
 
 export default async function TrznicaPage() {

@@ -171,7 +171,7 @@ describe("POLIR6 A: dayEstimate — ocena dneva (ISTA hevristika kot LegRow)", (
     }
   });
 
-  test("⑤ premočna ×1,3 ostaja jedro ocene (km ≥ premočrne razdalje)", () => {
+  test("⑤ premočrtna ×1,3 ostaja jedro ocene (km ≥ premočrtne razdalje)", () => {
     const est = dayEstimate([
       stop("a", BLED.lat, BLED.lng),
       stop("b", BOHINJ.lat, BOHINJ.lng),

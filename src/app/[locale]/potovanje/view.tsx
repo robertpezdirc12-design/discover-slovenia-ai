@@ -119,7 +119,7 @@ const L = {
   dayTotal: { sl: "Danes skupaj", en: "Day total", it: "Totale giornata", de: "Tagessumme", fr: "Total du jour", es: "Total del día" },
   warningsTitle: { sl: "Iskrena opozorila", en: "Honest warnings", it: "Avvisi onesti", de: "Ehrliche Warnungen", fr: "Avertissements honnêtes", es: "Avisos honestos" },
   warningsLead: {
-    sl: "Preverjanje izvedljivosti: prekrivanja časov, dolgi presledki in razdalje med sosednjima postankoma (ocena vožnje ~60 km/h, premočna razdalja ×1,3 — ni podatka o prometu v realnem času).",
+    sl: "Preverjanje izvedljivosti: prekrivanja časov, dolgi presledki in razdalje med sosednjima postankoma (ocena vožnje ~60 km/h, premočrtna razdalja ×1,3 — ni podatka o prometu v realnem času).",
     en: "Feasibility check: schedule overlaps, long gaps and distances between adjacent stops (drive estimate ~60 km/h, straight-line ×1.3 — no real-time traffic data).",
     it: "Controllo di fattibilità: sovrapposizioni di orari, lunghi intervalli e distanze tra tappe adiacenti (stima di guida ~60 km/h, distanza in linea d'aria ×1,3 — nessun dato sul traffico in tempo reale).",
     de: "Machbarkeitsprüfung: Zeitüberschneidungen, lange Lücken und Distanzen zwischen benachbarten Stopps (geschätzte Fahrt ~60 km/h, Luftlinie ×1,3 — keine Echtzeit-Verkehrsdaten).",
@@ -288,7 +288,7 @@ const L = {
     es: (km: string, min: number) => `${km} km · ${min} min de conducción — medido (OSRM/OpenStreetMap)`,
   },
   estimatedDay: {
-    sl: (km: number, min: number) => `~ ${km} km · ~ ${min} min — ocena (premočna ×1,3 @ ~60 km/h)`,
+    sl: (km: number, min: number) => `~ ${km} km · ~ ${min} min — ocena (premočrtna razdalja ×1,3 @ ~60 km/h)`,
     en: (km: number, min: number) => `~ ${km} km · ~ ${min} min — estimate (straight-line ×1.3 @ ~60 km/h)`,
     it: (km: number, min: number) => `~ ${km} km · ~ ${min} min — stima (linea d'aria ×1,3 a ~60 km/h)`,
     de: (km: number, min: number) => `~ ${km} km · ~ ${min} Min. — Schätzung (Luftlinie ×1,3 bei ~60 km/h)`,

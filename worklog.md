@@ -3055,3 +3055,17 @@ Work Log:
 Stage Summary:
 - Platforme usklajene na cb78d15 / v2.52.0: GitHub PR #40 = GitLab zrcalo = Vercel preview. Deployed artefakt je end-to-end verificiran (vsebina + E2E 10/10 + health).
 - Preostanek je čisto lastniško/kvoten: (1) GitLab Identity Verification → retry pipeline 2943046833 → zeleni 7-vratni tek; (2) GitHub Actions kvota (Billing → rerun); (3) merge PR #40; (4) SDK kvota → 9 dogodkov + Podkoren slika.
+
+---
+## R38-ACTIONS-ZELEN (2.52.x 4. del) — 2026-10-13
+
+Agent: Z.ai Code (glavni orkestrator).
+
+Work Log:
+- **GitHub Actions kvota obnovljena — PRVI ZELENI CI TEK PR #40** (po 10 kvotnih 0-korakov serijah): run 38420968256 = CI 6 vrat (2 joba: 20 + 11 korakov, vklj. E2E zlata pot + mobilni) ✅ + run 38420962280 = dvosmerna sinhronizacija GitLab↔GitHub ✅ (head 0cd3120a).
+- GitLab zrcalo: ustvarjen **MR !1** (feat/r35-seo-p0-dogodki-2.44.0 → main) — zrcalo pripravljeno do zadnjega klika; pipeline čaka Identity Verification (CI Lint 7 vrat že VALID, self-hosted runner 57360920 registriran).
+- Kvotne preverbe: SDK web_search še 429 (9 nepotrjenih 2027 dogodkov + Podkoren slika); GitLab IV še ne izvedena.
+- #38 komentar 6149113075 (mejnik Actions zelena) + PR body dodatek.
+
+Stage Summary:
+- PR #40 je zdaj 100 % CI-zelen na GitHubu (lokalna vrata + Actions 6 vrat + E2E + deployed preview 10/10). Merge ovire na GitHub strani: NIČ. Preostanek #38: GitLab IV (pariteta) + SDK kvota (vsebina) + merge klik.

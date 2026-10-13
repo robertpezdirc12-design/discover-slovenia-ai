@@ -241,3 +241,22 @@ Stage Summary:
 - Nič ni ostalo nepushano — vsi lokalni commiti so na GitHubu; edini „manjkajoč“ push je bil stale-refspec artefakt.
 - PR #40 zdaj nosi P0 1.+2.+3. serijo + P1 SEO (2.44.0), 2 commita čakanja na zeleni CI; CI blokada je 100 % infrastrukturna (Actions kvota), ne kodo.
 - Naslednji koraki po zelenem CI: merge PR #40 → komentar/obvestilo na #38; nato P1 načrtovalnik/E2E ali P2 dostopnost; verifikacija preostalih ~12 dogodkov ob obnovi SDK kvote (vsi 2027 termini, organizatorji še ne objavljajo).
+
+---
+Task ID: R35-P2-ACCESS
+Agent: Z.ai Code (glavni orkestrator)
+Task: Nadaljevanje („odlično nadaljuj“) — CI/kvota še vedno mrtva → P2 dostopnost + besedila (#38), brskalniška E2E verifikacija v peskovniku, commit bce3ae1 pushan na PR #40.
+
+Work Log:
+- KVOTE: CI pada tudi na main (2 nova run-a 23:01 + 00:49, failure); SDK web_search/page_reader še vedno 429 → izbira naslednjega nekvotnega dela načrta: P2 dostopnost.
+- AUDIT: oznake/obrazci (načrtovalnik, /kontakt, /prijava, /vir-podatkov, dom) — vse ŽE imajo Label/htmlFor; heuristični sken vseh src/*.tsx za ikonske gumbe brez dostopnega imena = 0 (2 lažno pozitivna imata besedilo).
+- BESEDILNI POPRAVKI (12 mest, 7 datotek): „premočna ×1,3“ → „premočrtna razdalja ×1,3“ (terminska napaka — drugi jeziki pravilni: straight-line/Luftlinie/…); paucal (3/4 → „postanki“) v stopsWord + draftSummary; mestnik „v 2 regijah“ (nov PLANNER_MSG.regionsWordIn + call site); noga brez „Rekonstrukcija 2026-10-12“; pravne strani datumi ohranjeni (kanon #38).
+- TESTI: nov tests/p2-dostopnost.test.ts (8 zaklepov), plan-summary ㉖ kanon posodobljen, PLANNER_MSG izvožen; MERILA: bun test 2027/2027 (17761 expect), tsc 0, eslint 0.
+- BRSKALNIŠKA E2E (repo dev strežnik :3100, prisma sqlite push, agent-browser): 24/24 kombinacij 320/375/390/768/1440 × 5 strani BREZ vodoravnega preliva; focus-visible ring, skip-link, mobilni meni + Escape OK; zemljevid uporaben @320; FAB prekrivanje @320 = samo fiksni FAB nad vsebino (brez premika, standard); hidracijska napaka = samo HMR artefakt (čista nalaganja 0 napak); Radix DialogContent opozorilo + LCP loading=eager = zabeležena ohlapna opomba.
+- VSE 3 HITRE PREDNASTAVITVE živo preverjene: „4 postanki v 2 regijah“, „2 postanka v 1 regiji“, „premočrtna razdalja ×1,3“ — stari nizi nikjer v DOM.
+- PUSH: bce3ae1 na feat/r35-seo-p0-dogodki-2.44.0; komentar na #38 (issuecomment-6138545062); PR #40 body dopolnjen (P2 sekcija); repo worklog dopolnjen.
+
+Stage Summary:
+- PR #40 zdaj: P1 SEO + P0 dogodki 1./2./3. serija + P2 dostopnost/besedila (3 commiti, 2.44.0) — čaka ZELEN CI (kvota/billing = uporabniška stran), potem merge.
+- E2E prvič izvedena v peskovniku na uporabnikovem repozitoriju (dev :3100 + agent-browser) — ponovljiv postopek: prisma generate + db:push + bunx next dev -p 3100.
+- Ostalo za #38 po merge-u: P1 Playwright E2E suite + JSON-LD Event schema + ~12 nepotrjenih dogodkov (2027, organizatorji ne objavljajo) + pravne strani vsebinski lektorat (ločen prehod).

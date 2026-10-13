@@ -12,7 +12,7 @@
  * zapisan (iskrenostni kanon izvirnika).
  */
 
-import type { Destination } from "./slovenia-data";
+import type { CountryCode, Destination } from "./slovenia-data";
 
 // ============================================================================
 // DOGODKI — 31 dogodkov (30 iz produkcije + 1 razdvojen zapis P0 2. serije 2.44.0)
@@ -99,6 +99,20 @@ export interface CommunityEvent {
   source?: string;
   /** Datum zadnje verifikacije pri primarnem viru (ISO). */
   verifiedAt?: string;
+  /** Država dogodka (#41 Faza 0, 2.54.0). Opcijsko za združljivost s
+   *  kanonom #38: obstoječih 31 zapisov ostane NEPOPREMLJENIH —
+   *  manjkajoča vrednost pomeni "SI" (pomožnik eventCountry). Novi
+   *  balkanski dogodki (F2) polje zapišejo izrecno. */
+  country?: CountryCode;
+}
+
+/**
+ * Država dogodka — enoten dostop z defaultom "SI" (#41 F0).
+ * Sprejemljivost: obstoječi registri so implicitno slovenski; helper je
+ * edino branje polja v UI/testih, da default ostane na enem mestu.
+ */
+export function eventCountry(e: Pick<CommunityEvent, "country">): CountryCode {
+  return e.country ?? "SI";
 }
 
 export const EVENTS: CommunityEvent[] = [

@@ -18,8 +18,11 @@ import {
   getFeaturedDestinations,
   type Destination,
 } from "../src/lib/slovenia-data";
+import { ALL_COUNTRY_CODES } from "../src/lib/countries-data";
 
-const COUNTRIES = ["SI", "HR", "ME", "AL"] as const;
+// #41 F0: vir resnice za države je COUNTRIES (cel Balkan); nabor
+// destinacij je še vedno 4-državen (F1 dodaja vsebino).
+const COUNTRIES = ALL_COUNTRY_CODES;
 const TYPES = [
   "lake",
   "city",
@@ -62,8 +65,8 @@ describe("slovenia-data: obseg nabora", () => {
 });
 
 describe("slovenia-data: veljavnost polj", () => {
-  test("države izključno SI/HR/ME/AL", () => {
-    for (const d of all) expect(COUNTRIES).toContain(d.country);
+  test("države izključno iz COUNTRIES kanona (cel Balkan, #41 F0)", () => {
+    for (const d of all) expect(ALL_COUNTRY_CODES).toContain(d.country);
   });
 
   test("koordinate znotraj geografskih vrat regije", () => {

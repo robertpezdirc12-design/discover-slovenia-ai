@@ -121,7 +121,7 @@ test("③ dotik: iskanje Bled → Dodaj v mojo pot → /moja-potovanja", async (
   await gotoTrdo(page, "/destinacije");
   await page.getByLabel(/Išči/i).fill("Bled");
   await ustaliSe(page); // debounce/soft-nav po iskanju se ne sme tekmovati s klikom
-  await page.getByRole("combobox").first().click();
+  await page.locator("#dest-region").click(); // #41 F0: ID, ne vrstni red (državni filter je zdaj prvi)
   await page.getByRole("option", { name: "Gorenjska" }).click();
 
   const bledKartica = page.getByRole("link", { name: /Bled/ }).first();

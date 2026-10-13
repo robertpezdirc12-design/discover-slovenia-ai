@@ -2979,3 +2979,25 @@ Stage Summary:
 
 ### Stanje
 - Vsa 6 vrat ci.yml LOKALNO zelena za glavo PR #40 (2.48.0) — edina preostanka v #38 sta še vedno kvotna: verifikacija ~11 dogodkov 2027 (SDK) + merge na zeleni CI (Actions).
+
+## 2.49.0 — verifikacija 2027 dogodkov s primarnimi viri (2026-10-13, issue #38)
+
+### Kontekst
+- CI (Actions kvota, 8. serija 0-korakov padcev tudi za f835de7) + SDK web_search/image-gen (429) še vedno mrtva → NASLEDNJA POT: direkten HTTP dostop do uradnih virov organizatorjev CURL (brez SDK) — in je uspela: 2 od 5 P0 primerov POTRJENA.
+
+### Spremembe
+- content-data.ts, 2 zapisa:
+  - planica-nordic-festival: POTRJENO planica.si „Program 2027 — Planica bo med 18. in 21. marcem 2027“ → dateStart 2027-03-18, dateEnd 2027-03-21, dateLabel „18. – 21. mar 2027“, dateUnconfirmed odstranjen, verifiedAt 2026-10-13; neodvisna potrditev sloski.si; vstopnice od 7. 10. 2026.
+  - zlati-lisjak-smucanje (id NE spremenjen): P0 popravek IMENA (uradno „Zlata lisica“, ne „Zlati lisjak“) in LOKACIJE (Podkoren/Kranjska Gora, ne Mariborsko Pohorje — do 2019 Maribor, od 2020 Podkoren); dateStart 2027-01-29, dateEnd 2027-01-30; destSlug „maribor“ odstranjen (Kranjska Gora ni med 38 destinacijami); NOVA website kranjskagora-worldcup.si (HTTP 200); source ostaja sloski.si; slika git mv → zlata-lisica-golden-fox.jpg (zgodovinska fotografija; Podkoren slika ob prekinitvi kvote — image gen 429).
+- Dvojni vir za Planico: planica.si („Četrtek, 18. marec 2027 10.00 Kvalifikacije … Nedelja, 21. marec 2027“) + sloski.si („Planica 18. – 21. 3. 2027“).
+- Ostali viri preverjeni BREZ 2027: vinska-vigred.si (Cloudflare izaiv), jurjevanje.si, pivoincvetje.si, bled.si, visitljubljana.com, postojna.si; nedosegljive domene: ljubljanafestival.si, tolminator.si, visitmaribor.si.
+- Testi: NOV ①f (Zlata lisica: ime/lokacija/datumi/vir/slika + destSlug undefined) + posodobljeni ①d Planica, ② UNCONFIRMED_IDS (8 → 6), ③c (13 → 11), ③d (dateEnd 2 → 4 zapisi), ④b (16 → 18 + nova startDate), ④c (18 → 20), ⑲ (20/31), ㉓ (20).
+- Verzija 2.49.0 na 7 mestih + README banner.
+
+### Verifikacija
+- bun test 2097/2097 (18276 expect, 104 datotek), tsc 0, eslint 0.
+- Živi izris (začasni dev strežnik :3200): /dogodki izriše „Zlata lisica“ 7×, „Zlati lisjak“ 0×, novi datumi, JSON-LD 2027-01-29 + 2027-03-18, „datum še ni potrjen“ točno 11×, „pretekli dogodek“ točno 2× (regresija 2.48.0 nedotrajana).
+- Pouk: (a) pri urejanju zapisa prilagodi CEL blok — `dateUnconfirmed: true` in `verifiedAt` so sedeli globlje v zapisu in so prvi run dali 7 padov; (b) commit z večvrstičnim sporočilom prek `git commit -F` (narekovaji v -m jurijo); (c) peskovnik znova ubil ozadnje procese → živi smoke v ISTEM klicu.
+
+### Stanje
+- Kanon zdaj: 20 potrjenih / 11 nepotrjenih; preostanek #38 ČISTO kvoten: 9 nepotrjenih 2027 (SDK web_search 429) + zeleni CI/merge PR #40 (Actions kvota). GitHub: #38 komentar 6143529693; PR #40 body dopolnjen.

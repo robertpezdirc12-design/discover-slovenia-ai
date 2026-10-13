@@ -305,3 +305,26 @@ Stage Summary:
 - Merili #38 „Obrazci in glavne kontrole imajo dostopna imena“ + „Lektoriraj vidna besedila“ + „širine 320–1440“ = IZPOLNJENI in avtomatizirani (dostopnost 2.44.0, lektorat + mobilni projekt 2.46.0).
 - Preostanek #38 PO merge-u: verifikacija ~12 dogodkov 2027 (SDK kvota) + CI E2E job (Actions kvota) + pravne strani vsebinski lektorat = ZAKLJUČEN s tem prehodom.
 - Izjemni dogodki za naslednje agente: peskovnik se med sejami očisti (kloni v /home/z/*, ne /home/z/my-project); glob `*/` past v komentarjih; stash pop se lahko ne prijel — vedno preveriti git status po stash operacijah.
+
+---
+Task ID: R38-CI-E2E-FILTERS
+Agent: Z.ai Code (glavni orkestrator)
+Task: Nadaljevanje („odlično nadaljuj kjer si ostal“) — obnova konteksta po ponovnem zagonu seje; CI (Actions kvota, 6.–7. serija) in SDK web_search (429) še vedno mrtva → preostanek #38 brez kvotnih odvisnosti: E2E job v ci.yml + regresijski testi filtrov destinacij, 2.47.0, commit d166f0d na PR #40.
+
+Work Log:
+- OBNOVA KONTEKSTA: prebrana zadnja 4 vnosa workloga + artefakti (issue38-comment.json, pr40-ci-comment.json); kloni še vedno v /home/z/* (polir15-repo na branchi feat/r35-seo-p0-dogodki-2.44.0 @ 0dc9e41).
+- CI AUDIT: run #104 (0dc9e41) in #105 (d166f0d) — OBEMA joba „vrata“ + novi „e2e“ padeta z 0 koraki v ~2 s (GitHub Actions kvota/billing, 7. serija; zadnja zelena main prejšnjega dne 19:08). SDK web_search CLI: 429 (sintaksa: z-ai function -n web_search -a '{...}').
+- ISSUE #38 PONOVNO PREBRANA (celotno telo + 6 komentarjev): merila „Filtri dogodkov in destinacij imajo regresijske teste“ za destinacije pokrita SAMO brskalniško; „E2E job v CI“ še neobstojec. Ti dve = edini preostanek brez kvot.
+- DESTINACIJSKI FILTRI: logika iz useMemo v destinations-explorer.tsx izvlečena v NOVO src/lib/destinations-filter.ts (filterDestinations, activeRegionKeys, hasActiveFilters — 1 : 1 semantika); komponenta samo kliče lib; REGIONS/DEST_TYPES uvoza ostajata (labels).
+- NOVO tests/destinations-filter.test.ts: 20 zaklepov ①–⑦ (iskanje 4 polja + trim + velikost črk, neznana regija/tip → prazno, „all“, vrstni red nabora ohranjen, aktivne regije v kanonskem vrstnem redu, integriteta 38/21/9). Empirično kalibrirano: „bled“ in „vintgarska“ ujameta [bled, vintgar] (vintgar v poljih) — aserciji ①a/①d popravljeni pred zaklepom.
+- CI E2E JOB: v ci.yml dodan job `e2e` (vzporedno z „vrata“): checkout, setup-bun, bun install, prisma generate + db push na /tmp/e2e.db, playwright install --with-deps chromium, bun run e2e, artefakti playwright-report/ + test-results/ if: always(); kvotna opomba v glavi (+~6 min/push). YAML validiran s pyyaml — past: dvopiče v imenu joba zahteva navedke („mapping values are not allowed here“).
+- VERZIJA 2.47.0: package.json, health route, sw.js SW_VERSION, footer, README banner + razdelek „E2E v CI“, p2-data-plane (3 asercije), pwa-sw (2). Pravne strani (zgodovinski komentarji lektorata 2.46.0) NISO spremenjene.
+- VERIFIKACIJA: bun test 2080/2080 (18203 expect, 103 datotek), tsc 0, eslint 0, Playwright 10/10 (1.7 min; prisma generate + db push /tmp/e2e.db prej). Pouk: ReturnType<typeof genericFn> izgubi generični T → pomožnik ids eksplicitno generičen.
+- PUSH + GITHUB: commit d166f0d (12 datotek, +393/−35) na PR #40 (7. commit); komentar na #38 (issuecomment-6142162018); PR #40 body dopolnjen s sekcijo 2.47.0 (11326 znakov); repo worklog dopolnjen.
+- Sandbox worklog (ta datoteka) dopolnjen.
+
+Stage Summary:
+- PR #40 zdaj: P1 SEO + P0 dogodki 1./2./3. serija + P2 dostopnost + Event JSON-LD + Playwright E2E + P2 lektorat + mobilni E2E + E2E v CI + regresijski testi destinacijskih filtrov (2.47.0, 7 commitov) — čaka ZELEN CI (uporabnik: Settings → Billing → Actions → rerun), potem merge.
+- Merili #38 „regresijski testi filtrov (dogodki IN destinacije)“ in „E2E pot uspe (tudi v CI)“ = IZPOLNJENI; E2E job je definiran in registriran (check-run „E2E (Playwright: zlata pot + mobilni)“ se pojavlja tudi v kvotnem padcu) — ob obnovi kvote teče samodejno.
+- Preostanek #38 = SAMO kvotne odvisnosti: (1) verifikacija ~12 dogodkov 2027 (SDK 429; organizatorji 2027 terminov še ne objavljajo), (2) merge PR #40 na zeleni CI (Actions kvota).
+- Izjemni dogodki: sandbox se očisti med sejami, a /home/z/* kloni preživijo; z-ai CLI za web_search = `z-ai function -n web_search` (ni `web-search` ukaza); dvopičja v YAML vrednostih brez navedkov so napaka.

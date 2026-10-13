@@ -27,8 +27,9 @@ import {
 } from "../src/lib/map-pins";
 import { DESTINATIONS } from "../src/lib/slovenia-data";
 
-/** Veljaven bbox, ki pokriva VSE pine (lat 39,88–46,67 · lng 13,57–20,14). */
-const FULL_BBOX = { south: 39, west: 13, north: 47, east: 21 };
+/** Veljaven bbox, ki pokriva VSE pine (#41 F1). */
+/** Bbox cel Balkan (#41 F1: od Alp do severne Grčije, do bg Črnega morja). */
+const FULL_BBOX = { south: 39, west: 13, north: 47, east: 28 };
 /** Bbox Ljubljane (destinacija + 11 lokalov = 12 pinov). */
 const LJ_BBOX = { south: 46.03, west: 14.42, north: 46.1, east: 14.6 };
 
@@ -101,18 +102,18 @@ describe("map-pins: zoom", () => {
   });
 });
 
-describe("map-pins: gradnja pinov (38 + 26 = 64, iskrene oznake)", () => {
-  test("obseg: 38 destinacij + 26 lokalov = 64 pinov z unikatnimi id-ji", () => {
+describe("map-pins: gradnja pinov (74 + 26 = 100, iskrene oznake)", () => {
+  test("obseg: 74 destinacij + 26 lokalov = 100 pinov z unikatnimi id-ji", () => {
     const pins = buildAllPins();
-    expect(DESTINATIONS.length).toBe(38);
+    expect(DESTINATIONS.length).toBe(74); // #41 F1: 38 + 36 balkanskih
     expect(LOKALI.filter((l) => l.destinationSlug).length).toBe(26);
-    expect(pins.length).toBe(64);
-    expect(new Set(pins.map((p) => p.id)).size).toBe(64);
-    expect(ALL_PINS.length).toBe(64);
-    expect(PINS_DATASET_PLACES).toBe(64);
+    expect(pins.length).toBe(100);
+    expect(new Set(pins.map((p) => p.id)).size).toBe(100);
+    expect(ALL_PINS.length).toBe(100);
+    expect(PINS_DATASET_PLACES).toBe(100);
   });
 
-  test("vseh 38 destinacij: type destination, precision exact, id = slug, koordinate 1:1", () => {
+  test("vseh 74 destinacij: type destination, precision exact, id = slug, koordinate 1:1", () => {
     const pins = buildAllPins();
     for (const d of DESTINATIONS) {
       const pin = pins.find((p) => p.id === d.slug);
@@ -173,7 +174,7 @@ describe("map-pins: zoom vrata in agregacija", () => {
   test("grid: total = vsota števil terk celic, returned = št. celic, capped false", () => {
     const p = buildPinsPayload(FULL_BBOX, 9);
     expect(p.mode).toBe("grid");
-    expect(p.total).toBe(64);
+    expect(p.total).toBe(100);
     expect(p.cells?.length).toBeGreaterThan(0);
     if (!p.cells) throw new Error("grid način mora vrniti celice");
     expect(p.cells.reduce((s, c) => s + c.count, 0)).toBe(p.total);
@@ -260,11 +261,11 @@ describe("map-pins: cap 500 + invariante odgovora", () => {
     expect(p.total).toBeGreaterThanOrEqual(p.returned);
   });
 
-  test("dataset pošteno opisuje LASTNE podatke (places 64, installed true)", () => {
+  test("dataset pošteno opisuje LASTNE podatke (places 100, installed true)", () => {
     for (const zoom of [9, 15]) {
       const p = buildPinsPayload(FULL_BBOX, zoom);
       expect(p.dataset.installed).toBe(true);
-      expect(p.dataset.places).toBe(64);
+      expect(p.dataset.places).toBe(100);
       expect(p.dataset.lastUpdated).toBe("2026-10-07");
       expect(p.dataset.snapshotDate).toBe("2026-10-07");
       expect(p.total).toBeGreaterThanOrEqual(p.returned);

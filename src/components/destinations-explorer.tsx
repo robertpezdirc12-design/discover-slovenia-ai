@@ -60,12 +60,12 @@ export function DestinationsExplorer() {
     kicker: { sl: "Odkrij", en: "Discover", it: "Scopri", de: "Entdecken", fr: "Découvrir", es: "Descubre" },
     title: { sl: "Destinacije", en: "Destinations", it: "Destinazioni", de: "Reiseziele", fr: "Destinations", es: "Destinos" },
     lead: {
-      sl: `${DESTINATIONS.length} kuriranih destinacij Slovenije in zahodnega Balkana — z izvorno zabeleženim virom, oceno in praktičnimi podatki.`,
-      en: `${DESTINATIONS.length} curated destinations across Slovenia and the Western Balkans — with recorded provenance, ratings and practical details.`,
-      it: `${DESTINATIONS.length} destinazioni selezionate tra Slovenia e Balcani occidentali — con fonte documentata, valutazioni e informazioni pratiche.`,
-      de: `${DESTINATIONS.length} kuratierte Reiseziele in Slowenien und auf dem westlichen Balkan — mit erfasster Quelle, Bewertungen und praktischen Details.`,
-      fr: `${DESTINATIONS.length} destinations sélectionnées en Slovénie et dans les Balkans occidentaux — avec provenance enregistrée, notes et informations pratiques.`,
-      es: `${DESTINATIONS.length} destinos seleccionados de Eslovenia y los Balcanes occidentales — con fuente registrada, valoraciones y datos prácticos.`,
+      sl: `${DESTINATIONS.length} kuriranih destinacij Slovenije in celotnega Balkana — z izvorno zabeleženim virom, oceno in praktičnimi podatki.`,
+      en: `${DESTINATIONS.length} curated destinations across Slovenia and the Balkans — with recorded provenance, ratings and practical details.`,
+      it: `${DESTINATIONS.length} destinazioni selezionate tra Slovenia e Balcani — con fonte documentata, valutazioni e informazioni pratiche.`,
+      de: `${DESTINATIONS.length} kuratierte Reiseziele in Slowenien und auf dem Balkan — mit erfasster Quelle, Bewertungen und praktischen Details.`,
+      fr: `${DESTINATIONS.length} destinations sélectionnées en Slovénie et dans les Balkans — avec provenance enregistrée, notes et informations pratiques.`,
+      es: `${DESTINATIONS.length} destinos seleccionados de Eslovenia y los Balcanes — con fuente registrada, valoraciones y datos prácticos.`,
     },
     searchLabel: {
       sl: "Išči po imenu, opisu ali poudarkih",

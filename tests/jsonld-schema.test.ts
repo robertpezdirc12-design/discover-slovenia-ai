@@ -145,8 +145,8 @@ describe("jsonld [enote]: TouristDestination (/destinacija/[slug])", () => {
     );
   });
 
-  test("⑬ VSEH 38 destinacij zgradi veljaven JSON-LD z realnimi koordinatami", () => {
-    expect(DESTINATIONS.length).toBe(38); // kanon nabora (slovenia-data.test)
+  test("⑬ VSEH 74 destinacij zgradi veljaven JSON-LD z realnimi koordinatami", () => {
+    expect(DESTINATIONS.length).toBe(74); // kanon nabora (slovenia-data.test, #41 F1)
     for (const d of DESTINATIONS) {
       const ld = touristDestinationJsonLd(d, "sl");
       const parsed = JSON.parse(JSON.stringify(ld)) as typeof ld;

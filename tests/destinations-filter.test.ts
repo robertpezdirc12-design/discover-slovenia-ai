@@ -84,9 +84,9 @@ describe("destinations-filter (#38): iskanje", () => {
     expect(hits).toEqual([]);
   });
 
-  test("①f prazen/whitespace q = brez iskalne omejitve (vseh 38)", () => {
-    expect(filterDestinations(DESTINATIONS, { q: "", region: "all", type: "all" })).toHaveLength(38);
-    expect(filterDestinations(DESTINATIONS, { q: "   ", region: "all", type: "all" })).toHaveLength(38);
+  test("①f prazen/whitespace q = brez iskalne omejitve (vseh 74)", () => {
+    expect(filterDestinations(DESTINATIONS, { q: "", region: "all", type: "all" })).toHaveLength(74);
+    expect(filterDestinations(DESTINATIONS, { q: "   ", region: "all", type: "all" })).toHaveLength(74);
   });
 });
 
@@ -208,9 +208,9 @@ describe("destinations-filter (#38): integriteta registra", () => {
     }
   });
 
-  test("⑦b registr ostaja 38 destinacij / 21 regij / 9 tipov (kanon glave)", () => {
-    expect(DESTINATIONS).toHaveLength(38);
-    expect(Object.keys(REGIONS)).toHaveLength(21);
-    expect(Object.keys(DEST_TYPES)).toHaveLength(9);
+  test("⑦b registr ostaja 74 destinacij / 44 regij / 10 tipov (kanon glave, #41 F1)", () => {
+    expect(DESTINATIONS).toHaveLength(74);
+    expect(Object.keys(REGIONS)).toHaveLength(44);
+    expect(Object.keys(DEST_TYPES)).toHaveLength(10);
   });
 });

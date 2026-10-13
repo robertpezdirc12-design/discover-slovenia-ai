@@ -630,12 +630,15 @@ export function buildItinerary(query: PlannerQuery): ItineraryPlan {
     const { blob, tokens } = blobs.get(d.id) ?? { blob: "", tokens: [] };
     const matched = interests.filter((i) => interestMatches(tokens, blob, i));
     const seasonFit = query.season ? d.bestSeason.includes(query.season) : false;
-    // IDF uteženi zadetki + tipska afiniteta (×2) — redki interesi
-    // razločujejo močneje; tip destinacije podvoji utež svojega interesa.
+    // IDF uteženi zadetki + tipska afiniteta (×3, #41 F1) — redki interesi
+    // razločujejo močneje; tip destinacije potroji utež svojega interesa.
+    // ×2→×3 (2026-10-13): s 74 destinacijami je ×2 omogočilo, da mesto z
+    // OMEMBO jezera („Sprehod ob jezeru“) premaga pravi lake sidro — QA
+    // invarianta (day 1 = pravi tip) mora ostati dominantna čez rast korpusa.
     let weighted = 0;
     for (const i of matched) {
       const w = interestIdfWeight(dfMap.get(i) ?? 0, DESTINATIONS.length);
-      weighted += typeAffinityMatches(d, i) ? w * 2 : w;
+      weighted += typeAffinityMatches(d, i) ? w * 3 : w;
     }
     return {
       dest: d,

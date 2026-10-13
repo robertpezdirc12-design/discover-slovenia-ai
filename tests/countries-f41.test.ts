@@ -100,8 +100,8 @@ describe("countries-f41 (#41 F0): državna meta", () => {
     }
   });
 
-  test("①f iskrenostni kanon: nabor destinacij je ŠE VEDNO 38 po 4 državah (F0 ne doda vsebine)", () => {
-    expect(DESTINATIONS.length).toBe(38);
+  test("①f iskrenostni kanon: nabor destinacij 74 — osnovne 4 + F1 balkanske po 6 (#41)", () => {
+    expect(DESTINATIONS.length).toBe(74);
     const byCountry = new Map<string, number>();
     for (const d of DESTINATIONS) {
       byCountry.set(d.country, (byCountry.get(d.country) ?? 0) + 1);
@@ -110,7 +110,11 @@ describe("countries-f41 (#41 F0): državna meta", () => {
     expect(byCountry.get("HR")).toBe(8);
     expect(byCountry.get("ME")).toBe(4);
     expect(byCountry.get("AL")).toBe(4);
-    expect(byCountry.size).toBe(4);
+    // #41 F1: 36 novih destinacij, po 6 na državo:
+    for (const c of ["BA", "RS", "MK", "XK", "BG", "GR"] as const) {
+      expect(byCountry.get(c)).toBe(6);
+    }
+    expect(byCountry.size).toBe(10);
     // vsaka destinacija ima veljaven COUNTRIES ključ:
     for (const d of DESTINATIONS) expect(COUNTRIES[d.country]).toBeDefined();
   });
@@ -143,8 +147,8 @@ describe("countries-f41 (#41 F0): eventCountry + državni filter", () => {
   test("②e 'all'/manjkajoča vrednost → brez omejitve (združljivost starih klicev)", () => {
     const explicit = filterDestinations(DESTINATIONS, { q: "", region: "all", type: "all", country: "all" });
     const implicit = filterDestinations(DESTINATIONS, { q: "", region: "all", type: "all" });
-    expect(explicit.length).toBe(38);
-    expect(implicit.length).toBe(38);
+    expect(explicit.length).toBe(74); // #41 F1: 74 destinacij
+    expect(implicit.length).toBe(74);
   });
 
   test("②f kombinacija: država → regija → tip → iskanje (vrstni red ne spreminja stare semantike)", () => {
@@ -157,8 +161,8 @@ describe("countries-f41 (#41 F0): eventCountry + državni filter", () => {
 
   test("②g activeCountryKeys: kanonski vrstni red, samo prisotne države", () => {
     const keys = activeCountryKeys(DESTINATIONS);
-    expect(keys).toEqual(["SI", "HR", "ME", "AL"]); // podmnožica v vrstnem redu ALL_COUNTRY_CODES
-    expect(keys).not.toContain("BA");
+    // #41 F1: vse 10 držav zdaj nastopa (kanonski vrstni red ALL_COUNTRY_CODES)
+    expect(keys).toEqual(["SI", "HR", "BA", "RS", "ME", "XK", "AL", "MK", "BG", "GR"]);
   });
 
   test("②h hasActiveFilters vključuje državo", () => {

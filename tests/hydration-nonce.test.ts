@@ -211,8 +211,8 @@ describe("POLIR10: JSON vsebina brez per-zahtevnih vrednosti (nonce samo atribut
       izpisi.push(jsonldScriptHtml(touristDestinationJsonLd(d, "sl")));
       izpisi.push(jsonldScriptHtml(touristDestinationJsonLd(d, "en")));
     }
-    expect(DESTINATIONS.length).toBe(38); // kanon nabora (slovenia-data.test)
-    expect(izpisi.length).toBe(7 + 38 * 2);
+    expect(DESTINATIONS.length).toBe(74); // kanon nabora (slovenia-data.test)
+    expect(izpisi.length).toBe(7 + 74 * 2);
     for (const izpis of izpisi) {
       expect(izpis).not.toContain("nonce");
       expect(izpis).not.toContain("Nonce");

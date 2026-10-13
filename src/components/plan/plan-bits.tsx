@@ -20,12 +20,13 @@ import {
   Route as RouteIcon,
   Trees,
   Waves,
+  Church,
   type LucideIcon,
 } from "lucide-react";
 
 import type { TripStopKind } from "@/lib/types";
 
-/** Ikona po vrsti postanka (kanonskih 9 tipov + splošni). */
+/** Ikona po vrsti postanka (kanonskih 10 tipov + splošni). */
 const KIND_ICONS: Record<TripStopKind, LucideIcon> = {
   castle: Castle,
   cave: Gem,
@@ -33,6 +34,7 @@ const KIND_ICONS: Record<TripStopKind, LucideIcon> = {
   coast: Palmtree,
   gorge: Mountain,
   lake: Waves,
+  monastery: Church,
   mountain: MountainSnow,
   river: Waves,
   spa: Trees,

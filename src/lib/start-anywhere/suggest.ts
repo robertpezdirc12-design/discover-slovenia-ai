@@ -28,6 +28,7 @@ export const TYPE_INTERESTS: Record<DestinationType, string> = {
   coast: "morje",
   gorge: "soteska",
   lake: "jezero",
+  monastery: "samostan",
   mountain: "gora",
   river: "reka",
   spa: "zdravje",

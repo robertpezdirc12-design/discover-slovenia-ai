@@ -50,12 +50,13 @@ test("zlata pot: destinacije → Moja pot → načrtuj → Na poti → zaključe
   await page.getByLabel(/Išči/i).fill("Bled");
   await ustaliSe(page); // debounce/soft-nav po iskanju se ne sme tekmovati s klikom
 
-  // ── 2. filter Gorenjska (Radix Select) ──────────────────────────────────
-  await page.getByRole("combobox").first().click();
+  // ── 2. filter Gorenjska (Radix Select; #41 F0: državni filter je zdaj
+  // prvi combobox — ciljamo po semantičnem ID, ne po vrstnem redu) ────────
+  await page.locator("#dest-region").click();
   await page.getByRole("option", { name: "Gorenjska" }).click();
 
   // ── 3. filter Jezero ────────────────────────────────────────────────────
-  await page.getByRole("combobox").nth(1).click();
+  await page.locator("#dest-type").click();
   await page.getByRole("option", { name: "Jezero" }).click();
 
   // Iskanje + oba filtra ⇒ natanko Bled (Bohinj ne ustreza poizvedbi „Bled“).

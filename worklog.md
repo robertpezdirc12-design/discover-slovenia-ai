@@ -367,3 +367,20 @@ Work Log:
 Stage Summary:
 - Issue #38: VSA ne-kvotna dela zaključena (vključno s 3. serijo QA verifikacije prek direktnih virov). Preostanek ČISTO kvoten: 9 nepotrjenih 2027 dogodkov (SDK) + zeleni CI/merge PR #40 (Actions — rešuje uporabnik prek Billing → Actions → rerun).
 - Kanon dogodkov sedaj 20 potrjenih / 11 nepotrjenih; 2.49.0 potisnjena; vsa živa vrata zelena.
+
+---
+Task ID: R35-DOKUMENT (2.50.0)
+Agent: Z.ai Code (glavni orkestrator)
+Task: Issue #35 (repo /home/z/polir15-repo) — dopolniti manjkajoči izvedljivi rezultat: dokument docs/research/balkan-platform-no-ai.md z vsemi 12 točkami iz meril sprejemanja (raziskavna tabela iz prejšnjega komentarja ni bila dovolj po specifikaciji dokumenta).
+
+Work Log:
+- Kvote preverjene (Actions 8. serija 0-korakov, SDK 429) + retry 3 mrtvih domen (ljubljanafestival.si, tolminator.si, visitmaribor.si) — vse še mrtve.
+- Repo inventar zbrani s programsko analizo: 30 API route skupin, 27 Prisma modelov, [locale] 30 strani, 6 jezikov, deterministični engine 1937 vrstic (itinerary-engine 1239 + next-step 467 + day-segments + deterministic-itinerary), registri (38 destinacij/31 dogodkov/lokali/GO).
+- curl-potrditve licenc: Valhalla COPYING = MIT (ne BSD-2), Photon = Apache-2.0, MapLibre = BSD-3, OpenFreeMap „no limits“, podatki.gov.si = 0 GTFS datasetov.
+- Napisan docs/research/balkan-platform-no-ai.md (12 poglavij): repo-pregled (deluje/nepopolno/manjka/podvajanje), matrika SDK, viri+ODbL, pokritost 5 držav, model Provider + verifikacija, partner API-ji [nepotrjeno], arhitektura, faze 1–6, stroški (0 EUR znane vs [nepotrjene]), 10 tveganj, viri z datumi.
+- Verzija 2.50.0 na 7 mestih; vrata: bun test 2097/2097, tsc 0, eslint 0; commit 07f1f9e + worklog b8f0dad potisnjena v PR #40.
+- #35 komentar 6143809470 (pokritost meril + nerešena vprašanja za lastnika: faza 1 sprožitev, ODbL pravni pregled, Viator pilot).
+
+Stage Summary:
+- #35 DOKUMENTIRAN in completen: raziskava + izvedljiv načrt na enem mestu; predlog zaprtja ob merge-u PR #40. Ključna sodba: platforma je izvedljiva z 0 EUR licenc in brez AI — 80 % arhitekture že obstaja (deterministični engine!), faza 1 (OpenFreeMap swap) je reverzibilna uro dela.
+- Vsi pushi v PR #40: 2.49.0 (verifikacija dogodkov) + 2.50.0 (dokument #35). CI še vedno kvotno zadržan — merge čaka uporabnikovo rešitev billinga.

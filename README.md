@@ -12,7 +12,7 @@
 > deterministični motor (/api/start-anywhere); z-ai-web-dev-sdk odstranjen —
 > kanon P1: 100 % deterministično, 0 AI modelov.
 
-**Verzija: 2.45.0 — EVENT JSON-LD + P2 DOSTOPNOST (2026-10-13, issue #38): /dogodki izriše schema.org Event @graph (18 potrjenih dogodkov; nepotrjeni datumi NIKOLI v strukturiranih podatkih — iskrenostni kanon: brez izmišljenega endDate, Place samo z dejanskim imenom prizorišča + SI, isAccessibleForFree izključno za "free", url po hreflang konvenciji; vzor MySwitzerland iz benchmarka #35). P2 dostopnost/besedila: „premočrtna razdalja ×1,3“ (terminska napaka), paucal „postanki“ (3/4), mestnik „v 2 regijah“, umik razvojne oznake iz noge; 8 novih zaklepov (p2-dostopnost) + 6 novih zaklepov (jsonld-schema Event @graph ⑲–㉔); Playwright E2E zlata pot (destinacije → načrtuj → na-poti) v tests/e2e/; 0 AI.
+**Verzija: 2.46.0 — P2 LEKTORAT PRAVNIH STRANI + MOBILNI E2E PROJEKT (2026-10-13, issue #38): /pogoji-uporabe — affiliate seznam 1:1 s kanonom registra (dodana Kiwi.com in Rentalcars.com, točno „Viator (Tripadvisor)“, Kiwitaxi izrecno kot prevozi), slike (Unsplash) ločene od zemljevidnih podatkov (© prispevavalci OpenStreetMap, ODbL), cene „€/mesec“ + „obračunava“; /politika-zasebnosti — GDPR katalog pravic popoln (omejitev obdelave + ugovor + prenosljivost, 6 jezikov), „se naročite na novice“; /zaupanje-in-varnost — „avtomatsko izračunano oceno profila“ (slovnična napaka), knjižno „lokal“ namesto „lokalce“; datumi na vseh 3 straneh posodobljeni, ker je bila vsebina dejansko pregledana in popravljena (kanon #38); mobilni Playwright projekt (Pixel 7 — dotik) s stalno preverbo vodoravnega preliva 5 strani × 320/375/390/768/1440, mobilni meni (Escape), dotik zlata pot (skrajšana) in uporabnost zemljevida; 27 novih zaklepov (legal-lektorat); 0 AI.
 
 **Faza 2 (2.1.0):** skupnostne funkcije potovanja 1:1 iz izvorne kode (prijava,
 sodelovanje z vlogami/vabili/CAS, rezervacije, ankete, skupinski klepet z
@@ -140,6 +140,16 @@ na-poti (2 testa, izoliran kontekst z začasnim stanje na test):
 bun run db:generate       # prisma klient (enkrat)
 bun run db:push           # tabele (enkrat)
 bun run e2e               # webServer sam zažene next dev :3100 (reuse izven CI)
+```
+
+**Mobilni E2E projekt (2.46.0, issue #38 P2)** — `chromium-mobile` (Pixel 7:
+dotik, mobilni UA) teče izključno proti `e2e/mobile.e2e.ts` — zlata pot na
+desktopu se ne podvaja. Pokritje: vodoravni preliv 5 strani × 320/375/390/768/1440,
+mobilni meni (odpri → Escape → navigacija), zlata pot na dotiku (skrajšana) in
+uporabnost zemljevida (Leaflet vsebnik + zoom + OSM atribucija):
+
+```bash
+bun run e2e:mobile        # samo mobilni projekt; bun run e2e = obe projekta
 ```
 
 **Produkcija (PostgreSQL)** — priprava in prevezava:

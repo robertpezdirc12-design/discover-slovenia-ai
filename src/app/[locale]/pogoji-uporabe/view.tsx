@@ -5,7 +5,15 @@ import { useLocale } from "next-intl";
 import { LegalPage, type LegalSection } from "@/components/layout/legal-page";
 import { pick } from "@/lib/i18n-pick";
 
-/** Besedilo 1:1 iz produkcije (production-mirror/pogoji-uporabe, 2025). */
+/**
+ * Besedilo iz produkcije (production-mirror/pogoji-uporabe, 2025) + lektorat
+ * 2.46.0 (2026-10-13, issue #38 P2): seznam affiliate partnerjev usklajen
+ * s kanonom registra (src/lib/affiliate-providers.ts — dodana Kiwi.com in
+ * Rentalcars.com, točna imena; Kiwitaxi izrecno kot prevozi), slike in
+ * zemljevidni podatki ločeno (Unsplash ≠ OpenStreetMap, ODbL atribucija),
+ * cene „€/mesec“ + glagol „obračunava“. Datum posodobljen, ker je bila
+ * vsebina dejansko pregledana in popravljena (kanon #38).
+ */
 const SL: LegalSection[] = [
   {
     id: "sprejem",
@@ -30,14 +38,14 @@ const SL: LegalSection[] = [
     id: "affiliate",
     heading: "Affiliate povezave",
     paragraphs: [
-      "Platforma vsebuje partnerske (affiliate) povezave (Booking.com, DiscoverCars, GetYourGuide, Skyscanner, World Nomads, SafetyWing, Airalo, Kiwitaxi, Omio, Tiqets in Viator). Če prek teh povezav opravite rezervacijo, lahko Discover Slovenia prejme partnersko provizijo. Cena za vas se zaradi tega ne poveča.",
+      "Platforma vsebuje partnerske (affiliate) povezave (Booking.com, GetYourGuide, Viator (Tripadvisor), Tiqets, Kiwi.com, Skyscanner, Rentalcars.com, DiscoverCars, Omio, Airalo, World Nomads, SafetyWing) ter povezave za prevoze Kiwitaxi. Če prek teh povezav opravite rezervacijo, lahko Discover Slovenia prejme partnersko provizijo. Cena za vas se zaradi tega ne poveča.",
     ],
   },
   {
     id: "ponudniki",
     heading: "Ponudniki (B2B)",
     paragraphs: [
-      "Registrirani ponudniki so odgovorni za točnost svojih podatkov. Pavšalna naročnina (Premium €149/mes, Enterprise €499/mes) se obračuna mesečno. Odjava je možna kadarkoli s 30-dnevnim odpovednim rokom.",
+      "Registrirani ponudniki so odgovorni za točnost svojih podatkov. Pavšalna naročnina (Premium €149/mesec, Enterprise €499/mesec) se obračunava mesečno. Odjava je možna kadarkoli s 30-dnevnim odpovednim rokom.",
     ],
   },
   {
@@ -51,7 +59,7 @@ const SL: LegalSection[] = [
     id: "intelektualna",
     heading: "Intelektualna lastnina",
     paragraphs: [
-      "Vsebina platforme je zaščitena z MIT licenco. Slike destinacij so pridobljene iz odprtih virov (Unsplash, OpenStreetMap). Spletna koda je odprtokodna.",
+      "Vsebina platforme je objavljena pod licenco MIT; spletna koda je odprtokodna. Slike destinacij so pridobljene iz odprtih virov (Unsplash). Zemljevidi in točke interesa izhajajo iz odprtih podatkov OpenStreetMap — © prispevavalci OpenStreetMap (licenca ODbL).",
     ],
   },
   {
@@ -102,7 +110,7 @@ const EN: LegalSection[] = [
     id: "affiliate",
     heading: "Affiliate links",
     paragraphs: [
-      "The platform contains affiliate links (Booking.com, DiscoverCars, GetYourGuide, Skyscanner, World Nomads, SafetyWing, Airalo, Kiwitaxi, Omio, Tiqets and Viator). If you book through these links, Discover Slovenia may receive a partner commission. Your price does not increase because of this.",
+      "The platform contains affiliate links (Booking.com, GetYourGuide, Viator (Tripadvisor), Tiqets, Kiwi.com, Skyscanner, Rentalcars.com, DiscoverCars, Omio, Airalo, World Nomads, SafetyWing) as well as Kiwitaxi transfer links. If you book through these links, Discover Slovenia may receive a partner commission. Your price does not increase because of this.",
     ],
   },
   {
@@ -123,7 +131,7 @@ const EN: LegalSection[] = [
     id: "ip",
     heading: "Intellectual property",
     paragraphs: [
-      "Platform content is protected by the MIT licence. Destination images come from open sources (Unsplash, OpenStreetMap). The web code is open source.",
+      "Platform content is published under the MIT licence and the web code is open source. Destination images come from open sources (Unsplash). Maps and points of interest use open data from OpenStreetMap — © OpenStreetMap contributors (ODbL licence).",
     ],
   },
   {
@@ -174,7 +182,7 @@ const IT: LegalSection[] = [
     id: "affiliate",
     heading: "Link di affiliazione",
     paragraphs: [
-      "La piattaforma contiene link di affiliazione (Booking.com, DiscoverCars, GetYourGuide, Skyscanner, World Nomads, SafetyWing, Airalo, Kiwitaxi, Omio, Tiqets e Viator). Se prenoti tramite questi link, Discover Slovenia può ricevere una provvigione partner. Per te il prezzo non aumenta.",
+      "La piattaforma contiene link di affiliazione (Booking.com, GetYourGuide, Viator (Tripadvisor), Tiqets, Kiwi.com, Skyscanner, Rentalcars.com, DiscoverCars, Omio, Airalo, World Nomads, SafetyWing) oltre ai link per i trasferimenti Kiwitaxi. Se prenoti tramite questi link, Discover Slovenia può ricevere una provvigione partner. Per te il prezzo non aumenta.",
     ],
   },
   {
@@ -195,7 +203,7 @@ const IT: LegalSection[] = [
     id: "ip",
     heading: "Proprietà intellettuale",
     paragraphs: [
-      "I contenuti della piattaforma sono protetti dalla licenza MIT. Le immagini delle destinazioni provengono da fonti aperte (Unsplash, OpenStreetMap). Il codice web è open source.",
+      "I contenuti della piattaforma sono pubblicati con licenza MIT e il codice web è open source. Le immagini delle destinazioni provengono da fonti aperte (Unsplash). Le mappe e i punti di interesse utilizzano dati aperti di OpenStreetMap — © contributori OpenStreetMap (licenza ODbL).",
     ],
   },
   {
@@ -248,7 +256,7 @@ const DE: LegalSection[] = [
     id: "affiliate",
     heading: "Affiliate-Links",
     paragraphs: [
-      "Die Plattform enthält Affiliate-Links (Booking.com, DiscoverCars, GetYourGuide, Skyscanner, World Nomads, SafetyWing, Airalo, Kiwitaxi, Omio, Tiqets und Viator). Wenn Sie über diese Links buchen, kann Discover Slovenia eine Partnerprovision erhalten. Für Sie wird der Preis dadurch nicht höher.",
+      "Die Plattform enthält Affiliate-Links (Booking.com, GetYourGuide, Viator (Tripadvisor), Tiqets, Kiwi.com, Skyscanner, Rentalcars.com, DiscoverCars, Omio, Airalo, World Nomads, SafetyWing) sowie Kiwitaxi-Transferlinks. Wenn Sie über diese Links buchen, kann Discover Slovenia eine Partnerprovision erhalten. Für Sie wird der Preis dadurch nicht höher.",
     ],
   },
   {
@@ -269,7 +277,7 @@ const DE: LegalSection[] = [
     id: "ip",
     heading: "Geistiges Eigentum",
     paragraphs: [
-      "Die Inhalte der Plattform sind durch die MIT-Lizenz geschützt. Bilder der Reiseziele stammen aus offenen Quellen (Unsplash, OpenStreetMap). Der Web-Code ist Open Source.",
+      "Die Inhalte der Plattform stehen unter der MIT-Lizenz, der Web-Code ist Open Source. Bilder der Reiseziele stammen aus offenen Quellen (Unsplash). Karten und Points of Interest nutzen offene Daten von OpenStreetMap — © OpenStreetMap-Mitwirkende (ODbL-Lizenz).",
     ],
   },
   {
@@ -322,7 +330,7 @@ const FR: LegalSection[] = [
     id: "affiliate",
     heading: "Liens d'affiliation",
     paragraphs: [
-      "La plateforme contient des liens d'affiliation (Booking.com, DiscoverCars, GetYourGuide, Skyscanner, World Nomads, SafetyWing, Airalo, Kiwitaxi, Omio, Tiqets et Viator). Si vous réservez via ces liens, Discover Slovenia peut recevoir une commission de partenaire. Votre prix n'augmente pas pour autant.",
+      "La plateforme contient des liens d'affiliation (Booking.com, GetYourGuide, Viator (Tripadvisor), Tiqets, Kiwi.com, Skyscanner, Rentalcars.com, DiscoverCars, Omio, Airalo, World Nomads, SafetyWing) ainsi que des liens de transfert Kiwitaxi. Si vous réservez via ces liens, Discover Slovenia peut recevoir une commission de partenaire. Votre prix n'augmente pas pour autant.",
     ],
   },
   {
@@ -343,7 +351,7 @@ const FR: LegalSection[] = [
     id: "ip",
     heading: "Propriété intellectuelle",
     paragraphs: [
-      "Le contenu de la plateforme est protégé par la licence MIT. Les images des destinations proviennent de sources ouvertes (Unsplash, OpenStreetMap). Le code web est open source.",
+      "Le contenu de la plateforme est publié sous licence MIT et le code web est open source. Les images des destinations proviennent de sources ouvertes (Unsplash). Les cartes et les points d'intérêt utilisent les données ouvertes d'OpenStreetMap — © contributeurs d'OpenStreetMap (licence ODbL).",
     ],
   },
   {
@@ -396,7 +404,7 @@ const ES: LegalSection[] = [
     id: "affiliate",
     heading: "Enlaces de afiliación",
     paragraphs: [
-      "La plataforma contiene enlaces de afiliación (Booking.com, DiscoverCars, GetYourGuide, Skyscanner, World Nomads, SafetyWing, Airalo, Kiwitaxi, Omio, Tiqets y Viator). Si reserva a través de estos enlaces, Discover Slovenia puede recibir una comisión de socio. Su precio no aumenta por ello.",
+      "La plataforma contiene enlaces de afiliación (Booking.com, GetYourGuide, Viator (Tripadvisor), Tiqets, Kiwi.com, Skyscanner, Rentalcars.com, DiscoverCars, Omio, Airalo, World Nomads, SafetyWing) además de enlaces de traslados de Kiwitaxi. Si reserva a través de estos enlaces, Discover Slovenia puede recibir una comisión de socio. Su precio no aumenta por ello.",
     ],
   },
   {
@@ -417,7 +425,7 @@ const ES: LegalSection[] = [
     id: "ip",
     heading: "Propiedad intelectual",
     paragraphs: [
-      "El contenido de la plataforma está protegido por la licencia MIT. Las imágenes de los destinos provienen de fuentes abiertas (Unsplash, OpenStreetMap). El código web es de código abierto.",
+      "El contenido de la plataforma está publicado bajo licencia MIT y el código web es de código abierto. Las imágenes de los destinos provienen de fuentes abiertas (Unsplash). Los mapas y los puntos de interés utilizan datos abiertos de OpenStreetMap — © colaboradores de OpenStreetMap (licencia ODbL).",
     ],
   },
   {
@@ -459,7 +467,7 @@ export default function TermsPage() {
   return (
     <LegalPage
       title={title}
-      updated="2025"
+      updated="2026-10-13"
       sections={SECTIONS[l] ?? SL}
     />
   );

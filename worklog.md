@@ -2909,3 +2909,26 @@ Stage Summary:
 - commit c1786fd pushan na PR #40 (4. commit; CI še vedno pada na kvoti — 0 korakov, BlobNotFound v 2–3 s)
 - komentar na #38 (issuecomment-6138917938); PR #40 body dopolnjen
 - preostanek #38: verifikacija ~12 dogodkov 2027 (SDK kvota) + pravne strani lektorat (ločen prehod) + mobilni E2E projekt (lahko)
+
+---
+
+## 2.46.0 (2026-10-13, issue #38 P2) — P2 lektorat pravnih strani + mobilni E2E projekt
+
+### Lektorat pravnih strani (#38 P2: „Preglej pravne strani …; datum posodobitve spremeni samo, če je bila vsebina dejansko pregledana in posodobljena“)
+- /pogoji-uporabe: affiliate seznam 1:1 s kanonom registra affiliate-providers.ts (brez nekomercialnega osm-fuel plasta) — DODANA Kiwi.com in Rentalcars.com (prej manjkala!), točno ime „Viator (Tripadvisor)“, Kiwitaxi izrecno ločen kot PREVOZI (kanon supply/providers/kiwitaxi: rezervacija = zunanja affiliate povezava); IP sekcija: slike (Unsplash) ločene od zemljevidnih podatkov (© prispevavalci OpenStreetMap, licenca ODbL) — prej mešani zapis „(Unsplash, OpenStreetMap)“; B2B: „€149/mesec“, „€499/mesec“, „se obračunava mesečno“ (nedelesknjižni glagol); vseh 6 jezikov
+- /politika-zasebnosti: GDPR katalog pravic dopolnjen na popolnega (vpogled, popravek, izbris, OMEJITEV OBDELAVE, UGOVOR, PRENOSLJIVOST) — prej 4 od 6; „prenosa“ → „prenosljivosti“; „Če se naročite na novice (newsletter)“ namesto „prijavite na newsletter“; 6 jezikov
+- /zaupanje-in-varnost: „avtomatsko izračunan oceni profil“ → „avtomatsko izračunano oceno profila“ (slovnična napaka), knjižno „lokal“ namesto neknjižnega „lokalce“ (usklajeno z odstavkom „vsak lokal“), „premium boosta“ brez vezaja
+- DATUMI: updated="2026-10-13" na VSEH 3 straneh — vsebina je bila dejansko pregledana in popravljena (kanon #38 izrecno dovoljuje spremembo datuma šele tedaj)
+
+### Mobilni E2E projekt (#38 P2: „Pri širinah 320, 375, 390, 768 in 1440 px …“)
+- nov projekt `chromium-mobile` (Pixel 7: hasTouch, isMobile, mobilni UA) — ločitev per-projekt prek testIgnore/testMatch (desktop izključi e2e/mobile.e2e.ts, mobilni projekt teče IZKLJUČNO nanj; zlata pot se ne podvaja)
+- e2e/mobile.e2e.ts (8 testov): ① vodoravni preliv 5 strani (/ , /destinacije, /nacrtuj, /dogodki, /moja-potovanja) × 5 širin — avtomatizacija ročne 24/24 preverbe iz 2.44.0; ② mobilni meni: odpri → Escape zapre → navigacija prek menija; ③ zlata pot na dotiku (skrajšana: iskanje Bled → Dodaj v mojo pot → /moja-potovanja); ④ zemljevid @ 390: Leaflet vsebnik + zoom + OSM atribucija
+- POUK IZ IZVEDBE (2 pasti): (a) glob `*.mobile.e2e.ts` NE ujame `mobile.e2e.ts` (zahteva predpono pred .mobile) — pravilen vzorec `**/mobile.e2e.ts`; (b) `*/` znotraj blokovnega komentarja (npr. zapis globa `**/…`) ZAKLJUČI komentar → BABEL_PARSE_ERROR — v prozi se glob zapiše besedilno; (c) majhen /dev/shm v vsebniškem okolju sesuje Chromium tab („Page crashed“) → `--disable-dev-shm-usage` + en test na širino (svež tab, čista akumulacija pomnilnika)
+
+### Merila
+- bun test 2060/2060 (18089 expect, 102 datoteke) — +27 zaklepov (tests/legal-lektorat.test.ts: register 1:1, ODbL, cene, GDPR 6 pravic × 6 jezikov, slovnica, datumi, strukturna pariteta); tsc 0; eslint 0; Playwright 10/10 (2 desktop + 8 mobilnih)
+- verzija 2.46.0 (package.json, health, sw.js, footer, README, p2-data-plane, pwa-sw); script `e2e:mobile`; README: mobilni E2E dokumentiran
+
+### Stanje
+- CI/kvota: GitHub Actions še vedno pada z 0 koraki (5. serija), SDK web_search/page_reader še vedno 429 → ta prehod je bil 100 % brez kvotnih odvisnosti
+- preostanek #38: verifikacija ~12 dogodkov 2027 (SDK kvota), CI E2E job (Actions kvota), merge PR #40 (Actions kvota)

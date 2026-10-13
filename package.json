@@ -1,6 +1,6 @@
 {
   "name": "discover-slovenia-ai",
-  "version": "2.45.0",
+  "version": "2.46.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000 2>&1 | tee dev.log",
@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "e2e": "playwright test",
+    "e2e:mobile": "playwright test --project=chromium-mobile",
     "activation:check": "bun scripts/activation-check.ts",
     "db:push": "bun scripts/db-push-guarded.ts",
     "db:materialize": "prisma db push --skip-generate",

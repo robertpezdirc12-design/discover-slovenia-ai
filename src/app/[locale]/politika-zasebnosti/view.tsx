@@ -5,7 +5,13 @@ import { useLocale } from "next-intl";
 import { LegalPage, type LegalSection } from "@/components/layout/legal-page";
 import { pick } from "@/lib/i18n-pick";
 
-/** Besedilo 1:1 iz produkcije (production-mirror/politika-zasebnosti, 2025). */
+/**
+ * Besedilo iz produkcije (production-mirror/politika-zasebnosti, 2025) +
+ * lektorat 2.46.0 (2026-10-13, issue #38 P2): GDPR seznam pravic dopolnjen
+ * z omejitvijo obdelave in ugovorom (standardni katalog 15–21) + termin
+ * „prenosljivost“; „naročite se na novice“ namesto „prijavite na newsletter“.
+ * Datum posodobljen, ker je bila vsebina dejansko pregledana in popravljena.
+ */
 const SL: LegalSection[] = [
   {
     id: "splosno",
@@ -25,7 +31,7 @@ const SL: LegalSection[] = [
     id: "newsletter",
     heading: "Newsletter",
     paragraphs: [
-      "Če se prijavite na newsletter, shranimo vaš e-poštni naslov. Uporabimo ga izključno za pošiljanje turističnih vodnikov in nasvetov. Kadarkoli se lahko odjavite.",
+      "Če se naročite na novice (newsletter), shranimo vaš e-poštni naslov. Uporabimo ga izključno za pošiljanje turističnih vodnikov in nasvetov. Kadarkoli se lahko odjavite.",
     ],
   },
   {
@@ -60,7 +66,7 @@ const SL: LegalSection[] = [
     id: "pravice",
     heading: "Vaše pravice",
     paragraphs: [
-      "V skladu s GDPR imate pravico do: vpogleda, popravka, izbrisa in prenosa svojih podatkov. Pravice uveljavljate prek obrazca na kontaktni strani.",
+      "V skladu s GDPR imate pravico do vpogleda, popravka, izbrisa, omejitve obdelave, ugovora in prenosljivosti svojih podatkov. Pravice uveljavljate prek obrazca na kontaktni strani.",
     ],
     links: [{ href: "/kontakt", label: "Kontakt" }],
   },
@@ -128,7 +134,7 @@ const EN: LegalSection[] = [
     id: "rights",
     heading: "Your rights",
     paragraphs: [
-      "Under the GDPR you have the right to access, rectification, erasure and portability of your data. You can exercise your rights via the contact form.",
+      "Under the GDPR you have the right to access, rectification, erasure, restriction of processing, objection and portability of your data. You can exercise your rights via the contact form.",
     ],
     links: [{ href: "/kontakt", label: "Contact" }],
   },
@@ -196,7 +202,7 @@ const IT: LegalSection[] = [
     id: "rights",
     heading: "I tuoi diritti",
     paragraphs: [
-      "Ai sensi del GDPR hai diritto di: accesso, rettifica, cancellazione e portabilità dei tuoi dati. I diritti si esercitano tramite il modulo sulla pagina dei contatti.",
+      "Ai sensi del GDPR hai diritto di: accesso, rettifica, cancellazione, limitazione del trattamento, opposizione e portabilità dei tuoi dati. I diritti si esercitano tramite il modulo sulla pagina dei contatti.",
     ],
     links: [{ href: "/kontakt", label: "Contatto" }],
   },
@@ -264,7 +270,7 @@ const DE: LegalSection[] = [
     id: "rights",
     heading: "Ihre Rechte",
     paragraphs: [
-      "Nach der DSGVO haben Sie das Recht auf: Auskunft, Berichtigung, Löschung und Übertragbarkeit Ihrer Daten. Die Rechte können Sie über das Formular auf der Kontaktseite ausüben.",
+      "Nach der DSGVO haben Sie das Recht auf: Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Widerspruch und Übertragbarkeit Ihrer Daten. Die Rechte können Sie über das Formular auf der Kontaktseite ausüben.",
     ],
     links: [{ href: "/kontakt", label: "Kontakt" }],
   },
@@ -332,7 +338,7 @@ const FR: LegalSection[] = [
     id: "rights",
     heading: "Vos droits",
     paragraphs: [
-      "Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, d'effacement et de portabilité de vos données. Vous pouvez exercer vos droits via le formulaire de la page contact.",
+      "Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation du traitement, d'opposition et de portabilité de vos données. Vous pouvez exercer vos droits via le formulaire de la page contact.",
     ],
     links: [{ href: "/kontakt", label: "Contact" }],
   },
@@ -400,7 +406,7 @@ const ES: LegalSection[] = [
     id: "rights",
     heading: "Sus derechos",
     paragraphs: [
-      "Con arreglo al RGPD, tiene derecho al acceso, rectificación, supresión y portabilidad de sus datos. Puede ejercer sus derechos mediante el formulario de la página de contacto.",
+      "Con arreglo al RGPD, tiene derecho al acceso, la rectificación, la supresión, la limitación del tratamiento, la oposición y la portabilidad de sus datos. Puede ejercer sus derechos mediante el formulario de la página de contacto.",
     ],
     links: [{ href: "/kontakt", label: "Contacto" }],
   },
@@ -428,7 +434,7 @@ export default function PrivacyPage() {
   return (
     <LegalPage
       title={pick(l, { sl: "Politika zasebnosti", en: "Privacy policy", it: "Politica sulla privacy", de: "Datenschutzerklärung", fr: "Politique de confidentialité", es: "Política de privacidad" })}
-      updated="2025"
+      updated="2026-10-13"
       sections={SECTIONS[l] ?? SL}
     />
   );

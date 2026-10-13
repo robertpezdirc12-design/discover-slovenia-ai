@@ -3108,3 +3108,17 @@ Stage Summary:
 - **E2E regresija najdena in popravljena**: državni filter (#dest-country) je zdaj prvi Radix combobox na /destinacije — stara `getByRole("combobox").first()/nth(1)` lokatorja sta v zlati poti in mobilnem testu zadela napačen select (2/10 faila: "Gorenjska" nikoli ponujena). Fix: semantični ID lokatorji `#dest-region` / `#dest-type` (e2e/golden-path.e2e.ts, e2e/mobile.e2e.ts). Ponovni teki: 10/10 na v2.54.0 previewju in ponovljen 10/10 na finalnem headu 0171254 (2,6 min).
 - **GitLab WAF bypass**: `git push`/`fetch` proti gitlab.com s privzetim git UA = 403; z `-c http.userAgent="Mozilla/5.0 …"` push normalno preide (zrcalo usklajeno: 88ef727 → 0171254 forced update). Isti vzorec kot API klici z browser UA (glapi.sh).
 - Dokazni sklad F0 @ 0171254: lokalna vrata (tsc 0, eslint 0, 2111/2111, 18531 expect, build OK) + Vercel preview v2.54.0 (health ok, 10/11 startup ok + ops:cron skipped) + E2E 10/10 (zlata pot + mobilni, 5 prelomov) + GitLab zrcalo parity. Actions runa na 0171254 = 0 korakov v obeh jobih (isti kvotni vzorec — zabeleženo pošteno, ni signal o kodi).
+
+---
+
+## R41-F1 (2.55.0) — vsebina cel Balkan: 6 novih držav × 6 destinacij (issue #41, 2026-10-13)
+
+- NOVIH 36 destinacij (74 skupaj): BA 6 (Sarajevo, Mostar, Jahorina, Kravica, Una NP, Trebinje), RS 6 (Beograd, Novi Sad, Kopaonik, Studenica, Zlatibor, Đerdap), MK 6 (Ohrid, Ohridsko jezero, Skopje, Matka, Mavrovo, Bitola), XK 6 (Prizren, Dečani, Gračanica, Priština, Rugova, Brezovica), BG 6 (Sofija, Plovdiv, Rilski samostan, Sedem rilskih jezer, Nesebar, Varna), GR 6 (Solun, Meteora, Halkidiki, Olimp, Vergina, Vikos).
+- Provenance kanon #38: 7× UNESCO WHC z sourceUrl (Mostar 946, Ohrid 99, Rilski samostan 216, Meteora 455, Solun 456, Kosovski spomeniki 724 ×2, Studenica 389, Nesebar 217), ostalo uradni nacionalni portali (tourismbih.com, serbia.travel, macedonia-timeless.com, destinationkosovo.com, visitbulgaria.com, visitgreece.gr) — vsi verifiedAt 2026-10-13.
+- NOV tip „monastery“ (DEST_TYPES 10); ikona Church (home), barva #6D4C41 (map), interest žeton „samostan“.
+- 21 novih regij (REGIONS 42): geografsko nevtralna imena (XK: smeri, ne „Metohija“).
+- 36 novih AI-generiranih slik (public/content, 1344×768, skladna z obstoječim stilom).
+- interests-i18n: 134 novih prevodov čipov + 16 baznih žetonov (gastronomija, sport, zima, …) = pokritost 273/273.
+- map-pins dataset: 100 krajev (74+26), lastUpdated/snapshot 2026-10-13.
+- Verzija 2.55.0 (package.json, health, sw.js, footer, README). Gates: tsc 0, eslint 0, **2111/2111** (21.275 expect), build naslednji korak.
+- Popravljeni številni jezikovni slipi pri vnosih (CJK leak, ciriliški znaki, garbled fraze) — končna besedila lektorirana.

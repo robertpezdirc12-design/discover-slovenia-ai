@@ -22,7 +22,7 @@ import { DESTINATIONS, getDestination } from "../src/lib/slovenia-data";
  *     featureList ×6 popoln in vsebuje »deterministi«/»0 AI« (varovalni pes:
  *     bodoča AI marketinška točka brez resnice takoj pade), TouristDestination
  *     samo iz kanonskih podatkov (geo 1:1, url po hreflang konvenciji) —
- *     prek VSEH 38 destinacij.
+ *     prek VSEH 74 destinacij.
  */
 
 describe("jsonld [enote]: SoftwareApplication (domača stran)", () => {
@@ -145,8 +145,8 @@ describe("jsonld [enote]: TouristDestination (/destinacija/[slug])", () => {
     );
   });
 
-  test("⑬ VSEH 38 destinacij zgradi veljaven JSON-LD z realnimi koordinatami", () => {
-    expect(DESTINATIONS.length).toBe(38); // kanon nabora (slovenia-data.test)
+  test("⑬ VSEH 74 destinacij zgradi veljaven JSON-LD z realnimi koordinatami", () => {
+    expect(DESTINATIONS.length).toBe(74); // kanon nabora (slovenia-data.test)
     for (const d of DESTINATIONS) {
       const ld = touristDestinationJsonLd(d, "sl");
       const parsed = JSON.parse(JSON.stringify(ld)) as typeof ld;

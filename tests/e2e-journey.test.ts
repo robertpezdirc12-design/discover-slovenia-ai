@@ -172,7 +172,7 @@ describe("E2E 1 · DISCOVER — prazno stanje → izbira destinacij", () => {
     expect(myTrip.has("bled")).toBe(false);
   });
 
-  test("izbira iz kanonskega nabora: 38 destinacij, getDestination(„bled“) z veljavnimi koordinatami", () => {
+  test("izbira iz kanonskega nabora: 74 destinacij, getDestination(„bled“) z veljavnimi koordinatami", () => {
     const bled = getDestination("bled");
     expect(bled).toBeDefined();
     expect(bled!.slug).toBe("bled");
@@ -182,9 +182,9 @@ describe("E2E 1 · DISCOVER — prazno stanje → izbira destinacij", () => {
     expect(bled!.coords.lng).toBeGreaterThan(13);
     expect(bled!.coords.lng).toBeLessThan(17);
     // Nabor kot vhod celotnega journeya: 38 enkratnih slugov, končne
-    // koordinate znotraj SI/HR/ME/AL (lat 39,9–46,7 · lng 13,6–20,1).
-    expect(DESTINATIONS.length).toBe(38);
-    expect(new Set(DESTINATIONS.map((d) => d.slug)).size).toBe(38);
+    // koordinate znotraj cel Balkan (#41 F1).
+    expect(DESTINATIONS.length).toBe(74);
+    expect(new Set(DESTINATIONS.map((d) => d.slug)).size).toBe(74);
     expect(
       DESTINATIONS.every(
         (d) =>
@@ -193,7 +193,7 @@ describe("E2E 1 · DISCOVER — prazno stanje → izbira destinacij", () => {
           d.coords.lat >= 38 &&
           d.coords.lat <= 48 &&
           d.coords.lng >= 12 &&
-          d.coords.lng <= 22
+          d.coords.lng <= 29
       )
     ).toBe(true);
   });
@@ -523,8 +523,8 @@ describe("E2E invarianta · PREHODI STATUSOV — booking veriga spoštuje ALLOWE
 
 // ─── INVARIANTE: CELOVITOST PODATKOV ───────────────────────────────────────
 
-describe("E2E invarianta · CELOVITOST PODATKOV — vse izhaja iz kanonskega nabora 38", () => {
-  test("načrt iz VSEH 38 destinacij: vsak postanek veljaven slug + koordinate; ponudbe nosijo samo kanonske slug-e", () => {
+describe("E2E invarianta · CELOVITOST PODATKOV — vse izhaja iz kanonskega nabora 74", () => {
+  test("načrt iz VSEH 74 destinacij: vsak postanek veljaven slug + koordinate; ponudbe nosijo samo kanonske slug-e", () => {
     const all: MyTripItem[] = DESTINATIONS.map((d, i) => ({
       refId: d.slug,
       name: d.name,
@@ -534,8 +534,8 @@ describe("E2E invarianta · CELOVITOST PODATKOV — vse izhaja iz kanonskega nab
     const { plan, unmatched } = buildPlanFromMyTrip(all);
     expect(unmatched).toEqual([]);
     const stops = plan.days[0]!;
-    expect(stops.length).toBe(38);
-    expect(new Set(stops.map((s) => s.slug)).size).toBe(38); // brez dvojnikov
+    expect(stops.length).toBe(74);
+    expect(new Set(stops.map((s) => s.slug)).size).toBe(74); // brez dvojnikov
     expect(
       stops.every(
         (s) => SLUGS.has(s.slug!) && getDestination(s.slug!) !== undefined && !!s.coords

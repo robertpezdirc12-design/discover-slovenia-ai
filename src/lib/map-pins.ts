@@ -20,7 +20,7 @@
  *
  * Zoom vrata (kot v produkciji): zoom < 15 → mode "grid" (agregacija v
  * celice ~0,05°: floor(coord/0,05)), zoom ≥ 15 → mode "pins" (cap 500 +
- * zastavica capped). dataset.places = 38 + 26 = 64 — pošten opis LASTNE
+ * zastavica capped). dataset.places = 74 + 26 = 100 — pošten opis LASTNE
  * množice, ne FSQ 125k.
  *
  * Modul je ČIST (brez stranskih učinkov) — testi ga uvažajo brez
@@ -111,8 +111,8 @@ export const BBOX_MAX_LAT_SPAN = 10;
 export const BBOX_MAX_LNG_SPAN = 15;
 
 /** Datum potrditve kanonskih podatkov (živo preverjeno; glej RECONSTRUCTION-PLAN). */
-export const PINS_LAST_UPDATED = "2026-10-07";
-export const PINS_SNAPSHOT_DATE = "2026-10-07";
+export const PINS_LAST_UPDATED = "2026-10-13";
+export const PINS_SNAPSHOT_DATE = "2026-10-13";
 
 export const PINS_SOURCE: MapPinsSource = {
   slug: "own",
@@ -229,7 +229,7 @@ export function buildAllPins(): MapPin[] {
   return [...destPins, ...lokalPins];
 }
 
-/** Vsi pinu (modul-nivo constant — 38 + 26 = 64). */
+/** Vsi pinu (modul-nivo konstanta — 74 + 26 = 100). */
 export const ALL_PINS: MapPin[] = buildAllPins();
 
 /** Število krajev v LASTNI množici (dataset.places). */

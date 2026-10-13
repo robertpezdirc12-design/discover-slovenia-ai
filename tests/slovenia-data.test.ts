@@ -39,14 +39,14 @@ const TYPES = [
 ] as const;
 const SEASONS = ["spring", "summer", "autumn", "winter"] as const;
 const BUDGETS = ["€", "€€", "€€€"] as const;
-/** Širše območje SI + jadran (SI/HR/ME/AL) — groba geografska vrata. */
-const LAT_MIN = 38, LAT_MAX = 48, LNG_MIN = 7, LNG_MAX = 24;
+/** Širše območje SI + cel Balkan (#41 F1) — groba geografska vrata (do Črnega morja). */
+const LAT_MIN = 38, LAT_MAX = 48, LNG_MIN = 7, LNG_MAX = 29;
 
 const all: Destination[] = DESTINATIONS;
 
 describe("slovenia-data: obseg nabora", () => {
-  test("natančno 38 destinacij (kanon produkcije 1.190.0)", () => {
-    expect(all.length).toBe(38);
+  test("natančno 74 destinacij (kanon #41 F1: 38 izvirnih + 6×6 novih držav)", () => {
+    expect(all.length).toBe(74);
   });
 
   test("unikatni id-ji", () => {
@@ -121,8 +121,8 @@ describe("slovenia-data: veljavnost polj", () => {
       const d = getDestination(slug);
       expect(d?.region).toBe("gorenjska");
     }
-    // 21 regij (20 izvirnih + posocje).
-    expect(Object.keys(REGIONS).length).toBe(21);
+    // 42 regij (#41 F1: 21 izvirnih + 21 novih balkanskih).
+    expect(Object.keys(REGIONS).length).toBe(42);
   });
 
   test("slike obstajajo na disku (public/content)", () => {

@@ -1,13 +1,16 @@
 /**
- * COUNTRIES-F41 — zaklepi balkanske ekspanzije Faza 0 (#41, 2.54.0).
+ * COUNTRIES-F41 — zaklepi balkanske ekspanzije (#41, 2.54.0 F0 + 2.55.0 F1).
  * ============================================================================
  * #41 F0 merila: CountryCode pokriva cel Balkan (10 držav), državna meta
  * (imena 6 jezikov, valuta, emergency, klicna, eSIM cona) je POPOLNA za
  * vse ključe, `eventCountry` je enoten dostop z defaultom "SI" (obstoječih
  * 31 dogodkov NE spreminjamo — kanon #38), državni filter destinacij ima
  * URL semantiko (neznana → prazen rezultat) in `activeCountryKeys` vrne
- * kanonski geografski vrstni red. Iskrenostni kanon: velikost COUNTRIES
- * ≠ države z vsebino (nabor destinacij ostaja 38 po 4 državah do F1).
+ * kanonski geografski vrstni red.
+ * #41 F1 merila (2.55.0): vsebina za 6 novih držav (BA/RS/MK/XK/BG/GR po
+ * 6 destinacij) s provenance kanonom #38 — vsak vnos z virom (UNESCO WHC
+ * ali uradni nacionalni turistični portal). Nabor destinacij: 74 po 10
+ * državah (SI 22 · HR 8 · ME 4 · AL 4 · BA/RS/MK/XK/BG/GR 6).
  */
 
 import { describe, expect, test } from "bun:test";
@@ -100,8 +103,8 @@ describe("countries-f41 (#41 F0): državna meta", () => {
     }
   });
 
-  test("①f iskrenostni kanon: nabor destinacij je ŠE VEDNO 38 po 4 državah (F0 ne doda vsebine)", () => {
-    expect(DESTINATIONS.length).toBe(38);
+  test("①f iskrenostni kanon F1: nabor destinacij je 74 po 10 državah (F1 doda 6×6)", () => {
+    expect(DESTINATIONS.length).toBe(74);
     const byCountry = new Map<string, number>();
     for (const d of DESTINATIONS) {
       byCountry.set(d.country, (byCountry.get(d.country) ?? 0) + 1);
@@ -110,7 +113,10 @@ describe("countries-f41 (#41 F0): državna meta", () => {
     expect(byCountry.get("HR")).toBe(8);
     expect(byCountry.get("ME")).toBe(4);
     expect(byCountry.get("AL")).toBe(4);
-    expect(byCountry.size).toBe(4);
+    for (const c of ["BA", "RS", "MK", "XK", "BG", "GR"] as const) {
+      expect(byCountry.get(c)).toBe(6); // F1: 6 destinacij na novo državo
+    }
+    expect(byCountry.size).toBe(10);
     // vsaka destinacija ima veljaven COUNTRIES ključ:
     for (const d of DESTINATIONS) expect(COUNTRIES[d.country]).toBeDefined();
   });
@@ -143,8 +149,8 @@ describe("countries-f41 (#41 F0): eventCountry + državni filter", () => {
   test("②e 'all'/manjkajoča vrednost → brez omejitve (združljivost starih klicev)", () => {
     const explicit = filterDestinations(DESTINATIONS, { q: "", region: "all", type: "all", country: "all" });
     const implicit = filterDestinations(DESTINATIONS, { q: "", region: "all", type: "all" });
-    expect(explicit.length).toBe(38);
-    expect(implicit.length).toBe(38);
+    expect(explicit.length).toBe(74);
+    expect(implicit.length).toBe(74);
   });
 
   test("②f kombinacija: država → regija → tip → iskanje (vrstni red ne spreminja stare semantike)", () => {
@@ -155,10 +161,9 @@ describe("countries-f41 (#41 F0): eventCountry + državni filter", () => {
     expect(none).toEqual([]); // gorenjska ne obstaja v HR
   });
 
-  test("②g activeCountryKeys: kanonski vrstni red, samo prisotne države", () => {
+  test("②g activeCountryKeys: kanonski vrstni red, vseh 10 držav z vsebino", () => {
     const keys = activeCountryKeys(DESTINATIONS);
-    expect(keys).toEqual(["SI", "HR", "ME", "AL"]); // podmnožica v vrstnem redu ALL_COUNTRY_CODES
-    expect(keys).not.toContain("BA");
+    expect(keys).toEqual(["SI", "HR", "BA", "RS", "ME", "XK", "AL", "MK", "BG", "GR"]); // v vrstnem redu ALL_COUNTRY_CODES
   });
 
   test("②h hasActiveFilters vključuje državo", () => {

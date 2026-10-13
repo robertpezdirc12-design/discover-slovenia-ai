@@ -199,7 +199,7 @@ describe("POLIR10: regresija — <html> v [locale]/layout.tsx ohranja suppressHy
 // ── ⑥ ČISTOST VSEBINE: nonce živi SAMO v atributu, nikoli v JSON ────────────
 
 describe("POLIR10: JSON vsebina brez per-zahtevnih vrednosti (nonce samo atribut)", () => {
-  test("⑥ jsonldScriptHtml(…) izpis vseh 6 jezikov + vseh 38 destinacij NE vsebuje žetona \"nonce\"", () => {
+  test("⑥ jsonldScriptHtml(…) izpis vseh 6 jezikov + vseh 74 destinacij NE vsebuje žetona \"nonce\"", () => {
     // Če bi per-zahtevni nonce kdaj pretekel v JSON vsebino, bi hidracijska
     // razlika postala NEdeterministična tudi po vsebini (in CSP nonce bi
     // puščal v iskalne kazale). Vsebina mora ostati per-jezikovno fiksna.
@@ -211,8 +211,8 @@ describe("POLIR10: JSON vsebina brez per-zahtevnih vrednosti (nonce samo atribut
       izpisi.push(jsonldScriptHtml(touristDestinationJsonLd(d, "sl")));
       izpisi.push(jsonldScriptHtml(touristDestinationJsonLd(d, "en")));
     }
-    expect(DESTINATIONS.length).toBe(38); // kanon nabora (slovenia-data.test)
-    expect(izpisi.length).toBe(7 + 38 * 2);
+    expect(DESTINATIONS.length).toBe(74); // kanon nabora (slovenia-data.test)
+    expect(izpisi.length).toBe(7 + 74 * 2);
     for (const izpis of izpisi) {
       expect(izpis).not.toContain("nonce");
       expect(izpis).not.toContain("Nonce");

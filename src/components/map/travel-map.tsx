@@ -103,6 +103,7 @@ const TYPE_COLORS: Record<DestinationType, string> = {
   coast: "#2A9D8F",
   gorge: "#6B8E23",
   lake: "#1E7F86",
+  monastery: "#6D4C41",
   mountain: "#8D6E63",
   river: "#48A9A6",
   spa: "#C2586E",

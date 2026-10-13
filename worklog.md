@@ -2882,3 +2882,30 @@ Stage Summary:
 - P2 dostopnost/besedila (#38) zaključena v kodi: 12 besedilnih popravkov, 2 slovnični razredi (paucal + mestnik), 1 umik razvojne oznake, 8 novih regresijskih zaklepov; brskalniški preverbi 24/24 brez preliva, tipkovnica/Escape/fokus čisto, 3/3 prednastavitve konsistentne.
 - Pravne strani (/pogoji-uporaba, /politika-zasebnosti, /zaupanje-in-varnost): datumi NE spremenjeni (vsebina v tem prehodu ni bila vsebinsko lektorirana — kanon iz #38: datum samo ob dejanskem pregledu).
 - Ostalo za #38: CI/merge PR #40 (kvota), P1 načrtovalnik E2E (Playwright suite), JSON-LD Event schema, preostali ~12 dogodkov (2027 termini).
+
+---
+
+## 2.45.0 — Event JSON-LD /dogodki + Playwright E2E zlata pot (2026-10-13, issue #38 P1)
+
+### Event JSON-LD (vzor MySwitzerland, benchmark #35 R-5-c2a)
+- src/lib/jsonld.ts: eventsJsonLd(events, locale) — schema.org Event @graph IZKLJUČNO za potrjene datume (18/31); dateUnconfirmed NIKOLI v strukturiranih podatkih (iskrenostni kanon #38)
+- brez endDate (podatki nimajo trajanja), brez offers (euro/euro2 niso numerična cena), isAccessibleForFree izključno za "free", location = Place 1:1 + addressCountry SI (addressLocality se NE ugiba — heterogeni venue formati), url po hreflang konvenciji
+- /dogodki/page.tsx: skripta ld+json s CSP nonce (isti kanon kot domača stran)
+- testi: +6 zaklepov ⑲–㉔; kanarček hydration-nonce zavesten update 2→3 ld+json skripti (+dogodki)
+
+### Playwright E2E (P1 ponovljivost)
+- playwright.config.ts (webServer next dev :3100, reuse izven CI) + e2e/golden-path.e2e.ts + script e2e (devDep @playwright/test)
+- zlata pot: /destinacije → iskanje Bled → Gorenjska → Jezero → Bled → Dodaj v mojo pot → /moja-potovanja → prednastavitev (en klik = načrt) → Shrani v Moja pot → /potovanje → Zaženi na poti → /na-poti Opravljeno → napredek → Preskoči → osvežitev → POTOVANJE ZAKLJUČENO
+- determinizem: prednastavitev ×2 → isti fingerprint plana (4cdd15a0); savedAt obvoj se razlikuje (pričakovano)
+- pouk iz izvedbe: dai:last-plan se zapiše šele ob Shrani/Go; init-skripta za čiščenje dai:* teče ENKRAT na kontekst (oznaka), sicer pomete stanje poti
+- izvedba v peskovniku: bunx playwright test → 2/2 passed (~45 s, Chromium 1.64)
+
+### Merila
+- bun test 2033/2033 (17960 expect), tsc --noEmit 0, eslint 0, playwright 2/2
+- verzija 2.45.0 na vseh 7 mestih; E2E dokumentiran v README (Razvoj)
+- živa verifikacija /dogodki (curl + agent-browser): 18 Eventov v grau, nepotrjeni izključeni, nonce prisoten, izris čist
+
+### Stanje
+- commit c1786fd pushan na PR #40 (4. commit; CI še vedno pada na kvoti — 0 korakov, BlobNotFound v 2–3 s)
+- komentar na #38 (issuecomment-6138917938); PR #40 body dopolnjen
+- preostanek #38: verifikacija ~12 dogodkov 2027 (SDK kvota) + pravne strani lektorat (ločen prehod) + mobilni E2E projekt (lahko)

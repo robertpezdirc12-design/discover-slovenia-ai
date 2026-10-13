@@ -3001,3 +3001,21 @@ Stage Summary:
 
 ### Stanje
 - Kanon zdaj: 20 potrjenih / 11 nepotrjenih; preostanek #38 ČISTO kvoten: 9 nepotrjenih 2027 (SDK web_search 429) + zeleni CI/merge PR #40 (Actions kvota). GitHub: #38 komentar 6143529693; PR #40 body dopolnjen.
+
+## 2.50.0 — dokument #35: balkanska platforma brez AI (2026-10-13)
+
+### Kontekst
+- #38 čisto izčrpan za ne-kvotna dela (2.49.0); uporabnik z „odlicno nadaljuj“ odobril ponujeni naslednji korak: izvedljivi načrt #35. Raziskavni komentar (6132732445) je pokrival SDK matriko, a dokument docs/research/balkan-platform-no-ai.md (12 poglavij iz meril sprejemanja) ŠE NE obstaja — to je bil manjkajoči rezultat.
+
+### Spremembe
+- NOVO docs/research/balkan-platform-no-ai.md: 12 poglavij — povzetek; repo-pregled s trdimi dokazi (deluje: deterministicni engine 1937 vrstic, Leaflet+CSP, 27 Prisma modelov, 2097 testov; nepopolno: geokodiranje/routing/i18n vsebine; manjka: ploscice prod, Valhalla, vecdrzavni model, Provider katalog; podvajanje izrecno izloceno); primerjalna matrika SDK; podatkovni viri + ODbL; pokritost 5 drzav (GTFS 0/5); podatkovni model Provider + postopek verifikacije (OSM = VEČNO unverified do potrditve); partner API-ji vse [nepotrjeno]; arhitektura na obstoječem engine; faze 1–6 (faza 1 = OpenFreeMap swap, reverzibilna); stroški znani 0 EUR ločeni od [nepotrjenih] ponudb; register 10 tveganj; viri z datumi.
+- curl-potrditve 2026-10-13: Valhalla COPYING = MIT; Photon LICENSE = Apache-2.0; MapLibre LICENSE.txt = BSD-3; OpenFreeMap „completely free, no limits“; podatki.gov.si CKAN = 0 GTFS.
+- Verzija 2.50.0 na 7 mestih + README banner. 0 produkcijskih sprememb vedenja.
+
+### Verifikacija
+- bun test 2097/2097 (18276 expect), tsc 0, eslint 0.
+- GitHub: #35 komentar 6143809470; commit 07f1f9e potisnjen v PR #40.
+
+### Stanje
+- #35 zaključen (predlog zaprtja ob merge-u #40); odločitev lastnika: faza 1 (OpenFreeMap swap), ODbL pravni pregled pred fazo 4, Viator pilot ob obsegu.
+- Kvote še vedno mrtve (Actions 8. serija, SDK 429) — oboje neovira tega prehoda (curl + lokalna vrata).

@@ -12,7 +12,7 @@
 > deterministični motor (/api/start-anywhere); z-ai-web-dev-sdk odstranjen —
 > kanon P1: 100 % deterministično, 0 AI modelov.
 
-**Verzija: 2.44.0 — QA P0 DOGODKI (2026-10-12): zanesljivost podatkov o dogodkih po issue #34→#38 — prva verifikacijska serija pri primarnih virih organizatorjev. POTRJENO: Kurentovanje 3.–9. feb 2027 (kurentovanje.net), Ljubljanski maraton 17.–18. okt 2026 (ljubljanamarathon.si — izmišljeni „25. maj 2027“ popravljen), Vinska vigred = Metlika/Bela krajina + maj (vinska-vigred.si — prej napačno Maribor/marec; vinskavigred.si je vinarna), Planica = FIS finale SP (planica.si), Jurjevanje = junij + Draga/Črnomelj (jurjevanje.si). NEPOTRJENO označeno pošteno („datum še ni potrjen“, izmišljeni datumi odstranjeni): zimski festival, Zlati lisjak, Vigred, Planica, Festival Soča, Blejski danovski, Jurjevanje, Pivo in cvetje. Mrtve domene odstranjene (zlati-lisjak.si, festivalsoca.si, festivalblejskihdni.si, vinskavigred.si — regresijski zaklep). Nov model: dateUnconfirmed/source/verifiedAt + pošten UI prikaz (6 jezikov); 14 novih testnih zaklepov (events-p0-qa38) + posodobljeni content-data zaklepi; 0 AI.
+**Verzija: 2.45.0 — EVENT JSON-LD + P2 DOSTOPNOST (2026-10-13, issue #38): /dogodki izriše schema.org Event @graph (18 potrjenih dogodkov; nepotrjeni datumi NIKOLI v strukturiranih podatkih — iskrenostni kanon: brez izmišljenega endDate, Place samo z dejanskim imenom prizorišča + SI, isAccessibleForFree izključno za "free", url po hreflang konvenciji; vzor MySwitzerland iz benchmarka #35). P2 dostopnost/besedila: „premočrtna razdalja ×1,3“ (terminska napaka), paucal „postanki“ (3/4), mestnik „v 2 regijah“, umik razvojne oznake iz noge; 8 novih zaklepov (p2-dostopnost) + 6 novih zaklepov (jsonld-schema Event @graph ⑲–㉔); Playwright E2E zlata pot (destinacije → načrtuj → na-poti) v tests/e2e/; 0 AI.
 
 **Faza 2 (2.1.0):** skupnostne funkcije potovanja 1:1 iz izvorne kode (prijava,
 sodelovanje z vlogami/vabili/CAS, rezervacije, ankete, skupinski klepet z
@@ -131,6 +131,15 @@ cp .env.example .env      # DATABASE_URL (SQLite)
 bun run db:push           # ustvari tabele
 bun run dev               # http://localhost:3000
 bun run lint
+```
+
+**Playwright E2E (2.45.0, issue #38 P1)** — zlata pot destinacije → načrtuj →
+na-poti (2 testa, izoliran kontekst z začasnim stanje na test):
+
+```bash
+bun run db:generate       # prisma klient (enkrat)
+bun run db:push           # tabele (enkrat)
+bun run e2e               # webServer sam zažene next dev :3100 (reuse izven CI)
 ```
 
 **Produkcija (PostgreSQL)** — priprava in prevezava:

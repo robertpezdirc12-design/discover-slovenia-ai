@@ -32,3 +32,7 @@ tsconfig.tsbuildinfo
 seed-legacy.sql
 .vercel
 .env*
+
+# Playwright E2E artefakti
+test-results/
+playwright-report/

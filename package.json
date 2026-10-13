@@ -1,6 +1,6 @@
 {
   "name": "discover-slovenia-ai",
-  "version": "2.44.0",
+  "version": "2.45.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000 2>&1 | tee dev.log",
@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
+    "e2e": "playwright test",
     "activation:check": "bun scripts/activation-check.ts",
     "db:push": "bun scripts/db-push-guarded.ts",
     "db:materialize": "prisma db push --skip-generate",
@@ -107,6 +108,7 @@
     "zustand": "^5.0.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.0",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^3.0.0",
     "@types/pg": "^8.23.1",

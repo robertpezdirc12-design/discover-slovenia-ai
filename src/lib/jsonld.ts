@@ -26,6 +26,7 @@
 
 import { asPickLocale, pick, type PickDict } from "./i18n-pick";
 import { localePrefixPath } from "@/i18n/routing";
+import type { CommunityEvent } from "./content-data";
 import type { Destination } from "./slovenia-data";
 
 /**
@@ -179,6 +180,76 @@ export function touristDestinationJsonLd(
       latitude: d.coords.lat,
       longitude: d.coords.lng,
     },
+  };
+}
+
+/**
+ * Event (@graph) za /dogodki v danem jeziku (vzor MySwitzerland: Event
+ * JSON-LD na koledarju prireditev — raziskava benchmarka #35, R-5-c2a).
+ *
+ * ISKRENOSTNI KANON (QA #38, najožja varovala):
+ *  · @graph vsebuje SAMO dogodke s POTRJENIM datumom (dateStart ≠ "" IN
+ *    !dateUnconfirmed) — schema.org Event z izmišljenim startDate bi
+ *    pomenil objavo ugibanja kot resnice; nepotrjeni ostanejo vidni v UI
+ *    („datum še ni potrjen“), a NIKOLI v strukturiranih podatkih.
+ *  · startDate = dateStart iz kanona (ISO), NE iz dateLabel prikaza.
+ *  · location = Place z imenom prizorišča 1:1 iz podatkov + država SI;
+ *    addressLocality NE ugibamo (venue formati so heterogeni: „Metlika,
+ *    Bela krajina“ je mesto+regija, „Koper in Izola“ sta dve mesti) —
+ *    Google Event rich result zahteva Place, pošteno ime prizorišča je zadostno.
+ *  · endDate IZPUŠČEN — podatki vsebujejo samo začetek; izmišljenega
+ *    trajanja ne vpisujemo (Google priporoča, a ne zahteva endDate).
+ *  · isAccessibleForFree: true IZKLJUČNO za price "free" (resnična
+ *    lastnost); euro/euro2 simboli niso numerična cena → offers izpuščen.
+ *  · url = kanonični naslov strani, ki dogodek opisuje (/dogodki) po
+ *    hreflang konvenciji; uradna stran organizatorja v podatkih ni
+ *    per-dogodek landing stran našega spletišča.
+ */
+export interface EventLd {
+  "@type": "Event";
+  name: string;
+  url: string;
+  image: string;
+  description: string;
+  startDate: string;
+  location: {
+    "@type": "Place";
+    name: string;
+    address: { "@type": "PostalAddress"; addressCountry: string };
+  };
+  isAccessibleForFree?: boolean;
+}
+
+export interface EventsGraphLd {
+  "@context": "https://schema.org";
+  "@graph": EventLd[];
+}
+
+export function eventsJsonLd(
+  events: readonly CommunityEvent[],
+  locale: string
+): EventsGraphLd {
+  const lang = asPickLocale(locale);
+  const listUrl = `${JSONLD_SITE_ORIGIN}${localePrefixPath(lang)}/dogodki`;
+  const confirmed = events.filter(
+    (e) => e.dateStart !== "" && !e.dateUnconfirmed
+  );
+  return {
+    "@context": "https://schema.org",
+    "@graph": confirmed.map((e) => ({
+      "@type": "Event",
+      name: e.title,
+      url: listUrl,
+      image: `${JSONLD_SITE_ORIGIN}${e.image}`,
+      description: e.description,
+      startDate: e.dateStart,
+      location: {
+        "@type": "Place",
+        name: e.venue,
+        address: { "@type": "PostalAddress", addressCountry: "SI" },
+      },
+      ...(e.price === "free" ? { isAccessibleForFree: true } : {}),
+    })),
   };
 }
 

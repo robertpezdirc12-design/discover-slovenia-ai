@@ -3038,3 +3038,20 @@ Work Log:
 Stage Summary:
 - Issue #38: DEPLOYED ARTEFAKT je zdaj end-to-end verificiran na pravem hostingu (Vercel preview, v2.50.0 → commit b8f0dad): zlata pot + mobilni paket + vsebina dogodkov + SEO. E2E proti preview-ju je zdaj stalen vzorec (`E2E_BASE_URL=… bunx playwright test`).
 - Preostanek #40 merge-a = IZKLJUČNO GitHub Actions kvota (9. serija; uporabnik: Billing → Actions → rerun). SDK kvota še 429 → 9 nepotrjenih 2027 dogodkov + Podkoren slika ostajata čakalca.
+
+---
+## R38-SINHRONIZACIJA-PLATFORM (2.52.x) — 2026-10-13
+
+Agent: Z.ai Code (glavni orkestrator). Kontekst: peskovniški reset izgubil lokalni klon in GitHub žeton; žetona obnovljena (GitLab klasični PAT + GitHub lastniški).
+
+Work Log:
+- GitLab zrcalo (markec-group1/discover-slovenia-ai): **prvi uspešen push celotne feature branche** `feat/r35-seo-p0-dogodki-2.44.0` @ cb78d15 (9 commitov, 2.44.0→2.52.0); push samodejno kreiral pipeline 2943046833.
+- GitLab CI diagnoza do definitive meje: API-trigger + materializacija jobov blokirana z računskimi vrati **„Identity verification is required in order to run CI jobs"** (account-wide: potrjeno na zrcalu in 2. projektu lastnika; 3 pipeline z 0 jobi; shared runnerji stale/inactive). Self-hosted runner (id 57360920) registriran in avtenticiran (HTTP 204) — ne pomaga, ker jobi sploh ne nastanejo.
+- **CI Lint (GitLab API): 7 vrat VALID** — lint, typecheck, test, prisma-validate, build, smoke, **e2e**; ko lastnik zaključi Identity Verification, pipeline požene brez YAML napak.
+- **E2E proti živemu Vercel preview-u v2.52.0 (cb78d15): 10/10** (2.7 min): zlata pot + determinizem + mobilni paket (5 prelomov, meni, dotik, Leaflet). Health: `{"status":"ok","version":"2.52.0"}`; /dogodki: Planica 18.–21. mar, Zlata lisica/Podkoren ×7, unikatni SEO titles.
+- Kvotne preverbe: GitHub Actions še 0-korakov (2 joba, 0 korakov, run 38390975189); SDK web_search še 429 → 9 nepotrjenih 2027 dogodkov + Podkoren slika ostajata čakalca.
+- Vercel produkcija: v2.43.0 (= main @ 01e2147); prevezava na 2.52.0 sledi merge-u PR #40 (mergeable: true).
+
+Stage Summary:
+- Platforme usklajene na cb78d15 / v2.52.0: GitHub PR #40 = GitLab zrcalo = Vercel preview. Deployed artefakt je end-to-end verificiran (vsebina + E2E 10/10 + health).
+- Preostanek je čisto lastniško/kvoten: (1) GitLab Identity Verification → retry pipeline 2943046833 → zeleni 7-vratni tek; (2) GitHub Actions kvota (Billing → rerun); (3) merge PR #40; (4) SDK kvota → 9 dogodkov + Podkoren slika.

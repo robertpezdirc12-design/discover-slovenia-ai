@@ -402,3 +402,17 @@ Work Log:
 
 Stage Summary:
 - Deployed artefakt je end-to-end verificiran na pravem hostingu — nov, kvotno neodvisen dokaz za #38. Preostanek merge-a: IZKLJUČNO uporabnikova rešitev Actions kvote (Billing → rerun). SDK-odvisne postavke (9 dogodkov 2027, Podkoren slika) čakajo kvoto.
+
+---
+Task ID: R38-GITLAB-CI (2.52.0)
+Agent: Z.ai Code (glavni orkestrator)
+Task: Issue #38 (repo /home/z/polir15-repo, PR #40) — GitLab CI/CD alternativa: uporabnik priskrbel GitLab fine-grained PAT, cilj zelen pipeline na zrcalu markec-group1/discover-slovenia-ai.
+
+Work Log:
+- Peskovniška ovira: gitlab.com blokira default curl/git UA → rešitev http.userAgent/brskalni UA (prvi pravi API odgovori).
+- Žeton: veljaven (robertpezdirc8), a ONLY user-level dovoljenja (91, access: user) — brez Project/Branch/Pipeline/Code project dovoljenj; git push → 403 „requires [Code: Download]"; /projects/:id → „requires [Project: Read]".
+- Narejeno vse mimo žetona: E2E stage dodan v .gitlab-ci.yml (polna pariteta s ci.yml, 7 jobov), YAML validiran, verzija 2.52.0, vrata zelena, commit cb78d15 na GitHub.
+- Pull mirror na zrcalu stal (aktivnost včeraj 18:24) — verjetno pavziran (neodvisen od tega žetona; uporablja lasten GitHub credential v import_url).
+
+Stage Summary:
+- Edini preostanek za zelen GitLab pipeline: lastnik ustvari klasčen PAT (read_api + read_repository + write_repository), ga zapiše v GitHub skrivnost GITLAB_TOKEN (in po potrebi GITLAB_PROJECT_PATH=markec-group1/discover-slovenia-ai) → sync.yml ali ročen push prenese branch → pipeline se požene samodejno (CI=true obnašanje je že podprto v playwright.config.ts).

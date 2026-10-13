@@ -3085,3 +3085,17 @@ Work Log:
 
 Stage Summary:
 - Število potrjenih dogodkov: 20 → 22; nepotrjenih: 11 → 9. Dve zmaki vsebinski potrditvi s primarnimi viri prek SDK. Preostanek #38 vsebinsko: 9 nepotrjenih (objave pričakovane novembra) + Podkoren slika (ni blokirana — preverba pokazala, da ni ločene postavke v kodi).
+
+---
+
+## R41-F0 (2.54.0) — Balkanska ekspanzija Faza 0 (issue #41, 2026-10-13)
+
+- `CountryCode` += `BA | RS | MK | XK | BG | GR` (cel Balkan, 10 držav; XK = uporabniška koda, odločitev v #41).
+- NOV `src/lib/countries-data.ts`: popolna meta za vseh 10 (zastava emoji, imena 6 jezikov, ISO 4217 valute, klicne predpone, emergency — XK `112/192/194`, eSIM cone) + `countryName`/`countryLabel`/`isNewInF0` + kanonski geografski vrstni red `ALL_COUNTRY_CODES`.
+- `CommunityEvent.country?: CountryCode` (opcijsko — obstoječih 31 zapisov NEPOPREMLJENIH, kanon #38) + `eventCountry()` enoten dostop z defaultom SI.
+- Državni filter destinacij: `filterDestinations` (vrstni red država → regija → tip → iskanje), `activeCountryKeys`, `hasActiveFilters` — UI Select z zastavami + `?country=` URL semantika (neznana → prazen rezultat).
+- Državni filter dogodkov: EventsView chip skupina (aktivne države iz registra; F0 = samo SI — pošteno), reset vključuje državo.
+- NOV `tests/countries-f41.test.ts` (14 zaklepov): meta popolnost, ISO fakta, eventCountry default, URL semantika, iskrenost (38 destinacij po 4 državah tudi po F0 — COUNTRIES velikost ≠ vsebina).
+- `slovenia-data.test.ts`: državni lock preusmerjen na COUNTRIES kanon (cel Balkan); nabor destinacij ostaja 4-državen.
+- Verzija 2.54.0 (package.json, health, footer, sw.js, README); gates: tsc 0, eslint 0, 2111/2111 (18531 expect).
+- Skladnost z #35: „normalizacija na državno modeliranje (novi modeli, NE prepis aplikacije)" — F0 je točno to; F1 (vsebina 6 držav z provenance kanonom) sledi.

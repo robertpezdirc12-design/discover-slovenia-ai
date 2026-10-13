@@ -19,10 +19,12 @@ import {
 } from "@/components/ui/select";
 import { pick } from "@/lib/i18n-pick";
 import {
+  activeCountryKeys,
   activeRegionKeys,
   filterDestinations,
   hasActiveFilters,
 } from "@/lib/destinations-filter";
+import { countryLabel } from "@/lib/countries-data";
 import {
   DEST_TYPES,
   DESTINATIONS,
@@ -99,6 +101,15 @@ export function DestinationsExplorer() {
     },
     allRegions: { sl: "Vse regije", en: "All regions", it: "Tutte le regioni", de: "Alle Regionen", fr: "Toutes les régions", es: "Todas las regiones" },
     allTypes: { sl: "Vsi tipi", en: "All types", it: "Tutti i tipi", de: "Alle Typen", fr: "Tous les types", es: "Todos los tipos" },
+    countryLabel: {
+      sl: "Filtriraj po državi",
+      en: "Filter by country",
+      it: "Filtra per paese",
+      de: "Nach Land filtern",
+      fr: "Filtrer par pays",
+      es: "Filtrar por país",
+    },
+    allCountries: { sl: "Vse države", en: "All countries", it: "Tutti i paesi", de: "Alle Länder", fr: "Tous les pays", es: "Todos los países" },
     reset: { sl: "Počisti filtre", en: "Clear filters", it: "Azzera i filtri", de: "Filter zurücksetzen", fr: "Effacer les filtres", es: "Borrar filtros" },
     count: {
       sl: (n: number) => `${n} ${destWord("sl", n)}`,
@@ -123,23 +134,27 @@ export function DestinationsExplorer() {
   const [q, setQ] = React.useState(searchParams.get("q") ?? "");
   const [region, setRegion] = React.useState(searchParams.get("region") ?? "all");
   const [type, setType] = React.useState(searchParams.get("type") ?? "all");
+  // #41 F0: ?country= iz URL (neznana vrednost → logika filtra vrne prazen rezultat).
+  const [country, setCountry] = React.useState(searchParams.get("country") ?? "all");
 
-  // Regije, ki dejansko nastopajo v naboru (kanonska vrstni red slovarja).
+  // Regije/države, ki dejansko nastopajo v naboru (kanonska vrstni red slovarja).
   // Logika filtra je izvlečena v @/lib/destinations-filter (2.47.0, #38:
   // regresijski testi filtrov destinacij) — komponenta jo samo kliče.
   const activeRegions = React.useMemo(() => activeRegionKeys(DESTINATIONS), []);
+  const activeCountries = React.useMemo(() => activeCountryKeys(DESTINATIONS), []);
 
   const results = React.useMemo(
-    () => filterDestinations(DESTINATIONS, { q, region, type }),
-    [q, region, type],
+    () => filterDestinations(DESTINATIONS, { q, region, type, country }),
+    [q, region, type, country],
   );
 
-  const hasFilters = hasActiveFilters({ q, region, type });
+  const hasFilters = hasActiveFilters({ q, region, type, country });
 
   const reset = () => {
     setQ("");
     setRegion("all");
     setType("all");
+    setCountry("all");
   };
 
   return (
@@ -150,8 +165,8 @@ export function DestinationsExplorer() {
         lead={pick(l, L.lead)}
       />
 
-      {/* Nadzorna vrstica: iskanje + filtra */}
-      <div className="mt-8 grid gap-3 md:grid-cols-[1fr_auto_auto]">
+      {/* Nadzorna vrstica: iskanje + filtri (država/regija/tip, #41 F0) */}
+      <div className="mt-8 grid gap-3 md:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto]">
         <div className="relative">
           <Search
             className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
@@ -168,6 +183,25 @@ export function DestinationsExplorer() {
             className="h-11 pl-9"
             autoComplete="off"
           />
+        </div>
+
+        <div>
+          <label htmlFor="dest-country" className="sr-only">
+            {pick(l, L.countryLabel)}
+          </label>
+          <Select value={country} onValueChange={setCountry}>
+            <SelectTrigger id="dest-country" className="h-11 w-full md:w-56">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="max-h-96">
+              <SelectItem value="all">{pick(l, L.allCountries)}</SelectItem>
+              {activeCountries.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {countryLabel(l, c)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div>

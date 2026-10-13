@@ -22,7 +22,22 @@
 
 import { pick } from "./i18n-pick";
 
-export type CountryCode = "SI" | "HR" | "ME" | "AL";
+/**
+ * Države (#41 Faza 0, 2.54.0): SI + HR/ME/AL (izhodišče) + BA/RS/MK/XK/BG/GR
+ * (cel Balkan). XK = uporabniška koda za Kosovo (uradno ne rezervirana ISO;
+ * odločitev dokumentirana v #41). Meta po državi: @/lib/countries-data.
+ */
+export type CountryCode =
+  | "SI"
+  | "HR"
+  | "ME"
+  | "AL"
+  | "BA"
+  | "RS"
+  | "MK"
+  | "XK"
+  | "BG"
+  | "GR";
 
 export type DestinationType =
   | "castle"

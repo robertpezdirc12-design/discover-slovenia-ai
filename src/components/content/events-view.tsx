@@ -11,15 +11,17 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
 import { pick } from "@/lib/i18n-pick";
+import { ALL_COUNTRY_CODES, countryLabel } from "@/lib/countries-data";
 import {
   EVENT_CATEGORIES,
   EVENT_MONTHS,
   EVENT_PRICE_LABEL,
   EVENTS,
+  eventCountry,
   isEventPast,
   type EventCategory,
 } from "@/lib/content-data";
-import { getDestination } from "@/lib/slovenia-data";
+import { type CountryCode, getDestination } from "@/lib/slovenia-data";
 
 const CATEGORY_ICONS = {
   music: CalendarDays,
@@ -57,6 +59,8 @@ export function EventsView({ todayIso }: { todayIso?: string }) {
   const l = useLocale();
   const [month, setMonth] = React.useState<number | "all">("all");
   const [category, setCategory] = React.useState<EventCategory | "all">("all");
+  // #41 F0: državni filter (aktivne = tiste z vsebino; F2 doda balkanske).
+  const [country, setCountry] = React.useState<CountryCode | "all">("all");
 
   const L = {
     kicker: { sl: "Dogodki", en: "Events", it: "Eventi", de: "Veranstaltungen", fr: "Événements", es: "Eventos" },
@@ -90,6 +94,8 @@ export function EventsView({ todayIso }: { todayIso?: string }) {
     allCategories: { sl: "Vse kategorije", en: "All categories", it: "Tutte le categorie", de: "Alle Kategorien", fr: "Toutes les catégories", es: "Todas las categorías" },
     filterMonth: { sl: "Filtriraj po mesecu", en: "Filter by month", it: "Filtra per mese", de: "Nach Monat filtern", fr: "Filtrer par mois", es: "Filtrar por mes" },
     filterCategory: { sl: "Filtriraj po kategoriji", en: "Filter by category", it: "Filtra per categoria", de: "Nach Kategorie filtern", fr: "Filtrer par catégorie", es: "Filtrar por categoría" },
+    filterCountry: { sl: "Filtriraj po državi", en: "Filter by country", it: "Filtra per paese", de: "Nach Land filtern", fr: "Filtrer par pays", es: "Filtrar por país" },
+    allCountries: { sl: "Vse države", en: "All countries", it: "Tutti i paesi", de: "Alle Länder", fr: "Tous les pays", es: "Todos los países" },
     noEvents: {
       sl: "Za izbrano kombinacijo filtra ni dogodkov — počisti filter ali izberi drug mesec.",
       en: "No events match this filter combination — clear the filters or pick another month.",
@@ -150,15 +156,23 @@ export function EventsView({ todayIso }: { todayIso?: string }) {
   const filtered = EVENTS.filter(
     (e) =>
       (month === "all" || e.monthIndex === month) &&
-      (category === "all" || e.category === category)
+      (category === "all" || e.category === category) &&
+      (country === "all" || eventCountry(e) === country)
   );
+
+  // Države, ki dejansko nastopajo v registru dogodkov (kanonski vrstni
+  // red ALL_COUNTRY_CODES; #41 F0: register je implicitno SI — F2 doda).
+  const eventCountries = React.useMemo(() => {
+    const present = new Set<CountryCode>(EVENTS.map((e) => eventCountry(e)));
+    return ALL_COUNTRY_CODES.filter((c) => present.has(c));
+  }, []);
 
   // Razvrsti po mesecih (produkcija: skupine po mesecih v vrstnem redu koledarja).
   const monthsPresent = EVENT_MONTHS.filter(
     (m) => month === "all" || m.index === month
   ).filter((m) => filtered.some((e) => e.monthIndex === m.index));
 
-  const hasFilters = month !== "all" || category !== "all";
+  const hasFilters = month !== "all" || category !== "all" || country !== "all";
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -181,8 +195,8 @@ export function EventsView({ todayIso }: { todayIso?: string }) {
           {eventCountLabel(l, filtered.length)}
         </p>
 
-        {/* Filtri */}
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        {/* Filtri (#41 F0: + država) */}
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <p className="sr-only">{pick(l, L.filterMonth)}</p>
             <div
@@ -227,6 +241,28 @@ export function EventsView({ todayIso }: { todayIso?: string }) {
               ))}
             </div>
           </div>
+          <div>
+            <p className="sr-only">{pick(l, L.filterCountry)}</p>
+            <div
+              className="flex flex-wrap gap-1.5"
+              role="group"
+              aria-label={pick(l, L.filterCountry)}
+            >
+              <FilterChip
+                active={country === "all"}
+                onClick={() => setCountry("all")}
+                label={pick(l, L.allCountries)}
+              />
+              {eventCountries.map((c) => (
+                <FilterChip
+                  key={c}
+                  active={country === c}
+                  onClick={() => setCountry(c)}
+                  label={countryLabel(l, c)}
+                />
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Seznam po mesecih */}
@@ -239,6 +275,7 @@ export function EventsView({ todayIso }: { todayIso?: string }) {
                 onClick={() => {
                   setMonth("all");
                   setCategory("all");
+                  setCountry("all");
                 }}
                 className="mt-4 inline-flex min-h-9 items-center rounded-md border px-4 text-sm font-medium hover:bg-accent focus-green"
               >

@@ -124,7 +124,6 @@ describe("events P0 (#38): potrditve primarnih virov", () => {
 
 describe("events P0 (#38): nepotrjeni datumi", () => {
   const UNCONFIRMED_IDS = [
-    "ljubljanski-zimski-festival",
     "vinska-vigred-maribor",
     "festival-soca",
     "blejski-danovski-festival",
@@ -134,6 +133,10 @@ describe("events P0 (#38): nepotrjeni datumi", () => {
   // QA 3. serija (2026-10-13): „zlati-lisjak-smucanje“ (→ Zlata lisica,
   // 29.–30. 1. 2027) in „planica-nordic-festival“ (→ 18.–21. 3. 2027)
   // prešla med POTRJENE — glej ①d/①f.
+  // SDK serija (2026-10-13): „ljubljanski-zimski-festival“ → POTRJEN
+  // (15. 2. 2027, Eventim + glasbenamatica.si) — mesec popravljen jan → feb;
+  // „bozicni-sejmi-ljubljana-maribor“ (Ljubljana del) → POTRJEN začetek
+  // 27. 11. 2026 (uradna stran visitljubljana.com). Maribor ostaja nepotrjen.
 
   test("②a vsak nepotrjen dogodek: PRAZEN ISO datum + pošten napis + mesec 1–12", () => {
     expect(UNCONFIRMED_IDS.length).toBeGreaterThan(0);
@@ -270,12 +273,17 @@ describe("events P0 2. serija (2026-10-13): popravki po primarnih virih", () => 
     const lj = byId("bozicni-sejmi-ljubljana-maribor");
     const mb = byId("bozicni-sejmi-maribor");
     // Ljubljana: uradni brand „December v Ljubljani“, glavni prizorišči
-    // Prešernov trg/Breg (ne „Stari trg“), datumi 2026 neobjavljeni
+    // Prešernov trg/Breg (ne „Stari trg“); SDK serija (2026-10-13): začetek
+    // sezone 2026/27 POTRJEN — prižig lučk 27. 11. 2026 (uradna stran).
     expect(lj.title).toBe("December v Ljubljani — božični sejmi");
-    expect(lj.dateUnconfirmed).toBe(true);
-    expect(lj.dateStart).toBe("");
+    expect(lj.dateUnconfirmed).toBeUndefined();
+    expect(lj.dateStart).toBe("2026-11-27");
+    expect(lj.dateLabel).toBe("od 27. nov 2026");
+    expect(lj.monthIndex).toBe(11);
+    expect(lj.source).toContain("visitljubljana.com");
+    expect(lj.verifiedAt).toBe("2026-10-13");
     expect(lj.venue).toBe("Prešernov trg in Breg, Ljubljana");
-    expect(lj.website).toBe("https://www.visitljubljana.com/sl/obiskovalci/prireditve");
+    expect(lj.website).toBe("https://www.visitljubljana.com/sl/obiskovalci/prireditve/prireditve-v-ljubljani/december-v-ljubljani");
     // Maribor: uradni brand „Čarobni Maribor“ (visitmaribor.si)
     expect(mb.title).toBe("Čarobni Maribor — božični sejmi");
     expect(mb.dateUnconfirmed).toBe(true);
@@ -372,12 +380,13 @@ describe("events P0 3. serija (2026-10-13): korekcija + ponovna sledljivost", ()
     expect(e.destSlug).toBe("bled");
   });
 
-  test("⑤c ponovna verifikacija registra (2026-10-13): koline/jamski/božični/blejski → datumi ostanejo prazni", () => {
-    // vsi izrecno ponovno preverjeni prek e-občina /DobiDogodke (0 zadetkov)
+  test("⑤c ponovna verifikacija registra (2026-10-13): koline/jamski/božični-MB/blejski → datumi ostanejo prazni", () => {
+    // vsi izrecno ponovno preverjeni prek e-občina /DobiDogodke (0 zadetkov);
+    // SDK serija (2026-10-13): ljubljanski del božičnih sejmov POTRJEN
+    // (27. 11. 2026, visitljubljana.com) — iz seznama izločen, Maribor ostane.
     const RECHECKED = [
       "bela-krajina-koline",
       "jamski-sejem-postojna",
-      "bozicni-sejmi-ljubljana-maribor",
       "bozicni-sejmi-maribor",
       "blejski-danovski-festival",
       "festival-soca",

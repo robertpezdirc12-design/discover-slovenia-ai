@@ -111,11 +111,12 @@ describe("events-past (#38): živi kanon ob 2026-10-13", () => {
     expect(isEventPast(byId("kurentovanje-ptuj"), TODAY)).toBeFalse();
   });
 
-  test("③c nepotrjeni (11) niso nikoli pretekli", () => {
+  test("③c nepotrjeni (9) niso nikoli pretekli", () => {
     const unconfirmed = EVENTS.filter((e) => e.dateUnconfirmed);
-    // 2.49.0: 13 → 11 (Zlata lisica + Planica potrjena s primarnima
-    // viroma, QA 3. serija 2026-10-13 — glej events-p0-qa38 ①d/①f).
-    expect(unconfirmed.length).toBe(11);
+    // 2.49.0: 13 → 11 (Zlata lisica + Planica); SDK serija 2026-10-13:
+    // 11 → 9 (zimski festival februar 2027 + december v Ljubljani 27. 11.
+    // 2026 potrjena — glej events-p0-qa38 ①/④c).
+    expect(unconfirmed.length).toBe(9);
     expect(unconfirmed.every((e) => !isEventPast(e, TODAY))).toBeTrue();
   });
 
@@ -143,20 +144,23 @@ describe("events-past (#38): Event JSON-LD izključitev zaključenih", () => {
     expect(names).not.toContain("POMP — sejem pompoznih dogodkov");
   });
 
-  test("④b 3-argska forma: prihodnji potrjeni ostanejo (maraton, Kurentovanje, Zlata lisica, Planica)", () => {
+  test("④b 3-argska forma: prihodnji potrjeni ostanejo (maraton, Kurentovanje, Zlata lisica, Planica, december LJ, zimski festival)", () => {
     const graph = eventsJsonLd(EVENTS, "sl", TODAY)["@graph"];
-    // 2.49.0: 16 → 18 (Zlata lisica 29.–30. 1. 2027 + Planica 18.–21. 3.
-    // 2027 prešli med potrjene prihodnje).
-    expect(graph.length).toBe(18);
+    // 2.49.0: 16 → 18 (Zlata lisica + Planica); SDK serija 2026-10-13:
+    // 18 → 20 (december v Ljubljani 27. 11. 2026 + zimski festival
+    // 15. 2. 2027 prešli med potrjene prihodnje).
+    expect(graph.length).toBe(20);
     expect(graph.some((e) => e.startDate === "2026-10-17")).toBeTrue();
-    expect(graph.some((e) => e.startDate === "2027-02-03")).toBeTrue();
+    expect(graph.some((e) => e.startDate === "2026-11-27")).toBeTrue();
     expect(graph.some((e) => e.startDate === "2027-01-29")).toBeTrue();
+    expect(graph.some((e) => e.startDate === "2027-02-03")).toBeTrue();
+    expect(graph.some((e) => e.startDate === "2027-02-15")).toBeTrue();
     expect(graph.some((e) => e.startDate === "2027-03-18")).toBeTrue();
   });
 
-  test("④c 2-argska forma (brez todayIso) NE filtrira zaključenih (20/31 kanon)", () => {
+  test("④c 2-argska forma (brez todayIso) NE filtrira zaključenih (22/31 kanon)", () => {
     const graph = eventsJsonLd(EVENTS, "sl")["@graph"];
-    expect(graph.length).toBe(20);
+    expect(graph.length).toBe(22);
   });
 });
 

@@ -12,7 +12,7 @@
 > deterministični motor (/api/start-anywhere); z-ai-web-dev-sdk odstranjen —
 > kanon P1: 100 % deterministično, 0 AI modelov.
 
-**Verzija: 2.52.0 — DOKUMENT #35 (2026-10-13): docs/research/balkan-platform-no-ai.md — izvedljiv načrt balkanske platforme brez AI na 12 poglavij (merila sprejemanja #35): repo-pregled (obstoječe/nepopolno/manjkajoče/podvajanje), primerjalna matrika SDK (licenca kode ≠ ODbL podatkov — Valhalla MIT in Photon Apache-2.0 curl-potrjena), pokritost 5 držav (GTFS 0/5 preverjeno), podatkovni model Provider + postopek verifikacije, partner API status vse [nepotrjeno], arhitektura na obstoječem determinističnem engine, faze 1–6 (faza 1 = OpenFreeMap swap, reverzibilna), stroški ločeni na znane 0 EUR vs [nepotrjeno] ponudbe, register 10 tveganj, viri z datumi. 0 produkcijskih sprememb vedenja.
+**Verzija: 2.53.0 — DOKUMENT #35 (2026-10-13): docs/research/balkan-platform-no-ai.md — izvedljiv načrt balkanske platforme brez AI na 12 poglavij (merila sprejemanja #35): repo-pregled (obstoječe/nepopolno/manjkajoče/podvajanje), primerjalna matrika SDK (licenca kode ≠ ODbL podatkov — Valhalla MIT in Photon Apache-2.0 curl-potrjena), pokritost 5 držav (GTFS 0/5 preverjeno), podatkovni model Provider + postopek verifikacije, partner API status vse [nepotrjeno], arhitektura na obstoječem determinističnem engine, faze 1–6 (faza 1 = OpenFreeMap swap, reverzibilna), stroški ločeni na znane 0 EUR vs [nepotrjeno] ponudbe, register 10 tveganj, viri z datumi. 0 produkcijskih sprememb vedenja.
 
 **Faza 2 (2.1.0):** skupnostne funkcije potovanja 1:1 iz izvorne kode (prijava,
 sodelovanje z vlogami/vabili/CAS, rezervacije, ankete, skupinski klepet z

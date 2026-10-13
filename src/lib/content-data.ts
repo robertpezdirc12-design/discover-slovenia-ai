@@ -104,13 +104,17 @@ export interface CommunityEvent {
 export const EVENTS: CommunityEvent[] = [
   {
     id: "ljubljanski-zimski-festival",
-    monthIndex: 1,
+    monthIndex: 2,
     category: "glasba",
     title: "Ljubljanski zimski festival",
-    // QA #34→#38 (verifikacija 2026-10-12): ljubljanafestival.si za januar
-    // 2027 še NE objavlja terminov — izmišljeni „15. – 26. jan 2027“ odstranjen.
-    dateStart: "",
-    dateLabel: "datum še ni potrjen",
+    // SDK verifikacijska serija (2026-10-13): 10. Zimski festival Ljubljana
+    // je v FEBRUARJU 2027 — prvi potrjeni termin 15. 2. 2027, 19.30, Cankarjev
+    // dom (Eventim, uradna prodaja: Simfonični orkester RTV Slovenija;
+    // neodvisno glasbenamatica.si: „10. zimski Festival Ljubljana … 15. februar
+    // 2027“). Izmišljeni „15. – 26. jan 2027“ (odstranjen 2.44.0) se ne vrača —
+    // zapisuje se izključno potrjeni termin; mesec popravljen jan → feb.
+    dateStart: "2027-02-15",
+    dateLabel: "od 15. feb 2027",
     venue: "Cankarjev dom, Ljubljana",
     price: "euro2",
     featured: false,
@@ -119,9 +123,8 @@ export const EVENTS: CommunityEvent[] = [
     description:
       "Vrhunski mednarodni glasbeni festival z diskografijami klasične in komorne glasbe v Cankarjevem domu, operi in ljubljanskih cerkvah. Tradicija, ki sega v leto 1952.",
     destSlug: "ljubljana",
-    dateUnconfirmed: true,
-    source: "https://www.ljubljanafestival.si",
-    verifiedAt: "2026-10-12",
+    source: "https://www.eventim.si/en/event/zimski-festival-simfonicni-orkester-rtv-slovenija-cankarjev-dom-2218",
+    verifiedAt: "2026-10-13",
   },
   {
     id: "zlati-lisjak-smucanje",
@@ -627,19 +630,22 @@ export const EVENTS: CommunityEvent[] = [
     monthIndex: 11,
     category: "tradicija",
     title: "December v Ljubljani — božični sejmi",
-    // P0 2. serija (2026-10-13): datumi za 2026 niso še uradno objavljeni
-    // (ljubljana.si + visitljubljana.com brez napovedi sejmov).
-    dateStart: "",
-    dateLabel: "datum še ni potrjen",
-    dateUnconfirmed: true,
+    // SDK verifikacijska serija (2026-10-13): uradna stran visitljubljana.com
+    // objavlja začetek sezone 2026/27 — „Začetek prešernosti s prižigom lučk:
+    // 27. 11. 2026“. Potrjen je IZKLJUČNO začetek (konec sezone brez uradnega
+    // razpona → brez dateEnd po kanonu); sejmi na Prešernovem trgu in Bregu.
+    dateStart: "2026-11-27",
+    dateLabel: "od 27. nov 2026",
     venue: "Prešernov trg in Breg, Ljubljana",
     price: "free",
     featured: true,
-    website: "https://www.visitljubljana.com/sl/obiskovalci/prireditve",
+    website: "https://www.visitljubljana.com/sl/obiskovalci/prireditve/prireditve-v-ljubljani/december-v-ljubljani",
     image: "/content/bozicni-sejmi.jpg",
     description:
       "Romantični božični sejmi s stojnicami z ročnimi izdelki, medenimi piškoti, kuhanim vinom in prešanim sokom. Srednjeveško staro mestno jedro Ljubljane zasveti z venci in dišečimi jelkami.",
     destSlug: "ljubljana",
+    source: "https://www.visitljubljana.com/sl/obiskovalci/prireditve/prireditve-v-ljubljani/december-v-ljubljani",
+    verifiedAt: "2026-10-13",
   },
   {
     // P0 2. serija (2026-10-13): NOV zapis po razdvojitvi — uradni brand

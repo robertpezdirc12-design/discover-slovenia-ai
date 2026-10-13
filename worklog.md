@@ -3069,3 +3069,19 @@ Work Log:
 
 Stage Summary:
 - PR #40 je zdaj 100 % CI-zelen na GitHubu (lokalna vrata + Actions 6 vrat + E2E + deployed preview 10/10). Merge ovire na GitHub strani: NIČ. Preostanek #38: GitLab IV (pariteta) + SDK kvota (vsebina) + merge klik.
+
+---
+## R38-SDK-SERIJA (2.53.0) — 2026-10-13
+
+Agent: Z.ai Code (glavni orkestrator). Kontekst: SDK kvota se je obnovila (prvi uspešni web_search po 2 dneh 429).
+
+Work Log:
+- **SDK verifikacijska serija** (3 kroga web_search + 4 page_reader): ciljno preverjanje 11 nepotrjenih dogodkov.
+- **POTRDITEV ①: December v Ljubljani 2026/27** — uradna stran visitljubljana.com objavlja „Začetek prešernosti s prižigom lučk: 27. 11. 2026“ → bozicni-sejmi-ljubljana-maribor: dateStart 2026-11-27, „od 27. nov 2026“, mesec 11 ostaja, URL strani december-v-ljubljani kot website+source.
+- **POTRDITEV ②: Ljubljanski zimski festival 2027** — 10. izdaja je v FEBRUARJU (ne januarju!): prvi potrjeni termin 15. 2. 2027, 19.30, Cankarjev dom (Eventim uradna prodaja: Simfonični orkester RTV SLO; neodvisno glasbenamatica.si „10. zimski Festival Ljubljana … 15. februar 2027“; TicketSwap 10. 2.) → monthIndex 1 → 2, dateStart 2027-02-15, „od 15. feb 2027“.
+- **Ostaja pošteno nepotrjeno (9)**: Čarobni Maribor (uradni vir še ne objavlja; agregator 27.11. NI primarni vir), Blejska zimska pravljica (uradno okno dec–jan, brez programskega datuma), jamski sejem, koline + 5 poletnih 2027. Bled: page_reader potrdil okno „od začetka decembra do začetka januarja“ (okno ≠ program).
+- Kanon posodobljen: 20/31 → **22/31 potrjenih**; @graph zaklepi (④b 18→20, ④c/⑲/㉓ 20→22), ③c 11→9 nepotrjenih; RECHECKED/UNCONFIRMED seznama usklajena.
+- Verzija 2.53.0 (7 mest). Vrata: tsc 0, eslint 0, **bun test 2097/2097** (18298 expect).
+
+Stage Summary:
+- Število potrjenih dogodkov: 20 → 22; nepotrjenih: 11 → 9. Dve zmaki vsebinski potrditvi s primarnimi viri prek SDK. Preostanek #38 vsebinsko: 9 nepotrjenih (objave pričakovane novembra) + Podkoren slika (ni blokirana — preverba pokazala, da ni ločene postavke v kodi).

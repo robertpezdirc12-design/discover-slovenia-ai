@@ -279,3 +279,29 @@ Stage Summary:
 - PR #40 zdaj: P1 SEO + P0 dogodki 1./2./3. serija + P2 dostopnost + Event JSON-LD + Playwright E2E (2.45.0) — čaka ZELEN CI (uporabnik: Settings → Billing → Actions → rerun).
 - Merila sprejemanja #38: „E2E pot od dodajanja destinacije do napredka v »Na poti« uspe" = ZESENJENO in avtomatizirano; „Vse tri hitre prednastavitve delujejo konsistentno" = determinizem zaklenjen E2E.
 - Preostanek #38 po merge-u: verifikacija ~12 dogodkov 2027 (SDK kvota), pravne strani lektorat (ločen prehod), mobilni E2E projekt (lahko), CI E2E job (ob rešeni kvoti).
+
+---
+Task ID: R38-P2-LEGAL-MOBILE
+Agent: Z.ai Code (glavni orkestrator)
+Task: Nadaljevanje („odlično nadaljuj“) — CI kvota (5. serija, 0 korakov) + SDK kvota (429) še vedno mrtvi → preostanek #38 brez kvotnih odvisnosti: P2 lektorat pravnih strani (pogoji-uporabe, politika-zasebnosti, zaupanje-in-varnost) + P2 mobilni E2E projekt (širine 320–1440), 2.46.0, commit 0dc9e41 na PR #40.
+
+Work Log:
+- PESKOVNIK OBNOVLJEN: kloni so se prestavili iz /home/z/my-project v /home/z/polir15-repo (dsa-repo, polir15-target nedotaknjeni); git push access deluje prek tokena v remote URL.
+- CI AUDIT: run-a za c1786fd/bb78b89 in nov 0dc9e41 VSI „completed failure“ z 0 koraki v 2–3 s — GitHub Actions kvota/billing še vedno izčrpana (zadnja zelena main prejšnjega dne 19:08); PR #40 open, mergeable True, mergeable_state unstable.
+- SDK AUDIT: z-ai CLI web_search → 429 „Too many requests“ — raziskovalna kvota še ni obnovljena → izbira naslednjega nekvotnega dela načrta.
+- LEKTORAT — /pogoji-uporabe (6 jezikov): affiliate seznam 1:1 s kanonom registra (dodana Kiwi.com in Rentalcars.com — prej NAPAKA v pravni strani, točno „Viator (Tripadvisor)“, Kiwitaxi izrecno kot prevozi); IP: slike (Unsplash) ≠ zemljevidni podatki (© prispevavalci OpenStreetMap, ODbL); B2B €/mesec + „obračunava“.
+- LEKTORAT — /politika-zasebnosti (6 jezikov): GDPR katalog popoln (omejitev obdelave + ugovor prej manjkala; „prenosa“ → „prenosljivosti“); „se naročite na novice“.
+- LEKTORAT — /zaupanje-in-varnost: „izračunano oceno profila“ (slovnična napaka), knjižno „lokal“ (ne „lokalci“), „premium boosta“.
+- DATUMI: updated=2026-10-13 na vseh 3 (kanon #38: datum samo ob dejanski pregledanosti — tokrat izpolnjeno).
+- TESTI: nov tests/legal-lektorat.test.ts (27 zaklepov ①–⑦: register 1:1 × 6 jezikov, ODbL, cene, GDPR × 6, slovnica, datumi, strukturna pariteta po številu razdelkov); pouk: negativni zaklepi morajo na SL blok (komentar glave + ES „/mes“ so legitimni); regex z [^)]+ ne zmore gnezdenih oklepajev („Viator (Tripadvisor)“).
+- MOBILNI E2E: projekt chromium-mobile (Pixel 7) + e2e/mobile.e2e.ts (8 testov: preliv 5 strani × 5 širin, meni Escape, dotik zlata pot, zemljevid @ 390); skripta e2e:mobile; 3 pasti dokumentirane: (a) glob *.mobile.e2e.ts ne ujame mobile.e2e.ts → **/mobile.e2e.ts (empirična matrika 4 vzorcev), (b) `*/` v blokovnem komentarju ga zaključi → BABEL_PARSE_ERROR (lovljenje ~15 min: bisect configa v /tmp), (c) /dev/shm sesuje Chromium → --disable-dev-shm-usage + en test na širino.
+- INCIDENT+REŠITEV: med stash-testiranjem konfiga so spremembe zašle v stash (pop se ni prijel) — prepoznavo prek git status/stash show, obnovitev: cp good config → checkout config → stash pop → cp back; nič izgubljeno.
+- VERIFIKACIJA: bun test 2060/2060 (18089 expect, 102 datotek, +27), tsc 0, eslint 0, Playwright 10/10 (2 desktop + 8 mobilnih, ~1.8 min).
+- VERZIJA 2.46.0 na 7 mestih + README (naslovnica + mobilni E2E razdelek); repo worklog dopolnjen.
+- GITHUB: push 0dc9e41; PR #40 body dopolnjen (sekcija 2.46.0, preverjena celovitost backtickov); komentar na #38 (issuecomment-6139947910); CI za 0dc9e41 potrjeno še vedno kvotna (0 korakov).
+
+Stage Summary:
+- PR #40 zdaj: P1 SEO + P0 dogodki 1./2./3. serija + P2 dostopnost + Event JSON-LD + Playwright E2E + P2 lektorat pravnih strani + mobilni E2E (2.46.0, 6 commitov) — čaka ZELEN CI (uporabnik: Settings → Billing → Actions → rerun), potem merge.
+- Merili #38 „Obrazci in glavne kontrole imajo dostopna imena“ + „Lektoriraj vidna besedila“ + „širine 320–1440“ = IZPOLNJENI in avtomatizirani (dostopnost 2.44.0, lektorat + mobilni projekt 2.46.0).
+- Preostanek #38 PO merge-u: verifikacija ~12 dogodkov 2027 (SDK kvota) + CI E2E job (Actions kvota) + pravne strani vsebinski lektorat = ZAKLJUČEN s tem prehodom.
+- Izjemni dogodki za naslednje agente: peskovnik se med sejami očisti (kloni v /home/z/*, ne /home/z/my-project); glob `*/` past v komentarjih; stash pop se lahko ne prijel — vedno preveriti git status po stash operacijah.

@@ -349,3 +349,21 @@ Stage Summary:
 - #38: VSA merila sprejemanja IZPOLNJENA (lokalno) — končno poročilo objavljeno; PR #40 (2.48.0, 8 commitov, 63 datotek) čaka ZELEN CI → merge.
 - Vsa 6 vrat ci.yml LOKALNO zelena prvič za ta PR (lint 0, tsc 0, test 2096/2096, prisma, build standalone, migration safety + smoke 19/19) + Playwright 10/10 + žive preverbe /dogodki.
 - Preostanek #38 = izključno kvotne odvisnosti: (1) merge ob Actions kvoti (uporabnik: Billing), (2) verifikacija ~11 dogodkov 2027 ob SDK kvoti (organizatorji še ne objavljajo; zapisi pošteno nepotrjeni).
+
+---
+Task ID: R38-QA-SERIJA-3 (2.49.0)
+Agent: Z.ai Code (glavni orkestrator)
+Task: Nadaljevanje issue #38 (repo /home/z/polir15-repo, PR #40): po 2.47.0 (E2E v CI + filtri destinacij) in 2.48.0 (pretekli dogodki) počistiti še verifikacijo 2027 dogodkov — tudi brez SDK kvote.
+
+Work Log:
+- Preverjene obe kvoti: GitHub Actions 8. serija 0-korakov padcev (runa za f835de7, ~3 s, 0 korakov v obeh jobih — tudi novem E2E jobu), SDK web_search + image-gen 429.
+- NOVA POT: direkten curl na uradne vire organizatorjev (brez SDK) — planica.si, sloski.si, pivoincvetje.si, jurjevanje.si, vinska-vigred.si, bled.si, visitljubljana.com, postojna.si dosegljivi; ljubljanafestival.si, tolminator.si, visitmaribor.si ne.
+- POTRDITVI: Planica FIS finale SP 18.–21. 3. 2027 (planica.si Program 2027 + neodvisno sloski.si) in Zlata lisica 29.–30. 1. 2027 Podkoren/Kranjska Gora (sloski.si) — P0 popravek imena („Zlati lisjak“ → uradno „Zlata lisica“) IN lokacije (Maribor → Podkoren; destSlug odstranjen; nova website kranjskagora-worldcup.si, HTTP 200).
+- content-data.ts: oba zapisa posodobljena (dateStart/dateEnd/dateLabel/verifiedAt 2026-10-13, brez dateUnconfirmed); slika git mv → zlata-lisica-golden-fox.jpg; past: dateUnconfirmed/verifiedAt sedijo globlje v zapisu — prvi run 7 padov dokler nista odstranjena.
+- Testi: nov ①f + posodobljeni ①d/②/③c/③d/④b/④c/⑲/㉓ (kanon 20 potrjenih / 11 nepotrjenih, dateEnd 4 zapisi, @graph 20); verzija 2.49.0 na 7 mestih + README banner.
+- Vrata: bun test 2097/2097 (18276 expect), tsc 0, eslint 0; živi izris /dogodki preverjen na začasnem :3200 (novi datumi izrisani, 11× „datum še ni potrjen“, 2× „pretekli dogodek“).
+- Push e576c24 → PR #40 (8. commit); #38 komentar 6143529693; PR body + 2.49.0 sekcija; repo worklog.md dopolnjen.
+
+Stage Summary:
+- Issue #38: VSA ne-kvotna dela zaključena (vključno s 3. serijo QA verifikacije prek direktnih virov). Preostanek ČISTO kvoten: 9 nepotrjenih 2027 dogodkov (SDK) + zeleni CI/merge PR #40 (Actions — rešuje uporabnik prek Billing → Actions → rerun).
+- Kanon dogodkov sedaj 20 potrjenih / 11 nepotrjenih; 2.49.0 potisnjena; vsa živa vrata zelena.

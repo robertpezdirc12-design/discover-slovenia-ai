@@ -385,7 +385,7 @@ export async function GET() {
 
   return NextResponse.json({
     status: "ok",
-    version: "2.50.0",
+    version: "2.51.0",
     startup,
     checkedAt: now(),
   });

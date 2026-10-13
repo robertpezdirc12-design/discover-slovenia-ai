@@ -24,6 +24,7 @@
  * kot golden-path.e2e.ts).
  */
 import { expect, test, type Page } from "@playwright/test";
+import { gotoTrdo, ustaliSe } from "./nav";
 
 /** Širine iz merila sprejemanja #38 P2 (mobilni + tablet + namizni). */
 const SIRINE = [320, 375, 390, 768, 1440] as const;
@@ -67,7 +68,7 @@ for (const sirina of SIRINE) {
 
     await page.setViewportSize({ width: sirina, height: 800 });
     for (const stran of STRANI) {
-      await page.goto(stran);
+      await gotoTrdo(page, stran);
       const preliv = await page.evaluate(() => {
         const el = document.scrollingElement;
         return el ? el.scrollWidth - el.clientWidth : 0;
@@ -87,7 +88,7 @@ test("② mobilni meni: odpri, Escape zapre, navigacija prek menija", async ({
 }) => {
   test.setTimeout(60_000);
 
-  await page.goto("/");
+  await gotoTrdo(page, "/");
   const meniGumb = page.getByRole("button", { name: "Odpri meni" });
   await expect(meniGumb).toBeVisible();
 
@@ -117,8 +118,9 @@ test("③ dotik: iskanje Bled → Dodaj v mojo pot → /moja-potovanja", async (
 }) => {
   test.setTimeout(90_000);
 
-  await page.goto("/destinacije");
+  await gotoTrdo(page, "/destinacije");
   await page.getByLabel(/Išči/i).fill("Bled");
+  await ustaliSe(page); // debounce/soft-nav po iskanju se ne sme tekmovati s klikom
   await page.getByRole("combobox").first().click();
   await page.getByRole("option", { name: "Gorenjska" }).click();
 
@@ -134,7 +136,7 @@ test("③ dotik: iskanje Bled → Dodaj v mojo pot → /moja-potovanja", async (
     page.getByRole("button", { name: "V mojo pot ✓" })
   ).toBeVisible();
 
-  await page.goto("/moja-potovanja");
+  await gotoTrdo(page, "/moja-potovanja");
   await expect(page.getByText("Bled").first()).toBeVisible();
 });
 
@@ -146,7 +148,7 @@ test("④ zemljevid: Leaflet vsebnik + zoom + OSM atribucija @ 390 px", async ({
   test.setTimeout(90_000);
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/zemljevid");
+  await gotoTrdo(page, "/zemljevid");
 
   const vsebnik = page.locator(".leaflet-container").first();
   await expect(vsebnik).toBeVisible({ timeout: 30_000 });

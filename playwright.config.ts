@@ -25,6 +25,13 @@
  * za lokalni razvoj); potrebna je prej zagnana `bun run db:generate` +
  * `bun run db:push`. V CI je reuse izklopljen (vedno svež strežnik).
  *
+ * E2E PROTI DEPLOYED PREVIEW-U (2.51.0, issue #38): nastavi
+ * `E2E_BASE_URL=https://…vercel.app bunx playwright test` — testi tečejo
+ * proti oddaljeni predstavitvi (Vercel preview/produkcija) namesto
+ * lokalnega strežnika; webServer se v tem primeru NE zažene. Varno:
+ * zlata pot uporablja izključno localStorage (dai:* ključi) v svežem
+ * brskalniškem kontekstu — strežniška baza ostane nedotaknjena.
+ *
  * LOČITEV PROJEKTOV: desktop teče ZA VSAKO testno datoteko RAZEN
  * e2e/mobile.e2e.ts (testIgnore); mobilni projekt teče SAMO
  * e2e/mobile.e2e.ts (testMatch) — zlata pot se ne podvaja in ne
@@ -38,23 +45,34 @@ import { defineConfig, devices } from "@playwright/test";
 
 const PORT = Number(process.env.E2E_PORT ?? 3100);
 
+/** Oddaljen cilj (npr. Vercel preview) — če je nastavljen, webServer ne teče. */
+const REMOTE_BASE_URL = (process.env.E2E_BASE_URL ?? "").replace(/\/+$/, "");
+
 export default defineConfig({
   testDir: "./e2e",
   testMatch: "**/*.e2e.ts",
   fullyParallel: false,
   workers: 1,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
+  // Oddaljeni cilj (Vercel preview) ima nestabilno latenco → 1 retry za
+  // tranzične mrežne napake (ERR_ABORTED), ne glede na CI.
+  retries: process.env.CI || REMOTE_BASE_URL ? 1 : 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : [["list"]],
   use: {
-    baseURL: `http://localhost:${PORT}`,
+    baseURL: REMOTE_BASE_URL || `http://localhost:${PORT}`,
     locale: "sl-SI",
     timezoneId: "Europe/Ljubljana",
     trace: "retain-on-failure",
+    // Oddaljeni cilj: client-side navigacija (RSC fetch + hidracija) je
+    // bistveno počasnejša kot localhost — sproščeni timeout-i le v
+    // remote načinu, lokalni teki ostanejo hitri.
+    navigationTimeout: REMOTE_BASE_URL ? 30_000 : 10_000,
+    actionTimeout: REMOTE_BASE_URL ? 20_000 : 10_000,
     // Vsebniško okolje: majhen /dev/shm sesuje Chromium tab („Page
     // crashed“ ob živem next dev) — klasičen popavek za Docker/sandbox.
     launchOptions: { args: ["--disable-dev-shm-usage"] },
   },
+  expect: { timeout: REMOTE_BASE_URL ? 20_000 : 10_000 },
   projects: [
     {
       name: "chromium",
@@ -67,10 +85,12 @@ export default defineConfig({
       testMatch: "**/mobile.e2e.ts",
     },
   ],
-  webServer: {
-    command: `bunx next dev -p ${PORT}`,
-    url: `http://localhost:${PORT}`,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  webServer: REMOTE_BASE_URL
+    ? undefined
+    : {
+        command: `bunx next dev -p ${PORT}`,
+        url: `http://localhost:${PORT}`,
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+      },
 });

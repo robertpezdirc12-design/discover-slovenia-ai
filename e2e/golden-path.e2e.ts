@@ -11,6 +11,7 @@
  * playwright.config.ts); stanje je začasno in se uniči s kontekstom.
  */
 import { expect, test, type Page } from "@playwright/test";
+import { gotoTrdo, ustaliSe } from "./nav";
 
 /**
  * Vsi dai:* ključi (my-trip, last-plan, go-trip, dismissed …) počistimo
@@ -45,8 +46,9 @@ test("zlata pot: destinacije → Moja pot → načrtuj → Na poti → zaključe
   test.setTimeout(120_000);
 
   // ── 1. /destinacije: iskanje Bled ───────────────────────────────────────
-  await page.goto("/destinacije");
+  await gotoTrdo(page, "/destinacije");
   await page.getByLabel(/Išči/i).fill("Bled");
+  await ustaliSe(page); // debounce/soft-nav po iskanju se ne sme tekmovati s klikom
 
   // ── 2. filter Gorenjska (Radix Select) ──────────────────────────────────
   await page.getByRole("combobox").first().click();
@@ -78,11 +80,11 @@ test("zlata pot: destinacije → Moja pot → načrtuj → Na poti → zaključe
   expect(trip).toContain('"refId":"bled"');
 
   // ── 5. /moja-potovanja: Bled je v zbirki ────────────────────────────────
-  await page.goto("/moja-potovanja");
+  await gotoTrdo(page, "/moja-potovanja");
   await expect(page.getByText("Bled").first()).toBeVisible();
 
   // ── 6. /nacrtuj: prednastavitev „Miren vikend ob reki“ (en klik = načrt) ─
-  await page.goto("/nacrtuj");
+  await gotoTrdo(page, "/nacrtuj");
   await page.getByRole("button", { name: /Miren vikend ob reki/ }).click();
   // načrt se sestavi takoj (deterministični motor) — počakamo na akcije:
   const saveBtn = page.getByRole("button", { name: "Shrani v Moja pot" });
@@ -98,9 +100,9 @@ test("zlata pot: destinacije → Moja pot → načrtuj → Na poti → zaključe
   expect(lastPlan).toContain("days");
 
   // ── 8. /moja-potovanja + /potovanje: zbirka in načrt ────────────────────
-  await page.goto("/moja-potovanja");
+  await gotoTrdo(page, "/moja-potovanja");
   await expect(page.getByText("Bled").first()).toBeVisible();
-  await page.goto("/potovanje");
+  await gotoTrdo(page, "/potovanje");
   const goLink = page.getByRole("link", { name: /Zaženi na poti/ });
   await expect(goLink).toBeVisible();
 
@@ -133,6 +135,7 @@ test("zlata pot: destinacije → Moja pot → načrtuj → Na poti → zaključe
 
   // ── 12. osvežitev: napredek je vztrajen (dai:go-trip) ────────────────────
   await page.reload();
+  await ustaliSe(page); // po osvežitvi počakamo hidracijo
   const startDay2 = page.getByRole("button", { name: /ZAČNI DAN|Začni dan/ });
   if (await startDay2.isVisible().catch(() => false)) {
     await startDay2.first().click();
@@ -184,7 +187,7 @@ test("ponovljivost: ista prednastavitev ×2 → isti načrt (determinizem)", asy
 
   // 1. tek: en klik na prednastavitev sestavi načrt; SHRAINJE (dai:last-plan
   // se zapiše šele ob Shrani/Go — pričakovano vedenje, zaklep P1)
-  await page.goto("/nacrtuj");
+  await gotoTrdo(page, "/nacrtuj");
   await page.getByRole("button", { name: /Miren vikend ob reki/ }).click();
   const saveBtn2 = page.getByRole("button", { name: "Shrani v Moja pot" });
   await expect(saveBtn2).toBeVisible({ timeout: 15_000 });
@@ -195,7 +198,7 @@ test("ponovljivost: ista prednastavitev ×2 → isti načrt (determinizem)", asy
 
   // 2. tek: ista prednastavitev po ponovnem vstopu (isti kontekst, ponovljen
   // obisk) — enako vedenje ob ponovitvi (kanon determinističnega motorja)
-  await page.goto("/nacrtuj");
+  await gotoTrdo(page, "/nacrtuj");
   await page.getByRole("button", { name: /Miren vikend ob reki/ }).click();
   const saveBtn3 = page.getByRole("button", { name: "Shrani v Moja pot" });
   await expect(saveBtn3).toBeVisible({ timeout: 15_000 });

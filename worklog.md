@@ -3019,3 +3019,22 @@ Stage Summary:
 ### Stanje
 - #35 zaključen (predlog zaprtja ob merge-u #40); odločitev lastnika: faza 1 (OpenFreeMap swap), ODbL pravni pregled pred fazo 4, Viator pilot ob obsegu.
 - Kvote še vedno mrtve (Actions 8. serija, SDK 429) — oboje neovira tega prehoda (curl + lokalna vrata).
+
+---
+Task ID: R38-E2E-PREVIEW (2.51.0)
+Agent: Z.ai Code (glavni orkestrator)
+Task: Issue #38 — E2E verifikacija deployed artefakta na Vercel preview-u (ne-kvotna pot, ko sta Actions in SDK izčrpani).
+
+Work Log:
+- Kvoti ponovno preverjeni: GitHub Actions 9. serija 0-korakov padcev (runa za b8f0dad/07f1f9e, tudi E2E job); SDK web_search 429. Ni novih odgovorov lastnika na #38/#35/#40.
+- NOVA POT: Vercel preview deployment na PR #40 deluje NEODVISNO od Actions kvote — commit status za b8f0dad = Vercel success; curl preview URL potrjuje v2.50.0.
+- Živi preview verificiran (curl): /dogodki izrisuje Planica 18.–21. mar 2027, Zlata lisica + Podkoren, kranjskagora-worldcup.si povezavo, 11× „datum še ni potrjen“, 2× pretekli dogodek, NIČ „lisjak“ ostankov; P1 SEO naslovi unikatni na /destinacije, /nacrtuj, /dozivetja, /lokali, /trznica, /vodici, /zemljevid, /en.
+- playwright.config.ts: podpora `E2E_BASE_URL` (remote način — webServer se ne zažene, navigationTimeout/actionTimeout/expect timeout sproščeni, 1 retry za tranzientne mrežne napake).
+- Prvi oddaljeni tek: 4/10 padov (deterministično) — diagnoza: ERR_ABORTED ob `load` prek počasnega proxyja + klik tekmuje s hidracijo/soft-nav („element was detached“, opcija padе pred prikazom).
+- e2e/nav.ts (nov): gotoTrdo (domcontentloaded + 1 retry + networkidle v remote načinu) + ustaliSe (networkidle po fill-u); vpeljano v golden-path.e2e.ts in mobile.e2e.ts (vsi goto/fill/reload točke). Lokalno = no-op (obnašanje nespremenjeno).
+- 2. oddaljeni tek: 10/10 PASSED proti živemu Vercel preview-u (2.5 min). Lokalni tek: 10/10 (1.9 min) — brez regresije.
+- Verzija 2.51.0 (7 datotek); vrata: tsc 0, eslint 0, bun test 2097/2097 (18276 expect).
+
+Stage Summary:
+- Issue #38: DEPLOYED ARTEFAKT je zdaj end-to-end verificiran na pravem hostingu (Vercel preview, v2.50.0 → commit b8f0dad): zlata pot + mobilni paket + vsebina dogodkov + SEO. E2E proti preview-ju je zdaj stalen vzorec (`E2E_BASE_URL=… bunx playwright test`).
+- Preostanek #40 merge-a = IZKLJUČNO GitHub Actions kvota (9. serija; uporabnik: Billing → Actions → rerun). SDK kvota še 429 → 9 nepotrjenih 2027 dogodkov + Podkoren slika ostajata čakalca.

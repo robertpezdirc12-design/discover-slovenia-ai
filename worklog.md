@@ -384,3 +384,21 @@ Work Log:
 Stage Summary:
 - #35 DOKUMENTIRAN in completen: raziskava + izvedljiv načrt na enem mestu; predlog zaprtja ob merge-u PR #40. Ključna sodba: platforma je izvedljiva z 0 EUR licenc in brez AI — 80 % arhitekture že obstaja (deterministični engine!), faza 1 (OpenFreeMap swap) je reverzibilna uro dela.
 - Vsi pushi v PR #40: 2.49.0 (verifikacija dogodkov) + 2.50.0 (dokument #35). CI še vedno kvotno zadržan — merge čaka uporabnikovo rešitev billinga.
+
+---
+Task ID: R38-E2E-PREVIEW (2.51.0)
+Agent: Z.ai Code (glavni orkestrator)
+Task: Issue #38 (/home/z/polir15-repo, PR #40) — po 2.49.0 (verifikacija dogodkov) in 2.50.0 (dokument #35) odkriti in izvesti še ne-kvotno delo, ko sta GitHub Actions in SDK izčrpani.
+
+Work Log:
+- Kvoti: Actions 9. serija 0-korakov (b8f0dad, oba joba + sync), SDK web_search 429; gh CLI ni na voljo → GitHub API prek curl z žetonom iz git remote URL.
+- Vercel preview deluje neodvisno od Actions: commit status b8f0dad = success; URL iz vercel[bot] komentarja (i-feel-slovenia-git-fea-129d56-….vercel.app).
+- Curl-verifikacija živega deploy-a v2.50.0: /dogodki (Planica 18.–21. mar 2027, Zlata lisica/Podkoren, 11× nepotrjenih, 2× preteklih, nič lisjak-ostankov, worldcup povezava), unikatni SEO title na 8 straneh.
+- archive.org nedosegljiv iz peskovnika (timeout) — Wayback pot za 3 mrtve domene ni mogoča.
+- E2E proti preview-ju: playwright.config.ts + E2E_BASE_URL (remote: brez webServer, sproščeni timeout-i, 1 retry); prvi tek 4/10 (ERR_ABORTED ob load prek proxyja; klik tekmuje s hidracijo/soft-nav — „element was detached“).
+- Nov e2e/nav.ts: gotoTrdo (domcontentloaded + retry + networkidle remote) + ustaliSe; vpeljano v obe e2e datoteki; lokalno no-op.
+- Rezultat: 10/10 E2E proti živemu Vercel preview-u + 10/10 lokalno (brez regresije); 2.51.0 (7 datotek); tsc 0, eslint 0, bun test 2097/2097.
+- Push v PR #40 + #38 komentar + PR body posodobljen.
+
+Stage Summary:
+- Deployed artefakt je end-to-end verificiran na pravem hostingu — nov, kvotno neodvisen dokaz za #38. Preostanek merge-a: IZKLJUČNO uporabnikova rešitev Actions kvote (Billing → rerun). SDK-odvisne postavke (9 dogodkov 2027, Podkoren slika) čakajo kvoto.

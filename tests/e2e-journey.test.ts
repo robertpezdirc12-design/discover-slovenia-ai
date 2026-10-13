@@ -310,7 +310,7 @@ describe("E2E 3 · BOOKING — načrt → ponudba → demo rezervacija → prekl
 // ─── 4. SCENARIJ: NAVIGATION ───────────────────────────────────────────────
 
 describe("E2E 4 · NAVIGATION — živi GPS proti naslednjemu postanku", () => {
-  test("razdalja do naslednjega postanka > 0; ETA ocena premočna ×1,3 pri ~55 km/h", () => {
+  test("razdalja do naslednjega postanka > 0; ETA ocena premočrtna ×1,3 pri ~55 km/h", () => {
     const { prev, next } = firstLeg();
     const user = midOfLeg();
     const straight = haversineKm(user, next);

@@ -410,7 +410,7 @@ const L = {
   recalcResult: { sl: "Preračunana pot", en: "Recalculated route", it: "Percorso ricalcolato", de: "Neu berechnete Route", fr: "Itinéraire recalculé", es: "Ruta recalculada" },
   recalcSourceOsrm: { sl: "OSRM — realna cestna pot", en: "OSRM — real road route", it: "OSRM — percorso stradale reale", de: "OSRM — echte Straßenroute", fr: "OSRM — itinéraire routier réel", es: "OSRM — ruta real por carretera" },
   recalcSourceHeuristic: {
-    sl: "ocena (premočna ×1,3 pri ~55 km/h)",
+    sl: "ocena (premočrtna razdalja ×1,3 pri ~55 km/h)",
     en: "estimate (straight line ×1.3 at ~55 km/h)",
     it: "stima (linea retta ×1,3 a ~55 km/h)",
     de: "Schätzung (Luftlinie ×1,3 bei ~55 km/h)",
@@ -1255,7 +1255,7 @@ function StopWeatherCard({
  *  - gumb „Navigiraj“ (NEXT kartica) je zunanji handoff na OSM —
  *    uporabnikov izrecen klik, enako kot vsak navigacijski gumb.
  *
- * Iskrenost: brez GPS ostaja ETA NEZNANO; razdalja je premočna
+ * Iskrenost: brez GPS ostaja ETA NEZNANO; razdalja je premočrtna
  * („v zraku“); odklon brez geometrije poti se meri le proti premici
  * do cilja (razkrito v opozorilu); preračun pošteno oznani vir
  * (OSRM — realna cestna pot / ocena).

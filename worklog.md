@@ -2862,3 +2862,23 @@ Work Log:
 Stage Summary:
 - P0 3. serija: 1 korekcija na realni dogodek (Tolminator z Wikipedia virom), 1 not_found z dokazi (blejski-danovski), 6 registrov ponovno preverjenih prve roke; 31 dogodkov (13 še vedno pošteno nepotrjenih, 18 potrjenih/datiranih).
 - Omejitve: tolminator.si/bovec.com iz peskovnika nedosegljiva (DNS 000) — povezave ne dodane; bozicni sejmi (visitljubljana/visitmaribor) ostajajo brez source (Maribor TCP-nedosegljiv, Ljubljana register 0 — dokazi v komentarjih iz 2. serije).
+
+---
+Task ID: R35-P2-ACCESS (2.44.0, dopolnitev)
+Agent: Z.ai Code (glavni orkestrator)
+Task: P2 dostopnost + besedila (#38) — lektoriranje vidnih besedil, slovnični popravki paucal/mestnik, umik razvojne oznake iz noge, brskalniški preverbi (5 širin × 5 strani, tipkovnica, Escape, 3 prednastavitve).
+
+Work Log:
+- AUDIT oznak/obrazcev: načrtovalnik (nl-input, interests-custom, chip-search, days-stepper, region-select, season-select, budget-select), /kontakt (contact-name/email/message), /prijava (prijava-email/geslo, registracija-*), /vir-podatkov, dom (hero-search, newsletter-email) — VSE že imajo Label/htmlFor (prejšnji cikli). Sken ikonskih gumbov (heuristika po vseh src/*.tsx): 0 brez dostopnega imena (2 lažno pozitivna sta imala besedilo).
+- BESEDILA — „premočna ×1,3“ → „premočrtna razdalja ×1,3“ (12 mest v 7 datotekah: itinerary-engine, na-poti, potovanje, nacrtuj, shared-trip-view, go-gps, plan-map-data; + 3 testna imena/kanon plan-summary ㉖) — vsi drugi jeziki so imeli pravilno (straight-line/Luftlinie/…); sl edini napačen.
+- SLOVNICA: stopsWord.sl paucal (3/4 → „postanki“, prej „postankov“); draftSummary.sl isti paucal; NOV regionsWordIn (mestnik: „v 2 regijah“, prej imenovalni „v 2 regiji“) + call site preklopjen; regionsWord (imenovalnik) nespremenjen; dayStops varna (sproži se šele pri >4, kjer je „postankov“ pravilen).
+- NOGA: razvojna oznaka „Rekonstrukcija 2026-10-12“ odstranjena iz javnega prikaza (verzija v2.44.0 ostane); poreklo ostaja v worklogu in /vir-podatkov.
+- TESTI: nov tests/p2-dostopnost.test.ts (8 zaklepov: paucal, mestnik, iskrenost summary, ne-slo regije = regije, globalni sweep „premočna“, footer source-contract); plan-summary ㉖ kanon posodobljen na popravljeni niz; PLANNER_MSG izvožen (bralna površina za zaklepe).
+- BRSKALNIŠKA VERIFIKACIJA (dev strežnik :3100 + agent-browser): vodoravni preliv = 0 na VSEH kombinacijah 320/375/390/768/1440 × (domov, dogodki, nacrtuj, zemljevid, kontakt) — 24/24 čisto; focus-visible ring (focus-green: ring-2 ring-ring) prisoten; skip-link „Preskoči na vsebino“; mobilni meni „Odpri meni“ (aria-expanded) se zapre z Escape; zemljevid uporaben na 320 (brez preliva); footer lepljiv (mt-auto, starševski layout nespremenjen); VSE 3 hitre prednastavitve delujejo — živi izpisi: „4 postanki v 2 regijah“, „2 postanka v 1 regiji“ (dual + mestnik), „premočrtna razdalja ×1,3“ — stari nizi nikjer.
+- Ohlapne opombe (niso blokatorji): Radix DialogContent brez Description (opozorilo, dostopno ime je prisotno; ni reproducirljivo izolirano), LCP slika na /dogodki brez loading=eager (perf, ne a11y), enkratna hidracijska napaka med HMR urejanjem — na čistih nalaganjih 0 napak.
+- MERILA: bun test 2027/2027 (17761 expect, 101 datotek), tsc --noEmit 0, eslint 0. Verzija ostane 2.44.0 (isti PR #40).
+
+Stage Summary:
+- P2 dostopnost/besedila (#38) zaključena v kodi: 12 besedilnih popravkov, 2 slovnični razredi (paucal + mestnik), 1 umik razvojne oznake, 8 novih regresijskih zaklepov; brskalniški preverbi 24/24 brez preliva, tipkovnica/Escape/fokus čisto, 3/3 prednastavitve konsistentne.
+- Pravne strani (/pogoji-uporaba, /politika-zasebnosti, /zaupanje-in-varnost): datumi NE spremenjeni (vsebina v tem prehodu ni bila vsebinsko lektorirana — kanon iz #38: datum samo ob dejanskem pregledu).
+- Ostalo za #38: CI/merge PR #40 (kvota), P1 načrtovalnik E2E (Playwright suite), JSON-LD Event schema, preostali ~12 dogodkov (2027 termini).

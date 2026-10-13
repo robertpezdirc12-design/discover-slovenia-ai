@@ -373,7 +373,7 @@ describe("POLIR5 A: L10N ×6 — vsi novi ključi imajo sl+en+it+de+fr+es", () =
       "sl: (km: string, min: number) => `${km} km · ${min} min vožnje — izmerjeno (OSRM/OpenStreetMap)`"
     );
     expect(VIEW).toContain(
-      "sl: (km: number, min: number) => `~ ${km} km · ~ ${min} min — ocena (premočna ×1,3 @ ~60 km/h)`"
+      "sl: (km: number, min: number) => `~ ${km} km · ~ ${min} min — ocena (premočrtna razdalja ×1,3 @ ~60 km/h)`"
     );
     expect(VIEW).toContain(
       "sl: (km: string, dur: string) => `Skupaj izmerjeno: ${km} km · ${dur} vožnje (OSRM/OpenStreetMap)`"

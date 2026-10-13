@@ -1,7 +1,7 @@
 /**
  * GO-GPS — ČISTE izračunske funkcije žive GPS navigacije za Go Mode
  * „Na poti“ (issue #1 področje 1; kanon izvirnika v1.190.0: geo-distance,
- * travel-state, DistanceChip / ETA hint — premočna razdalja ×1,3 pri
+ * travel-state, DistanceChip / ETA hint — premočrtna razdalja ×1,3 pri
  * ~55 km/h, vse ocene pošteno razkrite).
  *
  * 0 DOM, 0 omrežje, 0 persistenc — modul je CLIENT-SAFE in testabilen
@@ -36,7 +36,7 @@ export type GpsLang = PickLocale;
 
 export const EARTH_RADIUS_KM = 6371;
 
-/** Haversine razdalja v km (premočna črta — „v zraku“). */
+/** Haversine razdalja v km (premočrtna razdalja — „v zraku“). */
 export function haversineKm(a: GeoPoint, b: GeoPoint): number {
   const toRad = (d: number) => (d * Math.PI) / 180;
   const dLat = toRad(b.lat - a.lat);
@@ -263,7 +263,7 @@ export const ARRIVAL_RADIUS_KM = 0.25;
 export interface ArrivalCheck {
   /** Ali je uporabnik znotraj radijusa prihoda trenutnega postanka. */
   arrived: boolean;
-  /** Izmerjena premočna razdalja do cilja v km (zaokrožena na 3 m). */
+  /** Izmerjena premočrtna razdalja do cilja v km (zaokrožena na 3 m). */
   distanceKm: number;
 }
 

@@ -37,7 +37,9 @@ export type PlannerLang = PickLocale;
  * sl/en izhodi so BAJTNO identični predhodnim ternarijem; it/de/fr/es
  * so novi prevodi (4-c, PRODUCT-AUDIT §9).
  */
-const PLANNER_MSG = {
+// P2 (#38): izvoženo za regresijske zaklepe besedil (paucal, mestnik,
+// „premočrtna“) — uporaba ostaja interna; izvoz je samo bralna površina.
+export const PLANNER_MSG = {
   dayTitle: {
     sl: (n: number, head: string, name: string) => `Dan ${n} · ${head}${name}`,
     en: (n: number, head: string, name: string) => `Day ${n} · ${head}${name}`,
@@ -55,7 +57,9 @@ const PLANNER_MSG = {
     es: (n: number) => `${n} ${n === 1 ? "día" : "días"}`,
   },
   stopsWord: {
-    sl: (n: number) => `${n} ${n === 1 ? "postanek" : n === 2 ? "postanka" : "postankov"}`,
+    // P2 dostopnost/besedila (#38): slovenščina pozna PAUCAL — 3 in 4 postanki
+    // (ne „3 postankov“); 5+ šele tedaj roditelj množine.
+    sl: (n: number) => `${n} ${n === 1 ? "postanek" : n === 2 ? "postanka" : n <= 4 ? "postanki" : "postankov"}`,
     en: (n: number) => `${n} ${n === 1 ? "stop" : "stops"}`,
     it: (n: number) => `${n} ${n === 1 ? "tappa" : "tappe"}`,
     de: (n: number) => `${n} ${n === 1 ? "Stopp" : "Stopps"}`,
@@ -64,6 +68,16 @@ const PLANNER_MSG = {
   },
   regionsWord: {
     sl: (n: number) => `${n} ${n === 1 ? "regija" : n === 2 ? "regiji" : n <= 4 ? "regije" : "regij"}`,
+    en: (n: number) => `${n} ${n === 1 ? "region" : "regions"}`,
+    it: (n: number) => `${n} ${n === 1 ? "regione" : "regioni"}`,
+    de: (n: number) => `${n} ${n === 1 ? "Region" : "Regionen"}`,
+    fr: (n: number) => `${n} ${n === 1 ? "région" : "régions"}`,
+    es: (n: number) => `${n} ${n === 1 ? "región" : "regiones"}`,
+  },
+  // P2 (#38): mestnik za „v …“ — „v 2 regijAH“ (ne imenovalni „v 2 regiji“).
+  // Za ne-slovenske jezike oblika po predlogi = oblika iz regionsWord.
+  regionsWordIn: {
+    sl: (n: number) => `${n} ${n === 1 ? "regiji" : "regijah"}`,
     en: (n: number) => `${n} ${n === 1 ? "region" : "regions"}`,
     it: (n: number) => `${n} ${n === 1 ? "regione" : "regioni"}`,
     de: (n: number) => `${n} ${n === 1 ? "Region" : "Regionen"}`,
@@ -79,7 +93,7 @@ const PLANNER_MSG = {
     es: (names: string) => `Plan: ${names || "—"}`,
   },
   summary: {
-    sl: (daysWord: string, stopsWord: string, regionsWord: string, cost: number, speed: number) => `Deterministični načrt za ${daysWord}: ${stopsWord} v ${regionsWord}, ocena ${cost} € na osebo. Časi so predlogi (09:00–19:00); vožnje so ocene (premočna ×1,3 pri ~${speed} km/h).`,
+    sl: (daysWord: string, stopsWord: string, regionsWord: string, cost: number, speed: number) => `Deterministični načrt za ${daysWord}: ${stopsWord} v ${regionsWord}, ocena ${cost} € na osebo. Časi so predlogi (09:00–19:00); vožnje so ocene (premočrtna razdalja ×1,3 pri ~${speed} km/h).`,
     en: (daysWord: string, stopsWord: string, regionsWord: string, cost: number, speed: number) => `Deterministic ${daysWord} plan: ${stopsWord} across ${regionsWord}, estimated ${cost} € per person. Times are proposals (09:00–19:00); drives are straight-line ×1.3 estimates at ~${speed} km/h.`,
     it: (daysWord: string, stopsWord: string, regionsWord: string, cost: number, speed: number) => `Piano deterministico di ${daysWord}: ${stopsWord} in ${regionsWord}, stima ${cost} € a persona. Gli orari sono proposte (09:00–19:00); i tragitti sono stime (linea d'aria ×1,3 a ~${speed} km/h).`,
     de: (daysWord: string, stopsWord: string, regionsWord: string, cost: number, speed: number) => `Deterministischer Plan über ${daysWord}: ${stopsWord} in ${regionsWord}, geschätzt ${cost} € pro Person. Zeiten sind Vorschläge (09:00–19:00); Fahrten sind Schätzungen (Luftlinie ×1,3 bei ~${speed} km/h).`,
@@ -191,7 +205,7 @@ const PLANNER_MSG = {
     es: () => `Borrador: Mi viaje`,
   },
   draftSummary: {
-    sl: (n: number, cost: number, speed: number) => `Osnutek iz zbirke „Moja pot“ v tvojem vrstnem redu: ${n} ${n === 1 ? "postanek" : "postankov"}, ocena ${cost} € na osebo. Časi so predlogi (začetek 09:00, vožnje ocenjene pri ~${speed} km/h).`,
+    sl: (n: number, cost: number, speed: number) => `Osnutek iz zbirke „Moja pot“ v tvojem vrstnem redu: ${n} ${n === 1 ? "postanek" : n === 2 ? "postanka" : n <= 4 ? "postanki" : "postankov"}, ocena ${cost} € na osebo. Časi so predlogi (začetek 09:00, vožnje ocenjene pri ~${speed} km/h).`,
     en: (n: number, cost: number, speed: number) => `Draft built from your “My trip” collection in your order: ${n} stop(s), estimated ${cost} € per person. Times are proposals (09:00 start, drives estimated at ~${speed} km/h).`,
     it: (n: number, cost: number, speed: number) => `Bozza creata dalla collezione “Il mio viaggio” nel tuo ordine: ${n} ${n === 1 ? "tappa" : "tappe"}, stima ${cost} € a persona. Gli orari sono proposte (inizio 09:00, tragitti stimati a ~${speed} km/h).`,
     de: (n: number, cost: number, speed: number) => `Entwurf aus deiner Sammlung „Meine Reise“ in deiner Reihenfolge: ${n} Stopp(s), geschätzt ${cost} € pro Person. Zeiten sind Vorschläge (Start 09:00, Fahrten geschätzt bei ~${speed} km/h).`,
@@ -245,7 +259,7 @@ export function round5(n: number): number {
   return Math.round(n / 5) * 5;
 }
 
-/** Ocena cestne razdalje (premočna × 1,3) — vedno "~" v prikazu. */
+/** Ocena cestne razdalje (premočrtna × 1,3) — vedno "~" v prikazu. */
 export function roadKm(
   a: { lat: number; lng: number },
   b: { lat: number; lng: number }
@@ -788,7 +802,7 @@ export function buildItinerary(query: PlannerQuery): ItineraryPlan {
 
   const stopsWord = PLANNER_MSG.stopsWord[lang](allStops.length);
 
-  const regionsWord = PLANNER_MSG.regionsWord[lang](regionsUsed.length);
+  const regionsWord = PLANNER_MSG.regionsWordIn[lang](regionsUsed.length);
 
   const summary = PLANNER_MSG.summary[lang](daysWord, stopsWord, regionsWord, totalCost, AVG_SPEED_KMH);
 

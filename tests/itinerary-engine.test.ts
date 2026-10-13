@@ -133,7 +133,7 @@ describe("itinerary-engine: geometrijski kanon (P0.2)", () => {
     expect(haversineKm({ lat: 46.1, lng: 14.5 }, { lat: 46.1, lng: 14.5 })).toBe(0);
   });
 
-  test("roadKm = premočna × ROAD_FACTOR (1,3)", () => {
+  test("roadKm = premočrtna × ROAD_FACTOR (1,3)", () => {
     expect(ROAD_FACTOR).toBe(1.3);
     const flat = haversineKm(
       { lat: 45.0, lng: 13.0 },

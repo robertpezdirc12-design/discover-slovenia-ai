@@ -343,7 +343,7 @@ export function summarizeMeasured(
 /**
  * Ocena vožnje CELEGA dneva = VSOTA LegRow vrednosti tistega dneva: po
  * skokih (sosednja postanka OBA z koordinatama) sešteje round5(roadKm) in
- * travelMinutes — ISTI hevristiki kot LegRow (premočna ×1,3 @ ~60 km/h),
+ * travelMinutes — ISTI hevristiki kot LegRow (premočrtna razdalja ×1,3 @ ~60 km/h),
  * zato se vrstica pod glavo dneva in noge med postanki NIKOLI ne
  * nasprotujeta. Skok brez koordinat se izpusti (LegRow zanj ne kaže
  * vrstice); dan brez nobenega skoka → null (iskrena odsotnost — ni

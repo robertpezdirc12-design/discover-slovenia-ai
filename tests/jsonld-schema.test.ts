@@ -241,7 +241,10 @@ describe("jsonld [enote]: Event @graph (/dogodki, 2.45.0 — QA #38)", () => {
     expect(page).toContain('type="application/ld+json"');
     expect(page).toContain("nonce={nonce}");
     expect(page).toContain('(await headers()).get("x-nonce")');
-    expect(page).toContain("eventsJsonLd(EVENTS, locale)");
+    // 2.48.0 (#38): stran poda SSR `todayIso` (Europe/Ljubljana) —
+    // zaključeni dogodki izključeni iz @graph + oznaka „pretekli dogodek“.
+    expect(page).toContain("eventsJsonLd(EVENTS, locale, todayIso)");
+    expect(page).toContain("<EventsView todayIso={todayIso} />");
     expect(page).toContain("jsonldScriptHtml(");
     expect(page).not.toContain("__html: JSON.stringify(");
   });

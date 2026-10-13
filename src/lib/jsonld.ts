@@ -26,7 +26,7 @@
 
 import { asPickLocale, pick, type PickDict } from "./i18n-pick";
 import { localePrefixPath } from "@/i18n/routing";
-import type { CommunityEvent } from "./content-data";
+import { isEventPast, type CommunityEvent } from "./content-data";
 import type { Destination } from "./slovenia-data";
 
 /**
@@ -227,16 +227,26 @@ export interface EventsGraphLd {
 
 export function eventsJsonLd(
   events: readonly CommunityEvent[],
-  locale: string
+  locale: string,
+  todayIso?: string
 ): EventsGraphLd {
   const lang = asPickLocale(locale);
   const listUrl = `${JSONLD_SITE_ORIGIN}${localePrefixPath(lang)}/dogodki`;
   const confirmed = events.filter(
     (e) => e.dateStart !== "" && !e.dateUnconfirmed
   );
+  // #38 (2.48.0): dogodki, ki so že ZAKLJUČENI ob danem dnevu, ne grejo v
+  // strukturirane podatke (Google: ne označuj že zaključenih dogodkov —
+  // bogat rezultat sme zavajati). Filtrira se po isEventPast (dateEnd
+  // ?? dateStart); brez `todayIso` (pogodbene teste/čisti podatkovni
+  // pogled) se zaključeni ne filtrirajo — stran /dogodki podaja SSR datum.
+  const upcoming =
+    todayIso !== undefined
+      ? confirmed.filter((e) => !isEventPast(e, todayIso))
+      : confirmed;
   return {
     "@context": "https://schema.org",
-    "@graph": confirmed.map((e) => ({
+    "@graph": upcoming.map((e) => ({
       "@type": "Event",
       name: e.title,
       url: listUrl,

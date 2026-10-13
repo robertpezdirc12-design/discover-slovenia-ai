@@ -2953,3 +2953,29 @@ Stage Summary:
 ### Stanje
 - CI/kvota: GitHub Actions še vedno pada z 0 koraki (6. serija), SDK web_search še vedno 429 → tudi ta prehod 100 % brez kvotnih odvisnosti.
 - preostanek #38: verifikacija ~12 dogodkov 2027 (SDK kvota), merge PR #40 (Actions kvota; E2E job zdaj že definiran).
+
+## 2.48.0 — pretekli dogodki jasno označeni + LOKALNI BUILD/SMOKE (2026-10-13, issue #38)
+
+### Kontekst
+- CI (Actions kvota, 7. serija) + SDK web_search (429) še vedno mrtva → izbrana naslednja ne-kvotna zahteva #38: „Pretekle dogodke odstrani iz privzetega seznama prihodnjih dogodkov oziroma jih jasno prikaži kot pretekle“ + ZAKLJUČEK edinega ne-preverjenega lokalnega vrata (build + smoke).
+
+### Spremembe
+- content-data.ts: NOVO polje CommunityEvent.dateEnd? (izpolnjeno IZKLJUČNO iz preverjenih razponov: Stara trta 2026-10-12, POMP 2026-10-11) + čista pomočnika eventEndIso (dateEnd ?? dateStart) in isEventPast (nepotrjen/prazen NIKOLI pretekli; zaključek == danes → še teče; < danes → pretekli).
+- events-view.tsx: prop todayIso? (SSR) + Badge „pretekli dogodek“ (6 jezikov, variant outline) — oznaka namesto brisanja (kanon sledljivosti).
+- dogodki/page.tsx: todayIso = Intl en-CA + timeZone Europe/Ljubljana (NE UTC) — 0 hidracijskih razlik; prop v EventsView + 3-argski eventsJsonLd.
+- jsonld.ts: eventsJsonLd(events, locale, todayIso?) — zaključeni izključeni iz @graph (Google smernice); 2-argska forma ostane čisti podatkovni pogled.
+- NOVO tests/events-past.test.ts: 16 zaklepov ①–⑤ (eventEndIso, semantika z fiksnim TODAY=2026-10-13 — datumsko neodvisno, živi kanon: natanko 2 pretekla, 13 nepotrjenih nikoli, dateEnd samo pri 2, JSON-LD 16/18 dvojna forma, pogodba strani).
+- tests/jsonld-schema.test.ts: pogodba ㉔ posodobljena (3-argski klic + <EventsView todayIso .../>).
+- Verzija 2.48.0 na 7 mestih + README banner.
+
+### Verifikacija (VSA 6 CI vrat lokalno — prvič za ta PR)
+- bun test 2096/2096 (18235 expect, 104 datotek), tsc 0, eslint 0, prisma generate/db push ✓
+- BUILD: next build standalone ✓ (Next.js 16.1.3)
+- MIGRATION SAFETY: sveža SQLite iz praznega stanja brez --accept-data-loss ✓
+- SMOKE: 19/19 preverb zelenih na standalone strežniku :3100 (9 strani, health status/version/checks 2.48.0 ≡ package.json, destinations 38, go 302/400 fail-closed, 4 cron 401 fail-closed) — reports/smoke.txt + smoke-report.json
+- Živo: /dogodki izriše „pretekli dogodek“ natanko 2×; @graph = 16 Eventov (Stara trta + POMP izključena, Kurentovanje vključeno)
+- Playwright 10/10 (2. tek; 1. tek = ostanek :3100 strežnika po smoke-u — artefakt okolja, ponovljen čisto)
+- Pouk: peskovnik ubije odzadnje procese ob koncu orodjarsega klica → strežnik + smoke MORAJO teči v istem klicu (kot v ci.yml); pkill za seboj.
+
+### Stanje
+- Vsa 6 vrat ci.yml LOKALNO zelena za glavo PR #40 (2.48.0) — edina preostanka v #38 sta še vedno kvotna: verifikacija ~11 dogodkov 2027 (SDK) + merge na zeleni CI (Actions).

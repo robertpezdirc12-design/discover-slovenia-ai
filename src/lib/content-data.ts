@@ -72,6 +72,12 @@ export interface CommunityEvent {
    *  QA #34/#38: PRAZEN niz, kadar je `dateUnconfirmed` — izmišljenega
    *  datuma nikoli ne zapisujemo (iskrenostni kanon). */
   dateStart: string;
+  /** ISO datum konca (zadnji dan) za VEČDNEVNE dogodke s preverjenim
+   *  razponom (2.48.0, #38 „pretekle dogodke jasno prikaži“). Izpolnjen
+   *  IZKLJUČNO iz preverjene `dateLabel` range vrednosti pri primarnem
+   *  viru; za enodnevne dogodke ostane neizpolnjen (= dateStart).
+   *  Uporablja ga isEventPast (zaključek dogodka). */
+  dateEnd?: string;
   /** Prirojen prikaz datuma, kot v produkciji (npr. „8. – 18. feb 2027").
    *  Pri `dateUnconfirmed` = pošten napis „datum še ni potrjen“. */
   dateLabel: string;
@@ -553,6 +559,7 @@ export const EVENTS: CommunityEvent[] = [
     category: "tradicija",
     title: "Festival Stara trta",
     dateStart: "2026-10-03",
+    dateEnd: "2026-10-12",
     dateLabel: "3. – 12. okt 2026",
     venue: "Lent, Maribor",
     price: "euro",
@@ -573,6 +580,7 @@ export const EVENTS: CommunityEvent[] = [
     category: "kultura",
     title: "POMP — sejem pompoznih dogodkov",
     dateStart: "2026-10-10",
+    dateEnd: "2026-10-11",
     dateLabel: "10. – 11. okt 2026",
     venue: "Celjski sejem, Celje",
     price: "euro",
@@ -1442,4 +1450,30 @@ export const THINGS_TO_DO_INTRO: Record<string, string> = {
 
 export function thingsToDoIntro(slug: string): string | undefined {
   return THINGS_TO_DO_INTRO[slug];
+}
+
+/**
+ * Konec dogodka v ISO obliki — `dateEnd` za preverjene večdnevne
+ * dogodke, sicer `dateStart` (enodnevni dogodek). Pomočnik za
+ * isEventPast (#38: „Pretekle dogodke … jasno prikaži kot pretekle“).
+ */
+export function eventEndIso(e: CommunityEvent): string {
+  return e.dateEnd && e.dateEnd !== "" ? e.dateEnd : e.dateStart;
+}
+
+/**
+ * Ali je dogodek ZAKLJUČEN ob danem dnevu (`todayIso`, ISO „YYYY-MM-DD“).
+ *
+ * Semantika (#38, iskrenostni kanon):
+ *  · nepotrjen/prazen datum → NIKOLI „pretekli“ (ne ugibamo iz monthIndex);
+ *  · zaključek == danes → ŠE TEČE (ne pretekli);
+ *  · zaključek < danes → pretekli (za večdnevne z dateEnd; za enodnevne
+ *    po dateStart).
+ * `todayIso` podaja strežnik (SSR prop — 0 hidracijskih razlik,
+ * deterministično per build/zahteva, kanon POLIR15-b).
+ */
+export function isEventPast(e: CommunityEvent, todayIso: string): boolean {
+  if (e.dateUnconfirmed || e.dateStart === "") return false;
+  const end = eventEndIso(e);
+  return end !== "" && end < todayIso;
 }

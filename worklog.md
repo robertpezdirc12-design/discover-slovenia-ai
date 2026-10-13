@@ -328,3 +328,24 @@ Stage Summary:
 - Merili #38 „regresijski testi filtrov (dogodki IN destinacije)“ in „E2E pot uspe (tudi v CI)“ = IZPOLNJENI; E2E job je definiran in registriran (check-run „E2E (Playwright: zlata pot + mobilni)“ se pojavlja tudi v kvotnem padcu) — ob obnovi kvote teče samodejno.
 - Preostanek #38 = SAMO kvotne odvisnosti: (1) verifikacija ~12 dogodkov 2027 (SDK 429; organizatorji 2027 terminov še ne objavljajo), (2) merge PR #40 na zeleni CI (Actions kvota).
 - Izjemni dogodki: sandbox se očisti med sejami, a /home/z/* kloni preživijo; z-ai CLI za web_search = `z-ai function -n web_search` (ni `web-search` ukaza); dvopičja v YAML vrednostih brez navedkov so napaka.
+
+---
+Task ID: R38-PAST-EVENTS-FINAL
+Agent: Z.ai Code (glavni orkestrator)
+Task: Nadaljevanje („odlično nadaljuj“) — CI (7. serija, 0 korakov) + SDK (429) še vedno mrtva → zadnja ne-kvotna zahteva #38 (pretekli dogodki) + zaključek edinega ne-preverjenega lokalnega vrata (build+smoke) + KONČNO POROČILO na #38, 2.48.0, commit f835de7 na PR #40.
+
+Work Log:
+- PROBE: run #105 failure (0 korakov), web_search 429 → potrditve kvot; rerun ni poskušan (2× že brez učinka).
+- PAST-EVENTS AUDIT: 31 dogodkov — 13 nepotrjenih (prazen dateStart; moj prvi hitri primerjalnik jih je zgrešil kot „pretekle“), RESNIČNO pretekla SAMO 2 (Stara trta 3.–12. okt, POMP 10.–11. okt) — v privzetem seznamu brez oznake + oba v Event JSON-LD (Google: ne označuj zaključenih).
+- IMPLEMENTACIJA: CommunityEvent.dateEnd? (izključno iz preverjenih razponov) + eventEndIso/isEventPast (nepotrjen NIKOLI pretekli; konec==danes → teče); EventsView prop todayIso + Badge „pretekli dogodek“ (6 jezikov, outline); page.tsx SSR dan prek Intl en-CA + timeZone Europe/Ljubljana (NE UTC); jsonld.ts 3-argska forma (brez todayIso = stara 18/31 kanon, z todayIso = izključitev zaključenih).
+- TESTI: NOVO tests/events-past.test.ts (16 zaklepov ①–⑤; fiksni TODAY=2026-10-13 → datumsko neodvisni zaklepi; ⑤ pogodba strani prek Bun.file source-contract); jsonld-schema ㉔ posodobljen (nova klicna forma) — pouk: pogodbene zaka e source-stringov morajo slediti namerni spremembi pogodbe.
+- VERZIJA 2.48.0 ×7 + README banner.
+- LOKALNI BUILD+SMOKE (edina ne-preverjena vrata za 8-commitni PR): next build standalone ✓ (Next 16.1.3); db:materialize sveža SQLite ✓; standalone strežnik :3100 (NEXTAUTH dummy, HOSTNAME=0.0.0.0) ✓; smoke 19/19 ✓ (reports/smoke.txt + smoke-report.json); živo: badge „pretekli dogodek“ natanko 2×, @graph=16 (Stara trta+POMP ven, Kurentovanje noter).
+- POUK PESKOVNIKA: odzadnji procesi umrejo ob koncu orodjarskega klica (tudi setsid nohup) → strežnik+wait-ready+smoke MORAJO biti v ENEM klicu (enako kot ci.yml koraki); pkill za seboj (stari :3100 je pokvaril 1. E2E tek → 2. tek čisto 10/10).
+- PUSH+GITHUB: f835de7 (14 datotek, +297/−22) na PR #40 (8. commit); KONČNO POROČILO na #38 (issuecomment-6143064474: merila tabela, 63 datotek +2990/−202, rezultati vrat, LOČITEV lokalno ≠ merge/deploy, preostanek); PR body +2.48.0 sekcija (12886 zn).
+- Sandbox worklog (ta datoteka) dopolnjen.
+
+Stage Summary:
+- #38: VSA merila sprejemanja IZPOLNJENA (lokalno) — končno poročilo objavljeno; PR #40 (2.48.0, 8 commitov, 63 datotek) čaka ZELEN CI → merge.
+- Vsa 6 vrat ci.yml LOKALNO zelena prvič za ta PR (lint 0, tsc 0, test 2096/2096, prisma, build standalone, migration safety + smoke 19/19) + Playwright 10/10 + žive preverbe /dogodki.
+- Preostanek #38 = izključno kvotne odvisnosti: (1) merge ob Actions kvoti (uporabnik: Billing), (2) verifikacija ~11 dogodkov 2027 ob SDK kvoti (organizatorji še ne objavljajo; zapisi pošteno nepotrjeni).

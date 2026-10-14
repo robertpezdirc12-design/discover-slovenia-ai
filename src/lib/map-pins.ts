@@ -11,7 +11,7 @@
  * množice v peskovniku NI (nameščena samo na produkciji), zato rekonstrukcija
  * pošteno streže LASTNE kanonske podatke (source.slug "own"):
  *
- *  - 38 destinacij (slovenia-data) → pin precision "exact"
+ *  - 74 destinacij (slovenia-data) → pin precision "exact"
  *  - 26 lokalov s povezavo na destinacijo (lokali-data) → koordinate
  *    IZPELJANE iz središča povezane destinacije, precision
  *    "destination_center" (iskreno označena izpeljava)
@@ -196,7 +196,7 @@ export function parseZoom(raw: string | null): ParseResult<number> {
 
 /**
  * Zgradi VSE pine iz lastnih kanonskih podatkov (deterministično):
- * 38 destinacij (precision "exact") + 26 lokalov s povezavo na destinacijo
+ * 74 destinacij (precision "exact") + 32 lokalov s povezavo na destinacijo
  * (precision "destination_center" — koordinate izpeljane iz središča
  * destinacije, iskreno označene). Lokali brez destinationSlug so izpuščeni.
  */

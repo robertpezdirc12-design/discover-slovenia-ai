@@ -317,7 +317,7 @@ export interface RerouteBody {
  * Čista validacija telesa preračuna { from: {lat, lng}, to: "<slug>" }:
  *  - from.lat ∈ [-90, 90], from.lng ∈ [-180, 180] (končni števili);
  *  - to: neprazen niz IZ dovoljenega nabora slug-ov (strežnik poda
- *    kanonskih 38 destinacij; testi svoje majhne nabore).
+ *    kanonskih 74 destinacij; testi svoje majhne nabore).
  * Vrne null ob katerikoli nepravilnosti — strežnik odgovori 400
  * (izločeno v čisto funkcijo, da je testabilna brez strežnika).
  */

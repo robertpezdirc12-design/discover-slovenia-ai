@@ -89,7 +89,7 @@ export interface CommunityEvent {
   website?: string;
   image: string;
   description: string;
-  /** Destinacija iz nabora 38, na katero se dogodek navezuje (neobvezno). */
+  /** Destinacija iz nabora 74, na katero se dogodek navezuje (neobvezno). */
   destSlug?: string;
   /** QA P0 (#34→#38): datum ZA CIKLOV LETO še ni uradno objavljen — UI prikaže
    *  „datum še ni potrjen“ namesto izmišljenega datuma. monthIndex ostane
@@ -153,7 +153,7 @@ export const EVENTS: CommunityEvent[] = [
     // kranjskagora-worldcup.si, domena dosegljiva) — Zlata lisica je na
     // Mariborskem Pohorju potekala do 2019, od 2020 v Podkorenu.
     // destSlug „maribor“ odstranjen (lokacija ni več Maribor; Kranjska Gora
-    // ni med 38 destinacijami). Zgodovinska fotografija dirke; slika s
+    // ni (več) med dest., opomba kaže na zgodovinski sklop registra). Zgodovinska fotografija dirke; slika s
     // Podkorena sledi ob prekinitvi SDK kvote (image gen je bil 429).
     dateStart: "2027-01-29",
     dateEnd: "2027-01-30",
@@ -964,7 +964,7 @@ export interface Guide {
   pubDate: string;
   /** Kategorija iz rss.xml. */
   rssCategory: string;
-  /** Povezane destinacije iz nabora 38 (samo tiste, ki res obstajajo). */
+  /** Povezane destinacije iz nabora 74 (samo tiste, ki res obstajajo). */
   destSlugs: string[];
 }
 
@@ -1337,7 +1337,7 @@ export interface BlogArticle {
   title: string;
   description: string;
   image: string;
-  /** Povezana destinacija iz nabora 38 (neobvezno). */
+  /** Povezana destinacija iz nabora 74 (neobvezno). */
   destSlug?: string;
 }
 
@@ -1525,7 +1525,7 @@ export interface ExperienceType {
   id: string;
   title: { sl: string; en: string; it: string; de: string; fr: string; es: string };
   description: string;
-  /** Destinacije iz nabora 38, kjer je tip doživetja doma. */
+  /** Destinacije iz nabora 74, kjer je tip doživetja doma. */
   destSlugs: string[];
 }
 
@@ -1637,7 +1637,7 @@ export function themeDescriptionFor(d: Destination, theme: GuideTheme): string {
 }
 
 // ============================================================================
-// KAJ POČETI — uvodni opisi things-to-do strani (rss.xml, 38 destinacij)
+// KAJ POČETI — uvodni opisi things-to-do strani (rss.xml, 74 destinacij)
 // ============================================================================
 
 /** Uvodni odstavek /destinacija/[slug]/things-to-do (rss.xml item opisi). */

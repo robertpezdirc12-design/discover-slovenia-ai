@@ -22,7 +22,7 @@ import { DESTINATIONS, getDestination } from "../src/lib/slovenia-data";
  *     featureList ×6 popoln in vsebuje »deterministi«/»0 AI« (varovalni pes:
  *     bodoča AI marketinška točka brez resnice takoj pade), TouristDestination
  *     samo iz kanonskih podatkov (geo 1:1, url po hreflang konvenciji) —
- *     prek VSEH 38 destinacij.
+ *     prek VSEH 74 destinacij.
  */
 
 describe("jsonld [enote]: SoftwareApplication (domača stran)", () => {
@@ -100,7 +100,7 @@ describe("jsonld [iskrenost]: featureList ×6 jezikov", () => {
     expect(joined).toContain("go mode");
     expect(joined).toContain("pdf");
     expect(joined).toContain(".ics");
-    expect(joined).toContain("38");
+    expect(joined).toContain("74");
     expect(joined).toContain("open-meteo");
   });
 

@@ -156,7 +156,7 @@ function answerWeather(body: string, stops: PlanStopRef[]): string {
     (d) =>
       `· ${d.name}: najlepše v ${d.bestSeason.map((s) => SEASON_LABELS[s] ?? s).join(", ") || "NEZNANO (ni podatka)"}`
   );
-  return `Trenutno vreme je NEZNANO — vremenski vir je pravkar odpovedal (iskrena meja tega sloja: 0 zunanjih klicev, odgovarjam samo iz baze 38 destinacij). Dnevno napoved za dneve poti vidiš na strani potovanja (vir Open-Meteo); za uradno napoved preveri ARSO (meteo.arso.gov.si). Iz baze pa vem, kdaj je najlepše:\n${lines.join("\n")}`;
+  return `Trenutno vreme je NEZNANO — vremenski vir je pravkar odpovedal (iskrena meja tega sloja: 0 zunanjih klicev, odgovarjam samo iz baze 74 destinacij). Dnevno napoved za dneve poti vidiš na strani potovanja (vir Open-Meteo); za uradno napoved preveri ARSO (meteo.arso.gov.si). Iz baze pa vem, kdaj je najlepše:\n${lines.join("\n")}`;
 }
 
 function answerDistance(body: string, stops: PlanStopRef[]): string {
@@ -256,7 +256,7 @@ function answerDestinationInfo(body: string): string {
   if (mentioned.length === 0) return "";
   const d = mentioned[0];
   const seasons = d.bestSeason.map((s) => SEASON_LABELS[s] ?? s).join(", ") || "neznano";
-  return `${d.name} — ${d.tagline}. Regija: ${d.region}; tip: ${d.type}; ocena obiskovalcev ${d.rating}/10; priporočen čas ${d.duration}; strošek ~${d.costPerPerson} € na osebo; najlepše v: ${seasons}.\nPoudarki: ${d.highlights.slice(0, 3).join(" · ")}.\n(podatki iz baze 38 destinacij — brez zunanjih klicev)`;
+  return `${d.name} — ${d.tagline}. Regija: ${d.region}; tip: ${d.type}; ocena obiskovalcev ${d.rating}/10; priporočen čas ${d.duration}; strošek ~${d.costPerPerson} € na osebo; najlepše v: ${seasons}.\nPoudarki: ${d.highlights.slice(0, 3).join(" · ")}.\n(podatki iz baze 74 destinacij — brez zunanjih klicev)`;
 }
 
 function answerBudget(plan: SharedPlan, stops: PlanStopRef[]): string {
@@ -296,7 +296,7 @@ function answerFallback(plan: SharedPlan, stops: PlanStopRef[]): string {
     parts.push(`Najbolje ocenjen postanek: ${top.name} (${top.rating}/10) — ${top.tagline}.`);
   }
   parts.push(
-    "Odgovarjam deterministično iz baze 38 destinacij in podatkov te poti (0 AI žetonov, 0 zunanjih klicev). Vprašaj me o vremenu (trenutno stanje; ob shranjenih datumih poti tudi dnevna napoved), razdaljah med postanki, predlogih, cenah, hrani (zbirka Lokali) ali kateri destinaciji."
+    "Odgovarjam deterministično iz baze 74 destinacij in podatkov te poti (0 AI žetonov, 0 zunanjih klicev). Vprašaj me o vremenu (trenutno stanje; ob shranjenih datumih poti tudi dnevna napoved), razdaljah med postanki, predlogih, cenah, hrani (zbirka Lokali) ali kateri destinaciji."
   );
   return parts.join("\n");
 }

@@ -8,7 +8,7 @@
  * myTrip.list() (bun test teče brez DOM, kjer modul ISENO poroča prazno).
  *
  * Sekvenčni scenarij „OD ODKRITJA DO ZAKLJUČENE POTI":
- *  1. DISCOVER  — prazno stanje → „Razišči Slovenijo"; izbira iz nabora 38;
+ *  1. DISCOVER  — prazno stanje → „Razišči Slovenijo"; izbira iz nabora 74;
  *  2. PLAN      — zbirka ≥ 2 → buildPlanFromMyTrip (vrstni red uporabnika);
  *  3. BOOKING   — searchDemoOffers → createDemoBooking (DSA-DEMO-XXXX) →
  *                 cancelDemoBooking (CANCELLED terminalen);
@@ -25,7 +25,7 @@
  *    realProviderStatus() je fail-closed — realni kanal NIKOLI ne obljubi;
  *  - KANALNA LOČENOST: demo rezervacija VEDNO nosi demo:true + kanal „demo";
  *  - PREHODI STATUSOV: veriga teče SKOZI ALLOWED_TRANSITIONS (booking.ts);
- *  - CELOVITOST PODATKOV: vsak slug postanka/ponudbe je iz nabora 38;
+ *  - CELOVITOST PODATKOV: vsak slug postanka/ponudbe je iz nabora 74;
  *  - ATESTACIJSKA ZDRUŽLJIVOST: demo JSON preživi parseAttestationNote.
  */
 
@@ -172,7 +172,7 @@ describe("E2E 1 · DISCOVER — prazno stanje → izbira destinacij", () => {
     expect(myTrip.has("bled")).toBe(false);
   });
 
-  test("izbira iz kanonskega nabora: 38 destinacij, getDestination(„bled“) z veljavnimi koordinatami", () => {
+  test("izbira iz kanonskega nabora: 74 destinacij, getDestination(„bled“) z veljavnimi koordinatami", () => {
     const bled = getDestination("bled");
     expect(bled).toBeDefined();
     expect(bled!.slug).toBe("bled");

@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { pageMetadata } from "@/lib/page-metadata";
 
 /**
- * /destinacije — raziskovalka vseh 38 destinacij.
+ * /destinacije — raziskovalka vseh 74 destinacij.
  * Explorer je odjemalec (useSearchParams za ?q/?region/?type) — zato
  * Suspense ovoj (kanon App Routerja za iskalne parametre).
  */

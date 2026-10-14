@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * TRAVEL-MAP — polen Leaflet zemljevid 38 destinacij (rekonstrukcija /zemljevid).
+ * TRAVEL-MAP — polen Leaflet zemljevid 74 destinacij (rekonstrukcija /zemljevid).
  *
  * Leaflet/OSM (react-leaflet 5, leaflet 1.9): MapContainer s slojem
  * tile.openstreetmap.org, markerji za VSE destinacije kanonskega nabora

@@ -48,7 +48,7 @@ function destWord(l: string, n: number): string {
 
 /**
  * RAZISKOVALKA DESTINACIJ — polna funkcionalna stran: iskanje po imenu/
- * tagline/opisu + filtra regija/tip + mreža kartic vseh 38 destinacij.
+ * tagline/opisu + filtra regija/tip + mreža kartic vseh 74 destinacij.
  * Začetno stanje prevzame ?q= ?region= ?type= iz URL (domov, teme).
  */
 export function DestinationsExplorer() {

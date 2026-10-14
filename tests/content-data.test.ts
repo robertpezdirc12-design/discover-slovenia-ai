@@ -117,7 +117,7 @@ describe("content-data: vodniki (/vodici + [slug])", () => {
     for (const g of GUIDES) expect(groups).toContain(g.group);
   });
 
-  test("destSlugs: veljavni sluzi nabora 38 — praznina je IZKRENO dovoljena (praktični vodniki)", () => {
+  test("destSlugs: veljavni sluzi nabora 74 — praznina je IZKRENO dovoljena (praktični vodniki)", () => {
     const slugs = new Set(DESTINATIONS.map((d) => d.slug));
     for (const g of GUIDES) {
       expect(Array.isArray(g.destSlugs)).toBe(true);

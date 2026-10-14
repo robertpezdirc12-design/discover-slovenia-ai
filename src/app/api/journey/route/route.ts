@@ -22,7 +22,7 @@ export const dynamic = "force-dynamic";
  *    GPS ob odklonu od poti): from je ZAOKROŽENA trenutna pozicija
  *    uporabnika (ZASEBNOSTNI KANON: klient pošlje 4 decimale ~11 m,
  *    strežnik zaokrožitev ŠE PRISILNO izvede — defense-in-depth;
- *    validacija lat ±90 / lng ±180), to mora biti slug iz nabora 38.
+ *    validacija lat ±90 / lng ±180), to mora biti slug iz nabora 74.
  *    Odziv ima ISTO obliko { legs, totalKm, totalMin, method } (ena
  *    noga, from "gps") + dodatno polje reroute { from, to }.
  *
@@ -102,13 +102,13 @@ export async function POST(request: Request) {
   // ── NOVA oblika: { from, to } — preračun z žive GPS ──────────
   if (slugs === undefined) {
     // Čista validacija (izvoz v go-gps.ts — testabilna brez strežnika):
-    // lat ±90 / lng ±180, končni števili, to iz nabora 38.
+    // lat ±90 / lng ±180, končni števili, to iz nabora 74.
     const reroute = parseRerouteBody(body, DEST_SLUG_SET);
     if (!reroute) {
       return NextResponse.json(
         {
           error:
-            'Neveljaven preračun: pričakovana oblika { from: { lat, lng }, to: "<slug>" } z lat ±90 / lng ±180 in slug-om iz nabora 38 destinacij.',
+            'Neveljaven preračun: pričakovana oblika { from: { lat, lng }, to: "<slug>" } z lat ±90 / lng ±180 in slug-om iz nabora 74 destinacij.',
         },
         { status: 400 }
       );
@@ -175,7 +175,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "Vse destinacije morajo biti iz kanonskega nabora 38 destinacij.",
+            "Vse destinacije morajo biti iz kanonskega nabora 74 destinacij.",
         },
         { status: 400 }
       );

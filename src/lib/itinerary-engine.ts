@@ -2,7 +2,7 @@
  * DETERMINISTIČNI MOTOR ITINERERJA (rekonstrukcija naloge 45-d).
  *
  * Po vzorcu izvirnika (/api/itinerary + lib/deterministic-itinerary.ts,
- * geo-validacija P0.2), poenostavljeno na 38 destinacij kanonskega nabora:
+ * geo-validacija P0.2), poenostavljeno na 74 destinacij kanonskega nabora:
  * - 0 AI žetonov, 0 omrežja, 0 ure — ČIST modul (strežnik + klient);
  * - ISTI vhod → ISTI izhod (nobenih klicev ure/naključja);
  * - iskrenostni kanon: vse ocene so razkrite ("~", hevristika
@@ -585,7 +585,7 @@ export function budgetTier(b: Budget): number {
 // ---------------------------------------------------------------------------
 
 /**
- * IDF utež interesa po korpusu 38 destinacij: REDI interes (»jezero« —
+ * IDF utež interesa po korpusu 74 destinacij: REDI interes (»jezero« —
  * zadetkov malo) razločuje destinacije bolj kot VSEPOVEDEN (»kolo« —
  * zadetkov povsod). Deterministično: fiksni korpus → fiksne uteži.
  * Glajenje ln(1 + N/(df+1)) drži df=0 končno (tak interes ne zadene ničesar).

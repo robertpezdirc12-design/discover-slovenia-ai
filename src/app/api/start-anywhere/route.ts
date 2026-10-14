@@ -13,7 +13,7 @@ import { deriveSuggestion } from "@/lib/start-anywhere/suggest";
  * Kje bi bil AI model (Mindtrip: video → LLM), je tu SKRIPTA:
  *   povezava (YouTube, članek, TikTok og:description …) → strežniško
  *   prebrano besedilo (SSRF-varovano, 256 KiB, 8 s) → ujemanje krajev
- *   z registrom 38 destinacij (slovenski skloni vključeni) + NLU namen
+ *   z registrom 74 destinacij (slovenski skloni vključeni) + NLU namen
  *   (dnevi/sezona/proračun) → predlog izhodišča za DETERMINISTIČNEGA
  *   načrtovalnika. 0 AI žetonov, 0 AI modelov, isti vhod → isti izhod.
  *
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "V viru nisem prepoznal nobenega kraja iz registra (38 destinacij). Ne ugibam — poskusi bolj jasen vir ali prilepi besedilo.",
+            "V viru nisem prepoznal nobenega kraja iz registra (74 destinacij). Ne ugibam — poskusi bolj jasen vir ali prilepi besedilo.",
         },
         { status: 422 }
       );
@@ -160,7 +160,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "V besedilu nisem prepoznal nobenega kraja iz registra (38 destinacij). Ne ugibam — dodaj imena krajev (npr. Bled, Ljubljana, Soča) ali izberi interese spodaj.",
+          "V besedilu nisem prepoznal nobenega kraja iz registra (74 destinacij). Ne ugibam — dodaj imena krajev (npr. Bled, Ljubljana, Soča) ali izberi interese spodaj.",
       },
       { status: 422 }
     );

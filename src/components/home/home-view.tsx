@@ -93,12 +93,12 @@ const L = {
     es: "¿Qué quieres vivir en Eslovenia?",
   },
   heroLead: {
-    sl: "Napiši, kaj te veseli — odkrij 38 kuriranih destinacij Slovenije in zahodnega Balkana, sestavi načrt in pojdi.",
-    en: "Write what you enjoy — discover 38 curated destinations across Slovenia and the Western Balkans, build a plan, and go.",
-    it: "Scrivi cosa ti piace — scopri 38 destinazioni selezionate tra Slovenia e Balcani occidentali, crea un itinerario e parti.",
-    de: "Schreib, was dir Freude macht — entdecke 38 kuratierte Reiseziele in Slowenien und auf dem westlichen Balkan, plane deine Route und los geht’s.",
-    fr: "Écris ce que tu aimes — découvre 38 destinations sélectionnées en Slovénie et dans les Balkans occidentaux, compose ton itinéraire et pars.",
-    es: "Escribe lo que te gusta — descubre 38 destinos seleccionados de Eslovenia y los Balcanes occidentales, arma tu plan y sal.",
+    sl: "Napiši, kaj te veseli — odkrij 74 kuriranih destinacij Slovenije in celega Balkana, sestavi načrt in pojdi.",
+    en: "Write what you enjoy — discover 74 curated destinations across Slovenia and the whole Balkans, build a plan, and go.",
+    it: "Scrivi cosa ti piace — scopri 74 destinazioni selezionate tra Slovenia e tutti i Balcani, crea un itinerario e parti.",
+    de: "Schreib, was dir Freude macht — entdecke 74 kuratierte Reiseziele in Slowenien und auf dem ganzen Balkan, plane deine Route und los geht’s.",
+    fr: "Écris ce que tu aimes — découvre 74 destinations sélectionnées en Slovénie et dans tous les Balkans, compose ton itinéraire et pars.",
+    es: "Escribe lo que te gusta — descubre 74 destinos seleccionados de Eslovenia y todos los Balcanes, arma tu plan y sal.",
   },
   searchPlaceholder: {
     sl: "Iskanje: Bled, jama, Soča, obala …",
@@ -995,12 +995,12 @@ export function HomeView({
             <Check className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
             <p className="text-sm leading-relaxed text-muted-foreground">
               {pick(l, {
-                sl: "Iskrenostni kanon: vsi prikazi (ocena, vir, cena) prihajajo iz kanonskega nabora 38 destinacij z zapisanim izvorom — nič ni izmišljeno.",
-                en: "Honesty canon: every displayed value (rating, source, price) comes from the canonical set of 38 destinations with recorded provenance — nothing is invented.",
-                it: "Canone dell’onestà: ogni valore mostrato (valutazione, fonte, prezzo) proviene dall’insieme canonico di 38 destinazioni con provenienza documentata — nulla è inventato.",
-                de: "Ehrlichkeits-Kanon: Jeder angezeigte Wert (Bewertung, Quelle, Preis) stammt aus dem kanonischen Bestand von 38 Reisezielen mit erfasster Herkunft — nichts ist erfunden.",
-                fr: "Canon d’honnêteté : chaque valeur affichée (note, source, prix) provient de l’ensemble canonique de 38 destinations avec provenance enregistrée — rien n’est inventé.",
-                es: "Canon de honestidad: cada valor mostrado (valoración, fuente, precio) proviene del conjunto canónico de 38 destinos con procedencia registrada — nada es inventado.",
+                sl: "Iskrenostni kanon: vsi prikazi (ocena, vir, cena) prihajajo iz kanonskega nabora 74 destinacij z zapisanim izvorom — nič ni izmišljeno.",
+                en: "Honesty canon: every displayed value (rating, source, price) comes from the canonical set of 74 destinations with recorded provenance — nothing is invented.",
+                it: "Canone dell’onestà: ogni valore mostrato (valutazione, fonte, prezzo) proviene dall’insieme canonico di 74 destinazioni con provenienza documentata — nulla è inventato.",
+                de: "Ehrlichkeits-Kanon: Jeder angezeigte Wert (Bewertung, Quelle, Preis) stammt aus dem kanonischen Bestand von 74 Reisezielen mit erfasster Herkunft — nichts ist erfunden.",
+                fr: "Canon d’honnêteté : chaque valeur affichée (note, source, prix) provient de l’ensemble canonique de 74 destinations avec provenance enregistrée — rien n’est inventé.",
+                es: "Canon de honestidad: cada valor mostrado (valoración, fuente, precio) proviene del conjunto canónico de 74 destinos con procedencia registrada — nada es inventado.",
               })}
             </p>
           </CardContent>

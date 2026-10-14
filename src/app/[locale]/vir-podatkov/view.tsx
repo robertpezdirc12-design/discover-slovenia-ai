@@ -289,12 +289,12 @@ export default function DataSourcePage() {
     },
     sourcesHeading: { sl: "Viri podatkov", en: "Data sources", it: "Fonti dei dati", de: "Datenquellen", fr: "Sources des données", es: "Fuentes de datos" },
     provHeading: {
-      sl: "Provenance destinacijske vsebine (38 destinacij)",
-      en: "Destination content provenance (38 destinations)",
-      it: "Provenienza dei contenuti delle destinazioni (38 destinazioni)",
-      de: "Provenienz der Destinationsinhalte (38 Destinationen)",
-      fr: "Provenance des contenus des destinations (38 destinations)",
-      es: "Procedencia del contenido de los destinos (38 destinos)",
+      sl: "Provenance destinacijske vsebine (74 destinacij)",
+      en: "Destination content provenance (74 destinations)",
+      it: "Provenienza dei contenuti delle destinazioni (74 destinazioni)",
+      de: "Provenienz der Destinationsinhalte (74 Destinationen)",
+      fr: "Provenance des contenus des destinations (74 destinations)",
+      es: "Procedencia del contenido de los destinos (74 destinos)",
     },
     provIntro: {
       sl: "Vsaka destinacija v uredniškem vodniku nosi zapis o viru in datumu: ali ima zunanjega preverjenega vira (uradna stran destinacije ali kanonična STO stran), ali je uredniško kurirana vsebina Discover Slovenia (pošteno označeno, brez izmišljenega vira). Enak zapis je dostopen prek API-ja (polje provenance).",

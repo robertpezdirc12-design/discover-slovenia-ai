@@ -11,7 +11,7 @@ ostaja obveznost pred vsako menjavo“).
 | **Zemljevid — vektorski PoC** (`?zemljevid=vektorji`, 2.63.0) | `/zemljevid` samo v PoC | OpenFreeMap javni primerek — `tiles.openfreemap.org` (slog Liberty: openmaptiles vektor + Natural Earth raster) | © OpenStreetMap contributors, **ODbL 1.0** (podatki); Natural Earth = javna domena | MapLibre GL JS 6.14.0, **BSD-3** (preverjeno 13. 10. 2026); slog Liberty OpenFreeMap | 14. 10. 2026 (curl slog + TileJSON) |
 | **Routing** (vozne poti) | `/api/journey/route` | OSRM javni demo — `router.project-osrm.org` (BJS, brez SLA — R11) | ODbL 1.0 (OSM graf) | OSRM, BSD-2 | 14. 10. 2026 (R11 dokument) |
 | **POI (živo)** | `/api/pois` | Overpass javni primerek | ODbL 1.0 | — | 14. 10. 2026 |
-| **Geokodiranje (demo)** | strežniško, demo obseg | Nominatim javni | ODbL 1.0 | Nominatim GPL (strežniško) | 14. 10. 2026 |
+| **Geokodiranje / krajevno iskanje** (`/api/geocode`, 2.64.0 — faza 3) | prijavnica ponudnika (`/za-ponudnike`), strežniško | Photon javni primerek — `photon.komoot.io` (BJS, fair-use; self-host: `PHOTON_BASE_URL`, koda ista) | © OpenStreetMap contributors, **ODbL 1.0** (podatki) | Photon, **Apache-2.0** (potrjeno prek LICENSE, raw 13. 10. 2026) | 14. 10. 2026 (curl `/api/`: GeoJSON, `lang` samo default/de/en/fr — `lang=en`) |
 
 ## Pravila
 

@@ -184,6 +184,13 @@ describe("balkan-followup — kopna sinhronizacija (source-contract)", () => {
     "src/components/home/home-view.tsx",
     "src/app/api/start-anywhere/route.ts",
     "src/app/api/journey/route/route.ts",
+    "messages/sl.json",
+    "messages/en.json",
+    "messages/it.json",
+    "messages/de.json",
+    "messages/fr.json",
+    "messages/es.json",
+    "public/manifest.json",
   ];
 
   test("nič več zastarelega „38 destinacij“ v uporabnik-vidni copy", () => {
@@ -210,6 +217,12 @@ describe("balkan-followup — kopna sinhronizacija (source-contract)", () => {
     );
     expect(READ("src/app/api/start-anywhere/route.ts")).toContain(
       "registra (74 destinacij)",
+    );
+    expect(READ("messages/sl.json")).toContain(
+      "celem Balkanu: 74 kuriranih destinacij",
+    );
+    expect(READ("public/manifest.json")).toContain(
+      "cel Balkan z AI-poganjanim načrtovalcem potovanj. 74 kuriranih destinacij",
     );
   });
 

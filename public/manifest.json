@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Discover Slovenia AI — AI turistična platforma",
   "short_name": "Discover Slovenia AI",
-  "description": "Odkrijte Slovenijo z AI-poganjanim načrtovalcem potovanj. 38 kuriranih destinacij, zemljevid po realnih cestah in načrti, ki ostanejo dostopni tudi brez povezave.",
+  "description": "Odkrijte Slovenijo in cel Balkan z AI-poganjanim načrtovalcem potovanj. 74 kuriranih destinacij, zemljevid po realnih cestah in načrti, ki ostanejo dostopni tudi brez povezave.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -95,7 +95,7 @@
     {
       "name": "Destinacije",
       "short_name": "Destinacije",
-      "description": "38 kuriranih destinacij",
+      "description": "74 kuriranih destinacij",
       "url": "/destinacije",
       "icons": [
         {

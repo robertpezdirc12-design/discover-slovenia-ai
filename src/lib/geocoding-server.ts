@@ -270,7 +270,7 @@ export class GeocodeCircuitBreaker {
 
 /** Pošten identifikacijski UA (OpenStreetMap etiquette; vzorec OSRM). */
 const PHOTON_USER_AGENT =
-  "DiscoverSlovenia-AI/2.65.1 (geokodiranje; sledi OpenStreetMap etiquette)";
+  "DiscoverSlovenia-AI/2.65.2 (geokodiranje; sledi OpenStreetMap etiquette)";
 
 /**
  * Privzeti Photon fetch prek node:https z Vsiljenim IPv4 (family:4) —

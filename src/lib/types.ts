@@ -27,6 +27,19 @@ export interface TripStop {
   coords?: { lat: number; lng: number };
   slug?: string;
   region?: string;
+  /** Država destinacije (CountryCode; F5 čezmejna potovanja #41). */
+  country?: string;
+}
+
+/**
+ * Mejni prehod v načrtu (F5, #41): sprememba države med dvema zaporednima
+ * postankoma (v dnevu ALI med dnevi). Dan je 1-indeksiran (prikaz).
+ */
+export interface BorderCrossing {
+  from: string;
+  to: string;
+  /** Dan (1-indeksiran), na katerem se prehod zgodi. */
+  day: number;
 }
 
 /**
@@ -43,6 +56,11 @@ export interface ItineraryPlan {
   coverageNote: string;
   dayTitles?: string[];
   meta?: PlanMeta;
+  /**
+   * Čezmejni prehodi v vrstnem redu potovanja (F5 #41). Odsoten/polje
+   * prazno = načrt je znotraj ene države (nekateri stari klici ne polnijo).
+   */
+  borderCrossings?: BorderCrossing[];
 }
 
 /** Razlog determinističnega načrta (isti vhod → isti izhod). */
@@ -50,6 +68,8 @@ export interface PlanMeta {
   interests: string[];
   days: number;
   region?: string;
+  /** Državni filter (CountryCode); neobvezen — privzeto cel Balkan. */
+  country?: string;
   season?: string;
   budget?: string;
   locale: "sl" | "en" | "it" | "de" | "fr" | "es";

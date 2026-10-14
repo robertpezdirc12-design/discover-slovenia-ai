@@ -123,6 +123,13 @@ import {
   typeLabel,
 } from "@/lib/slovenia-data";
 import type { Budget, Season } from "@/lib/slovenia-data";
+// F5 (#41): državni filter + čezmejni blok (dokumenti/prehodi).
+import { ALL_COUNTRY_CODES, COUNTRIES } from "@/lib/countries-data";
+import {
+  borderDocBlock,
+  EU_DOCS_SOURCE_URL,
+  SCHENGEN_SOURCE_URL,
+} from "@/lib/border-docs";
 import type { ItineraryPlan, TripStop } from "@/lib/types";
 
 // POLIR2 B (2.29.0): ZEMLJEVID NAČRTA — klientanski dinamični uvoz
@@ -193,6 +200,18 @@ const L = {
   daysUnit: { sl: "dni", en: "days", it: "giorni", de: "Tage", fr: "jours", es: "días" },
   regionLabel: { sl: "Regija", en: "Region", it: "Regione", de: "Region", fr: "Région", es: "Región" },
   regionAny: { sl: "Vse regije", en: "All regions", it: "Tutte le regioni", de: "Alle Regionen", fr: "Toutes les régions", es: "Todas las regiones" },
+  // F5 (#41): državni filter + čezmejni blok.
+  countryLabel: { sl: "Država", en: "Country", it: "Paese", de: "Land", fr: "Pays", es: "País" },
+  countryAny: { sl: "Cel Balkan (čezmejno dovoljeno)", en: "Whole Balkans (cross-border allowed)", it: "Tutti i Balcani (transfrontaliero consentito)", de: "Der ganze Balkan (grenzüberschreitend erlaubt)", fr: "Toute la Balkanique (transfrontalier autorisé)", es: "Todos los Balcanes (transfronterizo permitido)" },
+  borderBlockTitle: { sl: "Mejni prehodi in potovalni dokumenti", en: "Border crossings and travel documents", it: "Confini e documenti di viaggio", de: "Grenzübergänge und Reisedokumente", fr: "Frontières et documents de voyage", es: "Fronteras y documentos de viaje" },
+  borderDocsHeading: { sl: "Dokumenti po državah", en: "Documents by country", it: "Documenti per paese", de: "Dokumente je Land", fr: "Documents par pays", es: "Documentos por país" },
+  borderSchengen: { sl: "Schengen", en: "Schengen", it: "Schengen", de: "Schengen", fr: "Schengen", es: "Schengen" },
+  borderNonSchengen: { sl: "izven Schengena", en: "outside Schengen", it: "fuori Schengen", de: "außerhalb Schengens", fr: "hors Schengen", es: "fuera de Schengen" },
+  borderCrossingsHeading: { sl: "Prehodi po vrsti potovanja", en: "Crossings in travel order", it: "Attraversamenti in ordine di viaggio", de: "Übergänge in Reihenfolge der Reise", fr: "Passages dans l'ordre du voyage", es: "Cruces en orden de viaje" },
+  borderDay: { sl: "Dan", en: "Day", it: "Giorno", de: "Tag", fr: "Jour", es: "Día" },
+  borderOfficial: { sl: "Uradni vir", en: "Official source", it: "Fonte ufficiale", de: "Offizielle Quelle", fr: "Source officielle", es: "Fuente oficial" },
+  borderCurrency: { sl: "valuta", en: "currency", it: "valuta", de: "Währung", fr: "devise", es: "moneda" },
+  borderSourceNote: { sl: "Viri: EU (Schengen članstvo, dokumenti) — preverjeno; pogoje z osebno izkaznico v izvenschengenskih državah preveri pri MZV RS (povezava pri vsaki državi).", en: "Sources: EU (Schengen membership, documents) — verified; check ID-card conditions for non-Schengen countries with the Slovenian MFA (link per country).", it: "Fonti: UE (appartenenza a Schengen, documenti) — verificate; per la carta d'identità fuori Schengen verifica con il MFA sloveno (link per paese).", de: "Quellen: EU (Schengen-Mitgliedschaft, Dokumente) — geprüft; Personalausweis-Bedingungen außerhalb Schengens beim slowenischen MFA prüfen (Link je Land).", fr: "Sources : UE (appartenance à Schengen, documents) — vérifiées ; pour la carte d'identité hors Schengen, vérifier auprès du MAE slovène (lien par pays).", es: "Fuentes: UE (pertenencia a Schengen, documentos) — verificadas; para el DNI fuera de Schengen consulta el MFA esloveno (enlace por país)." },
   seasonLabel: { sl: "Sezona (prednost)", en: "Season (preference)", it: "Stagione (preferenza)", de: "Jahreszeit (Bevorzugung)", fr: "Saison (préférence)", es: "Temporada (preferencia)" },
   seasonAny: { sl: "Katera koli", en: "Any", it: "Qualsiasi", de: "Beliebig", fr: "N’importe laquelle", es: "Cualquiera" },
   budgetLabel: { sl: "Proračun na postanek", en: "Budget per stop", it: "Budget per tappa", de: "Budget pro Stopp", fr: "Budget par étape", es: "Presupuesto por parada" },
@@ -755,6 +774,7 @@ interface FormState {
   interests: string[];
   days: number;
   region: string;
+  country: string;
   season: string;
   budget: string;
 }
@@ -806,6 +826,7 @@ function PlannerApp() {
     interests: [],
     days: 2,
     region: "all",
+    country: "all",
     season: "any",
     budget: "any",
   });
@@ -860,6 +881,7 @@ function PlannerApp() {
             interests: f.interests,
             days: f.days,
             region: f.region !== "all" ? f.region : undefined,
+            country: f.country !== "all" ? f.country : undefined,
             season: f.season !== "any" ? f.season : undefined,
             budget: f.budget !== "any" ? f.budget : undefined,
             locale: lang,
@@ -900,6 +922,7 @@ function PlannerApp() {
         interests: preset.interests,
         days: preset.days,
         region: preset.region ?? "all",
+        country: "all", // F5: prednastavitve ostanejo čezmejno odprte
         season: preset.season ?? "any",
         budget: preset.budget ?? "any",
       };
@@ -945,6 +968,7 @@ function PlannerApp() {
             ? intent.days
             : form.days,
         region: typeof intent.region === "string" && intent.region !== "" ? intent.region : "all",
+        country: form.country, // F5: NLU ne spreminja državnega filtra
         season: typeof intent.season === "string" && intent.season !== "" ? intent.season : "any",
         budget: typeof intent.budget === "string" && intent.budget !== "" ? intent.budget : "any",
       };
@@ -1078,6 +1102,7 @@ function PlannerApp() {
           : form.days,
       region:
         typeof sug?.region === "string" && sug.region !== "" ? sug.region : form.region,
+      country: form.country, // F5: Start Anywhere ne spreminja državnega filtra
       season:
         typeof intent?.season === "string" && intent.season !== "" ? intent.season : form.season,
       budget:
@@ -1112,6 +1137,7 @@ function PlannerApp() {
       interests: preset.interests,
       days: preset.days,
       region: preset.region ?? "all",
+      country: "all", // F5: prednastavitve ostanejo čezmejno odprte
       season: preset.season ?? "any",
       budget: preset.budget ?? "any",
     };
@@ -1719,6 +1745,25 @@ function PlannerApp() {
               </Select>
             </div>
 
+            {/* F5 (#41): državni filter — "cel Balkan" je privzeti in pomeni,
+                da čezmejni načrti dovoljeni (vidni prehodi + dokumenti). */}
+            <div>
+              <Label htmlFor="country-select">{pick(l, L.countryLabel)}</Label>
+              <Select value={form.country} onValueChange={(v) => setForm((f) => ({ ...f, country: v }))}>
+                <SelectTrigger id="country-select" className="mt-2 h-11 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  <SelectItem value="all">{pick(l, L.countryAny)}</SelectItem>
+                  {ALL_COUNTRY_CODES.map((code) => (
+                    <SelectItem key={code} value={code}>
+                      {COUNTRIES[code].flag} {COUNTRIES[code].names[lang] ?? code}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <Label htmlFor="season-select">{pick(l, L.seasonLabel)}</Label>
               <Select value={form.season} onValueChange={(v) => setForm((f) => ({ ...f, season: v }))}>
@@ -2115,6 +2160,117 @@ function PlanResult({
           )}
         </CardContent>
       </Card>
+
+      {/* F5 (#41): ČEZMEJNI BLOK — viden SAMO pri čezmejnem načrtu.
+          Prehodi so IZPELJANI iz držav postankov (motor, deterministično);
+          dokumenti iz preverjenih virov (EU — glej border-docs.ts) + iskren
+          namig k MZV RS za pogoje, ki jih ta vir ne potrjuje. Vidno tudi
+          v natisu (break-inside-avoid). */}
+      {plan.borderCrossings && plan.borderCrossings.length > 0 && (() => {
+        const docBlock = borderDocBlock(
+          allStops.map((s) => s.country ?? "").filter(Boolean)
+        );
+        if (docBlock.length === 0) return null;
+        return (
+          <div className="mt-6 print:break-inside-avoid">
+            <Card className="border-primary/30">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <RouteIcon className="size-4" aria-hidden="true" />
+                  {pick(l, L.borderBlockTitle)}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                {/* Prehodi po vrsti potovanja (izpeljano iz načrta). */}
+                <div>
+                  <p className="text-sm font-semibold">
+                    {pick(l, L.borderCrossingsHeading)}
+                  </p>
+                  <ol className="mt-2 space-y-1.5">
+                    {plan.borderCrossings.map((c, i) => (
+                      <li
+                        key={`${c.from}-${c.to}-${c.day}-${i}`}
+                        className="flex flex-wrap items-center gap-2 text-sm"
+                      >
+                        <Badge variant="outline" className="font-mono text-xs">
+                          {pick(l, L.borderDay)} {c.day}
+                        </Badge>
+                        <span aria-hidden="true">{COUNTRIES[c.from as keyof typeof COUNTRIES]?.flag ?? "🏳"} → {COUNTRIES[c.to as keyof typeof COUNTRIES]?.flag ?? "🏳"}</span>
+                        <span>
+                          {COUNTRIES[c.from as keyof typeof COUNTRIES]?.names[lang] ?? c.from}
+                          {" → "}
+                          {COUNTRIES[c.to as keyof typeof COUNTRIES]?.names[lang] ?? c.to}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+
+                {/* Dokumenti po državah (preverjeni viri + iskren namig). */}
+                <div>
+                  <p className="text-sm font-semibold">{pick(l, L.borderDocsHeading)}</p>
+                  <ul className="mt-2 space-y-3">
+                    {docBlock.map((d) => (
+                      <li
+                        key={d.code}
+                        className="rounded-lg border bg-muted/30 p-3 text-sm leading-relaxed"
+                      >
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span aria-hidden="true" className="text-base">{d.flag}</span>
+                          <span className="font-semibold">{d.nameSl}</span>
+                          <Badge
+                            variant="outline"
+                            className={
+                              d.schengen
+                                ? "border-emerald-500/50 text-emerald-700 dark:text-emerald-400"
+                                : "border-amber-500/50 text-amber-700 dark:text-amber-400"
+                            }
+                          >
+                            {d.schengen ? pick(l, L.borderSchengen) : pick(l, L.borderNonSchengen)}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {pick(l, L.borderCurrency)}: {d.currency}
+                          </span>
+                        </div>
+                        <p className="mt-1.5">{pick(l, d.doc)}</p>
+                        <a
+                          href={d.mzzUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-1 inline-block text-xs font-medium text-primary underline underline-offset-2"
+                        >
+                          {pick(l, L.borderOfficial)}: MZV RS — {d.code}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Iskren vir — kaj je preverjeno in kaj ostaja uporabniku. */}
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {pick(l, L.borderSourceNote)}{" "}
+                  <a
+                    href={SCHENGEN_SOURCE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-primary underline underline-offset-2"
+                  >
+                    home-affairs.ec.europa.eu
+                  </a>{" · "}
+                  <a
+                    href={EU_DOCS_SOURCE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-primary underline underline-offset-2"
+                  >
+                    europa.eu/youreurope
+                  </a>
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      })()}
 
       {/* POLIR2 B (2.29.0): ZEMLJEVID NAČRTA — dnevno obarvani številčni
           markerji + črtkane premočrtne povezave (iskrena opomba o premočrtni

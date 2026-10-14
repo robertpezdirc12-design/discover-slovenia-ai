@@ -4,6 +4,7 @@ import { type PlannerLang } from "@/lib/itinerary-engine";
 import { buildDeterministicItinerary } from "@/lib/deterministic-itinerary";
 import { REGIONS } from "@/lib/slovenia-data";
 import type { Budget, Season } from "@/lib/slovenia-data";
+import { ALL_COUNTRY_CODES } from "@/lib/countries-data";
 
 /**
  * POST /api/itinerary — DETERMINISTIČNI načrtovalnik (jedro izvirnika,
@@ -32,6 +33,7 @@ interface ItineraryInput {
   interests?: unknown;
   days?: unknown;
   region?: unknown;
+  country?: unknown;
   season?: unknown;
   budget?: unknown;
   locale?: unknown;
@@ -146,6 +148,30 @@ export async function POST(request: Request) {
     season = input.season as Season;
   }
 
+  // country: znan CountryCode nabora (F5 #41) — "all"/prazno = cel Balkan.
+  let country: string | undefined;
+  if (input.country != null && input.country !== "" && input.country !== "all") {
+    if (
+      typeof input.country !== "string" ||
+      !(ALL_COUNTRY_CODES as readonly string[]).includes(input.country.toUpperCase())
+    ) {
+      return NextResponse.json(
+        {
+          error: PL(lang, {
+            sl: "Država je neznana — uporabi kodo iz /api/destinations ali pusti prazno",
+            en: "Unknown country — use a code from /api/destinations or leave empty",
+            it: "Paese sconosciuto — usa un codice da /api/destinations oppure lascia vuoto",
+            de: "Unbekanntes Land — verwende eine Kennung aus /api/destinations oder lasse leer",
+            fr: "Pays inconnu — utilise un identifiant de /api/destinations ou laisse vide",
+            es: "País desconocido — usa un código de /api/destinations o deja vacío",
+          }),
+        },
+        { status: 400 }
+      );
+    }
+    country = input.country.toUpperCase();
+  }
+
   // budget: € | €€ | €€€ (največja raven cene na postanek).
   let budget: Budget | undefined;
   if (input.budget != null && input.budget !== "" && input.budget !== "any") {
@@ -172,6 +198,7 @@ export async function POST(request: Request) {
     interests,
     days: daysNum,
     region,
+    country,
     season,
     budget,
     locale: lang,

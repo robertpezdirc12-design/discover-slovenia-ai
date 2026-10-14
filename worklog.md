@@ -3387,3 +3387,50 @@ Stage Summary:
    aplikacijo za ~1–3 min — verifikacija kopnih popravkov potrebuje
    cache-buster + potrpežljivost po vrstnem redu: NLU (API) → meta
    (SSR) → manifest (statična).
+
+## R35-F4A (2.61.0) — faza 4a kataloga ponudnikov + verifikacija OpenFreeMap
+- **Funkcionalno (faza 4a #35)**: podatkovni sloj kataloga ponudnikov —
+  Prisma `Provider` (vsa polja iz raziskave §6a: država/regija/kraj/koordinate/
+  kategorija/jeziki/fotografije+licenca/kontakt/sezonskost/odpiralni časi/
+  cena+valuta/rezervacija/preverjanje+datum/izvor/status) + `ProviderReport`
+  (javna prijava napake, §6c.4). Čista logika `src/lib/provider-model.ts`:
+  8 kategorij iz #35 §3, 4 bookingMode (partner ŠELE po odobritvi),
+  normalizacija imena (NFD + đ→dj eksplicitno — NFD ne razstavi; pravne
+  priponke d.o.o./srl/…), standardni geohash (potrjen proti Wikipedia
+  vektorjema u4pruydqqvj + ezs42), dedupKey = geohash-7 + normalizirano ime
+  (unique indeks; celica ~153 m — odstopanje od "±50 m" izrecno
+  dokumentirano), 12-mesečni potek preverjanja (stale verified → claimed,
+  verified brez datuma → claimed; nikoli samodejna napredovanja), valuta iz
+  COUNTRIES meta (10/10 držav). API `POST /api/providers/report`
+  (rate limit 10/min, zod, 404 brez profila, L1 skrivanje napak — vzorec
+  /api/contact). UI žica (report gumb + prijava + admin) = 4b.
+- **Verifikacija OpenFreeMap (14. 10.)**: javni primerek je VEKTORSKI
+  (TileJSON /planet → datirani .pbf, 16 vector_layers; style liberty:
+  openmaptiles=vector + ne2_shaded=raster Natural Earth relief) — uličnega
+  rasterja za Leaflet NI → faza 1 "sprememba 1 URL + CSP" REFUTIRANA;
+  dokument §3/§9/§12 osvežen (re-deizija: MapLibre PoC ali self-host;
+  diferencialni test potrdil metodo — OSMF ploščica 6987B image/png v istem
+  peskovniku). Zunanja trditev "completely free, no limits" ostaja potrjena.
+- **Testi**: NOVI tests/provider-model.test.ts (32 zaklepov, 69 expect).
+  Verzija 2.61.0 (pkg/health/sw/footer + testni literali pwa-sw + p2 §8).
+  Postgres izpeljana shema + baseline 0_init usklajena (db:pg:sync +
+  db:pg:baseline — en vir resnice).
+
+## Testi / vrata (2.61.0)
+- bun test **2277/2277** (25 928 expect; +32 nad 2.60.0) · tsc 0 · eslint 0 ·
+  build OK · verzija 2.61.0 (pkg/health/sw/footer)
+
+## Lekcije (F4A)
+1. **Peskovnik izvaža globalni DATABASE_URL** (kaže na DB DRUGEGA projekta) —
+   pred vsakim db:push/izvedbo nad bazo eksplicitno override:
+   `DATABASE_URL="file:/…/db/custom.db"`; varovalka db-push-guarded je
+   prepoznala file: in bi ZAKLJUČILA tuj projekt (padla šele na podatkovnem
+   driftu — sreča, ne zasnova).
+2. **bunx = najnovejši paket, ne lokalni** (bunx prisma → 8.0.0-rc.22 z
+   preimenovanimi ukazi, medtem ko repo pina ^6.11.1) — po svežem klonu
+   NAJPREJ bun install, šele nato prisma; za determinizem
+   ./node_modules/.bin/prisma.
+3. **OpenFreeMap javni primerek je vektorski** (raster samo Natural Earth
+   relief) — za Leaflet raster poti ni; "1 URL" faza je bila izmišljena brez
+   merjenja. Verifikacija PRED implementacijo je zajela refutacijo v istem
+   PR-ju — kanon "PREIZKUSITI" obstaja zato, da ga dejansko izvedeš.

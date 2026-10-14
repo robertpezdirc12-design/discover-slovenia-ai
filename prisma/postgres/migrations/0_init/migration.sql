@@ -400,6 +400,53 @@ CREATE TABLE "AuditLog" (
     CONSTRAINT "AuditLog_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "Provider" (
+    "id" TEXT NOT NULL,
+    "countryCode" TEXT NOT NULL,
+    "region" TEXT NOT NULL,
+    "place" TEXT NOT NULL,
+    "lat" DOUBLE PRECISION NOT NULL,
+    "lng" DOUBLE PRECISION NOT NULL,
+    "category" TEXT NOT NULL,
+    "subcategory" TEXT,
+    "name" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "languages" TEXT NOT NULL,
+    "photos" TEXT,
+    "contact" TEXT,
+    "officialUrl" TEXT,
+    "season" TEXT,
+    "openingHours" TEXT,
+    "priceFrom" DOUBLE PRECISION,
+    "currency" TEXT,
+    "availability" TEXT,
+    "bookingMode" TEXT NOT NULL,
+    "verification" TEXT NOT NULL,
+    "verifiedAt" TIMESTAMP(3),
+    "sourceName" TEXT,
+    "sourceId" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'draft',
+    "dedupKey" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Provider_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ProviderReport" (
+    "id" TEXT NOT NULL,
+    "providerId" TEXT NOT NULL,
+    "reason" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
+    "email" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'open',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ProviderReport_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Destination_slug_key" ON "Destination"("slug");
 
@@ -547,6 +594,24 @@ CREATE INDEX "AuditLog_entityType_entityId_idx" ON "AuditLog"("entityType", "ent
 -- CreateIndex
 CREATE INDEX "AuditLog_createdAt_idx" ON "AuditLog"("createdAt");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "Provider_dedupKey_key" ON "Provider"("dedupKey");
+
+-- CreateIndex
+CREATE INDEX "Provider_countryCode_category_idx" ON "Provider"("countryCode", "category");
+
+-- CreateIndex
+CREATE INDEX "Provider_status_idx" ON "Provider"("status");
+
+-- CreateIndex
+CREATE INDEX "Provider_countryCode_status_idx" ON "Provider"("countryCode", "status");
+
+-- CreateIndex
+CREATE INDEX "ProviderReport_providerId_status_idx" ON "ProviderReport"("providerId", "status");
+
+-- CreateIndex
+CREATE INDEX "ProviderReport_status_createdAt_idx" ON "ProviderReport"("status", "createdAt");
+
 -- AddForeignKey
 ALTER TABLE "UserPreference" ADD CONSTRAINT "UserPreference_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -600,3 +665,6 @@ ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("or
 
 -- AddForeignKey
 ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ProviderReport" ADD CONSTRAINT "ProviderReport_providerId_fkey" FOREIGN KEY ("providerId") REFERENCES "Provider"("id") ON DELETE CASCADE ON UPDATE CASCADE;

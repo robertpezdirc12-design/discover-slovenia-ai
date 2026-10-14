@@ -3296,3 +3296,38 @@ Stage Summary:
 - F4 ZAKLJUČENA: platforme usklajene @ cf23ec6 / v2.58.0
 - {country} predloge 10/10 držav živo preverjene (curl 200 2026-10-14)
 - Preostanek #41: samo še F5 (AI čezmejna potovanja)
+
+## R41-F5 (2.59.0) — AI čezmejna potovanja
+- Motor: TripStop.country (F0 nabor popoln), detectBorderCrossings
+  ({from,to,day} izpeljano iz vrstnega reda postankov; postanki brez države
+  ne sprožijo prehoda), državni filter PlannerQuery.country (+API validacija
+  fail-closed 400 + UI Select "Cel Balkan" privzeto), coverageNote filter,
+  iskrena čezmejna opomba v povzetku (6 jezikov).
+- border-docs.ts (nov): Schengen SI/HR/GR/BG zaklenjen na živo preverjen
+  EU vir (home-affairs: 29 članic, BG/RO 1.1.2025; youreurope: potni list
+  ALI izkaznica — oba curl 200 + vsebina, 2026-10-14); izvenschengenske
+  vrstice NE trdijo ID-pogojev (MZV gateway zlomljen — neodvisno potrjeno
+  ×3), usmerjene k MZV per državo; XK "posebna pravila" eksplicitno.
+- UI /nacrtuj: blok "Mejni prehodi in potovalni dokumenti" (SAMO pri
+  čezmejnem načrtu; prehodi + dok. po državah + valuta iz COUNTRIES +
+  viri; print-friendly).
+- Testi +21 (balkan-f5.test.ts): prehodi (5 scenarijev), determinizem,
+  filter, MyTrip osnutek, Schengen zaklep, iskrenost vrstic, MZV vzorci,
+  dedupe/vrstni red bloka.
+- Vrata @ d69e2a1: tsc 0 · eslint 0 · 2188/2188 (25 159 expect) · build OK.
+- PR #49 → preview v2.59.0 (16/16 E2E) → merged 0c4f7cc → produkcija
+  v2.59.0 (~90 s) → spot-checki (HR filter, 400 fail-closed, SI+GR prehod
+  dan 2) → E2E 16/16 produkcija (2,9 min) → GitLab parity b81be89..0c4f7cc.
+- #41: zaključni komentar 6166090917 → issue CLOSED (completed) — VSE
+  FAZE F0–F5 IZPELJANE (2.54.0 → 2.59.0).
+
+## Lekcije (F5)
+1. **MZV drzave.mzz.gov.si ima lahko zlomljen gateway** (SSL hostname
+   mismatch + "Access forbidden" — neodvisno potrjeno iz 3 omrežij):
+   iskrenostni kanon rešuje z DEKOMPOZICIJO dokaza — Schengen trditve
+   vezane na EU vir (curl 200), ostalo eksplicitno "preveri pri MZV"
+   (blok NE trdi nepreverjenega; testi to zaklenejo).
+2. **Web-reader CLI je rate-limited (429)** — pri verifikaciji več virov
+   vključi pavze; curl z browser UA je za EU strani hitrejša pot.
+3. **Funkcijska UI roka (IJIFE) za pogojne bloke v JSX** ob pogojih, ki
+   potrebujejo lokalne izpeljane vrednosti — brez posebne podkomponente.

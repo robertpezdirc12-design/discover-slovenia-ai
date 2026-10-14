@@ -7,17 +7,31 @@
  * IZKLJUČNO na klientu (next/dynamic ssr:false) — Leaflet potrebuje
  * window, zato bi SSR povzročil hidracijske napake. Glava strani
  * (naslov, statistika po mirror produkcije) se izriše takoj.
+ *
+ * #35 FAZA 1 PoC (2.63.0): ob `?zemljevid=vektorji` se ISTI skelet
+ * namesto Leaflet različice upodobi PoC vektorskega zemljevida (MapLibre
+ * + OpenFreeMap, travel-map-vector-poc.tsx) — pogojni next/dynamic
+ * ssr:false, tako da se paket MapLibre NALOŽI ŠELE ob vstopu v PoC
+ * (privzeti zemljevid je in OSTAJA Leaflet — status quo do lastniške
+ * re-deizije #35). Preklop je post-hidracijski (učinek beri
+ * window.location.search) — brez hidracijskih razlik; pred razrešitvijo
+ * vidi uporabnik enak skelet kot pri Leaflet različici.
  */
 
 import dynamic from "next/dynamic";
+import { FlaskConical } from "lucide-react";
 import { useLocale } from "next-intl";
+import * as React from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { Link } from "@/i18n/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { pick } from "@/lib/i18n-pick";
 import { DESTINATIONS } from "@/lib/slovenia-data";
 
-/** Nalagalni ovoj — skelet STRUKTUORNO IDENTIČEN TravelMap (POLIR15-d).
+/**
+ * Skupni nalagalni skelet (ISTI za Leaflet in PoC različico — višine so
+ * namerno identične, 0 premika ob zamenjavi komponente).
  *
  * POLIR15-d (2.42.0): skelet je prej rezerviral SAMO zemljevid + seznam —
  * nadzorne vrstice (iskanje+regija, čipi, preklop, plasti) in legenda so se
@@ -28,10 +42,10 @@ import { DESTINATIONS } from "@/lib/slovenia-data";
  * odmiki (mt-4/mt-3) in ISTIMI višinami (h-11/h-9/h-13/svh) — ob naložitvi
  * Leafleta NI vstavljanja, NI premika (web.dev „Reserve space for
  * late-loading content“). Višina zemljevida je dobesedno ISTI niz razredov
- * kot MapContainer v travel-map.tsx (svh enote, POLIR12). */
-const TravelMap = dynamic(() => import("@/components/map/travel-map"), {
-  ssr: false,
-  loading: () => (
+ * kot MapContainer v travel-map.tsx (svh enote, POLIR12).
+ */
+function MapSkeleton() {
+  return (
     <div
       aria-busy="true"
       className="mx-auto w-full max-w-7xl px-4 pb-12 sm:px-6 lg:px-8 max-lg:flex max-lg:flex-col"
@@ -79,8 +93,20 @@ const TravelMap = dynamic(() => import("@/components/map/travel-map"), {
         <Skeleton className="h-40 w-full rounded-xl sm:h-20" />
       </div>
     </div>
-  ),
+  );
+}
+
+const TravelMap = dynamic(() => import("@/components/map/travel-map"), {
+  ssr: false,
+  loading: () => <MapSkeleton />,
 });
+
+/** #35 faza 1 PoC (2.63.0): MapLibre + OpenFreeMap — paket se naloži ŠELE
+ * ob vstopu v PoC (pogojni izris spodaj); privzeti zemljevid je Leaflet. */
+const TravelMapVectorPoc = dynamic(
+  () => import("@/components/map/travel-map-vector-poc"),
+  { ssr: false, loading: () => <MapSkeleton /> },
+);
 
 /** Povprečna ocena nabora (iskreno izračunana iz podatkov, ne natanko 4,5). */
 const AVG_RATING =
@@ -90,6 +116,15 @@ const AVG_RATING =
 
 export default function MapPage() {
   const l = useLocale();
+
+  // #35 faza 1 PoC: preklop ŠELE po hidraciji (SSR ne vidi query paramsa —
+  // začetni izris je VEDNO Leaflet → ni hidracijskih razlik).
+  const [vectorPoc, setVectorPoc] = React.useState(false);
+  React.useEffect(() => {
+    setVectorPoc(
+      new URLSearchParams(window.location.search).get("zemljevid") === "vektorji",
+    );
+  }, []);
 
   const L = {
     kicker: { sl: "Odkrij", en: "Discover", it: "Scopri", de: "Entdecken", fr: "Découvrir", es: "Descubre" },
@@ -105,6 +140,14 @@ export default function MapPage() {
     statDest: { sl: "destinacij", en: "destinations", it: "destinazioni", de: "Destinationen", fr: "destinations", es: "destinos" },
     statRegions: { sl: "regij", en: "regions", it: "regioni", de: "Regionen", fr: "régions", es: "regiones" },
     statRating: { sl: "povprečna ocena", en: "average rating", it: "valutazione media", de: "Durchschnittsbewertung", fr: "note moyenne", es: "valoración media" },
+    tryVectorPoc: {
+      sl: "PoC: vektorski zemljevid (MapLibre + OpenFreeMap)",
+      en: "PoC: vector map (MapLibre + OpenFreeMap)",
+      it: "PoC: mappa vettoriale (MapLibre + OpenFreeMap)",
+      de: "PoC: Vektorkarte (MapLibre + OpenFreeMap)",
+      fr: "PoC : carte vectorielle (MapLibre + OpenFreeMap)",
+      es: "PoC: mapa vectorial (MapLibre + OpenFreeMap)",
+    },
   } as const;
 
   const stats = [
@@ -153,8 +196,24 @@ export default function MapPage() {
         ))}
       </dl>
 
-      {/* Polen Leaflet zemljevid (klientno nalaganje brez SSR) */}
-      <TravelMap />
+      {/* Privzeto polen Leaflet zemljevid; ob ?zemljevid=vektorji PoC
+          (#35 faza 1, 2.63.0) — oba klientno nalaganja brez SSR. */}
+      {vectorPoc ? <TravelMapVectorPoc /> : <TravelMap />}
+
+      {/* #35 faza 1 PoC: diskretna povabila v PoC (samo standardni način —
+          PoC pasica ima svojo povratno povezavo). Iskreno označeno kot PoC. */}
+      {!vectorPoc && (
+        <p className="mt-2 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+          <FlaskConical className="h-3 w-3" aria-hidden="true" />
+          <Link
+            href={{ pathname: "/zemljevid", query: { zemljevid: "vektorji" } }}
+            className="underline hover:text-foreground"
+          >
+            {pick(l, L.tryVectorPoc)}
+          </Link>
+        </p>
+      )}
+
       {/* POLIR14 (2.41.0): kompaktna statistična vrstica POD zemljevidom —
           mobilni nadomestek 3-stolpčnih kartic (te so ≥sm): ena vrstica,
           ločilo „·“, besedila se lahko prelomijo (duh break-words). */}

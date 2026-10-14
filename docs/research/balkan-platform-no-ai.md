@@ -58,12 +58,12 @@
 - ~~BA/ME/AL (+ RS/MK/XK/BG/GR) POI kuracija~~ → ✅ **REŠENO z F1** (kanon 74 destinacij s provenance kanonom #38; 6 držav × 6 destinacij).
 - Routing engine z profili + optimizacija vrstnega reda postankov → ŠE VEDNO ODPRTI (faza 2; OSRM demo je vmesna rešitev).
 - Photon geokodiranje/autocomplete → ŠE VEDNO ODPRTI (faza 3).
-- Katalog ponudnikov: Provider model s prijavo/verifikacijo/dedup/report → ŠE VEDNO ODPRTI (faza 4; delno razširjen Listing).
+- Katalog ponudnikov: Provider model s prijavo/verifikacijo/dedup/report → **ZAKLJUČEN (4a 2.61.0 + 4b 2.62.0)**; kuracija onkraj kanona 74 ostaja človeško delo.
 - Partnerski API sloj → ŠE VEDNO [nepotrjeno] (pogl. 7).
 
 ### 2d. Podvajanje, ki se ga izogibamo
 
-- NE uvajati MapLibre, dokler ni vektorski/PMTiles use-case (Leaflet 2D rastri pokrijejo faze 1–3).
+- NE uvajati MapLibre, dokler ni vektorski/PMTiles use-case → use-case ZDAJ OBSTAJA (OFM javni primerek je vektorski, verifikacija 14. 10.) — PoC izveden v 2.63.0 (`?zemljevid=vektorji`); polna menjava ostaja lastniška odločitev.
 - NE uvajati OR-Tools/Vroom za 3–15 postankov (lastni greedy+2-opt zadošča; Vroom šele pri časovnih oknih/več vozilih).
 - NE graditi novega CMS-ja za ponudnike (Listing + moderacija + owner stran so osnova).
 - NE uvajati OTP (0/5 nacionalnih GTFS feedov — glej pogl. 5).
@@ -78,8 +78,8 @@
 | komponenta | kategorija | licenca (vir, datum) | verzija | sodba | ključni razlog |
 |---|---|---|---|---|---|
 | **Leaflet** (obstoječ) | OSS | BSD-2 (repo LICENSE) | 1.9.4 | **IZBRATI — ostane** | 42 KB, 0 odvisnosti; 2D rastri pokrijejo vse faze 1–3 |
-| MapLibre GL JS | OSS | BSD-3 (LICENSE.txt, preverjeno 13.10.2026) | 6.14.0 | PREIZKUSITI (PoC) | vektor/3D/PMTiles ob potrebi; 4–7× večji paket |
-| **OpenFreeMap** (ploščice) | BJS+OSS | ODbL podatki; javni primerek brez ključev | — | **RE-DEIZIJA (verifikacija 14.10.2026)** | javni primerek je VEKTORSKI (TileJSON `/planet` → datirani `.pbf` zapis, 16 vektorskih plasti) + raster SAMO Natural Earth relief — uličnih rasterskih ploščic za Leaflet NIMA → "sprememba 1 URL" NI izvedljiva; poti: (a) MapLibre + OFM slog (premaknjena iz faze 6 — NOVO dejstvo upravičuje), (b) self-host raster (faza 2 infra), (c) status quo OSMF pri lahkotni uporabi; "completely free, no limits" ostaja potrjeno (stran + TileJSON atribucija) |
+| MapLibre GL JS | OSS | BSD-3 (LICENSE.txt, preverjeno 13.10.2026) | 6.14.0 | **PoC IZVEDEN (2.63.0)** | merjeno: chunk 1,1 MB / **277 kB gzip** (≈6,6× Leaflet), se naloži ŠELE ob `?zemljevid=vektorji` (pogojni dynamic ssr:false → 0 vpliva na privzeto pot); worker blob: že pokrit v CSP; brez default exporta v v6 (named imports) |
+| **OpenFreeMap** (ploščice) | BJS+OSS | ODbL podatki; javni primerek brez ključev | — | **RE-DEIZIJA (verifikacija 14.10.2026)** | javni primerek je VEKTORSKI (TileJSON `/planet` → datirani `.pbf` zapis, 16 vektorskih plasti) + raster SAMO Natural Earth relief — uličnih rasterskih ploščic za Leaflet NIMA → "sprememba 1 URL" NI izvedljiva; poti: (a) MapLibre + OFM slog (premaknjena iz faze 6 — NOVO dejstvo upravičuje), (b) self-host raster (faza 2 infra), (c) status quo OSMF pri lahkotni uporabi; "completely free, no limits" ostaja potrjeno (stran + TileJSON atribucija); **PoC pot (a) IZVEDEN 2.63.0** — MapLibre + Liberty deluje, VSE pridobitve (slog/vektor/glyphs/sprite/NE) iz ENEGA hosta (curl 14. 10.), CSP connect-src+img-src, ATTRIBUTIONS.md stoji |
 | tile.openstreetmap.org | BJS | ODbL | — | **ZAVRNITI** za produkcijo | OSMF politika: umik komercialnim storitvam |
 | Geofabrik izvozi/self-host | OJP+OSS | ODbL | dnevni izvozi | PREIZKUSITI | zakonita pot pri rasti |
 | **Valhalla** (routing) | OSS | **MIT** (COPYING, preverjeno 13.10.2026) | 3.9.1 | **IZBRATI — primarni** | auto/peš/kolo + multimodalno, vgrajen costmatrix/TSP, nizek pomnilniški odtis |
@@ -240,10 +240,10 @@ Pravilo: **vsako pravilo/utež pregledna + testirana** (obstoječi standard zakl
 |---|---|---|---|---|
 | **0 — dokument** | #35 raziskava oddana + osvežena na v2.60.0 | ✅ (07f1f9e + ta refresh) | 0 | — |
 | **(F0–F5 #41)** | večdržavni sloj: 10 držav, 74 destinacij, /drzava, sitemap 738 × 6, affiliate × 10, čezmejni prehodi, NLU 74 | ✅ **MERGANO v produkcijo v2.54.0–v2.60.0** | 0 | — |
-| **1 (re-deizija 14. 10.)** | ploščice: verifikacija je REFUTIRALA fazo, kot je bila napisana — OpenFreeMap javni primerek = vektorski (Leaflet ne more direktno); re-deizija: MapLibre PoC (iz faze 6 premaknjena naprej na podlagi NOVIH dejstev) ALI status quo OSMF pri lahkotni uporabi do faze 2 infra; ATTRIBUTIONS.md ostaja obveznost pred vsako menjavo | ⬜ ODPRTA — RE-DEIZIJA lastnika | 0 EUR (obe poti) | eno-vzdrževalec OFM (self-host ista koda); paket MapLibre +4–7× |
+| **1 (re-deizija 14. 10.)** | ploščice: verifikacija je REFUTIRALA fazo, kot je bila napisana — OpenFreeMap javni primerek = vektorski (Leaflet ne more direktno); re-deizija: MapLibre PoC (iz faze 6 premaknjena naprej na podlagi NOVIH dejstev) ALI status quo OSMF pri lahkotni uporabi do faze 2 infra; ATTRIBUTIONS.md ostaja obveznost pred vsako menjavo | ◐ **PoC ODDAN (2.63.0)**: MapLibre 6.14.0 + OFM Liberty na `/zemljevid?zemljevid=vektorji` (74 markerjev, atribucija vidna, CSP en host, chunk 277 kB gzip se nalaga šele v PoC, privzeti Leaflet nespremenjen; ATTRIBUTIONS.md izpolnjen) — **odločitev ŠE VEDNO lastniška** (MapLibre vs status quo vs self-host) | 0 EUR (obe poti) | eno-vzdrževalec OFM (self-host ista koda); paket MapLibre +4–7× (merjeno ≈6,6×) |
 | **2 (2–4 tedni)** | Valhalla self-host: Geofabrik izvozi → graf za 10 držav; zamenjava OSRM demo (R11); 2-opt optimizer + zaklepi | ⬜ ODPRTA (OSRM demo = vmesna rešitev z iskrenostnim kanonom) | VPS **[nepotrjena cena]** | obremenitev VPS pri rasti |
 | **3 (1–2 tedna)** | Photon self-host (autocomplete); Nominatim javni ostane samo za demo; Vroom šele za časovna okna | ⬜ ODPRTA | 0 | — |
-| **4 (1–3 tedni)** | Provider model (pogl. 6a) + prijava/verifikacija/dedup/report — **osnova Listing+moderacija že stojita; Destination.country je rešen (F0)**; kuracija onkraj kanona 74 | ◐ **4a ZAKLJUČENA (2.61.0)**: Prisma `Provider`+`ProviderReport`, čista logika (normalizacija imena, geohash, dedupKey, 12-mesečni potek preverjanja, valuta iz COUNTRIES meta — testno zaklenjeno), POST `/api/providers/report`; 4b (prijava/moderacija UI + admin) ostaja | 0 (človeški čas kuracije je glavni strošek) | svežina podatkov |
+| **4 (1–3 tedni)** | Provider model (pogl. 6a) + prijava/verifikacija/dedup/report — **osnova Listing+moderacija že stojita; Destination.country je rešen (F0)**; kuracija onkraj kanona 74 | ✅ **4a+4b ZAKLJUČENA (2.61.0/2.62.0)**: Prisma `Provider`+`ProviderReport`, čista logika (normalizacija imena, geohash, dedupKey, 12-mesečni potek preverjanja, valuta iz COUNTRIES meta — testno zaklenjeno), POST `/api/providers/report` + javna prijava `/api/providers/apply` (dedup 409, claimed+draft — NIKOLI samodejna objava) + admin `/api/admin/providers` (publish/unpublish/suspend/verify, AuditLog, fail-closed) + prijavnica `/za-ponudnike` + admin zavihek Ponudniki; kuracija onkraj kanona 74 ostaja človeško delo | 0 (človeški čas kuracije je glavni strošek) | svežina podatkov |
 | **5 (šele ob obsegu)** | Viator sandbox pilot; meritve prikazi/kliki/povpraševanja (diagnostika brez osebnih podatkov); PLUS paket ponudnikov | ⬜ ODPRTA | 0 do odobritve | pogodbeni pogoji |
 | **6 (opcija)** | MapLibre + PMTiles (offline/regionalni vektorji) | ⬜ opcija | 0 | paket +4–7× |
 
@@ -315,4 +315,4 @@ Merila za sprožitev rasti: presežek OSMF/OpenFreeMap poštene uporabe, p95 rou
 
 ---
 
-*Zaključek (osvežen 14. 10. 2026): platforma je izvedljiva z 0 EUR licenčnih stroškov in brez AI. Balkanska ekspanzija (F0–F5, #41) je med nastankom te raziskave že zaprla podatkovno-modelirno vrzel (74 destinacij × 10 držav, SEO, supply aktivacija, čezmejni prehodi); faza 4a (Provider podatkovni sloj + report API) je zaključena v 2.61.0. Ostajajo: Valhalla self-host, Photon, 4b (prijava/moderacija UI) ter ploščice — kjer je verifikacija 14. 10. refutirala „spremembo 1 URL“ (OpenFreeMap javni primerek je vektorski) in zahtevala re-deizijo (MapLibre PoC ali self-host). Odločitve ostanejo reverzibilne in majhne.*
+*Zaključek (osvežen 14. 10. 2026, 2.63.0): platforma je izvedljiva z 0 EUR licenčnih stroškov in brez AI. Balkanska ekspanzija (F0–F5, #41) je zaprla podatkovno-modelirno vrzel; faza 4a+4b (Provider sloj + prijava/moderacija) je zaključena v 2.61.0/2.62.0; faza 1 je dobila izveden PoC (2.63.0: MapLibre + OpenFreeMap na `?zemljevid=vektorji`, merjeno 277 kB gzip, privzeti Leaflet nespremenjen, ATTRIBUTIONS.md stoji) — polna menjava ploščic ostaja lastniška re-deizija. Ostajajo: Valhalla self-host, Photon, faza 5 Viator (odobritev) ter materializacija Postgres tabel (db:pg:deploy, PRODUCTION-CUTOVER). Odločitve ostanejo reverzibilne in majhne.*

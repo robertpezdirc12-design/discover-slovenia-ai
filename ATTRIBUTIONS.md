@@ -1,0 +1,31 @@
+# ATTRIBUTIONS — atribucije zunanjih virov (obveznost #35 §9 faza 1)
+
+Vsi zunanji podatkovni/vizualni viri platforme, z licenco in datumom
+verifikacije. Posodablja se ob VSAKI menjavi vira (kanon dokumenta
+`docs/research/balkan-platform-no-ai.md`, §9 faza 1: „ATTRIBUTIONS.md
+ostaja obveznost pred vsako menjavo“).
+
+| plast / vir | uporaba | ponudnik / host | podatkovna licenca | koda / stil | verifikirano |
+|---|---|---|---|---|---|
+| **Zemljevid — standardni** (privzeti, Leaflet 1.9.4) | `/zemljevid`, `/nacrtuj` | OSMF — `tile.openstreetmap.org` | © OpenStreetMap contributors, **ODbL 1.0** | Leaflet BSD-2 | 14. 10. 2026 (produkcija) |
+| **Zemljevid — vektorski PoC** (`?zemljevid=vektorji`, 2.63.0) | `/zemljevid` samo v PoC | OpenFreeMap javni primerek — `tiles.openfreemap.org` (slog Liberty: openmaptiles vektor + Natural Earth raster) | © OpenStreetMap contributors, **ODbL 1.0** (podatki); Natural Earth = javna domena | MapLibre GL JS 6.14.0, **BSD-3** (preverjeno 13. 10. 2026); slog Liberty OpenFreeMap | 14. 10. 2026 (curl slog + TileJSON) |
+| **Routing** (vozne poti) | `/api/journey/route` | OSRM javni demo — `router.project-osrm.org` (BJS, brez SLA — R11) | ODbL 1.0 (OSM graf) | OSRM, BSD-2 | 14. 10. 2026 (R11 dokument) |
+| **POI (živo)** | `/api/pois` | Overpass javni primerek | ODbL 1.0 | — | 14. 10. 2026 |
+| **Geokodiranje (demo)** | strežniško, demo obseg | Nominatim javni | ODbL 1.0 | Nominatim GPL (strežniško) | 14. 10. 2026 |
+
+## Pravila
+
+1. **Atribucija je VEDNO vidna v UI** — standardni zemljevid: „© OpenStreetMap
+   contributors“ (TileLayer attribution); vektorski PoC: AttributionControl
+   z istim besedilom + povezava na OpenFreeMap.
+2. **ODbL share-alike**: izpeljane baze (kurirani kanon destinacij) so
+   sprotno označene z provenance metapodatki (#38 kanon) — ne spreminjajo
+   OSM podatkov, ampak jih navajajo; morebitne izpeljane baze bodo
+   objavljene pod ODbL.
+3. **Menjava vira** (npr. faza 2 Valhalla / self-host ploščic) MORA ta
+   dokument posodobiti v ISTEM PR-ju — datum verifikacije je obvezen.
+4. Viri brez komercialne licence (OSMF javne ploščice, MapTiler/Stadia free)
+   so status quo / zavrnjeni po dokumentu #35 §2/R1 — vsaka produkcija na
+   njih mora ostati „lahkotna uporaba“ do lastniške re-deizije.
+
+*Ustvarjeno v 2.63.0 (#35 faza 1 PoC) — 14. 10. 2026.*

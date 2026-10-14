@@ -3484,3 +3484,22 @@ Stage Summary:
   (kanon iz faze 4a ostaja).
 - Lekcija: FR tu-kanon velja za NOVE nize tudi v novih komponentah —
   i18n-core vrata so jih ujela pred merge-om (delujejo kot zasnovano).
+
+## R35-F4B-SEO — 2.62.1: metadataBase popravek (odkrito ob verifikaciji 4b)
+
+**Datum**: 14. 10. 2026 · **Branch**: fix/seo-metadatabase-origin-2.62.1
+
+**Ugotovitev**: ob produkcijski verifikaciji faze 4b je spot-check
+`/za-ponudnike` pokazal, da so page-level `rel=alternate`/canonical URL-ji
+padali na **localhost (dev izvor)** — `NEXT_PUBLIC_SITE_URL` ni nastavljen na
+Vercelu, layout metadataBase pa je imel `?? "http://localhost:3000"`. Sitemap
+in JSON-LD sta bila PRAVILNA (imata svojo produkcijsko logiko) — napaka je
+bila samo v page metadata.
+
+**Popravek**: `metadataBase: new URL(JSONLD_SITE_ORIGIN)` — ista prednostna
+veriga kot src/lib/jsonld.ts (izrecni https env, sicer produkcijski naslov).
+2 nova zaklepa v tests/provider-f4b.test.ts (layout ne sme vsebovati
+dev izvora; JSONLD kanon ostane).
+
+**Testi / vrata (2.62.1)**: bun test **2301/2301** · tsc 0 · eslint 0 ·
+build OK · verzija 2.62.1 (pkg/health/sw/footer + testni literali)

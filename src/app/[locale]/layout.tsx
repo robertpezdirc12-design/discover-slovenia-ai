@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { Footer } from "@/components/layout/footer";
+import { JSONLD_SITE_ORIGIN } from "@/lib/jsonld";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { Navigation } from "@/components/layout/navigation";
 import { Providers } from "@/components/layout/providers";
@@ -50,7 +51,12 @@ export async function generateMetadata({
   const t = await getTranslations({ locale: safe, namespace: "meta" });
 
   return {
-    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+    // SEO: enaka prednost kot src/lib/jsonld.ts (kanon hiše) — izrecni
+    // NEXT_PUBLIC_SITE_URL (samo https), sicer produkcijski naslov.
+    // Popravek 2.62.1: prej je padal na localhost (dev izvor) in pošiljal
+    // canonical/alternate strani na napačen host, kadar env ni nastavljen
+    // (Vercel produkcija — odkrito ob verifikaciji faze 4b #35).
+    metadataBase: new URL(JSONLD_SITE_ORIGIN),
     title: {
       default: t("title"),
       template: `%s · Discover Slovenia AI`,

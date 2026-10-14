@@ -32,6 +32,7 @@
  */
 
 import {
+  config as mlConfig,
   Map as MlMap,
   Marker as MlMarker,
   NavigationControl,
@@ -54,6 +55,15 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 /** Javni primerek OpenFreeMap — slog Liberty (vektorski, openmaptiles). */
 export const OFM_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
+
+/** MapLibre v6 računa worker URL iz import.meta.url, ki v bundlerjih NI
+ * http(s) → „Worker failed to load“ (odkrito ob brskalniški verifikaciji
+ * produkcije 2.63.0, PR #55). Uradni override = config.WORKER_URL: worker
+ * strežemo iz istega izvora /maplibre/ (CSP worker-src 'self'; datoteka ima
+ * BSD-3 licenčno glavo — korektna redistribucija). ?v= zaklep predpomnilnika
+ * na izdajo. Nastavimo ENKRAT na nivoju modula (pred vsakim new MlMap). */
+export const ML_WORKER_URL = "/maplibre/maplibre-gl-worker.mjs?v=2.63.1";
+mlConfig.WORKER_URL = ML_WORKER_URL;
 
 /** Barvna paleta tipov — ZRCALANA iz travel-map.tsx TYPE_COLORS (PoC je
  * namerno samozadosten, da Leaflet datoteka ostane 100 % nedotaknjena). */
@@ -107,8 +117,11 @@ export default function TravelMapVectorPoc() {
     );
 
     const onLoad = () => {
-      // 74 markerjev (kanon DESTINATIONS) — pike po tipu, enak paleta kot
-      // Leaflet različica; popup z osnovnimi podatki + povezava na vodnik.
+      // 74 markerjev (kanon DESTINATIONS) — pike po tipu, enaka paleta kot
+      // Leaflet različica; popup prek idiomatskega marker.setPopup (MapLibre
+      // sam upravlja preklop odprt/zapr in zapiranje ob kliku na mapo —
+      // ročni click listener bi se zaprl sam sabo: v6 map-click zapre
+      // popupe, odkrito z brskalniško verifikacijo 2.63.1).
       for (const d of DESTINATIONS) {
         const markerEl = document.createElement("div");
         markerEl.className =
@@ -116,34 +129,32 @@ export default function TravelMapVectorPoc() {
         markerEl.style.backgroundColor = TYPE_COLORS[d.type];
         markerEl.title = d.name;
 
-        markerEl.addEventListener("click", () => {
-          const wrap = document.createElement("div");
-          wrap.className = "space-y-1";
+        const wrap = document.createElement("div");
+        wrap.className = "space-y-1";
 
-          const name = document.createElement("p");
-          name.className = "pr-1 font-semibold leading-tight";
-          name.textContent = d.name;
+        const name = document.createElement("p");
+        name.className = "pr-1 font-semibold leading-tight";
+        name.textContent = d.name;
 
-          const meta = document.createElement("p");
-          meta.className = "text-xs text-muted-foreground";
-          meta.textContent = `${typeLabel(d.type, l)} · ${d.country.toUpperCase()} · ★ ${d.rating.toFixed(1)}`;
+        const meta = document.createElement("p");
+        meta.className = "text-xs text-muted-foreground";
+        meta.textContent = `${typeLabel(d.type, l)} · ${d.country.toUpperCase()} · ★ ${d.rating.toFixed(1)}`;
 
-          const more = document.createElement("a");
-          more.className = "inline-block text-xs font-medium underline";
-          more.href = `${localePrefixPath(l)}/destinacija/${d.slug}`;
-          more.textContent = l === "sl" ? "Več" : l === "en" ? "More" : "Details";
+        const more = document.createElement("a");
+        more.className = "inline-block text-xs font-medium underline";
+        more.href = `${localePrefixPath(l)}/destinacija/${d.slug}`;
+        more.textContent = l === "sl" ? "Več" : l === "en" ? "More" : "Details";
 
-          wrap.append(name, meta, more);
+        wrap.append(name, meta, more);
 
-          new MlPopup({ offset: 16, maxWidth: "260px" })
-            .setLngLat([d.coords.lng, d.coords.lat])
-            .setDOMContent(wrap)
-            .addTo(map);
-        });
-
-        new MlMarker({ element: markerEl })
-          .setLngLat([d.coords.lng, d.coords.lat])
-          .addTo(map);
+        const marker = new MlMarker({ element: markerEl }).setLngLat([
+          d.coords.lng,
+          d.coords.lat,
+        ]);
+        marker.setPopup(
+          new MlPopup({ offset: 16, maxWidth: "260px" }).setDOMContent(wrap),
+        );
+        marker.addTo(map);
       }
       setReady(true);
     };

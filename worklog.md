@@ -439,3 +439,24 @@ Stage Summary:
 - Ključni NOVI dokumentirani dejstvi: (1) routing v kodi je živ OSRM odjemalec proti javnemu demo strežniku (R11 → Valhalla faza 2 postane trajna rešitev); (2) F0–F5 je rešil 3 od 4 vrzeli izvirne raziskave #35 — platforma je ~90 % arhitekture #35.
 - Ostalo za prihodnost: faze 1–5 iz dokumenta (OpenFreeMap 1 URL + CSP, Valhalla, Photon, Provider katalog, Viator pilot); GitLab parity zaostanek (owner PAT); november — 9 neprivrjenih dogodkov.
 - Lekcija: pred načrtovanjem iz povzetka ZDAJ preveriti živo stanje (git log + issues + health) — vmesne seje so napredovale onkraj povzetka (PR #42 že mergan, F1–F5 zaključene).
+
+---
+Task ID: R35-F4A
+Agent: Z.ai Code (glavni orkestrator)
+Task: Nadaljevanje po "odlicno nadaljuj" — izvedba faze iz plana #35: faza 4a (Provider podatkovni sloj) + verifikacija OpenFreeMap, ki je refutirala fazo 1.
+
+Work Log:
+- Verifikacija OpenFreeMap PRED implementacijo: javni primerek = VEKTORSKI (TileJSON /planet → datirani .pbf, 16 vector_layers; style liberty: openmaptiles=vector + ne2_shaded=raster Natural Earth relief) → uličnega rasterja za Leaflet NI; diferencialni test potrdil metodo (OSMF ploščica 6987B image/png v istem peskovniku) → faza 1 "1 URL + CSP" REFUTIRANA; re-deizija v dokument (MapLibre PoC / self-host / status quo), §3/§9/§12/§zaključek z datumom 14. 10.
+- Faza 4a: prisma Provider (vsa polja #35 §6a, dedupKey unique) + ProviderReport; provider-model.ts čista logika (8 kategorij, normalizacija imena NFD + đ→dj ker NFD ne razstavi, geohash potrjen proti u4pruydqqvj + ezs42, dedupKey geohash-7 + ime s dokumentiranim ~153 m odstopanjem od ±50 m, 12-mesečni potek preverjanja stale verified→claimed, valuta iz COUNTRIES meta 10/10); POST /api/providers/report (rate 10/min, zod, 404, L1) po vzorcu /api/contact; UI = 4b.
+- Peskovniška past #1: globalni DATABASE_URL kaže na DB DRUGEGA projekta (/home/z/my-project) — db:push je (neškodljivo, padel na podatkovnem driftu User.passwordHash) ciljal tuj projekt; rešitev: ekspliciten override file:/home/z/polir15-repo/db/custom.db; .env lokalni (gitignored).
+- Peskovniška past #2: bunx prisma → 8.0.0-rc.22 (preimenovani ukazi) medtem ko repo pina ^6.11.1 — po svežem klonu NAJPREJ bun install; nato lokalni prisma 6.19.2 db push OK (29 tabel).
+- Postgres izpeljana shema + baseline 0_init usklajena prek db:pg:sync + db:pg:baseline (test p2 §1 točno to zahteva — en vir resnice); verzija 2.61.0 v 4 virih + testni literali (pwa-sw, p2 §8).
+- Vrata: tsc 0 · eslint 0 · bun test 2277/2277 (25 928 expect, +32) · build OK (route registrirana).
+- Commit 2810b01 (identiteta potrjena) → PR #52 (mergeable=true) → merge 94110ed → produkcija v2.61.0 (health ok 10/11, ops:cron pričakovano); ruta živa: POST brez telesa → 400, GET → 405; ISKRENO: Postgres tabeli ŠE NI (validen klic → 500 L1) — materializacija ob db:pg:deploy (lastniška varovalka PRODUCTION-CUTOVER); /destinacije?country=HR 200, sitemap 738 (0 regresije).
+- Komentar na #35 (id 6171295803) + repo worklog R35-F4A z 3 lekcijami.
+
+Stage Summary:
+- Faza 4a zaključena in v produkciji (v2.61.0); faza 1 refutirana z merljivo verifikacijo in preusmerjena v re-deizijo — dokument #35 je spet resničen do zadnjega podatka.
+- Ključna lekcija: "PREIZKUSITI (PoC)" sodbe v raziskavi so OBVEZNOST, ne opcija — verifikacija pred implementacijo je zajela refutacijo v istem PR-ju in prihranila napačen deploy.
+- Peskovniška varnost: NIKOLI zaupati globalnim env (DATABASE_URL cilja drug projekt!) — vedno ekspliciten override per-repo.
+- Ostaja: 4b (UI + db:pg:deploy), faza 1 re-deizija (lastniška odločitev MapLibre/self-host/status quo), faza 2 (Valhalla/R11), faza 3 (Photon), november (9 dogodkov).

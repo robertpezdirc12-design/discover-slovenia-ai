@@ -180,3 +180,17 @@ describe("f4b [source-contract]: UI žica (prijavnica + admin zavihek)", () => {
     expect(code).toContain('action: "dismiss"');
   });
 });
+
+// ── SEO popravek 2.62.1: metadataBase ne sme padati na localhost ───────────
+
+describe("f4b [seo-fix 2.62.1]: metadataBase origin", () => {
+  test("layout metadataBase uporablja JSONLD_SITE_ORIGIN (produkcija), ne localhost", async () => {
+    const code = await src("src/app/[locale]/layout.tsx");
+    expect(code).toContain("metadataBase: new URL(JSONLD_SITE_ORIGIN)");
+    expect(code).not.toContain("http://localhost:3000");
+  });
+  test("JSONLD_SITE_ORIGIN ostaja produkcijski fallback (kanon jsonld)", async () => {
+    const code = await src("src/lib/jsonld.ts");
+    expect(code).toContain('"https://i-feel-slovenia.vercel.app"');
+  });
+});

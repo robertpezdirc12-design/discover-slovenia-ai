@@ -487,3 +487,24 @@ Stage Summary:
 - Bonus SEO popravek 2.62.1 (page alternates iz dev izvora na produkcijski) — 1-vrstični fix + zaklepa, živo preverjen.
 - Ostalo iz §9: faza 1 re-deizija (lastnik), faza 2 Valhalla (R11), faza 3 Photon, faza 5 Viator (odobritev), db:pg:deploy (materializacija Provider tabel — owner PRODUCTION-CUTOVER), november 9 dogodkov, GitLab PAT.
 - Lekcija: CI rdeča ≠ kodna regresija — vedno preveriti trajanje job-a in anotacije (2 s fail = infra/kvota; .md-only PR z enako rdečo je dokaz). Lokalna vrata + produkcijski E2E so veljavna kvotno-neodvisna verifikacija.
+
+---
+Task ID: R35-F1-POC
+Agent: Z.ai Code (glavni orkestrator)
+Task: Nadaljevanje po "odlicno nadaljuj" — faza 1 iz #35 (re-deizija): MapLibre + OpenFreeMap PoC. Pred delom preverjen živi status: main je bil že a343b43 (2.62.1 — povzetek je zastarel!), faza 4a+4b + SEO fix že mergani; faza 1 = re-deizija (verifikacija R35-F4A je refutirala "sprememba 1 URL" — OFM je vektorski).
+
+Work Log:
+- Status drift spet zajet: povzetek je govoril 2.60.0/PR #51, realnost 2.62.1 (PR #52/#53/#54 mergani) → prebran dokument §9 + worklog R35-F4A/F4B → izbrana edina autonomna faza: PoC pot (a) iz re-deizije.
+- VERIFIKACIJA PRED IMPLEMENTACIJO: curl na OFM Liberty slog → VSE pridobitve (slog JSON, vektorski .pbf, glyphs, sprite, NE raster) iz ENEGA hosta tiles.openfreemap.org → CSP je 1 host (connect-src + img-src).
+- 2.63.0 (PR #55, merge a320f4a): NOVO travel-map-vector-poc.tsx (MapLibre 6.14.0 named imports — v6 NIMA default exporta; 74 markerjev, isti kanon+paleta, atribucija vedno vidna, iskrena PoC pasica, map.remove cleanup); view.tsx pogojni preklop ?zemljevid=vektorji po hidraciji + skupni MapSkeleton (0 premika); csp.ts CSP_MAPLIBRE_HOSTS + inventura 2026-10-14 (EDINI klientni absolutni fetch = OFM PoC); ATTRIBUTIONS.md (obveznost kanona); dokument refresh (§2c/§2d/§3/§9/§12 — faza 1 ◐ PoC oddan, faza 4 ✅ 4a+4b); verzija 6 mest + testni literali; +16 testov (merjeno: chunk 1,1 MB / 277 kB gzip ≈6,6× Leaflet).
+- PRODUKCIJSKA VERIFIKACIJA 2.63.0 ujela 2 buga (zlata pot z agent-browserjem): (1) "Worker failed to load" — v6 računa worker URL iz import.meta.url, v bundlerju ni http(s) → markerji 0; (2) popup se zapre sam sabo 1 ms po odprtju (ročni click listener + closeOnClick default na map click — ujeto z MutationObserver sekvenco "2@t → 0@t+1").
+- 2.63.1 (PR #56, merge 1a2f6f2): uradni override config.WORKER_URL + maplibre-gl-worker.mjs v public/maplibre/ (BSD-3 glava = korektna redistribucija, ?v= zaklep, CSP worker-src 'self' že pokrit) + popup idiomatsko prek marker.setPopup + eslint ignores public/maplibre (vendor = 1062 lažnih opozoril) + +1 test ⑮. TOKRAT lokalna brskalniška verifikacija PRED merge (dev 3100): 74 markerjev, realni klik → popup odprt/toggle/zapiranje na kanvas, 1 popup hkrati, href pravilen, 0 napak.
+- Produkcija 2.63.1: health ok (0 ne-ok startupov), CSP živi, zlata pot realnim klikom zelena (74 markerjev, popup, atribucija, 0 napak), privzeti Leaflet nedotaknjen (12 ploščic + povabilo v PoC), E2E 16/16 (2.9 min).
+- Komentarji: #35 id 6173666989 (material za lastniško re-deizijo), PR #55 id 6173670184 (iskreno: zlata pot ujeta ŠELE po mergeju).
+
+Stage Summary:
+- Faza 1 = ◐ PoC ODDAN in DELUJOČ na produkciji (2.63.1); privzeti zemljevid Leaflet/OSMF nespremenjen; odločitev o menjavi ostaja lastniška: (a) MapLibre+OFM 277 kB gzip / (b) status quo OSMF / (c) self-host raster (faza 2 infra).
+- Lekcija 1: brskalniška verifikacija zlate poti je OBVEZNA šele PRED merge, ne šele po — "E2E zelen" ni "zlata pot zelena" (E2E ne pokriva PoC parametra); 2.63.0 je šel v produkcijo z delujočim E2E in NEDELUJOČIM PoC.
+- Lekcija 2: MapLibre v6 v Next.js = config.WORKER_URL override + worker datoteka v public/ (import.meta.url trik pade v vsakem bundlerju); popupi SAMO prek marker.setPopup (ročni click + closeOnClick = samozapiranje).
+- Lekcija 3: vendor minificiranih datotek v public/ → takoj v eslint ignores (1062 lažnih opozoril zakrije prava).
+- Ostalo iz §9: faza 2 Valhalla (R11 — lastniški VPS), faza 3 Photon, faza 5 Viator (odobritev), db:pg:deploy (PRODUCTION-CUTOVER), november 9 dogodkov, GitLab PAT, CI kvota/billing (lastniško).

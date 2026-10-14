@@ -86,7 +86,7 @@ export const LOKALI_HONESTY_NOTE = {
   es: "Las entradas son una selección editorial de proveedores reconocidos. Las direcciones exactas, los contactos, los horarios de apertura, las valoraciones y las coordenadas no se capturaron en la instantánea de recuperación — las completamos a partir de fuentes verificadas, sin inventar nada.",
 } as const;
 
-/** Vsi kurirani lokalni ponudniki (28 zapisov · 7 kategorij · 9 regij). */
+/** Vsi kurirani lokalni ponudniki (34 zapisi · 7 kategorij · regije SI + F2 balkanskih prestolnic). */
 export const LOKALI: Lokal[] = [
   // ── Hoteli ────────────────────────────────────────────────────────────
   {
@@ -603,6 +603,122 @@ export const LOKALI: Lokal[] = [
     },
     weather: "outdoor",
     destinationSlug: "ljubljana",
+  },
+
+  // ── #41 F2 (2.56.0): balkanski lokali — po en uredniško izbrani
+  // prenočitveni nosilec v prestolnici/vodilni destinaciji vsake nove
+  // države. Opisi so kuracija brez izmišljenih podrobnosti (cene,
+  // ocene in kontakti niso del zapisa); regije so ključi iz
+  // REGIONS_BALKAN (F1). ──────────────────────────────────────────────
+
+  {
+    id: "hotel-europe-sarajevo",
+    name: "Hotel Europe",
+    category: "hotel",
+    town: "Sarajevo",
+    region: "sarajevska-regija",
+    country: "BA",
+    description: {
+      sl: "Znamenitost sarajevske milje od 1882 — avstro-ogrska hiša ob reki Miljacki, blizu Baščaršije in Latinske ćuprije; med obleganjem je sprejemala tuje novinarje.",
+      en: "A Sarajevo landmark since 1882 — an Austro-Hungarian house on the Miljacka river, near Baščaršija and the Latin Bridge; during the siege it hosted foreign journalists.",
+      it: "Un punto di riferimento di Sarajevo dal 1882 — dimora austro-ungarica lungo il fiume Miljacka, vicina a Baščaršija e al Ponte Latino; durante l'assedio ospitò giornalisti stranieri.",
+      de: "Eine Wahrzeichen Sarajevos seit 1882 — ein österreichisch-ungarisches Haus an der Miljacka, nahe Baščaršija und der Lateinischen Brücke; während der Belagerung beherbergte es ausländische Journalisten.",
+      fr: "Un haut lieu de Sarajevo depuis 1882 — demeure austro-hongroise au bord de la Miljacka, près de Baščaršija et du pont latin ; pendant le siège, elle accueillait des journalistes étrangers.",
+      es: "Un emblema de Sarajevo desde 1882 — casona austrohúngara junto al río Miljacka, cerca de Baščaršija y del puente Latino; durante el asedio alojó a periodistas extranjeros.",
+    },
+    weather: "indoor",
+    destinationSlug: "sarajevo",
+    featured: true,
+  },
+  {
+    id: "hotel-moskva-beograd",
+    name: "Hotel Moskva",
+    category: "hotel",
+    town: "Beograd",
+    region: "beograd",
+    country: "RS",
+    description: {
+      sl: "Legenda beograjske Terazije od 1908 — stičišče pisateljev, politik in popotnikov; po lastnem zapisu je skozi hišo prehodilo več kot 40 milijonov gostov.",
+      en: "A Belgrade legend on Terazije since 1908 — a crossroads for writers, politicians and travellers; by its own account more than 40 million guests have passed through.",
+      it: "Una leggenda di Belgrado su Terazije dal 1908 — crocevia di scrittori, politici e viaggiatori; secondo la casa vi sono transitati oltre 40 milioni di ospiti.",
+      de: "Eine Belgrader Legende am Terazije seit 1908 — Treffpunkt von Schriftstellern, Politikern und Reisenden; nach eigenen Angaben sind über 40 Millionen Gäste durch das Haus gegangen.",
+      fr: "Une légende de Belgrade sur Terazije depuis 1908 — carrefour d'écrivains, de politiques et de voyageurs ; selon la maison, plus de 40 millions d'hôtes y sont passés.",
+      es: "Una leyenda de Belgrado en Terazije desde 1908 — cruce de escritores, políticos y viajeros; según la casa, por ella han pasado más de 40 millones de huéspedes.",
+    },
+    weather: "indoor",
+    destinationSlug: "beograd",
+  },
+  {
+    id: "inex-olgica-ohrid",
+    name: "Inex Olgica Hotel & SPA",
+    category: "hotel",
+    town: "Ohrid",
+    region: "jugozahodna-makedonija",
+    country: "MK",
+    description: {
+      sl: "Hotelski naslov tik ob Ohridskem jezeru, na poti proti samostanu Sv. Naum — naravna plaža, razgled na jezero in bližina antičnega gledališča.",
+      en: "A hotel address right on Lake Ohrid, on the road towards the St. Naum monastery — natural beach, lake views and close to the ancient theatre.",
+      it: "Un indirizzo alberghiero direttamente sul lago di Ocrida, sulla strada verso il monastero di S. Naum — spiaggia naturale, vista sul lago e vicinanza al teatro antico.",
+      de: "Eine Hoteladresse direkt am Ohridsee, auf dem Weg zum Kloster St. Naum — Naturstrand, Seeblick und Nähe zum antiken Theater.",
+      fr: "Une adresse hôtelière au bord du lac d'Ohrid, sur la route du monastère Saint-Naum — plage naturelle, vue sur le lac et proximité du théâtre antique.",
+      es: "Una dirección hotelera a orillas del lago de Ohrid, camino del monasterio de San Naum — playa natural, vistas al lago y cerca del teatro antiguo.",
+    },
+    weather: "indoor",
+    destinationSlug: "ohrid",
+  },
+  {
+    id: "hotel-theranda-prizren",
+    name: "Hotel Theranda",
+    category: "hotel",
+    town: "Prizren",
+    region: "jugozahodno-kosovo",
+    country: "XK",
+    description: {
+      sl: "Prijeten hotel v prizrenski stari trgi, med kamnitimi hišami in mošejami — izhodišče za sprehod do trdnjave Kalaja in ob Bistrico; imenovan po rimski predhodnici mesta (Theranda).",
+      en: "A welcoming hotel in Prizren's old town, among stone houses and mosques — a base for the walk up to Kalaja fortress and along the Bistrica; named after the city's Roman predecessor (Theranda).",
+      it: "Un hotel accogliente nella città vecchia di Prizren, tra case in pietra e moschee — punto di partenza per la salita alla fortezza Kalaja e lungo la Bistrica; prende nome dalla antecessore romana della città (Theranda).",
+      de: "Ein freundliches Hotel in der Altstadt von Prizren, zwischen Steinhäusern und Moscheen — Ausgangspunkt für den Aufstieg zur Festung Kalaja und entlang der Bistrica; benannt nach der römischen Vorgängerin der Stadt (Theranda).",
+      fr: "Un hôtel accueillant dans la vieille ville de Prizren, entre maisons de pierre et mosquées — point de départ vers la forteresse Kalaja et le long de la Bistrica ; nommé d'après la prédécesseur romaine de la ville (Theranda).",
+      es: "Un hotel acogedor en la ciudad vieja de Prizren, entre casas de piedra y mezquitas — punto de partida para subir a la fortaleza Kalaja y seguir el Bistrica; nombrado por la antecesora romana de la ciudad (Theranda).",
+    },
+    weather: "indoor",
+    destinationSlug: "prizren",
+  },
+  {
+    id: "sofia-balkan-palace-sofija",
+    name: "Sofia Balkan Palace",
+    category: "hotel",
+    town: "Sofija",
+    region: "sofijsko",
+    country: "BG",
+    description: {
+      sl: "Palas med dvorami NDK in cerkvijo Sv. Nedelja, zgrajen 1956 kot spoj klasične zasnove in domišljenega okrasja; danes del zaseži Prescott.",
+      en: "A palace between the NDK halls and the church of Sveta Nedelya, built in 1956 as a fusion of classical design and lavish decor; today part of the Prescott group.",
+      it: "Un palazzo tra le sale dell'NDK e la chiesa di Sveta Nedelya, costruito nel 1956 come fusione di disegno classico e decorazioni sontuose; oggi parte del gruppo Prescott.",
+      de: "Ein Palais zwischen den NDK-Sälen und der Kirche Sweta Nedelja, 1956 als Verschmelzung klassischer Architektur und üppiger Dekoration erbaut; heute Teil der Prescott-Gruppe.",
+      fr: "Un palais entre les salles du NDK et l'église Sveta Nedelya, édifié en 1956 comme une fusion de dessin classique et de décor somptueux ; aujourd'hui membre du groupe Prescott.",
+      es: "Un palacio entre las salas del NDK y la iglesia de Sveta Nedelya, construido en 1956 como fusión de diseño clásico y decoración suntuosa; hoy forma parte del grupo Prescott.",
+    },
+    weather: "indoor",
+    destinationSlug: "sofija",
+  },
+  {
+    id: "makedonia-palace-solun",
+    name: "Makedonia Palace",
+    category: "hotel",
+    town: "Solun",
+    region: "srednja-makedonija-gr",
+    country: "GR",
+    description: {
+      sl: "Petzvezdična hiša na solunski obali, na bulevardi Megalou Alexandrou — korak od središča, z razgledom na Terajsko morje in bližino White Tower.",
+      en: "A five-star address on Thessaloniki's seafront, on Megalou Alexandrou avenue — a step from the centre, with views over the Thermaic Gulf and close to the White Tower.",
+      it: "Un indirizzo a cinque stelle sul lungomare di Salonicco, sul viale Megalou Alexandrou — a un passo dal centro, con vista sul Golfo Termaico e vicino alla Torre Bianca.",
+      de: "Eine Fünf-Sterne-Adresse an der Uferpromenade Thessalonikis, an der Straße Megalou Alexandrou — ein Schritt vom Zentrum, mit Blick auf den Thermäischen Golf und in der Nähe des Weißen Turms.",
+      fr: "Une adresse cinq étoiles sur le front de mer de Thessalonique, avenue Megalou Alexandrou — à un pas du centre, avec vue sur le golfe Thermaïque et proche de la Tour blanche.",
+      es: "Una dirección de cinco estrellas en el paseo marítimo de Salónica, en la avenida Megalou Alexandrou — a un paso del centro, con vistas al golfo Termaico y cerca de la Torre Blanca.",
+    },
+    weather: "indoor",
+    destinationSlug: "solun",
   },
 ];
 

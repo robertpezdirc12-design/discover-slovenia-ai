@@ -724,6 +724,201 @@ export const EVENTS: CommunityEvent[] = [
       "Tradicionalni decembrski sejem v Postojni ob Postojnski jami z ročnimi izdelki kraške regije, pršutom, teranom, keramiko in božično razsvetljavo. Glasbeni program vsak večer.",
     destSlug: "postojnska-jama",
   },
+
+  // ── #41 F2 (2.56.0): balkanski dogodki — vsak z izrecnim country,
+  // primarnim virom in datumom po kanonu #38 (potrjen ALI pošteno
+  // nepotrjen — izmišljenega datuma nikoli). ──────────────────────────
+
+  {
+    // RS, potrjeno (2026-10-14): afisha.rs + belgrade-beat.com navajata
+    // celoten program 58. BEMUS (17.–30. 10. 2026, Kolarac); večdnevni
+    // razpon preverjen pri obeh virih.
+    id: "bemus-beograd-2026",
+    monthIndex: 10,
+    category: "glasba",
+    title: "BEMUS — Beogradska muzička svečanost",
+    country: "RS",
+    dateStart: "2026-10-17",
+    dateEnd: "2026-10-30",
+    dateLabel: "17. – 30. okt 2026",
+    venue: "Zadužbina Ilije M. Kolarca, Beograd",
+    price: "euro",
+    featured: false,
+    image: "/content/bemus-beograd-2026.jpg",
+    description:
+      "Najstarejši beograjski glasbeni festival (od 1969) prinaša simfonične in komorne večere v dvorani Kolarca — letos med drugim gosti Solunski državni orkester. Program v oktobrskih dneh po celotnem mestu.",
+    destSlug: "beograd",
+    source: "https://afisha.rs/en/festivals/58th-bemus-classical-music-festival-at-kolarac-with-vo",
+    verifiedAt: "2026-10-14",
+  },
+  {
+    // GR, potrjeno (2026-10-14): filmfestival.gr (uradna stran) v glavi
+    // objavlja »TIFF67 — 5 NOVEMBER → 15 NOVEMBER 2026«. Sandbox pri
+    // dostopu poroča neobičajen HTTP 404 (vsebina se vseeno servirá —
+    // WAF posebnost); datum sta potrdila tudi Facebook AgoraTIFF in
+    // asianfilmfestivals.com (poziv k prijavi, maj 2026).
+    id: "tiff-solun-2026",
+    monthIndex: 11,
+    category: "festival",
+    title: "67. Mednarodni filmski festival v Solunu",
+    country: "GR",
+    dateStart: "2026-11-05",
+    dateEnd: "2026-11-15",
+    dateLabel: "5. – 15. nov 2026",
+    venue: "Kino Olympion in Pavlos Zannas, Solun",
+    price: "euro",
+    featured: true,
+    website: "https://filmfestival.gr/en",
+    image: "/content/tiff-solun-2026.jpg",
+    description:
+      "Ena najstarejših filmskih prireditev v jugovzhodni Evropi (od 1960) novembra napolni Solun z avtorskim filmom — tekmovalni program, retrospektive in industrijski del Agora. Dvorani Olympion in Pavlos Zannas ob Aristotelovem trgu.",
+    destSlug: "solun",
+    source: "https://filmfestival.gr/en",
+    verifiedAt: "2026-10-14",
+  },
+  {
+    // BA, potrjeno (2026-10-14): sarajevowinterfest.ba (uradna stran)
+    // v odprtem pozivu objavlja »42. International Festival Sarajevo
+    // Winter, which will be held from February 7 to March 21, 2027«.
+    id: "sarajevo-winter-2027",
+    monthIndex: 2,
+    category: "kultura",
+    title: "42. Mednarodni festival Sarajevo Winter",
+    country: "BA",
+    dateStart: "2027-02-07",
+    dateEnd: "2027-03-21",
+    dateLabel: "7. feb – 21. mar 2027",
+    venue: "različne prizorišča po Sarajevu",
+    price: "euro",
+    featured: false,
+    website: "https://sarajevowinterfest.ba",
+    image: "/content/sarajevo-winter-2027.jpg",
+    description:
+      "Festival, ustanovljen po zimskih olimpijskih igrah 1984, vsako zimo prekrija Sarajevo z gledališčem, glasbo, filmom, likovno umetnostjo in ambijentalnimi namestitvami. Tradicionalno poteka od 7. februarja do 21. marca.",
+    destSlug: "sarajevo",
+    source: "https://sarajevowinterfest.ba/open-call-for-sarajevo-winter-2027-and-festival-grad-20",
+    verifiedAt: "2026-10-14",
+  },
+  {
+    // BG, nepotrjeno (2026-10-14): siff.bg (uradna stran) potrjuje le
+    // »31st edition … March 2027« brez dnevnega razpona; zunanji viri
+    // si nasprotujejo (wikipedia 12–31., festagent 11–21.) — po kanonu
+    // #38 ne ugibamo, ampak pošteno nepotrjen mesec.
+    id: "sofija-film-fest-2027",
+    monthIndex: 3,
+    category: "festival",
+    title: "31. Mednarodni filmski festival v Sofiji",
+    country: "BG",
+    dateStart: "",
+    dateLabel: "marec 2027 — datum še ni potrjen",
+    dateUnconfirmed: true,
+    venue: "Narodna palača kulture, Sofija",
+    price: "euro",
+    featured: false,
+    website: "https://siff.bg/en",
+    image: "/content/sofija-film-fest-2027.jpg",
+    description:
+      "Največji filmski dogodek v Bolgariji (od 1982) marca napolni dvorane Narodne palače kulture in mestnih kinematografov — izbor evropskega avtorskega filma s spremljajočimi projekcijami po Plovdivu, Burgasu in Varni.",
+    destSlug: "sofija",
+    source: "https://siff.bg/en",
+    verifiedAt: "2026-10-14",
+  },
+  {
+    // RS, nepotrjeno (2026-10-14): exitfest.org (uradna stran) še ne
+    // objavlja datumov za 2027; wikipedia dokumentira izroček »štirje
+    // dnevi od drugega četrtka v juliju« na Petrovaradinski trdnjavi.
+    id: "exit-novi-sad-2027",
+    monthIndex: 7,
+    category: "glasba",
+    title: "EXIT festival",
+    country: "RS",
+    dateStart: "",
+    dateLabel: "julij 2027 — datum še ni potrjen",
+    dateUnconfirmed: true,
+    venue: "Petrovaradinska trdnjava, Novi Sad",
+    price: "euro2",
+    featured: false,
+    website: "https://www.exitfest.org/en",
+    image: "/content/exit-novi-sad-2027.jpg",
+    description:
+      "Nagrajeni glasbeni festival na Petrovaradinski trdnjavi (od 2000) — štirje dnevi elektronske, rock in hip-hop glasbe z razgledom na Podunavje. Izroček: začetek v drugem četrtku julija.",
+    destSlug: "novi-sad",
+    source: "https://www.exitfest.org/en",
+    verifiedAt: "2026-10-14",
+  },
+  {
+    // MK, nepotrjeno (2026-10-14): ohridskoleto.com.mk (uradna stran,
+    // 200 po preusmeritvi na /en/homepage/) še ne objavlja programa za
+    // 2027; EFA (European Festivals Association) dokumentira izroček
+    // poletnega okna julij–avgust.
+    id: "ohridsko-leto-2027",
+    monthIndex: 7,
+    category: "festival",
+    title: "Ohridsko poletje",
+    country: "MK",
+    dateStart: "",
+    dateLabel: "poletje 2027 — datum še ni potrjen",
+    dateUnconfirmed: true,
+    venue: "Antično gledališče v Ohridu",
+    price: "euro",
+    featured: false,
+    website: "https://ohridskoleto.com.mk/en/homepage/",
+    image: "/content/ohridsko-leto-2027.jpg",
+    description:
+      "Vrhunec makedonske kulturne sezone od 1961 — koncerti klasične glasbe, opera in gledališče v antičnem gledališču nad Ohridskim jezerom, ob večerih, ko sonce zahaja nad vodo.",
+    destSlug: "ohrid",
+    source: "https://ohridskoleto.com.mk/en/homepage/",
+    verifiedAt: "2026-10-14",
+  },
+  {
+    // BA, nepotrjeno (2026-10-14): sff.ba je živa (sveža 32. izdaja v
+    // iskalnem kazalu; sandbox dostop zavrne — WAF/geo), datumi za 33.
+    // izdajo (avgust 2027) še niso objavljeni. Wikipedia dokumentira
+    // 32. izdajo (14.–21. 8. 2026) in avgustovski izroček.
+    id: "sarajevo-film-fest-2027",
+    monthIndex: 8,
+    category: "festival",
+    title: "33. Sarajevo Film Festival",
+    country: "BA",
+    dateStart: "",
+    dateLabel: "avgust 2027 — datum še ni potrjen",
+    dateUnconfirmed: true,
+    venue: "Nacionalno gledališče in dvorane po Sarajevu",
+    price: "euro",
+    featured: false,
+    website: "https://www.sff.ba/en",
+    image: "/content/sarajevo-film-fest-2027.jpg",
+    description:
+      "Vodilni filmski festival regije (od 1995) avgusta oživi Sarajevo — tekmovalni program, projekcije na prostem pred Nacionalnim gledališčem in metropolitansko vzdušje. Ustanovljen kot simbol upora med obleganjem mesta.",
+    destSlug: "sarajevo",
+    source: "https://www.sff.ba/en",
+    verifiedAt: "2026-10-14",
+  },
+  {
+    // XK, potrjeno (2026-10-14): uradni DokuFest kanal navaja »06–14
+    // August 2027, Prizren«; dokufest.com (uradna stran, 200) festival
+    // pozicionira kot »International Documentary and Short Film
+    // Festival held each year in Prizren«. Prizren je pošteno internal
+    // provenance (XK nima potrjenega uradnega NTO portala — #41 F1).
+    id: "dokufest-prizren-2027",
+    monthIndex: 8,
+    category: "festival",
+    title: "DokuFest — festival dokumentarnega in kratkega filma",
+    country: "XK",
+    dateStart: "2027-08-06",
+    dateEnd: "2027-08-14",
+    dateLabel: "6. – 14. avg 2027",
+    venue: "Prizren (kino Lumbardhi in odprte dvorišča)",
+    price: "euro",
+    featured: false,
+    website: "https://dokufest.com",
+    image: "/content/dokufest-prizren-2027.jpg",
+    description:
+      "Filmski praznik, ki vsak avgust spremeni srednjeveško Prizren — projekcije v restavriranem kinu Lumbardhi in dvoriščih pod trdnjavo Kalaja, pogovori in glasbeni program ob reki Bistrici.",
+    destSlug: "prizren",
+    source: "https://dokufest.com",
+    verifiedAt: "2026-10-14",
+  },
 ];
 
 // ============================================================================
@@ -1323,7 +1518,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
 ];
 
 // ============================================================================
-// DOŽIVETJA — 6 tipov 1:1 iz /dozivetja
+// DOŽIVETJA — 7 tipov (6 1:1 iz /dozivetja + vinske-poti #41 F2)
 // ============================================================================
 
 export interface ExperienceType {
@@ -1338,38 +1533,49 @@ export const EXPERIENCE_TYPES: ExperienceType[] = [
   {
     id: "pohodnistvo",
     title: { sl: "Pohodništvo", en: "Hiking", it: "Escursionismo", de: "Wandern", fr: "Randonnée", es: "Senderismo" },
-    description: "Triglav, Mangart, Storžič — od lahnih sprehodov do zahtevnih vzponov.",
-    destSlugs: ["triglav", "bohinj", "bled", "vintgarska-soteska"],
+    // #41 F2: dinarski grebeni in Šar planina (Durmitor, Kopaonik,
+    // Jahorina, Rugova, Brezovica) — balkansko dopolnilo alpske matice.
+    description: "Triglav, Mangart, Storžič — od lahnih sprehodov do zahtevnih vzponov. Dinaridi: Durmitor, Kopaonik, Rugova.",
+    destSlugs: ["triglav", "bohinj", "bled", "vintgarska-soteska", "durmitor", "kopaonik", "jahorina", "rugova", "brezovica"],
   },
   {
     id: "vodne-avanture",
-    title: { sl: "Vodne avanture", en: "Water adventures", it: "Avventure acquatiche", de: "Wasserabenteuer", fr: "Aventures nautiques", es: "Aventuras acuáticas" },
-    description: "Rafting na Soči, kajak na Kolpi, smučanje na vodi v Portorožu.",
-    destSlugs: ["reka-soca", "portoroz", "crnomelj"],
+    title: { sl: "Vodne avanture", en: "Water adventures", it: "Avventure acquatiche", de: "Wasserabenteuer", fr: "Aventures nautiques", es: "Aventuras náuticas" },
+    description: "Rafting na Soči, kajak na Kolpi, smučanje na vodi v Portorožu. Balkan: Kravica, kanjon Matka, Đerdap.",
+    destSlugs: ["reka-soca", "portoroz", "crnomelj", "kravica", "matka", "derdap"],
   },
   {
     id: "zgodovina-kultura",
     title: { sl: "Zgodovina & kultura", en: "History & culture", it: "Storia e cultura", de: "Geschichte & Kultur", fr: "Histoire et culture", es: "Historia y cultura" },
-    description: "Srednjeveški gradovi, Predjama, Ljubljanski grad, muzeji Soške fronte.",
-    destSlugs: ["ljubljana", "kobarid", "postojnska-jama", "ptuj", "celje"],
+    description: "Srednjeveški gradovi, Predjama, Ljubljanski grad, muzeji Soške fronte. Balkan: Sarajevo, Ohrid, Prizren, Solun.",
+    destSlugs: ["ljubljana", "kobarid", "postojnska-jama", "ptuj", "celje", "sarajevo", "mostar", "ohrid", "prizren", "sofija", "plovdiv", "solun", "berat"],
   },
   {
     id: "narava-parki",
     title: { sl: "Narava & parki", en: "Nature & parks", it: "Natura e parchi", de: "Natur & Parks", fr: "Nature et parcs", es: "Naturaleza y parques" },
-    description: "Triglavski narodni park, Cerkniško jezero, slovenski gozdovi.",
-    destSlugs: ["triglav", "bohinj", "vintgarska-soteska"],
+    description: "Triglavski narodni park, Cerkniško jezero, slovenski gozdovi. Balkan: Plitvice, Prespa, Mavrovo.",
+    destSlugs: ["triglav", "bohinj", "vintgarska-soteska", "plitvicka-jezera", "prespa", "mavrovo", "durmitor"],
   },
   {
     id: "kulinarika",
     title: { sl: "Kulinarika", en: "Gastronomy", it: "Gastronomia", de: "Gastronomie", fr: "Gastronomie", es: "Gastronomía" },
-    description: "Od kremšnite do štrukljev, od Teranov do rebule — 24 gastronomskih regij.",
-    destSlugs: ["bled", "piran", "kobarid", "novo-mesto", "murska-sobota"],
+    description: "Od kremšnite do štrukljev, od Teranov do rebule — 24 gastronomskih regij. Balkan: kafane Beograda, bokeljska kuhinja, solunska kuhinja.",
+    destSlugs: ["bled", "piran", "kobarid", "novo-mesto", "murska-sobota", "beograd", "kotor", "solun"],
   },
   {
     id: "skrite-dragulje",
     title: { sl: "Skrite dragulje", en: "Hidden gems", it: "Gioielli nascosti", de: "Verborgene Schätze", fr: "Pépites cachées", es: "Joyas ocultas" },
-    description: "Vintgarska soteska, soline Sečovlje, Logarska dolina — izven utirjenih poti.",
-    destSlugs: ["vintgarska-soteska", "piran", "portoroz"],
+    description: "Vintgarska soteska, soline Sečovlje, Logarska dolina — izven utirjenih poti. Balkan: Blagaj, Sremski Karlovci, Gjakova, Nesebar.",
+    destSlugs: ["vintgarska-soteska", "piran", "portoroz", "blagaj", "sremski-karlovci", "gjakova", "nesebar", "kastoria"],
+  },
+  {
+    // #41 F2 (2.56.0): nov tip doživetja — balkanski vinski predeli
+    // (Hercegovina, Fruška gora, Trakija, Naoussa); slugi kažejo na
+    // destinacije kanona 74.
+    id: "vinske-poti",
+    title: { sl: "Vinske poti", en: "Wine routes", it: "Strade del vino", de: "Weinstraßen", fr: "Routes des vins", es: "Rutas del vino" },
+    description: "Žilavka in Blatina iz Hercegovine (Mostar, Blagaj), bermet s Fruške gore (Novi Sad), trakijska vina okoli Plovdiva, vina iz okolic Soluna.",
+    destSlugs: ["mostar", "blagaj", "novi-sad", "plovdiv", "solun"],
   },
 ];
 

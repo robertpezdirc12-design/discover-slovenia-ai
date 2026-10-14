@@ -35,9 +35,9 @@ describe("lokali-data: obseg in integriteta", () => {
     }
   });
 
-  test("država izključno SI/HR/ME/AL", () => {
+  test("država iz canona 10 balkanskih držav (#41 F2: + BA/RS/MK/XK/BG/GR)", () => {
     for (const l of LOKALI) {
-      expect(["SI", "HR", "ME", "AL"]).toContain(l.country);
+      expect(["SI", "HR", "ME", "AL", "BA", "RS", "MK", "XK", "BG", "GR"]).toContain(l.country);
     }
   });
 

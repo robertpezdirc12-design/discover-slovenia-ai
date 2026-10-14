@@ -111,21 +111,28 @@ describe("events-past (#38): živi kanon ob 2026-10-13", () => {
     expect(isEventPast(byId("kurentovanje-ptuj"), TODAY)).toBeFalse();
   });
 
-  test("③c nepotrjeni (9) niso nikoli pretekli", () => {
+  test("③c nepotrjeni (13) niso nikoli pretekli", () => {
     const unconfirmed = EVENTS.filter((e) => e.dateUnconfirmed);
     // 2.49.0: 13 → 11 (Zlata lisica + Planica); SDK serija 2026-10-13:
     // 11 → 9 (zimski festival februar 2027 + december v Ljubljani 27. 11.
-    // 2026 potrjena — glej events-p0-qa38 ①/④c).
-    expect(unconfirmed.length).toBe(9);
+    // 2026 potrjena); F2 #41 2.56.0: 9 → 13 (SFF 33., EXIT, Ohridsko
+    // poletje, SIFF Sofija — vsi pošteno nepotrjeni za 2027).
+    expect(unconfirmed.length).toBe(13);
     expect(unconfirmed.every((e) => !isEventPast(e, TODAY))).toBeTrue();
   });
 
-  test("③d dateEnd izpolnjen IZKLJUČNO pri preverjenih razponih (4 zapisi)", () => {
+  test("③d dateEnd izpolnjen IZKLJUČNO pri preverjenih razponih (8 zapisov)", () => {
     const withEnd = EVENTS.filter((e) => e.dateEnd !== undefined).map((e) => e.id);
+    // F2 #41 2.56.0: + BEMUS (17.–30.10.), TIFF Solun (5.–15.11.),
+    // Sarajevo Winter (7.2.–21.3.), DokuFest (6.–14.8.2027).
     expect(withEnd.sort()).toEqual([
+      "bemus-beograd-2026",
       "celjski-sejem",
+      "dokufest-prizren-2027",
       "festival-stara-trta",
       "planica-nordic-festival",
+      "sarajevo-winter-2027",
+      "tiff-solun-2026",
       "zlati-lisjak-smucanje",
     ]);
   });
@@ -146,10 +153,12 @@ describe("events-past (#38): Event JSON-LD izključitev zaključenih", () => {
 
   test("④b 3-argska forma: prihodnji potrjeni ostanejo (maraton, Kurentovanje, Zlata lisica, Planica, december LJ, zimski festival)", () => {
     const graph = eventsJsonLd(EVENTS, "sl", TODAY)["@graph"];
-    // 2.49.0: 16 → 18 (Zlata lisica + Planica); SDK serija 2026-10-13:
-    // 18 → 20 (december v Ljubljani 27. 11. 2026 + zimski festival
-    // 15. 2. 2027 prešli med potrjene prihodnje).
-    expect(graph.length).toBe(20);
+    // 2.49.0: 16 → 18; SDK serija 2026-10-13: 18 → 20; F2 #41 2.56.0:
+    // 20 → 24 (BEMUS, TIFF Solun, Sarajevo Winter, DokuFest — vsi
+    // potrjeni in prihodnji ob TODAY 2026-10-13).
+    expect(graph.length).toBe(24);
+    expect(graph.some((e) => e.startDate === "2026-11-05")).toBeTrue();
+    expect(graph.some((e) => e.startDate === "2027-08-06")).toBeTrue();
     expect(graph.some((e) => e.startDate === "2026-10-17")).toBeTrue();
     expect(graph.some((e) => e.startDate === "2026-11-27")).toBeTrue();
     expect(graph.some((e) => e.startDate === "2027-01-29")).toBeTrue();
@@ -158,9 +167,9 @@ describe("events-past (#38): Event JSON-LD izključitev zaključenih", () => {
     expect(graph.some((e) => e.startDate === "2027-03-18")).toBeTrue();
   });
 
-  test("④c 2-argska forma (brez todayIso) NE filtrira zaključenih (22/31 kanon)", () => {
+  test("④c 2-argska forma (brez todayIso) NE filtrira zaključenih (26/39 kanon)", () => {
     const graph = eventsJsonLd(EVENTS, "sl")["@graph"];
-    expect(graph.length).toBe(22);
+    expect(graph.length).toBe(26);
   });
 });
 

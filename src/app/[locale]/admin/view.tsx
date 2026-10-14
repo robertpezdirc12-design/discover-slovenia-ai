@@ -50,9 +50,11 @@ import { LISTING_STATUS_LABELS } from "@/lib/listing-moderation";
 /**
  * /admin — skrbniški portal (P0-H, issue #1 §22/§20).
  *
- * Trije razdelki: prijave partnerjev (Lead approve → User.role "partner"),
+ * Štirje razdelki: prijave partnerjev (Lead approve → User.role "partner"),
  * moderacija vnosov (pending → published/rejected — partner NIKOLI ne objavi
- * sam) in konzultacije (ročni dopolnitve odgovorov, iskreno razkrite).
+ * sam), konzultacije (ročne dopolnitve odgovorov, iskreno razkrite) in
+ * ponudniki (#35 faza 4b: Provider prijava → moderacija statusov + verify
+ * + prijave napak resolve/dismiss — §6c).
  *
  * Vrata so strežniška (isAdminSession — DSA_ADMIN_EMAILS, fail-closed):
  * brez skrbniške seje API vrne 403 in stran to ISKRENO pokaže.
@@ -160,6 +162,7 @@ export default function AdminPage() {
     tabLeads: { sl: "Prijave", en: "Applications", it: "Domande", de: "Bewerbungen", fr: "Candidatures", es: "Solicitudes" },
     tabListings: { sl: "Moderacija", en: "Moderation", it: "Moderazione", de: "Moderation", fr: "Modération", es: "Moderación" },
     tabConsultations: { sl: "Konzultacije", en: "Consultations", it: "Consulenze", de: "Beratungen", fr: "Consultations", es: "Consultas" },
+    tabProviders: { sl: "Ponudniki", en: "Providers", it: "Fornitori", de: "Anbieter", fr: "Prestataires", es: "Proveedores" },
     forbiddenTitle: { sl: "Dostop samo za skrbnike", en: "Admins only", it: "Solo amministratori", de: "Nur für Admins", fr: "Administrateurs uniquement", es: "Solo administradores" },
     forbiddenBody: {
       sl: "Ta stran je za skrbnike (kanon DSA_ADMIN_EMAILS). Vrata so strežniška in fail-closed — brez skrbniške seje tu ni ničesar videti.",
@@ -191,6 +194,10 @@ export default function AdminPage() {
             <MessageSquareText className="size-4" aria-hidden="true" />
             {t("tabConsultations")}
           </TabsTrigger>
+          <TabsTrigger value="providers" className="gap-1.5">
+            <Store className="size-4" aria-hidden="true" />
+            {t("tabProviders")}
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="leads" className="mt-6">
           <LeadsPanel />
@@ -200,6 +207,9 @@ export default function AdminPage() {
         </TabsContent>
         <TabsContent value="consultations" className="mt-6">
           <ConsultationsPanel />
+        </TabsContent>
+        <TabsContent value="providers" className="mt-6">
+          <ProvidersPanel />
         </TabsContent>
       </Tabs>
     </div>
@@ -940,6 +950,386 @@ function ConsultationsPanel() {
           </DialogContent>
         </Dialog>
       )}
+    </div>
+  );
+}
+
+// ── PONUDNIKI (#35 faza 4b) ──────────────────────────────────────────────────
+
+interface AdminProvider {
+  id: string;
+  name: string;
+  countryCode: string;
+  region: string;
+  place: string;
+  category: string;
+  subcategory: string | null;
+  description: string;
+  languages: string;
+  officialUrl: string | null;
+  priceFrom: number | null;
+  currency: string | null;
+  bookingMode: string;
+  verification: string;
+  verifiedAt: string | null;
+  sourceName: string | null;
+  dedupKey: string;
+  status: string;
+  createdAt: string;
+  openReports: number;
+}
+
+interface AdminProviderReport {
+  id: string;
+  providerId: string;
+  reason: string;
+  message: string;
+  email: string | null;
+  createdAt: string;
+}
+
+const PROVIDER_STATUS_LABELS: Record<string, Record<"sl" | "en" | "it" | "de" | "fr" | "es", string>> = {
+  draft: { sl: "osnutek", en: "draft", it: "bozza", de: "Entwurf", fr: "brouillon", es: "borrador" },
+  published: { sl: "objavljeno", en: "published", it: "pubblicato", de: "veröffentlicht", fr: "publié", es: "publicado" },
+  suspended: { sl: "ustavljeno", en: "suspended", it: "sospeso", de: "gesperrt", fr: "suspendu", es: "suspendido" },
+};
+
+const PROVIDER_VERIFICATION_LABELS: Record<string, Record<"sl" | "en" | "it" | "de" | "fr" | "es", string>> = {
+  unverified: { sl: "nepreverjen", en: "unverified", it: "non verificato", de: "unverifiziert", fr: "non vérifié", es: "sin verificar" },
+  claimed: { sl: "prijavljen", en: "claimed", it: "rivendicato", de: "beansprucht", fr: "revendiqué", es: "reclamado" },
+  verified: { sl: "preverjen", en: "verified", it: "verificato", de: "verifiziert", fr: "vérifié", es: "verificado" },
+};
+
+const PROVIDER_REASON_LABELS: Record<string, Record<"sl" | "en" | "it" | "de" | "fr" | "es", string>> = {
+  napaka: { sl: "napaka", en: "error", it: "errore", de: "Fehler", fr: "erreur", es: "error" },
+  zaprt: { sl: "zaprt", en: "closed", it: "chiuso", de: "geschlossen", fr: "fermé", es: "cerrado" },
+  dupliciran: { sl: "dupliciran", en: "duplicate", it: "duplicato", de: "Duplikat", fr: "doublon", es: "duplicado" },
+  drugo: { sl: "drugo", en: "other", it: "altro", de: "anderes", fr: "autre", es: "otro" },
+};
+
+function ProvidersPanel() {
+  const l = useLocale();
+  const { toast } = useToast();
+  const [phase, setPhase] = React.useState<"loading" | "forbidden" | "error" | "ready">("loading");
+  const [status, setStatus] = React.useState<string>("draft");
+  const [providers, setProviders] = React.useState<AdminProvider[]>([]);
+  const [reports, setReports] = React.useState<AdminProviderReport[]>([]);
+  const [counts, setCounts] = React.useState<Record<string, number>>({});
+  const [acting, setActing] = React.useState<string | null>(null);
+
+  const L = {
+    empty: { sl: "V tej vrsti ni profilov.", en: "No provider profiles in this queue.", it: "Nessun profilo in questa coda.", de: "Keine Anbieterprofile in dieser Warteschlange.", fr: "Aucun profil de prestataire dans cette file.", es: "No hay perfiles de proveedor en esta cola." },
+    reportsTitle: { sl: "Prijave napak (odprte)", en: "Error reports (open)", it: "Segnalazioni di errori (aperte)", de: "Fehlermeldungen (offen)", fr: "Signalements d'erreurs (ouverts)", es: "Informes de errores (abiertos)" },
+    reportsEmpty: { sl: "Ni odprtih prijav napak.", en: "No open error reports.", it: "Nessuna segnalazione aperta.", de: "Keine offenen Fehlermeldungen.", fr: "Aucun signalement ouvert.", es: "No hay informes de errores abiertos." },
+    resolve: { sl: "Rešeno", en: "Resolve", it: "Risolvi", de: "Erledigen", fr: "Résoudre", es: "Resolver" },
+    dismiss: { sl: "Zavrzi", en: "Dismiss", it: "Scarta", de: "Verwerfen", fr: "Rejeter", es: "Descartar" },
+    publish: { sl: "Objavi", en: "Publish", it: "Pubblica", de: "Veröffentlichen", fr: "Publier", es: "Publicar" },
+    unpublish: { sl: "Umakni s police", en: "Unpublish", it: "Togli dalla vetrina", de: "Aus dem Regal nehmen", fr: "Retirer de la vitrine", es: "Quitar del escaparate" },
+    suspend: { sl: "Ustavi", en: "Suspend", it: "Sospendi", de: "Sperren", fr: "Suspendre", es: "Suspender" },
+    verify: { sl: "Potrdi identiteto", en: "Verify identity", it: "Verifica identità", de: "Identität bestätigen", fr: "Vérifier l'identité", es: "Verificar identidad" },
+    filterAll: { sl: "Osnutki", en: "Drafts", it: "Bozze", de: "Entwürfe", fr: "Brouillons", es: "Borradores" },
+    filterPublished: { sl: "Objavljeni", en: "Published", it: "Pubblicati", de: "Veröffentlicht", fr: "Publiés", es: "Publicados" },
+    filterSuspended: { sl: "Ustavljeni", en: "Suspended", it: "Sospesi", de: "Gesperrt", fr: "Suspendus", es: "Suspendidos" },
+    publishedMsg: { sl: "Profil objavljen.", en: "Profile published.", it: "Profilo pubblicato.", de: "Profil veröffentlicht.", fr: "Profil publié.", es: "Perfil publicado." },
+    unpublishedMsg: { sl: "Profil umaknjen (osnutek).", en: "Profile unpublished (draft).", it: "Profilo ritirato (bozza).", de: "Profil zurückgezogen (Entwurf).", fr: "Profil retiré (brouillon).", es: "Perfil retirado (borrador)." },
+    suspendedMsg: { sl: "Profil ustavljen.", en: "Profile suspended.", it: "Profilo sospeso.", de: "Profil gesperrt.", fr: "Profil suspendu.", es: "Perfil suspendido." },
+    verifiedMsg: { sl: "Identiteta potrjena (preverjeno 12 mesecev).", en: "Identity verified (valid for 12 months).", it: "Identità verificata (valida 12 mesi).", de: "Identität bestätigt (12 Monate gültig).", fr: "Identité vérifiée (valable 12 mois).", es: "Identidad verificada (válida 12 meses)." },
+    resolvedMsg: { sl: "Prijava rešena.", en: "Report resolved.", it: "Segnalazione risolta.", de: "Meldung erledigt.", fr: "Signalement résolu.", es: "Informe resuelto." },
+    dismissedMsg: { sl: "Prijava zavržena.", en: "Report dismissed.", it: "Segnalazione scartata.", de: "Meldung verworfen.", fr: "Signalement rejeté.", es: "Informe descartado." },
+    conflict: { sl: "Prehod ni dovoljen (stanje je morda spremenjeno).", en: "Transition not allowed (state may have changed).", it: "Transizione non consentita (lo stato potrebbe essere cambiato).", de: "Übergang nicht erlaubt (Zustand geändert).", fr: "Transition non autorisée (l'état a peut-être changé).", es: "Transición no permitida (el estado pudo cambiar)." },
+    err: { sl: "Dejanje ni uspelo.", en: "The action failed.", it: "L'azione non è riuscita.", de: "Die Aktion ist fehlgeschlagen.", fr: "L'action a échoué.", es: "La acción falló." },
+    retry: { sl: "Poskusi znova", en: "Try again", it: "Riprova", de: "Erneut versuchen", fr: "Réessayer", es: "Reintentar" },
+    dedup: { sl: "dedup", en: "dedup", it: "dedup", de: "Dedup", fr: "dedup", es: "dedup" },
+    from: { sl: "od", en: "from", it: "da", de: "ab", fr: "dès", es: "desde" },
+    source: { sl: "vir", en: "source", it: "fonte", de: "Quelle", fr: "source", es: "fuente" },
+    reportBy: { sl: "prijavitelj", en: "reporter", it: "segnalatore", de: "Melder", fr: "signalant", es: "informante" },
+  } as const;
+
+  const t = <K extends keyof typeof L>(k: K): string => pick(l, L[k]);
+
+  const load = React.useCallback(
+    async (wantStatus: string) => {
+      setPhase("loading");
+      try {
+        const res = await fetch(`/api/admin/providers?status=${encodeURIComponent(wantStatus)}`);
+        if (res.status === 403) {
+          setPhase("forbidden");
+          return;
+        }
+        const body = (await res.json().catch(() => null)) as
+          | { providers?: AdminProvider[]; reports?: AdminProviderReport[]; counts?: Record<string, number> }
+          | null;
+        if (res.ok && body?.providers) {
+          setProviders(body.providers);
+          setReports(body.reports ?? []);
+          if (body.counts) setCounts(body.counts);
+          setPhase("ready");
+        } else {
+          setPhase("error");
+        }
+      } catch {
+        setPhase("error");
+      }
+    },
+    []
+  );
+
+  React.useEffect(() => {
+    void load(status);
+  }, [load, status]);
+
+  async function act(
+    key: string,
+    payload: { providerId?: string; reportId?: string; action: string },
+    okMsg: string
+  ) {
+    if (acting) return;
+    setActing(key);
+    try {
+      const res = await fetch("/api/admin/providers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        toast({ title: okMsg });
+        await load(status);
+      } else if (res.status === 409) {
+        toast({ title: t("conflict"), variant: "destructive" });
+      } else {
+        toast({ title: t("err"), variant: "destructive" });
+      }
+    } catch {
+      toast({ title: t("err"), variant: "destructive" });
+    } finally {
+      setActing(null);
+    }
+  }
+
+  if (phase === "forbidden") {
+    return (
+      <ForbiddenCard
+        title={pick(l, {
+          sl: "Dostop samo za skrbnike",
+          en: "Admins only",
+          it: "Solo amministratori",
+          de: "Nur für Admins",
+          fr: "Administrateurs uniquement",
+          es: "Solo administradores",
+        })}
+        body={pick(l, {
+          sl: "Ponudniki so dostopni samo skrbnikom (DSA_ADMIN_EMAILS).",
+          en: "Providers are available to admins only (DSA_ADMIN_EMAILS).",
+          it: "I fornitori sono disponibili solo agli amministratori (DSA_ADMIN_EMAILS).",
+          de: "Anbieter sind nur für Admins verfügbar (DSA_ADMIN_EMAILS).",
+          fr: "Les prestataires sont réservés aux administrateurs (DSA_ADMIN_EMAILS).",
+          es: "Los proveedores están disponibles solo para administradores (DSA_ADMIN_EMAILS).",
+        })}
+      />
+    );
+  }
+  if (phase === "error") {
+    return (
+      <Button onClick={() => void load(status)} variant="outline" className="tap-target font-semibold">
+        <RefreshCw className="size-4" aria-hidden="true" />
+        {t("retry")}
+      </Button>
+    );
+  }
+  if (phase === "loading") {
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground" aria-busy="true">
+        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+        …
+      </div>
+    );
+  }
+
+  const providerName = (id: string): string =>
+    providers.find((p) => p.id === id)?.name ?? id;
+
+  return (
+    <div className="space-y-6">
+      {/* Statusni filter */}
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Status">
+        {([
+          ["draft", t("filterAll"), counts.draft ?? 0],
+          ["published", t("filterPublished"), counts.published ?? 0],
+          ["suspended", t("filterSuspended"), counts.suspended ?? 0],
+        ] as const).map(([value, label, count]) => (
+          <Button
+            key={value}
+            size="sm"
+            variant={status === value ? "default" : "outline"}
+            onClick={() => setStatus(value)}
+            className="tap-target font-semibold"
+          >
+            {label} ({count})
+          </Button>
+        ))}
+      </div>
+
+      {/* Profili */}
+      {providers.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t("empty")}</p>
+      ) : (
+        <div className="space-y-3">
+          {providers.map((p) => (
+            <Card key={p.id}>
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-semibold">{p.name}</span>
+                      <Badge variant="outline">{pick(l, PROVIDER_STATUS_LABELS[p.status] ?? PROVIDER_STATUS_LABELS.draft)}</Badge>
+                      {p.verification === "verified" ? (
+                        <Badge className="bg-primary text-primary-foreground">
+                          <BadgeCheck className="mr-1 size-3" aria-hidden="true" />
+                          {pick(l, PROVIDER_VERIFICATION_LABELS.verified)}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">
+                          {pick(l, PROVIDER_VERIFICATION_LABELS[p.verification] ?? PROVIDER_VERIFICATION_LABELS.unverified)}
+                        </Badge>
+                      )}
+                      {p.openReports > 0 && (
+                        <Badge variant="destructive">
+                          <ShieldAlert className="mr-1 size-3" aria-hidden="true" />
+                          {p.openReports}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {p.countryCode} · {p.place} ({p.region}) · {p.category}
+                      {p.subcategory ? ` · ${p.subcategory}` : ""}
+                      {p.priceFrom != null ? ` · ${t("from")} ${p.priceFrom} ${p.currency ?? ""}` : ""}
+                    </p>
+                    <p className="mt-2 line-clamp-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                      {p.description}
+                    </p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {t("dedup")}: <code className="text-[10px]">{p.dedupKey}</code>
+                      {p.sourceName ? ` · ${t("source")}: ${p.sourceName}` : ""} · {fmtDate(p.createdAt, l)}
+                      {p.officialUrl ? (
+                        <>
+                          {" · "}
+                          <a href={p.officialUrl} target="_blank" rel="noopener noreferrer" className="underline">
+                            {new URL(p.officialUrl).host}
+                          </a>
+                        </>
+                      ) : null}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {p.status !== "published" && (
+                      <Button
+                        size="sm"
+                        className="tap-target font-semibold"
+                        disabled={acting !== null}
+                        onClick={() => void act(`pub-${p.id}`, { providerId: p.id, action: "publish" }, t("publishedMsg"))}
+                      >
+                        {acting === `pub-${p.id}` ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <CheckCircle2 className="size-4" aria-hidden="true" />}
+                        {t("publish")}
+                      </Button>
+                    )}
+                    {p.status === "published" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={acting !== null}
+                        onClick={() => void act(`unpub-${p.id}`, { providerId: p.id, action: "unpublish" }, t("unpublishedMsg"))}
+                        className="tap-target font-semibold"
+                      >
+                        <Undo2 className="size-4" aria-hidden="true" />
+                        {t("unpublish")}
+                      </Button>
+                    )}
+                    {p.status !== "suspended" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={acting !== null}
+                        onClick={() => void act(`susp-${p.id}`, { providerId: p.id, action: "suspend" }, t("suspendedMsg"))}
+                        className="tap-target font-semibold"
+                      >
+                        <Ban className="size-4" aria-hidden="true" />
+                        {t("suspend")}
+                      </Button>
+                    )}
+                    {p.verification !== "verified" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={acting !== null}
+                        onClick={() => void act(`ver-${p.id}`, { providerId: p.id, action: "verify" }, t("verifiedMsg"))}
+                        className="tap-target font-semibold"
+                      >
+                        <UserCheck className="size-4" aria-hidden="true" />
+                        {t("verify")}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Prijave napak (§6c.4) */}
+      <div>
+        <h3 className="text-sm font-semibold">{t("reportsTitle")}</h3>
+        {reports.length === 0 ? (
+          <p className="mt-2 text-sm text-muted-foreground">{t("reportsEmpty")}</p>
+        ) : (
+          <div className="mt-2 space-y-2">
+            {reports.map((r) => (
+              <Card key={r.id}>
+                <CardContent className="p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="destructive">
+                          {pick(l, PROVIDER_REASON_LABELS[r.reason] ?? PROVIDER_REASON_LABELS.drugo)}
+                        </Badge>
+                        <span className="text-sm font-semibold">{providerName(r.providerId)}</span>
+                        <span className="text-xs text-muted-foreground">{fmtDate(r.createdAt, l)}</span>
+                      </div>
+                      <p className="mt-2 rounded-lg border bg-muted/40 p-3 text-sm leading-relaxed">{r.message}</p>
+                      {r.email && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {t("reportBy")}: {r.email}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        disabled={acting !== null}
+                        onClick={() => void act(`res-${r.id}`, { reportId: r.id, action: "resolve" }, t("resolvedMsg"))}
+                        className="tap-target font-semibold"
+                      >
+                        <CheckCircle2 className="size-4" aria-hidden="true" />
+                        {t("resolve")}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={acting !== null}
+                        onClick={() => void act(`dis-${r.id}`, { reportId: r.id, action: "dismiss" }, t("dismissedMsg"))}
+                        className="tap-target font-semibold"
+                      >
+                        <Ban className="size-4" aria-hidden="true" />
+                        {t("dismiss")}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

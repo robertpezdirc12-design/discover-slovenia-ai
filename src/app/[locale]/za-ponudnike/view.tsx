@@ -6,6 +6,7 @@ import { useLocale } from "next-intl";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import ProviderApplyForm from "@/components/providers/provider-apply-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +22,9 @@ import { pick } from "@/lib/i18n-pick";
  * prijavo → Lead (status "new") → skrbniška odločitev na /admin (approve →
  * vloga "partner"). Partner NIKOLI ne objavi sam — vsak vnos gre skozi
  * moderacijo (draft → pending → published).
+ * + Prijavnica ponudniškega profila (#35 faza 4b, §6c.1): javna prijava
+ * ponudnika z Balkana → Provider (claimed + draft) → skrbniška moderacija
+ * na /admin (zavihek Ponudniki).
  */
 export default function ForProvidersPage() {
   const l = useLocale();
@@ -284,6 +288,11 @@ export default function ForProvidersPage() {
       {/* Prijavnica partnerja (P0-H §22) */}
       <div id="prijavnica" className="scroll-mt-24">
         <PartnerApplyForm />
+      </div>
+
+      {/* Prijavnica ponudniškega profila (#35 faza 4b — cel Balkan) */}
+      <div id="prijava-ponudnika" className="mt-8 scroll-mt-24">
+        <ProviderApplyForm />
       </div>
 
       {/* Beta + obljuba */}

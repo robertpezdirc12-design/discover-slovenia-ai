@@ -508,3 +508,24 @@ Stage Summary:
 - Lekcija 2: MapLibre v6 v Next.js = config.WORKER_URL override + worker datoteka v public/ (import.meta.url trik pade v vsakem bundlerju); popupi SAMO prek marker.setPopup (ročni click + closeOnClick = samozapiranje).
 - Lekcija 3: vendor minificiranih datotek v public/ → takoj v eslint ignores (1062 lažnih opozoril zakrije prava).
 - Ostalo iz §9: faza 2 Valhalla (R11 — lastniški VPS), faza 3 Photon, faza 5 Viator (odobritev), db:pg:deploy (PRODUCTION-CUTOVER), november 9 dogodkov, GitLab PAT, CI kvota/billing (lastniško).
+
+---
+Task ID: R35-FAZA3
+Agent: Z.ai Code (session web-3612f14e, trace 1a13b8e0464c16ed)
+Task: #35 faza 3 — Photon geokodiranje/krajevno iskanje (PoC kanon faze 1); sprožil "odlicno nadaljuj".
+
+Work Log:
+- STATUS DRIFT SPET ZAJET: povzetek je govoril main @ 4ebedb7 (2.60.0) — realnost 2.63.1 (faza 4a+4b mergani + faza 1 PoC 2.63.0/2.63.1); prebran dokument §9 + worklog → izbrana faza 3 Photon kot edina NELASTNIŠKA odprta faza (faza 1 = lastniška re-deizija, faza 2 = lastniški VPS, faza 5 = odobritev).
+- VERIFIKACIJA PRED IMPLEMENTACIJO: curl na photon.komoot.io — lang=sl NE podpira (HTTP 400 "Supported are: default, de, en, fr") → koda uporablja lang=en (imena vseeno lokalizirana); GeoJSON FeatureCollection, [lng,lat], countrycode; prazni zadetki = HTTP 200.
+- 2.64.0 (PR #57, merge 10b4ba2): src/lib/geocoding-server.ts — Photon odjemalec po ISTEM kanonu kot road-routing-server (cache 24h/600 LRU, breaker 4→10 min, vbrizgljiv fetch/ura/timeout, node:https family:4, UA etiquette, source photon|none NIKOLI izmišljeni rezultati, prazni [] = uspeh + cache; PHOTON_BASE_URL override = self-host brez spremembe kode); GET /api/geocode (zod q 2–80/limit 1–10, rate 30/min, GET-only, L1, strežniški klic → CSP NESPREMENJEN); prijavnica /za-ponudnike dobi combobox (debounce 400 ms, ≥3 znaki, tipkovnica ↑↓/Enter/Escape, outside-click, zadetek izpolni kraj=city??name + državo + koordinati + regijo ČE znana, filtrirano na 10 kanonskih držav, atribucija OSM vedno vidna, ROČNI VNOS OSTAJA).
+- BRSKALNIŠKA VERIFIKACIJA PRED MERGE (lekcija 1 uveljavljena — 2.63.0 je šel s poznim odkritjem): zlata pot realnimi klikmi 4× (Ljubljanski grad/Piran/Postojna/Sarajevo) + tipkovniška pot Enter + submit → 201 "osnutek — čaka pregled". Ujeti in popravljeni 2 buga ŠELE pred merge: (1) podvojeni React key (Photon vrne 2 istih imen+koordinat — dva OSM vozlišča) → ključ +indeks; (2) neresnično sporočilo: source none je kazal "Ni zadetkov" → zdaj "Iskanje trenutno ni na voljo — vpiši polja ročno" (ujeto V ŽIVO, ko je javni Photon omejil peskovnik — breaker deloval po zasnovi); + searchHint iskreno popravljen v 6 jezikih ("regijo, če je znana").
+- Dev okolje: port 3000 zasedel star next-server (pid 1081, 4h44m) → ubit; lokalna SQLite baza je bila zastarela (samo Post+User, brez Provider) → prisma db push --force-reset (dev-only, produkcija nedotaknjena) → apply 201 lokalno.
+- CI na PR: lint/build/E2E job failure TUDI na uspešno merganih PR #55/#56 in main (kvota/billing — lastniško, potrjen vzorec) + sync (GitLab PAT) → merge po hišnem precedensu (lokalna vrata temeljitejša); Vercel Preview Comments ✅.
+- PRODUKCIJA 2.64.0: health ok (ops:cron pričakovan); /api/geocode živ (source photon, POST 405, kratko q 400); brskalniška zlata pot na produkciji: "Mostar" → izbira → kraj=Mostar, lat=43.3490, lng=17.8139, država SAMODEJNO na BA, 0 konzolnih napak; E2E 16/16 (3,0 min).
+- Komentarji: #35 id 6175951081 (faza 3 PoC + dokazi + stanje faz); PR #57 ustvarjen in mergan.
+
+Stage Summary:
+- Faza 3 = ◐ PoC ODDAN in DELUJOČ na produkciji (2.64.0): strežniški /api/geocode nad javnim Photon BJS + krajevno iskanje v prijavnici ponudnika; self-host = PHOTON_BASE_URL (lastniška odločitev); ročni vnos VEDNO mogoč; iskrenostni kanon enak routing.
+- 2334/2334 testov (+16) · tsc 0 · eslint 0 · build OK · E2E 16/16 produkcija · health v2.64.0 ok.
+- Stanje faz: 0/F0–F5/4a+4b ✅ · 1 ◐ lastniška re-deizija · 3 ◐ self-host odločitev · 2 ⬜ lastniški VPS · 5 ⬜ odobritev · db:pg:deploy (PRODUCTION-CUTOVER) lastniško.
+- Lekcija 4: javni BJS servisi omejijo peskovnik po hitrih zaporednih iskanjih — zlata pot preverjaj z vključenim breakerjem in iskrenim "ni na voljo" stanjem (ne le z uspešnim tokom); testiraj OBE degradacijski poti v brskalniku.

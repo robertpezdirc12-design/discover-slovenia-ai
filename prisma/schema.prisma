@@ -562,3 +562,85 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([createdAt])
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FAZA 4a (#35, 2.61.0) — katalog ponudnikov: podatkovni sloj.
+// Izvorna resnica: docs/research/balkan-platform-no-ai.md §6a/§6c.
+// ISKRENOST: OSM/odprti izvori so VEČNO verification="unverified", dokler
+// ponudnik ne potrdi (§6c); dedupKey je unique (normalizirano ime + geohash-7).
+model Provider {
+  id           String    @id @default(cuid())
+  /// ISO-3166 alfa-2 kanona (SI/HR/ME/AL/BA/RS/MK/XK/BG/GR — COUNTRIES meta).
+  countryCode  String
+  /// Kurirana regija (turistična ali NUTS-3 podobna).
+  region       String
+  /// Kraj/naselje.
+  place        String
+  lat          Float
+  lng          Float
+  /// accomodation|food|guide|activity|transport|attraction|event|wellness
+  /// (kanon: accommodation — glej PROVIDER_CATEGORIES).
+  category     String
+  subcategory  String?
+  name         String
+  description  String
+  /// CSV: sl,en,hr … (jeziki ponudnika).
+  languages    String
+  /// JSON: [{url, license, source}] — NIKOLI kopirano brez licence (pogl. 4).
+  photos       String?
+  /// JSON: {phone, email}.
+  contact      String?
+  officialUrl  String?
+  /// JSON: [{from, to}] sezonskost.
+  season       String?
+  /// JSON: OpeningHoursSpecification[].
+  openingHours String?
+  /// „Od"-cena (objavljena, NI živ citat — kanon FROM_PRICE supply registra).
+  priceFrom    Float?
+  /// ISO 4217 (iz COUNTRIES meta — providerCurrency()).
+  currency     String?
+  /// manual | request | partnerApi
+  availability String?
+  /// none | request | redirect | partner (partner ŠELE po pisni odobritvi).
+  bookingMode  String
+  /// unverified | claimed | verified (učinkovito stanje ob zapisu).
+  verification String
+  /// Datum zadnjega potrditvenega dokaza (12-mesečni potek — §6c.6).
+  verifiedAt   DateTime?
+  /// Izvor podatka (berljiv): "osm" | "sto" | "fsq" | "prijava" | …
+  sourceName   String?
+  /// Id pri izvoru (OSM id, prijava id, …) — neobvezno.
+  sourceId     String?
+  /// draft | published | suspended
+  status       String    @default("draft")
+  /// Dedup kanon (§6c.5): geohash-7 + normalizirano ime (providerDedupKey()).
+  dedupKey     String    @unique
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  reports ProviderReport[]
+
+  @@index([countryCode, category])
+  @@index([status])
+  @@index([countryCode, status])
+}
+
+/// Javno prijavljen napake na profilu ponudnika (§6c.4 — „report" gumb, 4b UI).
+/// Brez osebnih podatkov razen neobveznega e-poštnega kontakta (GDPR R6).
+model ProviderReport {
+  id         String   @id @default(cuid())
+  providerId String
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  /// napaka | zaprt | dupliciran | drugo (PROVIDER_REPORT_REASONS).
+  reason     String
+  /// Obvezna opis pri "drugo"; sicer neobvezno (5–1000 znakov).
+  message    String
+  /// Neobvezno — za povratno informacijo prijavitelju.
+  email      String?
+  /// open | resolved | dismissed
+  status     String   @default("open")
+  createdAt  DateTime @default(now())
+
+  @@index([providerId, status])
+  @@index([status, createdAt])
+}

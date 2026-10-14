@@ -3258,3 +3258,20 @@ Datum: 2026-10-14 · Veja: `feat/r41-balkan-f3-seo-2.57.0` @ `93e08bc` · PR: #4
    sestavljen ≤ 60), kar je dosledno, ker ≥38 ni bil nikoli dosežen.
 4. **GitLab WAF 403 je tranzieren**: isti browser-UA push je ob 403 uspel na
    2. poskus (retry ×3 z 10 s pavzo = deluje).
+
+## R41-F4 (2.58.0) — Supply/booking: cel Balkan
+- `COUNTRY_URL_NAMES` 4 → 10 držav: BA=bosnia-and-herzegovina, RS=serbia,
+  MK=macedonia, XK=kosovo, BG=bulgaria, GR=greece (živo preverjeno
+  curl 200 pri airalo.com/{name}-eSIM IN discovercars.com/{name}, 2026-10-14;
+  zavrnjena kandidata 404: bosnia-herzegovina, north-macedonia).
+- 302 /api/affiliate/go: 74 destinacij × airalo/discovercars zdaj zgradi
+  državno povezavo (prej je {country} padel na noCountryTmpl/domaco).
+- Tržnica regija dovoljenja → cel Balkan: OSM polica coverage + own tržnica
+  opis ("izkušnje ponudnikov z vsega Balkana, 10 držav"); /go/cars coverage
+  10 držav (Ljubljana, Zagreb, Sarajevo, Beograd, Sofija …); matrix
+  reasonSl airalo+discovercars = "10/10 držav, R41-F4".
+- Testi: data-lock COUNTRY_URL_NAMES 10 držav + F4 describe (12 novih
+  assertov: discovercars/airalo × 6 držav + cevovod 302 Sarajevo→BA-eSIM);
+  verzija 2.58.0 na vseh mestih (pkg/health/sw/footer + 2 lock testa).
+- Dokazni sklad: tsc 0 · eslint 0 · 2167/2167 (25 080 expect) · build OK.
+

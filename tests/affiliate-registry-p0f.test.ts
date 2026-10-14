@@ -6,8 +6,10 @@
  *
  * Zaklene kanone:
  * - {COUNTRY}: discovercars/airalo uporabljata {country} (vzorci
- *   preverjeni s curl 200 po vseh 4 državah nabora: slovenia/croatia/
- *   montenegro/albania); airalo brez države pade na domačo stran
+ *   preverjeni s curl 200 po VSEH 10 državah nabora: slovenia/croatia/
+ *   montenegro/albania + R41-F4 (2.58.0): bosnia-and-herzegovina/
+ *   serbia/macedonia/kosovo/bulgaria/greece — curl 200, 2026-10-14);
+ *   airalo brez države pade na domačo stran
  *   (noCountryTmpl) — NIKOLI pokvarjen URL z ostankom "-eSIM".
  * - ISKRENA VERIGA: ID brez znanega vzorca (affiliateTmpl "") NE more
  *   prikazati provizijske povezave — affiliateActive ostane false;
@@ -27,6 +29,7 @@ import {
   getProvider,
   type AffiliateProviderDef,
 } from "../src/lib/affiliate-providers";
+import { getDestination } from "../src/lib/slovenia-data";
 import { commissionDraftFromInput } from "../src/lib/affiliate-server";
 
 /** Kanonski partner po id-ju — če manjka, je register pokvarjen. */
@@ -39,12 +42,20 @@ function mustProvider(id: string): AffiliateProviderDef {
 // ── Države v URL-jih ({country}) ───────────────────────────────────────────
 
 describe("P0-F: COUNTRY_URL_NAMES + countryUrlName", () => {
-  test("vse 4 države kanonskega nabora (SI/HR/ME/AL) imajo imena URL-jev", () => {
+  test("vseh 10 držav kanonskega nabora (cel Balkan) ima imena URL-jev", () => {
     expect(COUNTRY_URL_NAMES).toEqual({
       SI: "slovenia",
       HR: "croatia",
       ME: "montenegro",
       AL: "albania",
+      // R41-F4 (2.58.0): 6 novih balkanskih držav — vzorci živo
+      // preverjeni (curl 200 pri airalo IN discovercars, 2026-10-14).
+      BA: "bosnia-and-herzegovina",
+      RS: "serbia",
+      MK: "macedonia",
+      XK: "kosovo",
+      BG: "bulgaria",
+      GR: "greece",
     });
   });
 
@@ -53,7 +64,15 @@ describe("P0-F: COUNTRY_URL_NAMES + countryUrlName", () => {
     expect(countryUrlName("hr")).toBe("croatia"); // velikost ne pomembna
     expect(countryUrlName("ME")).toBe("montenegro");
     expect(countryUrlName("AL")).toBe("albania");
+    // R41-F4: nove države — pretvorba kode v URL ime.
+    expect(countryUrlName("BA")).toBe("bosnia-and-herzegovina");
+    expect(countryUrlName("rs")).toBe("serbia");
+    expect(countryUrlName("MK")).toBe("macedonia");
+    expect(countryUrlName("XK")).toBe("kosovo");
+    expect(countryUrlName("BG")).toBe("bulgaria");
+    expect(countryUrlName("GR")).toBe("greece");
     expect(countryUrlName("IT")).toBeNull(); // izven nabora — ne izmišljujemo
+    expect(countryUrlName("TR")).toBeNull(); // TR/RO so opcijsko kasneje (#41)
     expect(countryUrlName("")).toBeNull();
     expect(countryUrlName(null)).toBeNull();
     expect(countryUrlName(undefined)).toBeNull();
@@ -158,6 +177,68 @@ describe("P0-F: buildPartnerLink — državni partnerji", () => {
     });
     expect(r.url).toBe("https://www.discovercars.com/Bled");
     expect(r.url).not.toContain("//Bled");
+  });
+});
+
+// ── R41-F4 (2.58.0): {country} za 6 novih balkanskih držav ─────────────────
+
+describe("R41-F4: {country} predloge za 6 novih balkanskih držav", () => {
+  // R41-F4: živo preverjeni vzorci (curl 200, 2026-10-14) — airalo
+  // IN discovercars pokrivata cel Balkan; URL imena po obeh ponudnikih
+  // enaka. Testi zaklenejo tok skozi buildPartnerLink (javna plast —
+  // enaka, kot jo 302 /api/affiliate/go izgradi iz kanonskega nabora).
+  const F4_CASES = [
+    { code: "BA", urlName: "bosnia-and-herzegovina", dest: "Sarajevo" },
+    { code: "RS", urlName: "serbia", dest: "Beograd" },
+    { code: "MK", urlName: "macedonia", dest: "Ohrid" },
+    { code: "XK", urlName: "kosovo", dest: "Prizren" },
+    { code: "BG", urlName: "bulgaria", dest: "Sofija" },
+    { code: "GR", urlName: "greece", dest: "Solun" },
+  ] as const;
+
+  test("discovercars: {country}/{dest} za vseh 6 novih držav", () => {
+    for (const c of F4_CASES) {
+      const r = buildPartnerLink({
+        provider: mustProvider("discovercars"),
+        destName: c.dest,
+        destCountryName: c.urlName,
+      });
+      expect(r.url).toBe(
+        `https://www.discovercars.com/${c.urlName}/${c.dest}`
+      );
+      expect(r.affiliateActive).toBe(false);
+      expect(r.tmpl).toBe("public");
+      expect(r.url).not.toContain("{country}");
+      expect(r.url).not.toContain("/croatia//"); // brez dvojne poševnice za {country}/
+    }
+  });
+
+  test("airalo: {country}-eSIM za vseh 6 novih držav", () => {
+    for (const c of F4_CASES) {
+      const r = buildPartnerLink({
+        provider: mustProvider("airalo"),
+        destName: c.dest,
+        destCountryName: c.urlName,
+      });
+      expect(r.url).toBe(`https://www.airalo.com/${c.urlName}-eSIM`);
+      expect(r.affiliateActive).toBe(false);
+      expect(r.tmpl).toBe("public");
+    }
+  });
+
+  test("cevovod 302: destinacija nabora → countryUrlName → {country} povezava", () => {
+    // Pogled od konca do konca, kot ga 302 /api/affiliate/go izvede:
+    // getDestination(slug).country → countryUrlName → applyTemplate.
+    const dest = getDestination("sarajevo"); // F1 nabor (data-lock balkan-f1)
+    expect(dest).toBeDefined();
+    const name = countryUrlName(dest!.country);
+    expect(name).toBe("bosnia-and-herzegovina");
+    const r = buildPartnerLink({
+      provider: mustProvider("airalo"),
+      destName: dest!.name,
+      destCountryName: name,
+    });
+    expect(r.url).toBe("https://www.airalo.com/bosnia-and-herzegovina-eSIM");
   });
 });
 

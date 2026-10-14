@@ -319,9 +319,17 @@ export function getProvider(
 // ── Države v URL-jih partnerjev ({country} — preverjeni vzorci) ────────────
 
 /**
- * Imena držav kanonskega nabora (SI/HR/ME/AL), kot jih uporabljajo
- * javne strani partnerjev (npr. discovercars.com/slovenia/bled,
+ * Imena držav kanonskega nabora (cel Balkan — 10 držav), kot jih
+ * uporabljajo javne strani partnerjev (npr. discovercars.com/slovenia/bled,
  * airalo.com/slovenia-eSIM — vzorci preverjeni s curl 200).
+ *
+ * R41-F4 (2.58.0): razširjeno s 6 novih balkanskih držav — vzorci za
+ * airalo.com/{name}-eSIM IN discovercars.com/{name} živo preverjeni
+ * (curl 200, 2026-10-14) za VSEH 10 držav:
+ *   bosnia-and-herzegovina / serbia / macedonia / kosovo / bulgaria /
+ *   greece (plus izvirne slovenia/croatia/montenegro/albania).
+ * Zavrnjena kandidata (404 pri obeh ponudnikih): bosnia-herzegovina,
+ * north-macedonia — ne izmišljujemo si, samo živo preverjeni vzorci.
  */
 export const COUNTRY_URL_NAMES: Readonly<Record<string, string>> =
   Object.freeze({
@@ -329,6 +337,12 @@ export const COUNTRY_URL_NAMES: Readonly<Record<string, string>> =
     HR: "croatia",
     ME: "montenegro",
     AL: "albania",
+    BA: "bosnia-and-herzegovina",
+    RS: "serbia",
+    MK: "macedonia",
+    XK: "kosovo",
+    BG: "bulgaria",
+    GR: "greece",
   });
 
 /** Ime države za {country} v predlogi (null za neznano kodo). */

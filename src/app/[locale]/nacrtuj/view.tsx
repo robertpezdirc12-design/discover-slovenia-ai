@@ -101,7 +101,7 @@ import {
   recomputeDayTitle,
 } from "@/lib/plan-reorder";
 import { saveLastPlan } from "@/lib/plan-store";
-// POLIR5 A (2.32.0): čista izpeljava IZMERJENIH dni (OSRM) za povzetek
+// POLIR5 A (2.32.0, vir 2.65.1→Valhalla): čista izpeljava IZMERJENIH dni (Valhalla) za povzetek
 // načrta — tip MeasuredDay + summarizeMeasured (0 omrežja, testabilna v bun;
 // ista datoteka že nosi čisto logiko črt planMapLines za zemljevid).
 // POLIR6 A (2.33.0): dayEstimate + fmtKm1 sta se prestavili sem — EN izvor
@@ -501,15 +501,15 @@ const L = {
   },
   // POLIR5 A (2.32.0): IZMERJENE razdalje v povzetku načrta (Wanderlog
   // pariteta: dnevne skupne POD glavo dneva + skupna vrstica; vsaka
-  // številka nosi razložljiv vir — izmerjeno OSRM ali izrecno označena
+  // številka nosi razložljiv vir — izmerjeno Valhalla ali izrecno označena
   // ocena; vsota združuje SAMO izmerjene dneve).
   measuredDay: {
-    sl: (km: string, min: number) => `${km} km · ${min} min vožnje — izmerjeno (OSRM/OpenStreetMap)`,
-    en: (km: string, min: number) => `${km} km · ${min} min of driving — measured (OSRM/OpenStreetMap)`,
-    it: (km: string, min: number) => `${km} km · ${min} min di guida — misurato (OSRM/OpenStreetMap)`,
-    de: (km: string, min: number) => `${km} km · ${min} Min. Fahrt — gemessen (OSRM/OpenStreetMap)`,
-    fr: (km: string, min: number) => `${km} km · ${min} min de conduite — mesuré (OSRM/OpenStreetMap)`,
-    es: (km: string, min: number) => `${km} km · ${min} min de conducción — medido (OSRM/OpenStreetMap)`,
+    sl: (km: string, min: number) => `${km} km · ${min} min vožnje — izmerjeno (Valhalla/OpenStreetMap)`,
+    en: (km: string, min: number) => `${km} km · ${min} min of driving — measured (Valhalla/OpenStreetMap)`,
+    it: (km: string, min: number) => `${km} km · ${min} min di guida — misurato (Valhalla/OpenStreetMap)`,
+    de: (km: string, min: number) => `${km} km · ${min} Min. Fahrt — gemessen (Valhalla/OpenStreetMap)`,
+    fr: (km: string, min: number) => `${km} km · ${min} min de conduite — mesuré (Valhalla/OpenStreetMap)`,
+    es: (km: string, min: number) => `${km} km · ${min} min de conducción — medido (Valhalla/OpenStreetMap)`,
   },
   estimatedDay: {
     sl: (km: number, min: number) => `~ ${km} km · ~ ${min} min — ocena (premočrtna razdalja ×1,3 @ ~60 km/h)`,
@@ -520,12 +520,12 @@ const L = {
     es: (km: number, min: number) => `~ ${km} km · ~ ${min} min — estimación (línea recta ×1,3 a ~60 km/h)`,
   },
   measuredTotal: {
-    sl: (km: string, dur: string) => `Skupaj izmerjeno: ${km} km · ${dur} vožnje (OSRM/OpenStreetMap)`,
-    en: (km: string, dur: string) => `Measured in total: ${km} km · ${dur} of driving (OSRM/OpenStreetMap)`,
-    it: (km: string, dur: string) => `Totale misurato: ${km} km · ${dur} di guida (OSRM/OpenStreetMap)`,
-    de: (km: string, dur: string) => `Insgesamt gemessen: ${km} km · ${dur} Fahrt (OSRM/OpenStreetMap)`,
-    fr: (km: string, dur: string) => `Total mesuré : ${km} km · ${dur} de conduite (OSRM/OpenStreetMap)`,
-    es: (km: string, dur: string) => `Total medido: ${km} km · ${dur} de conducción (OSRM/OpenStreetMap)`,
+    sl: (km: string, dur: string) => `Skupaj izmerjeno: ${km} km · ${dur} vožnje (Valhalla/OpenStreetMap)`,
+    en: (km: string, dur: string) => `Measured in total: ${km} km · ${dur} of driving (Valhalla/OpenStreetMap)`,
+    it: (km: string, dur: string) => `Totale misurato: ${km} km · ${dur} di guida (Valhalla/OpenStreetMap)`,
+    de: (km: string, dur: string) => `Insgesamt gemessen: ${km} km · ${dur} Fahrt (Valhalla/OpenStreetMap)`,
+    fr: (km: string, dur: string) => `Total mesuré : ${km} km · ${dur} de conduite (Valhalla/OpenStreetMap)`,
+    es: (km: string, dur: string) => `Total medido: ${km} km · ${dur} de conducción (Valhalla/OpenStreetMap)`,
   },
   measuredMissing: {
     sl: (n: number) => `za ${n} ${n === 1 ? "dan" : "dni"} ni izmerjenih podatkov — prikazana je ocena`,
@@ -1970,7 +1970,7 @@ function PlanResult({
   const previewDays = preview?.plan === plan ? preview.days : null;
   const days = previewDays ?? plan.days;
 
-  // POLIR5 A (2.32.0): IZMERJENI dnevi iz odgovora proxyja (OSRM distance/
+  // POLIR5 A (2.32.0, vir 2.65.1→Valhalla): IZMERJENI dnevi iz odgovora proxyja (Valhalla distance/
   // duration). Stanje je VEZANO NA REFERENCO dni (isti kanon kot poti v
   // PlanMap in predogled vlečenja): velja samo za `days`, ob katerih je
   // nastalo — regeneracija/reurejanje (nova referenca) ga samodejno
@@ -2341,7 +2341,7 @@ function PlanResult({
             const dayCost = stops.reduce((s, x) => s + x.cost, 0);
             // POLIR5 A (2.32.0): vrstica IZMERE POD GLAVO DNEVA (Wanderlog
             // pariteta — „total time and distance … under that day's
-            // heading"). Izmerjen dan → izmerjeno (OSRM); drugače → ISTA
+            // heading"). Izmerjen dan → izmerjeno (Valhalla); drugače → ISTA
             // hevristika kot LegRow, izrecno označena kot ocena. Dan brez
             // vožnje (manj kot 2 postanka) → vrstice ni (iskrena odsotnost).
             // Vidna TUDI v natisu — je del povzetka dneva (vir resnice so

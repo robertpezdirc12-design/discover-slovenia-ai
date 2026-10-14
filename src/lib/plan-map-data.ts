@@ -151,7 +151,7 @@ export interface PlanMapLine {
 
 /**
  * Odločitev opomb pod zemljevidom (iskrenost — opombi se nikoli ne lažeta):
- *  - routed:  vsaj ena POLNA črta → opomba „Vozljiva pot (OSRM/…)";
+ *  - routed:  vsaj ena POLNA črta → opomba „Vozljiva pot (Valhalla/…)";
  *  - straight: vsaj ena ČRTKANA črta ALI nobene poti (nalaganje/napaka)
  *    → opomba „Povezave so premočrtne (ne vozljiva pot)".
  * Mešano stanje (del dni vozljiv, del ne) pokaže OBE opombi.

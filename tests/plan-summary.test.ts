@@ -60,7 +60,7 @@ const LANGS = ["sl", "en", "it", "de", "fr", "es"] as const;
 // ── ZAOKROŽITVI (km 1 decimala; minute na 5 — ISTI kanon kot LegRow) ──────
 
 describe("POLIR5 A: measuredKm — kilometri na 1 decimalko (prikaz)", () => {
-  test("① živi ujet vzorec B: 21551 m → 21,6 km (izpis vrednosti OSRM)", () => {
+  test("① živi ujet vzorec B: 21551 m → 21,6 km (izpis vrednosti Valhalla; 2.65.1)", () => {
     expect(measuredKm(21_551)).toBe(21.6);
   });
 
@@ -333,7 +333,7 @@ describe("POLIR5 A: view.tsx — povzetek izmerjenih dni", () => {
     expect(ENGINE).toContain("export function travelMinutes(");
     expect(ENGINE).toContain("export const ROAD_FACTOR = 1.3;");
     expect(ENGINE).toContain("export const AVG_SPEED_KMH = 60;");
-    // view: urnik se NE riše iz izmer (OSRM je poročevalna plast) — vrstica
+    // view: urnik se NE riše iz izmer (Valhalla je poročevalna plast) — vrstica
     // povzetka ne hrani ur postankov in ne dotika recomputeDayTimes
     const povzetek = block(VIEW, "POLIR5 A (2.32.0): SKUPNA IZMERJENA vrstica", "manualOrder && (");
     expect(povzetek).not.toContain("recomputeDayTimes");
@@ -368,15 +368,15 @@ describe("POLIR5 A: L10N ×6 — vsi novi ključi imajo sl+en+it+de+fr+es", () =
     }
   });
 
-  test("㉖ dobesedni SL nizi (kanon specifikacije 2.32.0)", () => {
+  test("㉖ dobesedni SL nizi (kanon specifikacije 2.32.0; vir 2.65.1→Valhalla)", () => {
     expect(VIEW).toContain(
-      "sl: (km: string, min: number) => `${km} km · ${min} min vožnje — izmerjeno (OSRM/OpenStreetMap)`"
+      "sl: (km: string, min: number) => `${km} km · ${min} min vožnje — izmerjeno (Valhalla/OpenStreetMap)`"
     );
     expect(VIEW).toContain(
       "sl: (km: number, min: number) => `~ ${km} km · ~ ${min} min — ocena (premočrtna razdalja ×1,3 @ ~60 km/h)`"
     );
     expect(VIEW).toContain(
-      "sl: (km: string, dur: string) => `Skupaj izmerjeno: ${km} km · ${dur} vožnje (OSRM/OpenStreetMap)`"
+      "sl: (km: string, dur: string) => `Skupaj izmerjeno: ${km} km · ${dur} vožnje (Valhalla/OpenStreetMap)`"
     );
     expect(VIEW).toContain(
       'za ${n} ${n === 1 ? "dan" : "dni"} ni izmerjenih podatkov — prikazana je ocena`'
@@ -386,13 +386,13 @@ describe("POLIR5 A: L10N ×6 — vsi novi ključi imajo sl+en+it+de+fr+es", () =
 
   test("㉗ dobesedni EN nizi (prevodi po istem ključu)", () => {
     expect(VIEW).toContain(
-      "en: (km: string, min: number) => `${km} km · ${min} min of driving — measured (OSRM/OpenStreetMap)`"
+      "en: (km: string, min: number) => `${km} km · ${min} min of driving — measured (Valhalla/OpenStreetMap)`"
     );
     expect(VIEW).toContain(
       "en: (km: number, min: number) => `~ ${km} km · ~ ${min} min — estimate (straight-line ×1.3 @ ~60 km/h)`"
     );
     expect(VIEW).toContain(
-      "en: (km: string, dur: string) => `Measured in total: ${km} km · ${dur} of driving (OSRM/OpenStreetMap)`"
+      "en: (km: string, dur: string) => `Measured in total: ${km} km · ${dur} of driving (Valhalla/OpenStreetMap)`"
     );
     expect(VIEW).toContain(
       "en: (n: number) => `for ${n} ${n === 1 ? \"day\" : \"days\"} no measured data is available — an estimate is shown`"
@@ -400,10 +400,13 @@ describe("POLIR5 A: L10N ×6 — vsi novi ključi imajo sl+en+it+de+fr+es", () =
     expect(VIEW).toContain('en: "Driving this day: "');
   });
 
-  test("㉘ atribucija OSRM/OpenStreetMap v VSEH jezikih izmere/skupne vrstice", () => {
-    // vir podatka je razkrit v vsakem jeziku (kanon iskrenosti 2.30.0)
-    const stetri = VIEW.match(/OSRM\/OpenStreetMap/g) ?? [];
-    // measuredDay ×6 + measuredTotal ×6 + opombe zemljevida ( obstoječe )
-    expect(stetri.length).toBeGreaterThanOrEqual(12);
+  test("㉘ atribucija Valhalla/OpenStreetMap v VSEH jezikih izmere/skupne vrstice (2.65.1)", () => {
+    // vir podatka je razkrit v vsakem jeziku (kanon iskrenosti 2.30.0);
+    // 2.65.0 je zamenjal motor (OSRM demo → Valhalla), oznake so sledile 2.65.1
+    const stetri = VIEW.match(/Valhalla\/OpenStreetMap/g) ?? [];
+    // measuredDay ×6 + measuredTotal ×6 + obstoječi komentar opombe natisa (2.65.0) = 13
+    expect(stetri.length).toBe(13);
+    // zastarel vir se NE sme vrniti (zlati test 2.65.1 je ujel 36 zastarelih nizov)
+    expect(VIEW.match(/OSRM/g) ?? []).toHaveLength(0);
   });
 });

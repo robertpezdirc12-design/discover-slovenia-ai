@@ -316,15 +316,15 @@ export function SharedTripView({ shareId }: { shareId: string }) {
     },
     // POLIR6 A (2.33.0): IZMERJENE razdalje v skupnem pogledu (pariteta
     // /nacrtuj 2.32.0 — besedila DOBESEEDNO iz nacrtuj/view.tsx; vsaka
-    // številka nosi razložljiv vir: izmerjeno OSRM ali izrecno ocena;
+    // številka nosi razložljiv vir: izmerjeno Valhalla ali izrecno ocena;
     // vsota združuje SAMO izmerjene dneve — Roadtrippersova past).
     measuredDay: {
-      sl: (km: string, min: number) => `${km} km · ${min} min vožnje — izmerjeno (OSRM/OpenStreetMap)`,
-      en: (km: string, min: number) => `${km} km · ${min} min of driving — measured (OSRM/OpenStreetMap)`,
-      it: (km: string, min: number) => `${km} km · ${min} min di guida — misurato (OSRM/OpenStreetMap)`,
-      de: (km: string, min: number) => `${km} km · ${min} Min. Fahrt — gemessen (OSRM/OpenStreetMap)`,
-      fr: (km: string, min: number) => `${km} km · ${min} min de conduite — mesuré (OSRM/OpenStreetMap)`,
-      es: (km: string, min: number) => `${km} km · ${min} min de conducción — medido (OSRM/OpenStreetMap)`,
+      sl: (km: string, min: number) => `${km} km · ${min} min vožnje — izmerjeno (Valhalla/OpenStreetMap)`,
+      en: (km: string, min: number) => `${km} km · ${min} min of driving — measured (Valhalla/OpenStreetMap)`,
+      it: (km: string, min: number) => `${km} km · ${min} min di guida — misurato (Valhalla/OpenStreetMap)`,
+      de: (km: string, min: number) => `${km} km · ${min} Min. Fahrt — gemessen (Valhalla/OpenStreetMap)`,
+      fr: (km: string, min: number) => `${km} km · ${min} min de conduite — mesuré (Valhalla/OpenStreetMap)`,
+      es: (km: string, min: number) => `${km} km · ${min} min de conducción — medido (Valhalla/OpenStreetMap)`,
     },
     estimatedDay: {
       sl: (km: number, min: number) => `~ ${km} km · ~ ${min} min — ocena (premočrtna razdalja ×1,3 @ ~60 km/h)`,
@@ -335,12 +335,12 @@ export function SharedTripView({ shareId }: { shareId: string }) {
       es: (km: number, min: number) => `~ ${km} km · ~ ${min} min — estimación (línea recta ×1,3 a ~60 km/h)`,
     },
     measuredTotal: {
-      sl: (km: string, dur: string) => `Skupaj izmerjeno: ${km} km · ${dur} vožnje (OSRM/OpenStreetMap)`,
-      en: (km: string, dur: string) => `Measured in total: ${km} km · ${dur} of driving (OSRM/OpenStreetMap)`,
-      it: (km: string, dur: string) => `Totale misurato: ${km} km · ${dur} di guida (OSRM/OpenStreetMap)`,
-      de: (km: string, dur: string) => `Insgesamt gemessen: ${km} km · ${dur} Fahrt (OSRM/OpenStreetMap)`,
-      fr: (km: string, dur: string) => `Total mesuré : ${km} km · ${dur} de conduite (OSRM/OpenStreetMap)`,
-      es: (km: string, dur: string) => `Total medido: ${km} km · ${dur} de conducción (OSRM/OpenStreetMap)`,
+      sl: (km: string, dur: string) => `Skupaj izmerjeno: ${km} km · ${dur} vožnje (Valhalla/OpenStreetMap)`,
+      en: (km: string, dur: string) => `Measured in total: ${km} km · ${dur} of driving (Valhalla/OpenStreetMap)`,
+      it: (km: string, dur: string) => `Totale misurato: ${km} km · ${dur} di guida (Valhalla/OpenStreetMap)`,
+      de: (km: string, dur: string) => `Insgesamt gemessen: ${km} km · ${dur} Fahrt (Valhalla/OpenStreetMap)`,
+      fr: (km: string, dur: string) => `Total mesuré : ${km} km · ${dur} de conduite (Valhalla/OpenStreetMap)`,
+      es: (km: string, dur: string) => `Total medido: ${km} km · ${dur} de conducción (Valhalla/OpenStreetMap)`,
     },
     measuredMissing: {
       sl: (n: number) => `za ${n} ${n === 1 ? "dan" : "dni"} ni izmerjenih podatkov — prikazana je ocena`,
@@ -554,7 +554,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
   );
 
   // Vrstica izmere/ocene enega dneva (ISTA semantika kot /nacrtuj 2.32.0):
-  // izmerjen dan → izmerjeno (OSRM); padel dan z oceno → ISTA hevristika
+  // izmerjen dan → izmerjeno (Valhalla); padel dan z oceno → ISTA hevristika
   // kot LegRow (dayEstimate nad dnevi zemljevida — koordinate registra);
   // dan brez skoka (manj kot 2 postanka s coords) → BREZ vrstice (iskrena
   // odsotnost). Neodvisna od zemljevida: deluje tudi, ko zemljevid NI
@@ -1276,7 +1276,7 @@ function PlanDays({
   exploreLabel: string;
   /**
    * POLIR6 A (2.33.0): vrstica izmere/ocene POD glavo dneva (pariteta
-   * /nacrtuj): izmerjen dan → izmerjeno (OSRM); padel dan z oceno →
+   * /nacrtuj): izmerjen dan → izmerjeno (Valhalla); padel dan z oceno →
    * ISTA hevristika kot LegRow; dan brez skoka → null (brez vrstice).
    */
   travelRows: (dayIdx: number) => string | null;
@@ -1300,7 +1300,7 @@ function PlanDays({
                   </h2>
                   {/* POLIR6 A (2.33.0): vrstica izmere/ocene POD glavo dneva
                       (pariteta /nacrtuj 2.32.0 — vsaka številka nosi vir:
-                      izmerjeno OSRM ali izrecno označena ocena). Print-VIDNA
+                      izmerjeno Valhalla ali izrecno označena ocena). Print-VIDNA
                       (del povzetka dneva, ne zemljevida — zemljevid se v
                       natisu izpusti, ta vrstica pa NE) in neodvisna od
                       zemljevida (deluje tudi, ko ta ni izrisan < 2 točki). */}

@@ -242,7 +242,7 @@ describe("POLIR6 A: fmtKm1 — kilometri z 1 decimalko po jeziku", () => {
     }
   });
 
-  test("⑪ VEDNO natanko 1 decimala (brez lažne natančnosti OSRM)", () => {
+  test("⑪ VEDNO natanko 1 decimala (brez lažne natančnosti Valhalla)", () => {
     for (const km of [0, 4.7, 21.551, 63.34, 68, 1000]) {
       expect(fmtKm1("en", km)).toMatch(/^\d+\.\d$/);
       expect(fmtKm1("sl", km)).toMatch(/^\d+,\d$/);
@@ -466,20 +466,23 @@ describe("POLIR6 A: L10N ×6 — 5 ključev v obeh pogledih, dobesedno enakih na
     }
   });
 
-  test("Ⓠ atribucija OSRM/OpenStreetMap razkrita v vseh jezikih izmere/skupne", () => {
+  test("Ⓠ atribucija Valhalla/OpenStreetMap razkrita v vseh jezikih izmere/skupne (2.65.1)", () => {
     // Vir podatka je razkrit (kanon iskernosti 2.30.0): measuredDay ×6 +
-    // measuredTotal ×6 = 12 pojavitev na pogled.
+    // measuredTotal ×6 = 12 pojavitev na pogled; 2.65.0 je zamenjal motor
+    // (OSRM demo → Valhalla), oznake so sledile 2.65.1 (zlata pot ujela 36 zastarelih).
     for (const [ime, src] of [
       ["/pot/[shareId]", SHARED],
       ["/potovanje", POTOVANJE],
     ] as const) {
-      const stetje = (src.match(/OSRM\/OpenStreetMap/g) ?? []).length;
-      expect(stetje, ime).toBeGreaterThanOrEqual(12);
+      const stetje = (src.match(/Valhalla\/OpenStreetMap/g) ?? []).length;
+      expect(stetje, ime).toBe(12);
+      // zastarel vir se NE sme vrniti
+      expect(src.match(/OSRM/g) ?? [], ime).toHaveLength(0);
     }
   });
 });
 
-// ── URNIK MOTORJA NEPREMJENJEN (OSRM ostaja poročevalna plast) ──────────────
+// ── URNIK MOTORJA NEPREMJENJEN (Valhalla ostaja poročevalna plast) ──────────
 
 describe("POLIR6 A: urnik motorja zaklenjen (kanon 2.30.0/2.32.0)", () => {
   test("Ⓡ konstante dneva in hevristike ostajajo v motorju nespremenjene", () => {
@@ -494,7 +497,7 @@ describe("POLIR6 A: urnik motorja zaklenjen (kanon 2.30.0/2.32.0)", () => {
 
   test("Ⓢ novi vrstici NE dotikata urnika (časi postankov ostajajo motorjevi)", () => {
     // Vrstice izmere/ocene so ČISTI dodatek k povzetku — ne prevzemajo ur
-    // postankov in ne vplivajo na razpored (OSRM je poročevalna plast).
+    // postankov in ne vplivajo na razpored (Valhalla je poročevalna plast).
     const sharedVrstice = block(
       SHARED,
       "const travelRow = (dayIdx: number): string | null => {",

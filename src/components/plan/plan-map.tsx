@@ -529,10 +529,10 @@ export function PlanMap({
       </div>
 
       {/* Iskrene opombe pod zemljevidom (logika planMapLines.notes):
-          (1) vsaj ena POLNA črta → „Vozljiva pot (OSRM/…) — urnik ostaja
+          (1) vsaj ena POLNA črta → „Vozljiva pot (Valhalla/…) — urnik ostaja
           ocena"; (2) vsaj ena ČRTKANA črta ali nobena pot → „Povezave so
           premočrtne (ne vozljiva pot)"; mešano stanje pokaže OBE. Vir
-          OSM/OSRM je vedno v opombi (atribucija). */}
+          OSM/Valhalla je vedno v opombi (atribucija). */}
       {lineState.notes.routed && (
         <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
           {routedNote}

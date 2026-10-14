@@ -277,15 +277,15 @@ const L = {
   },
   // POLIR6 A (2.33.0): IZMERJENE razdalje na „Moja pot" (pariteta
   // /nacrtuj 2.32.0 — besedila DOBESEEDNO iz nacrtuj/view.tsx; vsaka
-  // številka nosi razložljiv vir: izmerjeno OSRM ali izrecno ocena;
+  // številka nosi razložljiv vir: izmerjeno Valhalla ali izrecno ocena;
   // vsota združuje SAMO izmerjene dneve — Roadtrippersova past).
   measuredDay: {
-    sl: (km: string, min: number) => `${km} km · ${min} min vožnje — izmerjeno (OSRM/OpenStreetMap)`,
-    en: (km: string, min: number) => `${km} km · ${min} min of driving — measured (OSRM/OpenStreetMap)`,
-    it: (km: string, min: number) => `${km} km · ${min} min di guida — misurato (OSRM/OpenStreetMap)`,
-    de: (km: string, min: number) => `${km} km · ${min} Min. Fahrt — gemessen (OSRM/OpenStreetMap)`,
-    fr: (km: string, min: number) => `${km} km · ${min} min de conduite — mesuré (OSRM/OpenStreetMap)`,
-    es: (km: string, min: number) => `${km} km · ${min} min de conducción — medido (OSRM/OpenStreetMap)`,
+    sl: (km: string, min: number) => `${km} km · ${min} min vožnje — izmerjeno (Valhalla/OpenStreetMap)`,
+    en: (km: string, min: number) => `${km} km · ${min} min of driving — measured (Valhalla/OpenStreetMap)`,
+    it: (km: string, min: number) => `${km} km · ${min} min di guida — misurato (Valhalla/OpenStreetMap)`,
+    de: (km: string, min: number) => `${km} km · ${min} Min. Fahrt — gemessen (Valhalla/OpenStreetMap)`,
+    fr: (km: string, min: number) => `${km} km · ${min} min de conduite — mesuré (Valhalla/OpenStreetMap)`,
+    es: (km: string, min: number) => `${km} km · ${min} min de conducción — medido (Valhalla/OpenStreetMap)`,
   },
   estimatedDay: {
     sl: (km: number, min: number) => `~ ${km} km · ~ ${min} min — ocena (premočrtna razdalja ×1,3 @ ~60 km/h)`,
@@ -296,12 +296,12 @@ const L = {
     es: (km: number, min: number) => `~ ${km} km · ~ ${min} min — estimación (línea recta ×1,3 a ~60 km/h)`,
   },
   measuredTotal: {
-    sl: (km: string, dur: string) => `Skupaj izmerjeno: ${km} km · ${dur} vožnje (OSRM/OpenStreetMap)`,
-    en: (km: string, dur: string) => `Measured in total: ${km} km · ${dur} of driving (OSRM/OpenStreetMap)`,
-    it: (km: string, dur: string) => `Totale misurato: ${km} km · ${dur} di guida (OSRM/OpenStreetMap)`,
-    de: (km: string, dur: string) => `Insgesamt gemessen: ${km} km · ${dur} Fahrt (OSRM/OpenStreetMap)`,
-    fr: (km: string, dur: string) => `Total mesuré : ${km} km · ${dur} de conduite (OSRM/OpenStreetMap)`,
-    es: (km: string, dur: string) => `Total medido: ${km} km · ${dur} de conducción (OSRM/OpenStreetMap)`,
+    sl: (km: string, dur: string) => `Skupaj izmerjeno: ${km} km · ${dur} vožnje (Valhalla/OpenStreetMap)`,
+    en: (km: string, dur: string) => `Measured in total: ${km} km · ${dur} of driving (Valhalla/OpenStreetMap)`,
+    it: (km: string, dur: string) => `Totale misurato: ${km} km · ${dur} di guida (Valhalla/OpenStreetMap)`,
+    de: (km: string, dur: string) => `Insgesamt gemessen: ${km} km · ${dur} Fahrt (Valhalla/OpenStreetMap)`,
+    fr: (km: string, dur: string) => `Total mesuré : ${km} km · ${dur} de conduite (Valhalla/OpenStreetMap)`,
+    es: (km: string, dur: string) => `Total medido: ${km} km · ${dur} de conducción (Valhalla/OpenStreetMap)`,
   },
   measuredMissing: {
     sl: (n: number) => `za ${n} ${n === 1 ? "dan" : "dni"} ni izmerjenih podatkov — prikazana je ocena`,
@@ -383,7 +383,7 @@ export default function JourneyPage() {
     [data, lang]
   );
 
-  // POLIR6 A (2.33.0): IZMERJENI dnevi iz odgovora proxyja (OSRM distance/
+  // POLIR6 A (2.33.0, vir 2.65.1→Valhalla): IZMERJENI dnevi iz odgovora proxyja (Valhalla distance/
   // duration) — isti kanon kot /nacrtuj 2.32.0. Stanje je VEZANO NA
   // REFERENCO dni (data.plan.days je stabilna referenca stanja fetcha):
   // regeneracija osnutka (my-trip) da novo referenco → pošteno ponovno
@@ -410,7 +410,7 @@ export default function JourneyPage() {
   );
 
   // Vrstica izmere/ocene TRENUTNEGA dneva (menja se z dnevno navigacijo —
-  // ISTA semantika kot /nacrtuj 2.32.0): izmerjen dan → izmerjeno (OSRM);
+  // ISTA semantika kot /nacrtuj 2.32.0): izmerjen dan → izmerjeno (Valhalla);
   // padel dan z oceno → ISTA hevristika kot LegRow (dayEstimate nad dnevi
   // načrta, ki nosijo koordinate); dan brez skoka → BREZ vrstice (iskrena
   // odsotnost). Print-VIDNA in neodvisna od zemljevida (< 2 točki).
@@ -610,7 +610,7 @@ export default function JourneyPage() {
               </CardTitle>
               {/* POLIR6 A (2.33.0): vrstica izmere/ocene TRENUTNEGA dneva POD
                   glavo dneva (ob dnevni ceni) — pariteta /nacrtuj 2.32.0:
-                  vsaka številka nosi vir (izmerjeno OSRM ali izrecno
+                  vsaka številka nosi vir (izmerjeno Valhalla ali izrecno
                   označena ocena). Print-VIDNA — del povzetka dneva (vir
                   resnice je kartica dneva, zemljevid se v natisu izpusti,
                   ta vrstica pa NE). DODATEK k obstoječi kartici: naslov,

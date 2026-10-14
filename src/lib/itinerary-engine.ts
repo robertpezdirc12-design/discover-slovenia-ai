@@ -23,7 +23,7 @@ import {
   type Season,
 } from "./slovenia-data";
 import { asPickLocale, type PickLocale } from "./i18n-pick";
-import type { ItineraryPlan, MyTripItem, TripStop } from "./types";
+import type { BorderCrossing, ItineraryPlan, MyTripItem, TripStop } from "./types";
 
 /**
  * Jezik načrtovalca — od 2.21.0 (4-c) vsi podprti jeziki lupine
@@ -131,6 +131,29 @@ export const PLANNER_MSG = {
     de: (label: string) => `Regionsfilter: ${label}.`,
     fr: (label: string) => `Filtre région : ${label}.`,
     es: (label: string) => `Filtro de región: ${label}.`,
+  },
+  // F5 (#41): državni filter + iskreno razkritje čezmejnega načrta.
+  countryFilter: {
+    sl: (code: string) => `Filter države: ${code}.`,
+    en: (code: string) => `Country filter: ${code}.`,
+    it: (code: string) => `Filtro paese: ${code}.`,
+    de: (code: string) => `Länderfilter: ${code}.`,
+    fr: (code: string) => `Filtre pays : ${code}.`,
+    es: (code: string) => `Filtro de país: ${code}.`,
+  },
+  crossBorder: {
+    sl: (countries: number, crossings: number) =>
+      `Čezmejni načrt: ${countries} držav, ${crossings} ${crossings === 1 ? "mejni prehod" : "mejnih prehodov"} — glej dokumente in prehode spodaj.`,
+    en: (countries: number, crossings: number) =>
+      `Cross-border plan: ${countries} countries, ${crossings} border ${crossings === 1 ? "crossing" : "crossings"} — see documents and crossings below.`,
+    it: (countries: number, crossings: number) =>
+      `Piano transfrontaliero: ${countries} paesi, ${crossings} ${crossings === 1 ? "attraversamento di confine" : "attraversamenti di confine"} — vedi documenti e confini qui sotto.`,
+    de: (countries: number, crossings: number) =>
+      `Grenzüberschreitender Plan: ${countries} Länder, ${crossings} ${crossings === 1 ? "Grenzübergang" : "Grenzübergänge"} — siehe Dokumente und Grenzen unten.`,
+    fr: (countries: number, crossings: number) =>
+      `Plan transfrontalier : ${countries} pays, ${crossings} ${crossings === 1 ? "passage frontalier" : "passages frontaliers"} — voir documents et frontières ci-dessous.`,
+    es: (countries: number, crossings: number) =>
+      `Plan transfronterizo: ${countries} países, ${crossings} ${crossings === 1 ? "cruce fronterizo" : "cruces fronterizos"} — ver documentos y fronteras abajo.`,
   },
   seasonPref: {
     sl: (s: string, fit: number, total: number) => `Sezonska prednost (${s}): ${fit}/${total} postankov je takrat najboljših.`,
@@ -516,6 +539,11 @@ export interface PlannerQuery {
   interests: string[];
   days: number;
   region?: string;
+  /**
+   * Državni filter (F5 #41): CountryCode nabora — zoži bazen na eno državo.
+   * Neobvezen: privzeto cel Balkan (čezmejni načrti dovoljeni in vidni).
+   */
+  country?: string;
   season?: Season;
   budget?: Budget;
   locale?: PlannerLang;
@@ -649,6 +677,9 @@ export function buildItinerary(query: PlannerQuery): ItineraryPlan {
   };
 
   const regionOk = (d: Destination) => !query.region || d.region === query.region;
+  // F5 (#41): državni filter — kot regionOk; neobvezen (privzeto cel Balkan).
+  const countryOk = (d: Destination) =>
+    !query.country || d.country === query.country;
 
   // IDF statistika po CELOTNEM korpusu (ne filtriranem naboru) — fiksna,
   // deterministična in stabilna ne glede na filtre poizvedbe. Izračunana
@@ -664,11 +695,11 @@ export function buildItinerary(query: PlannerQuery): ItineraryPlan {
     dfMap.set(interest, n);
   }
 
-  let pool = DESTINATIONS.filter((d) => regionOk(d) && inBudget(d)).map(score);
+  let pool = DESTINATIONS.filter((d) => regionOk(d) && countryOk(d) && inBudget(d)).map(score);
   if (pool.length < query.days * 2 && query.budget) {
     // Proračunski filter sprostimo (iskreno razkrito v coverageNote).
     budgetRelaxed = true;
-    pool = DESTINATIONS.filter(regionOk).map(score);
+    pool = DESTINATIONS.filter((d) => regionOk(d) && countryOk(d)).map(score);
   }
 
   // Deterministično urejanje: score ↓, rating ↓, id ↑.
@@ -780,6 +811,7 @@ export function buildItinerary(query: PlannerQuery): ItineraryPlan {
         coords: dest.coords,
         slug: dest.slug,
         region: dest.region,
+        country: dest.country, // F5 (#41): vidnost države na postanku
       });
       t += stops[stopIdx].durationMin;
     });
@@ -789,6 +821,10 @@ export function buildItinerary(query: PlannerQuery): ItineraryPlan {
   const allStops = days.flat();
   const totalCost = allStops.reduce((sum, s) => sum + s.cost, 0);
   const regionsUsed = [...new Set(allStops.map((s) => s.region ?? ""))].filter(Boolean);
+
+  // F5 (#41): mejni prehodi — spremembe države po vrsti potovanja (dnevi,
+  // nato postanki znotraj dneva). Vsaka sprememba je iskren prehod.
+  const borderCrossings = detectBorderCrossings(days);
 
   const names = [...new Set(allStops.map((s) => s.name))];
   const dayTitles = days.map((stops, i) => {
@@ -807,7 +843,13 @@ export function buildItinerary(query: PlannerQuery): ItineraryPlan {
 
   const regionsWord = PLANNER_MSG.regionsWordIn[lang](regionsUsed.length);
 
-  const summary = PLANNER_MSG.summary[lang](daysWord, stopsWord, regionsWord, totalCost, AVG_SPEED_KMH);
+  // F5 (#41): iskrena razkritja čezmejnega načrta v povzetku.
+  const countriesUsed = [...new Set(allStops.map((s) => s.country ?? ""))].filter(Boolean);
+  const summaryBase = PLANNER_MSG.summary[lang](daysWord, stopsWord, regionsWord, totalCost, AVG_SPEED_KMH);
+  const summary =
+    borderCrossings.length > 0
+      ? `${summaryBase} ${PLANNER_MSG.crossBorder[lang](countriesUsed.length, borderCrossings.length)}`
+      : summaryBase;
 
   return {
     days,
@@ -815,6 +857,7 @@ export function buildItinerary(query: PlannerQuery): ItineraryPlan {
     title,
     summary,
     totalCost,
+    borderCrossings: borderCrossings.length > 0 ? borderCrossings : undefined,
     coverageNote: buildCoverageNote({
       lang,
       interests,
@@ -823,6 +866,7 @@ export function buildItinerary(query: PlannerQuery): ItineraryPlan {
       days,
       requestedDays: query.days,
       region: query.region,
+      country: query.country,
       season: query.season,
       budget: query.budget,
       budgetRelaxed,
@@ -832,11 +876,38 @@ export function buildItinerary(query: PlannerQuery): ItineraryPlan {
       interests,
       days: query.days,
       region: query.region,
+      country: query.country,
       season: query.season,
       budget: query.budget,
       locale: lang,
     },
   };
+}
+
+// ---------------------------------------------------------------------------
+// Mejni prehodi (F5 #41) — spremembe države po vrsti potovanja
+// ---------------------------------------------------------------------------
+
+/**
+ * Zazna mejne prehode: spremembo države med dvema zaporednima postankoma
+ * (dnevi v vrsti, znotraj dneva v vrsti postankov). Postanki brez države
+ * (stari klici / custom) ne sprožijo prehoda — iskreno: manjkajoči podatek
+ * ne izmišljuje meje. Dan je 1-indeksiran (prikaz).
+ */
+export function detectBorderCrossings(days: TripStop[][]): BorderCrossing[] {
+  const crossings: BorderCrossing[] = [];
+  let prevCountry: string | null = null;
+  for (let dayIdx = 0; dayIdx < days.length; dayIdx++) {
+    for (const stop of days[dayIdx]) {
+      const c = stop.country ?? null;
+      if (!c) continue;
+      if (prevCountry && prevCountry !== c) {
+        crossings.push({ from: prevCountry, to: c, day: dayIdx + 1 });
+      }
+      prevCountry = c;
+    }
+  }
+  return crossings;
 }
 
 // ---------------------------------------------------------------------------
@@ -851,6 +922,7 @@ function buildCoverageNote(args: {
   days: TripStop[][];
   requestedDays: number;
   region?: string;
+  country?: string;
   season?: Season;
   budget?: Budget;
   budgetRelaxed: boolean;
@@ -872,6 +944,9 @@ function buildCoverageNote(args: {
 
   if (args.region) {
     parts.push(PLANNER_MSG.regionFilter[lang](regionLabel(args.region, lang)));
+  }
+  if (args.country) {
+    parts.push(PLANNER_MSG.countryFilter[lang](args.country));
   }
   if (args.season) {
     const seasonName: Record<Season, { sl: string; en: string; it: string; de: string; fr: string; es: string }> = {
@@ -960,6 +1035,7 @@ export function buildPlanFromMyTrip(items: MyTripItem[], locale?: PlannerLang): 
       coords: dest.coords,
       slug: dest.slug,
       region: dest.region,
+      country: dest.country, // F5 (#41)
     };
     t += stop.durationMin;
     return stop;
@@ -969,14 +1045,18 @@ export function buildPlanFromMyTrip(items: MyTripItem[], locale?: PlannerLang): 
   const title = PLANNER_MSG.draftTitle[lang]();
   const summary = PLANNER_MSG.draftSummary[lang](stops.length, totalCost, AVG_SPEED_KMH);
 
+  const draftDays = stops.length > 0 ? [stops] : [];
+  const draftCrossings = detectBorderCrossings(draftDays);
+
   return {
     plan: {
-      days: stops.length > 0 ? [stops] : [],
+      days: draftDays,
       dayTitles:
         stops.length > 0 ? [PLANNER_MSG.draftDayTitle[lang]()] : [],
       title,
       summary,
       totalCost,
+      borderCrossings: draftCrossings.length > 0 ? draftCrossings : undefined,
       coverageNote: PLANNER_MSG.draftCoverage[lang](),
       meta: { interests: [], days: 1, locale: lang },
     },

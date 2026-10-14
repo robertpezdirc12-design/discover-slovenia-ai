@@ -592,3 +592,18 @@ Stage Summary:
 - Faza 2/3 self-host = ZDAJ POPOLNOMA LASTNIŠKA ODLOČITEV Z VSEMI ŠTEVILKI: 0 EUR (javna primera + kanon) vs ≈ 16,40 EUR/mes (CX42, ena instanca za obe službi, SLA nad katerim vladaš); koda ISTA (override), preklop/rollback = minut redeploya; izvedba = 9 korakov runbooka (ocena 1 dan).
 - Lekcija 7 (nova): Geofabrik URL za Severno Makedonijo je 'macedonia' (NE 'north-macedonia' → 404); planet-priporočila velikosti NISO prenosljiva na regionalni build — vedno izmeri lasten obseg PBF pred sizing odločitvijo.
 - Stanje #35: VSA samostojna dela ZDAJ res zaključena (faze 0/F0–F5/4a+4b ✅ · 1/2/3 ◐ PoC + runbook · priprave na self-host popolne) — preostanek 100 % lastniški: re-deizija zemljevida, self-host potrditev (runbook pripravljen), Viator odobritev, db:pg:deploy, CI billing, GitLab PAT, 9 novembrskih dogodkov (če se uradne strani osvežijo — preverjeno 14. 10.).
+
+---
+Task ID: R35-VERIF-15OKT
+Agent: Z.ai Code (session web-3612f14e, trace 1a13c80b7b9a66e5)
+Task: #35 — sprožil "odlicno nadaljuj"; edina poštena akcija po R35-RUNBOOK = ponovna verifikacija živega stanja + potrditev, ali obstaja še kaka samostojna vrzel.
+
+Work Log:
+- Živo stanje: main @ d40fc6d (v2.65.2, PR #60 runbook) — delovno drevo čisto, origin usklajen ("Already up to date"); produkcija health ok v2.65.2; #35 = 10 komentarjev, zadnji 6179706911 (runbook, naš) — BREZ novih lastniških odgovorov; 0 odprtih PR; edini odprti issue = #35.
+- Pregled docs/SELF-HOST-RUNBOOK.md: naslov "Valhalla (faza 2) + Photon (faza 3)" — faza "2/3" pomeni OBE fazi, ni skrite faze 3-od-3; status v dokumentu: "odločitev ostaja LASTNIŠKA (ta dokument je priprava, ne odločitev)".
+- Pregled dokumenta §9/§11/§12 (osvežen 14. 10.): vsi ◐ imajo izrecno "odločitev ŠE VEDNO lastniška"; 2-opt "šele ob potrebah obsega", Vroom "šele za časovna okna" (izrecno odloženo); dogodki preverjeni 14. 10. — ponovni pregled dan kasneje ne bi spremenil nič (uradne strani še brez 2026 datumov).
+
+Stage Summary:
+- VSA samostojna dela iz #35 so POTRJENO zaključena (tretja zaporedna verifikacija: R35-FAZA2-UI → R35-RUNBOOK → ta vnos). Nobenega novega dela ni bilo — namerno, ne iz lenobe: kreativno "polnjenje časa" bi kršilo kanon iskrenosti.
+- Preostanek 100 % lastniški (7 postavk): ① re-deizija zemljevida (MapLibre vs status quo — PoC na ?zemljevid=vektorji); ② Valhalla self-host (runbook pripravljen, 16,40 EUR/mes CX42, 9 korakov ≈ 1 dan); ③ Photon self-host (isti runbook/VPS); ④ faza 5 Viator odobritev; ⑤ db:pg:deploy (Postgres poverilnice); ⑥ GitHub Actions Billing (CI mrtev od 2.64.0); ⑦ GitLab PAT (parity na e942254 + IV MR !1).
+- Naslednja seja: NE najti "še enega" samostojnega dela — vsak premik zahteva zgornje lastniške odločitve; če lastnik odobri katero, je izvedba pripravljena (runbook/env override/reverzibilnost dokumentirana).

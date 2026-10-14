@@ -3434,3 +3434,53 @@ Stage Summary:
    relief) — za Leaflet raster poti ni; "1 URL" faza je bila izmišljena brez
    merjenja. Verifikacija PRED implementacijo je zajela refutacijo v istem
    PR-ju — kanon "PREIZKUSITI" obstaja zato, da ga dejansko izvedeš.
+
+## R35-F4B — faza 4b: prijava/moderacija ponudnikov (2.62.0, Refs #35)
+
+**Datum**: 14. 10. 2026 · **Branch**: feat/r35-f4b-provider-ui-2.62.0
+
+**Kaj je dodano** (#35 §6c — faza 4b "prijava/moderacija UI + admin"):
+- **`src/lib/provider-moderation.ts`** (NOVO, čista logika): prehodi statusov
+  draft→published/suspended, published→draft/suspended, suspended→published/draft;
+  `verify` NE spreminja statusa (samo verification→"verified" + verifiedAt);
+  kanonska dejanja publish|unpublish|suspend|verify + prijave napak resolve|dismiss;
+  audit dejanja po kanonu `entity.verb` (vzorec listing-moderation).
+- **`src/app/api/providers/apply/route.ts`** (NOVO): javna prijava ponudniškega
+  profila — zod, rate 5/min, isCanonCountry (10), valuta izpeljana iz COUNTRIES
+  meta (NI odjemalsko polje), jeziki normalizirani (CSV → "sl,en"), dedup kanon
+  (geohash-7 + normalizirano ime) → 409 pri podvajanju, **NIKOLI samodejna
+  objava**: verification="claimed", status="draft", bookingMode="none"
+  (partner ŠELE po pisni odobritvi, §7), sourceName="prijava". L1 (brez
+  podrobnosti baze).
+- **`src/app/api/admin/providers/route.ts`** (NOVO): GET vrsta po statusih
+  (+ odprte prijave napak, counts), POST odločitve — profili (publish/unpublish/
+  suspend/verify skozi prehodno logiko, 409 pri nedovoljenem, varovalka pred
+  tujimi statusi) in prijave napak (open→resolved|dismissed); **isAdminSession
+  fail-closed na GET+POST**; AuditLog na vsaki odločitvi (actorType "owner").
+- **`src/components/providers/provider-apply-form.tsx`** (NOVO): javna prijavnica
+  ponudnika na /za-ponudnike (pod partner prijavnico P0-H) — 6 jezikov (pick,
+  FR tu-kanon), 10 držav (ALL_COUNTRY_CODES + zastave), 8 kategorij, iskrena
+  stanja: "osnutek — čaka pregled", ročni koordinati z opombo (geokoding =
+  faza 3 Photon), dedup 409 pošteno razložen.
+- **Admin UI**: 4. zavihek "Ponudniki" (/admin) — statusni filter (osnutki/
+  objavljeni/ustavljeni + števci), kartice profilov (status, preverjenost,
+  števec prijav, dedupKey, vir, „Od"-cena), dejanja Objavi/Umakni/Ustavi/
+  **Potrdi identiteto** (verify), vrsta odprtih prijav napak z Rešeno/Zavrži.
+
+**Testi / vrata (2.62.0)**
+- bun test **2299/2299** (25 987 expect; +22 nad 2.61.0) · tsc 0 · eslint 0 ·
+  build OK (nove rute: /api/providers/apply, /api/admin/providers) ·
+  verzija 2.62.0 (pkg/health/sw/footer + testni literali pwa-sw + p2 §8)
+- NOVI tests/provider-f4b.test.ts: 8 enotnih (prehodi) + 14 source-contract
+  zaklepov (rate, claimed/draft/none, valuta-strežnik, dedup 409, kanon držav,
+  L1, fail-closed vrata ×2, 409 prehodi, verify+verifiedAt, AuditLog ×2,
+  open→resolved/dismissed, UI žica ×3)
+
+**Iskreno (meje faze 4b)**
+- Javni "report" gumb na profilu ponudnika (§6c.4 UI) čaka JAVNO ime ponudnikov
+  (directory) — API plast je živa od faze 4a; admin vrsta prijav napak je živa.
+- Produkcijska Postgres tabela Provider je materializirana ob db:pg:deploy
+  (PRODUCTION-CUTOVER) — do takrat veljaven klic na apply vrne 500 L1
+  (kanon iz faze 4a ostaja).
+- Lekcija: FR tu-kanon velja za NOVE nize tudi v novih komponentah —
+  i18n-core vrata so jih ujela pred merge-om (delujejo kot zasnovano).

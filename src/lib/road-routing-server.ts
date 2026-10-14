@@ -1,30 +1,38 @@
 /**
- * ROAD-ROUTING-SERVER — strežniški OSRM odjemalec (rekonstrukcija
- * izvornega src/lib/road-routing-server.ts; glej avditski zapis
- * §"OSRM/route": pomnilniški cache 24 h / 600, circuit breaker 4 → 10 min,
- * NaN/negativna varovalka, RoutingMethod osrm|heuristic|mixed).
+ * ROAD-ROUTING-SERVER — strežniški Valhalla odjemalec (#35 faza 2 PoC,
+ * 2.65.0; prej OSRM demo — R11). Iskrenostni kanon se OHRANI v celoti:
+ * pomnilniški cache 24 h / 600, circuit breaker 4 → 10 min,
+ * NaN/negativna varovalka, RoutingMethod valhalla|heuristic|mixed.
  *
- * ISKRENOSTNI KANON (nikoli prelomljiv):
- *  - source "osrm" sme nositi SAMO uspešno razčlenjen odgovor javnega
- *    strežnika OSRM (router.project-osrm.org, profil driving) z veljavno
- *    geometrijo;
+ * VIR (iskrenostni kanon, nikoli prelomljiv):
+ *  - privzeti vir je JAVNI Valhalla primerek FOSSGIS
+ *    (valhalla1.openstreetmap.de — BJS za lahkotno uporabo; OpenStreetMap
+ *    podatki, ODbL; MIT motor) — trajna rešitev faze 2 je self-host:
+ *    nastavi VALHALLA_BASE_URL in koda ostane ISTA (kanon dokumenta #35:
+ *    „zamenjava BASE URL + formata odgovora je dovolj");
+ *  - source "valhalla" sme nositi SAMO uspešno razčlenjen odgovor Valhalla
+ *    /route (trip.status = 0, legs[0].summary z veljavno dolžino/časom,
+ *    dekodirana geometrija shape);
  *  - vsaka napaka (omrežje, timeout, HTTP napaka, NaN/negativne vrednosti,
- *    prazne poti) vodi v HEVRISTIČNO OCENO (haversine × 1,3 pri ~55 km/h)
- *    z oznako source "heuristic" — hevristika NIKOLI ni označena kot osrm;
+ *    prazne poti, pokvarjen shape) vodi v HEVRISTIČNO OCENO (haversine ×
+ *    1,3 pri ~55 km/h) z oznako source "heuristic" — hevristika NIKOLI ni
+ *    označena kot valhalla;
  *  - geometrija hevristike = premica med točkama (2 točki) — v UI je
  *    razkrita kot črtkana črta z oznako "ocena".
  *
  * Odločitve (dokumentirane):
- *  - v pomnilniški cache se shranjujejo SAMO uspešni OSRM odseki — ko
- *    OSRM okreva, takoj strežemo realne poti (zastarela hevristika bi
+ *  - v pomnilniški cache se shranjujejo SAMO uspešni Valhalla odseki — ko
+ *    strežnik okreva, takoj strežemo realne poti (zastarela hevristika bi
  *    bila neiskrena do vira);
  *  - geometrija z več kot 400 točkami se enakomerno redči (vsaka N-ta
  *    točka + zadnja) — ISTA realna pot, le zmanjšana ločljivost, ne izmislek;
- *  - OSRM se kliče prek node:https z family:4 (KANON IZVIRNIKA —
- *    „router.project-osrm.org prek node:https family:4"): globalni fetch
- *    Node v peskovniku poizkusi IPv6 (2a02:418:… je TU NEDELJIV — ETIMEDOUT)
- *    in NE pade nazaj na IPv4; prav tako strežnik zavrne zahtevek brez
- *    User-Agent (403) — zato pošiljamo pošten identifikacijski UA.
+ *  - Valhalla se kliče prek node:https z family:4 (KANON IZVIRNIKA —
+ *    prenos iz OSRM: globalni fetch Node v peskovniku poizkusi IPv6 in NE
+ *    pade nazaj na IPv4; pošten identifikacijski UA ostaja etiquette);
+ *  - zahteva = GET ?json={"locations":[…],"costing":"auto",
+ *    "shape_format":"polyline6","units":"kilometers"} — units je OBVEZEN
+ *    (privzeta enota summary.length je MILJA); polyline6 = 1e6 natančnost,
+ *    dekodirano v [lat, lng] (Valhalla vrstni red, brez preobra).
  *
  * Testabilnost: RoadRouter/CircuitBreaker sprejemata injiciran fetch/uro/
  * timeout — testi NE segajo na pravo omrežje. Modul je namenjen izključno
@@ -44,14 +52,28 @@ export interface LatLng {
 export interface LegRoute {
   km: number;
   min: number;
-  source: "osrm" | "heuristic";
+  source: "valhalla" | "heuristic";
   geometry: [number, number][];
 }
 
 // ── Konstante ──────────────────────────────────────────────────────────
 
-export const OSRM_BASE_URL = "https://router.project-osrm.org";
-export const OSRM_TIMEOUT_MS = 8_000;
+/** Javni Valhalla primerek FOSSGIS (BJS) — privzeti vir do self-host. */
+export const VALHALLA_PUBLIC_BASE_URL = "https://valhalla1.openstreetmap.de";
+
+/**
+ * Override za self-host (faza 2, trajna rešitev): nastavi VALHALLA_BASE_URL
+ * na svoj primerek — koda ostane ISTA (kanon dokumenta #35). Sprejmemo samo
+ * http(s) — drugače mirno pademo na javni primerek (vzorec PHOTON_BASE_URL).
+ */
+function resolveRoutingBaseUrl(): string {
+  const raw = process.env.VALHALLA_BASE_URL?.trim() ?? "";
+  if (raw.length > 0 && /^https?:\/\//.test(raw)) return raw;
+  return VALHALLA_PUBLIC_BASE_URL;
+}
+
+export const VALHALLA_BASE_URL = resolveRoutingBaseUrl();
+export const VALHALLA_TIMEOUT_MS = 8_000;
 export const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 h (kanon izvirnika)
 export const CACHE_CAP = 600; // največ 600 vnosov (kanon izvirnika)
 export const BREAKER_THRESHOLD = 4; // 4 zaporedne napake → odprt
@@ -130,55 +152,126 @@ export function sampleGeometry(
   return out;
 }
 
-// ── OSRM parse (čist) ──────────────────────────────────────────────────
+// ── Valhalla request/response (čisto) ──────────────────────────────────
 
 /**
- * Razčleni OSRM odgovor (route/v1/driving …?overview=full&geometries=geojson).
- * Vrne LegRoute ali null ob KATERIKOLI nepravilnosti (NaN/negativna
- * varovalka, prazne poti, manjkajoča geometrija, koda ≠ "Ok").
- * GeoJSON koordinate so [lng, lat] → pretvorba v [lat, lng].
+ * Zgradi Valhalla /route URL za en odsek (from → to).
+ * units=kilometers je OBVEZEN (privzeta enota summary.length je milja);
+ * shape_format=polyline6 (1e6 natančnost); costing=auto (vozni profil).
  */
-export function parseOsrmResponse(json: unknown): LegRoute | null {
-  if (json === null || typeof json !== "object") return null;
-  const root = json as { code?: unknown; routes?: unknown };
-  if (root.code !== "Ok") return null;
-  if (!Array.isArray(root.routes) || root.routes.length === 0) return null;
+export function buildValhallaUrl(
+  base: string,
+  from: LatLng,
+  to: LatLng
+): string {
+  const json = JSON.stringify({
+    locations: [
+      { lat: from.lat, lon: from.lng },
+      { lat: to.lat, lon: to.lng },
+    ],
+    costing: "auto",
+    shape_format: "polyline6",
+    units: "kilometers",
+  });
+  return `${base}/route?json=${encodeURIComponent(json)}`;
+}
 
-  const route = root.routes[0] as {
-    distance?: unknown;
-    duration?: unknown;
-    geometry?: { coordinates?: unknown };
+/**
+ * Dekodira Encoded Polyline (Valhalla shape, natančnost 1e6) v pari
+ * [lat, lng] (Valhalla vrstni red — brez preobra, za razliko od OSRM
+ * geojson [lng, lat]). Referenca: Mapbox/valhalla specifikacija
+ * (variable-length int + zigzag). Slaba oblika → null (iskrenostni kanon:
+ * ne ugibamo geometrije).
+ */
+export function decodePolyline6(shape: string): [number, number][] | null {
+  if (typeof shape !== "string" || shape.length === 0) return null;
+  const out: [number, number][] = [];
+  let index = 0;
+  let lat = 0;
+  let lng = 0;
+  const n = shape.length;
+
+  const readChunk = (): number | null => {
+    let result = 0;
+    let shift = 0;
+    let b: number;
+    do {
+      if (index >= n) return null; // prekinjen zapis
+      const code = shape.charCodeAt(index++);
+      // Valhalla polyline je ASCII (base64-ish); odmik od 63.
+      b = code - 63;
+      if (b < 0) return null;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    return result;
   };
-  const { distance, duration } = route;
-  if (typeof distance !== "number" || typeof duration !== "number") return null;
-  if (!Number.isFinite(distance) || !Number.isFinite(duration)) return null;
-  if (distance < 0 || duration < 0) return null; // NaN/negativna varovalka
 
-  const km = roundTo1(distance / 1000);
-  const min = Math.round(duration / 60);
+  while (index < n) {
+    const dLat = readChunk();
+    const dLng = readChunk();
+    if (dLat === null || dLng === null) return null;
+    lat += dLat & 1 ? ~(dLat >> 1) : dLat >> 1;
+    lng += dLng & 1 ? ~(dLng >> 1) : dLng >> 1;
+    const latDeg = lat / 1e6;
+    const lngDeg = lng / 1e6;
+    if (
+      !Number.isFinite(latDeg) ||
+      !Number.isFinite(lngDeg) ||
+      latDeg < -90 ||
+      latDeg > 90 ||
+      lngDeg < -180 ||
+      lngDeg > 180
+    ) {
+      return null;
+    }
+    out.push([latDeg, lngDeg]);
+  }
+  return out.length >= 2 ? out : null;
+}
+
+/**
+ * Razčleni Valhalla /route odgovor (native trip oblika).
+ * Vrne LegRoute ali null ob KATERIKOLI nepravilnosti (trip.status ≠ 0,
+ * prazne poti, manjkajoča/neveljavna summary, pokvarjen shape).
+ *  - leg.summary.length = km (units=kilometers);
+ *  - leg.summary.time = sekunde;
+ *  - leg.shape = encoded polyline6 → dekodirano v [lat, lng].
+ */
+export function parseValhallaResponse(json: unknown): LegRoute | null {
+  if (json === null || typeof json !== "object") return null;
+  const root = json as { trip?: unknown };
+  if (typeof root.trip !== "object" || root.trip === null) return null;
+  const trip = root.trip as {
+    status?: unknown;
+    legs?: unknown;
+    summary?: unknown;
+  };
+  if (trip.status !== 0) return null; // 0 = "Found route between points"
+  if (!Array.isArray(trip.legs) || trip.legs.length < 1) return null;
+
+  const leg = trip.legs[0] as {
+    summary?: unknown;
+    shape?: unknown;
+  };
+  const summary = leg?.summary;
+  if (typeof summary !== "object" || summary === null) return null;
+  const { length, time } = summary as { length?: unknown; time?: unknown };
+  if (typeof length !== "number" || typeof time !== "number") return null;
+  if (!Number.isFinite(length) || !Number.isFinite(time)) return null;
+  if (length < 0 || time < 0) return null; // NaN/negativna varovalka
+
+  const km = roundTo1(length);
+  const min = Math.round(time / 60);
   if (!Number.isFinite(km) || !Number.isFinite(min) || km < 0 || min < 0) {
     return null;
   }
 
-  const rawCoords = route.geometry?.coordinates;
-  if (!Array.isArray(rawCoords) || rawCoords.length < 2) return null;
-  const geometry: [number, number][] = [];
-  for (const c of rawCoords) {
-    if (!Array.isArray(c) || c.length < 2) return null;
-    const lng = c[0];
-    const lat = c[1];
-    if (
-      typeof lng !== "number" ||
-      typeof lat !== "number" ||
-      !Number.isFinite(lng) ||
-      !Number.isFinite(lat)
-    ) {
-      return null;
-    }
-    geometry.push([lat, lng]); // geojson [lng,lat] → [lat,lng]
-  }
+  if (typeof leg.shape !== "string" || leg.shape.length === 0) return null;
+  const geometry = decodePolyline6(leg.shape);
+  if (!geometry) return null; // pokvarjen/prekratek shape → ne ugibamo
 
-  return { km, min, source: "osrm", geometry: sampleGeometry(geometry) };
+  return { km, min, source: "valhalla", geometry: sampleGeometry(geometry) };
 }
 
 // ── Circuit breaker (vbrizgljiva ura za testi) ────────────────────────
@@ -220,18 +313,19 @@ export class CircuitBreaker {
   }
 }
 
-// ── OSRM fetch (privzeta implementacija — node:https family:4) ─────────
+// ── Valhalla fetch (privzeta implementacija — node:https family:4) ────
 
-/** Pošten identifikacijski UA (OSRM strežnik odgovori 403 brez njega). */
-const OSRM_USER_AGENT =
-  "DiscoverSlovenia-AI/2.2.0 (rekonstrukcija; sledi OpenStreetMap etiquette)";
+/** Pošten identifikacijski UA (OpenStreetMap etiquette — kanon izvirnika). */
+const VALHALLA_USER_AGENT =
+  "DiscoverSlovenia-AI/2.65.0 (routing; sledi OpenStreetMap etiquette)";
 
 /**
- * Privzeti OSRM fetch prek node:https z DVSILJENIM IPv4 (family:4) — kanon
- * izvirnika. Telo se v celoti prebere v Response (timeout 8 s pokriva
- * celotno izmenjavo). Podpira preklic prek init.signal (AbortController).
+ * Privzeti Valhalla fetch prek node:https z VSILJENIM IPv4 (family:4) —
+ * kanon iz OSRM dobe. Telo se v celoti prebere v Response (timeout 8 s
+ * pokriva celotno izmenjavo). Podpira preklic prek init.signal
+ * (AbortController).
  */
-export function osrmFetch(
+export function valhallaFetch(
   input: RequestInfo | URL,
   init?: RequestInit
 ): Promise<Response> {
@@ -245,9 +339,9 @@ export function osrmFetch(
     const req = https.request(
       url,
       {
-        family: 4, // IPv6 naslovi OSRM so v peskovniku nedelujni (ETIMEDOUT)
+        family: 4, // IPv6 naslovi so v peskovniku nedelujni (ETIMEDOUT)
         headers: {
-          "User-Agent": OSRM_USER_AGENT,
+          "User-Agent": VALHALLA_USER_AGENT,
           Accept: "application/json",
         },
       },
@@ -269,7 +363,7 @@ export function osrmFetch(
     );
     req.on("error", reject);
     init?.signal?.addEventListener("abort", () => {
-      req.destroy(new Error("OSRM request aborted (timeout)"));
+      req.destroy(new Error("Valhalla request aborted (timeout)"));
     });
     req.end();
   });
@@ -297,7 +391,7 @@ interface CacheEntry {
 }
 
 /**
- * OSRM usmerjevalnik z LRU pomnilniškim cachejem (TTL 24 h, cap 600),
+ * Valhalla usmerjevalnik z LRU pomnilniškim cachejem (TTL 24 h, cap 600),
  * circuit breakerjem in hevrističnim zasilnim načinom.
  * Odvisnosti (fetch/ura/timeout) so vbrizgljive — za teste brez omrežja.
  */
@@ -311,9 +405,9 @@ export class RoadRouter {
   private readonly breaker: CircuitBreaker;
 
   constructor(deps: RouterDeps = {}) {
-    this.fetchImpl = deps.fetchImpl ?? osrmFetch;
+    this.fetchImpl = deps.fetchImpl ?? valhallaFetch;
     this.now = deps.now ?? (() => Date.now());
-    this.timeoutMs = deps.timeoutMs ?? OSRM_TIMEOUT_MS;
+    this.timeoutMs = deps.timeoutMs ?? VALHALLA_TIMEOUT_MS;
     this.cacheTtlMs = deps.cacheTtlMs ?? CACHE_TTL_MS;
     this.cacheCap = deps.cacheCap ?? CACHE_CAP;
     this.breaker = new CircuitBreaker(this.now);
@@ -327,7 +421,7 @@ export class RoadRouter {
 
     let leg: LegRoute | null = null;
     if (!this.breaker.isOpen()) {
-      leg = await this.fetchOsrm(from, to);
+      leg = await this.fetchValhalla(from, to);
       if (leg) {
         this.breaker.recordSuccess();
       } else {
@@ -335,12 +429,12 @@ export class RoadRouter {
       }
     }
     if (!leg) {
-      // Vezje odprto ALI OSRM napaka → iskrena hevristika (nikoli "osrm").
+      // Vezje odprto ALI Valhalla napaka → iskrena hevristika (nikoli "valhalla").
       leg = heuristicLeg(from, to);
     }
 
-    if (leg.source === "osrm") {
-      // V cache SAMO realne poti — ko OSRM okreva, strežemo realno.
+    if (leg.source === "valhalla") {
+      // V cache SAMO realne poti — ko Valhalla okreva, strežemo realno.
       this.writeCache(key, leg);
     }
     return leg;
@@ -369,18 +463,18 @@ export class RoadRouter {
     }
   }
 
-  private async fetchOsrm(from: LatLng, to: LatLng): Promise<LegRoute | null> {
-    const url =
-      `${OSRM_BASE_URL}/route/v1/driving/` +
-      `${from.lng},${from.lat};${to.lng},${to.lat}` +
-      `?overview=full&geometries=geojson`;
+  private async fetchValhalla(
+    from: LatLng,
+    to: LatLng
+  ): Promise<LegRoute | null> {
+    const url = buildValhallaUrl(VALHALLA_BASE_URL, from, to);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
     try {
       const res = await this.fetchImpl(url, { signal: controller.signal });
       if (!res.ok) return null;
       const json: unknown = await res.json();
-      return parseOsrmResponse(json);
+      return parseValhallaResponse(json);
     } catch {
       return null; // omrežje/timeout/pokvarjen JSON → varovalka (ne meči)
     } finally {

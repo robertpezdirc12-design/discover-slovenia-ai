@@ -350,7 +350,7 @@ interface JourneyLegDTO {
   to: string;
   km: number;
   min: number;
-  source: "osrm" | "heuristic";
+  source: "valhalla" | "heuristic";
   geometry: [number, number][];
 }
 
@@ -358,7 +358,7 @@ interface JourneyRouteDTO {
   legs: JourneyLegDTO[];
   totalKm: number;
   totalMin: number;
-  method: "osrm" | "heuristic" | "mixed";
+  method: "valhalla" | "heuristic" | "mixed";
 }
 
 /** Stanje plasti Pot (iskrene napake — pot se nikoli ne izmišljuje). */
@@ -1131,12 +1131,12 @@ export default function TravelMap() {
       es: (km: number, min: number) => `${km} km · ${min} min`,
     },
     routeMethod: {
-      sl: (m: string) => (m === "osrm" ? "OSRM (realne ceste)" : m === "heuristic" ? "ocena poti (heuristika)" : "mešano"),
-      en: (m: string) => (m === "osrm" ? "OSRM (real roads)" : m === "heuristic" ? "route estimate (heuristic)" : "mixed"),
-      it: (m: string) => (m === "osrm" ? "OSRM (strade reali)" : m === "heuristic" ? "stima del percorso (euristica)" : "misto"),
-      de: (m: string) => (m === "osrm" ? "OSRM (echte Straßen)" : m === "heuristic" ? "Routenschätzung (heuristisch)" : "gemischt"),
-      fr: (m: string) => (m === "osrm" ? "OSRM (routes réelles)" : m === "heuristic" ? "estimation d'itinéraire (heuristique)" : "mixte"),
-      es: (m: string) => (m === "osrm" ? "OSRM (calles reales)" : m === "heuristic" ? "estimación de ruta (heurística)" : "mixta"),
+      sl: (m: string) => (m === "valhalla" ? "Valhalla (realne ceste)" : m === "heuristic" ? "ocena poti (heuristika)" : "mešano"),
+      en: (m: string) => (m === "valhalla" ? "Valhalla (real roads)" : m === "heuristic" ? "route estimate (heuristic)" : "mixed"),
+      it: (m: string) => (m === "valhalla" ? "Valhalla (strade reali)" : m === "heuristic" ? "stima del percorso (euristica)" : "misto"),
+      de: (m: string) => (m === "valhalla" ? "Valhalla (echte Straßen)" : m === "heuristic" ? "Routenschätzung (heuristisch)" : "gemischt"),
+      fr: (m: string) => (m === "valhalla" ? "Valhalla (routes réelles)" : m === "heuristic" ? "estimation d'itinéraire (heuristique)" : "mixte"),
+      es: (m: string) => (m === "valhalla" ? "Valhalla (calles reales)" : m === "heuristic" ? "estimación de ruta (heurística)" : "mixta"),
     },
     // ── Plast Bencinske + rezervacije (v2.5.0) ──────────────────────
     fuelLabel: { sl: "Bencinske", en: "Fuel", it: "Benzinaio", de: "Tankstellen", fr: "Stations-service", es: "Gasolineras" },

@@ -1,6 +1,6 @@
 # Balkan Travel Platform brez AI — raziskava in izvedljiv načrt
 
-**Issue:** #35 · **Status:** dokument oddan (07f1f9e, v2.50.0) + **posodobljen na stanje v2.60.0 (refresh 2026-10-14)**
+**Issue:** #35 · **Status:** dokument oddan (07f1f9e, v2.50.0) + **posodobljen na stanje v2.65.0 (refresh 2026-10-14, faza 2 PoC)**
 **Metoda:** vsi podatki o licencah/dostopu preverjeni na primarnih virih (uradni repo/LICENSE, uradna dokumentacija) na dan **13. 10. 2026**; repo-pregled posodobljen na glavo main `9230f20` (v2.60.0) dne **14. 10. 2026**; kjer podatek ni potrjen, je izrecno označen **[nepotrjeno]**.
 **Kategorije:** [OSS] odprtokodna programska oprema · [BJS] brezplačna javna storitev · [OJP] odprti javni podatki · [PPA] partnerski API z odobritvijo · [OBJ] lastna (objektna) vsebina/koda
 
@@ -10,17 +10,17 @@
 
 ## 1. Povzetek za odločanje
 
-**Sodba (osvežena 14. 10. 2026):** sedajšnji `discover-slovenia-ai` je po zaključku F0–F5 **~90 % arhitekture**, ki jo #35 opisuje: deterministični načrtovalnik obstaja (itinerary-engine + road-routing OSRM odjemalec + detectBorderCrossings — 0 AI), **večdržavni podatkovni sloj je ŽIV** (74 destinacij × 10 držav, /drzava/[code] × 10, sitemap 738 × 6 jezikov, NLU kanon 74, affiliate aktivacija × 10 držav), Leaflet zemljevid deluje, i18n pokriva 6 jezikov, monetizacija (Stripe, affiliate, listingi, partner portal) je v kodi, testno jeklo je 2245 enotnih (25 859 expect) + 16 E2E na produkciji. Manjka še **pet reči**:
+**Sodba (osvežena 14. 10. 2026):** sedajšnji `discover-slovenia-ai` je po zaključku F0–F5 **~90 % arhitekture**, ki jo #35 opisuje: deterministični načrtovalnik obstaja (itinerary-engine + road-routing Valhalla odjemalec + detectBorderCrossings — 0 AI), **večdržavni podatkovni sloj je ŽIV** (74 destinacij × 10 držav, /drzava/[code] × 10, sitemap 738 × 6 jezikov, NLU kanon 74, affiliate aktivacija × 10 držav), Leaflet zemljevid deluje, i18n pokriva 6 jezikov, monetizacija (Stripe, affiliate, listingi, partner portal) je v kodi, testno jeklo je 2338 enotnih (26 134 expect) + 16 E2E na produkciji. Manjka še **pet reči**:
 
 1. **Ploščice** — še vedno `tile.openstreetmap.org` (BJS), kar OSMF politika izrecno prepoveduje za komercialno produkcijo → zamenjava z **OpenFreeMap** [BJS/OSS] (0 EUR, brez registracije, self-host pot enaka kode). Sprememba: 1 URL + CSP vrstica.
-2. **Routing self-host** — obstoječ `road-routing-server.ts` kliče **javni OSRM demo strežnik** `router.project-osrm.org` (BJS, iskrenostni kanon: cache 24 h/600, circuit breaker, hevristični fallback izrecno označen). Za produkcijo ob rasti je potreben **Valhalla self-host** [OSS, MIT] nad Geofabrik izvozi — javni OSRM demo je nova operativna odvisnost (tveganje R11).
+2. **Routing self-host** — `road-routing-server.ts` (in `/api/plan/directions`) je od 2.65.0 (faza 2 PoC) preklopljen na **javni Valhalla primerek FOSSGIS** `valhalla1.openstreetmap.de` [BJS; OpenStreetMap graf, ODbL; motor MIT] — iskrenostni kanon ohranjen (cache 24 h/600, circuit breaker, hevristični fallback izrecno označen, `source valhalla|heuristic`). Za produkcijo ob rasti je potreben **Valhalla self-host** [OSS, MIT] nad Geofabrik izvozi — self-host = `VALHALLA_BASE_URL` override, KODA ISTA; javni primerek ostaja operativna odvisnost (tveganje R11).
 3. **Katalog ponudnikov s prijavo/preverjanjem** — affiliate/globalna aktivacija × 10 držav je živa (F4), Listing + moderacija obstajajo; manjka `Provider` model iz pogl. 6 (prijava, identiteta, dedup, report, 12-mesečni potek preverjanja).
 4. **Geokodiranje/autocomplete** — Photon [OSS, Apache-2.0] (faza 3); danes so koordinate ročno kurirane v registrih.
 5. **Partnerski API sloj** — vse [nepotrjeno] brez odobritve (pogl. 7); zakonita pot danes: označene globoke povezave prek `/api/affiliate/go` (302) + `bookingMode: "request"`.
 
 **Strošek faze 1 (tehnično začetno):** 0 EUR licence, 0 novih plačljivih storitev; strošek VPS za Valhalla je **[nepotrjen]** (ocena 5–20 EUR/mes za 2–4 vCPU, zahteva ponudbo). **AI: 0 komponent** — vsa logika je filtriranje, uteži, geometrija in pravila.
 
-**Ključno tveganje:** ODbL share-alike za izpeljane baze (mitigirano z ATTRIBUTIONS.md režimom), eno-vzdrževalčeva odvisnost OpenFreeMap (mitigirano: self-host pot enaka kode) in NOVO R11 — odvisnost od javnega OSRM demo strežnika (mitigirano: iskrenostni kanon + Valhalla faza 2).
+**Ključno tveganje:** ODbL share-alike za izpeljane baze (mitigirano z ATTRIBUTIONS.md režimom), eno-vzdrževalčeva odvisnost OpenFreeMap (mitigirano: self-host pot enaka kode) in R11 — odvisnost od javnega usmerjevalnika (v 2.65.0 prenešen z OSRM demo na javni Valhalla FOSSGIS; mitigirano: iskrenostni kanon + breaker + `VALHALLA_BASE_URL` self-host override).
 
 ---
 
@@ -56,7 +56,7 @@
 - ~~Ploščični ponudnik za produkcijo~~ → ŠE VEDNO ODPRTI (R1; faza 1).
 - ~~Večdržavni podatkovni model~~ → ✅ **REŠENO z F0–F5** (#41, v2.54.0–v2.60.0): država/regija/kraj so prvotne dimenzije; 74 destinacij × 10 držav; /drzava landingi; sitemap; NLU 74; affiliate × 10.
 - ~~BA/ME/AL (+ RS/MK/XK/BG/GR) POI kuracija~~ → ✅ **REŠENO z F1** (kanon 74 destinacij s provenance kanonom #38; 6 držav × 6 destinacij).
-- Routing engine z profili + optimizacija vrstnega reda postankov → ŠE VEDNO ODPRTI (faza 2; OSRM demo je vmesna rešitev).
+- Routing engine z profili + optimizacija vrstnega reda postankov → ◐ **PoC ODDAN (2.65.0, faza 2)**: `road-routing-server.ts` in `/api/plan/directions` zdaj govorita **Valhalla** (javni FOSSGIS primerek `valhalla1.openstreetmap.de` — BJS; native trip format, shape polyline6, `units=kilometers`) po ISTEM iskrenostnem kanonu (cache 24 h/600 + breaker 4→10 min + `source valhalla|heuristic`); self-host = `VALHALLA_BASE_URL` override, koda ISTA; 2-opt optimizer še ODPRT (šele ob potrebah obsega).
 - Photon geokodiranje/autocomplete → ◐ **PoC ODDAN (2.64.0, faza 3)**: javni Photon BJS prek strežniškega `/api/geocode` (iskrenostni kanon: cache 24 h/600 + breaker 4→10 min + rate 30/min + `source photon|none`); vstavljen v prijavnico ponudnika (`/za-ponudnike`) — ROČNI VNOS ostaja; self-host = `PHOTON_BASE_URL` override, koda ista.
 - Katalog ponudnikov: Provider model s prijavo/verifikacijo/dedup/report → **ZAKLJUČEN (4a 2.61.0 + 4b 2.62.0)**; kuracija onkraj kanona 74 ostaja človeško delo.
 - Partnerski API sloj → ŠE VEDNO [nepotrjeno] (pogl. 7).
@@ -67,7 +67,7 @@
 - NE uvajati OR-Tools/Vroom za 3–15 postankov (lastni greedy+2-opt zadošča; Vroom šele pri časovnih oknih/več vozilih).
 - NE graditi novega CMS-ja za ponudnike (Listing + moderacija + owner stran so osnova).
 - NE uvajati OTP (0/5 nacionalnih GTFS feedov — glej pogl. 5).
-- NE prepisovati `road-routing-server.ts` za Valhalla — obstoječ iskrenostni kanon (source osrm|heuristic) se ohrani; zamenjava BASE URL + formata odgovora je dovolj (faza 2).
+- NE prepisovati `road-routing-server.ts` za Valhalla — obstoječ iskrenostni kanon (realna pot vsa izrecno označena hevristika) se ohrani; zamenjava BASE URL + formata odgovora je dovolj → **IZVEDENO v 2.65.0 (faza 2 PoC)**: kanon ena-ob-ena (cache/breaker/hevristika/redčenje geometrije), zamenjan je SAMO request/response sloj; `source: "valhalla" | "heuristic"`.
 
 ---
 
@@ -82,8 +82,8 @@
 | **OpenFreeMap** (ploščice) | BJS+OSS | ODbL podatki; javni primerek brez ključev | — | **RE-DEIZIJA (verifikacija 14.10.2026)** | javni primerek je VEKTORSKI (TileJSON `/planet` → datirani `.pbf` zapis, 16 vektorskih plasti) + raster SAMO Natural Earth relief — uličnih rasterskih ploščic za Leaflet NIMA → "sprememba 1 URL" NI izvedljiva; poti: (a) MapLibre + OFM slog (premaknjena iz faze 6 — NOVO dejstvo upravičuje), (b) self-host raster (faza 2 infra), (c) status quo OSMF pri lahkotni uporabi; "completely free, no limits" ostaja potrjeno (stran + TileJSON atribucija); **PoC pot (a) IZVEDEN 2.63.0** — MapLibre + Liberty deluje, VSE pridobitve (slog/vektor/glyphs/sprite/NE) iz ENEGA hosta (curl 14. 10.), CSP connect-src+img-src, ATTRIBUTIONS.md stoji |
 | tile.openstreetmap.org | BJS | ODbL | — | **ZAVRNITI** za produkcijo | OSMF politika: umik komercialnim storitvam |
 | Geofabrik izvozi/self-host | OJP+OSS | ODbL | dnevni izvozi | PREIZKUSITI | zakonita pot pri rasti |
-| **Valhalla** (routing) | OSS | **MIT** (COPYING, preverjeno 13.10.2026) | 3.9.1 | **IZBRATI — primarni** | auto/peš/kolo + multimodalno, vgrajen costmatrix/TSP, nizek pomnilniški odtis |
-| OSRM | OSS | BSD-2 | 26.10.0 | ZAVRNITI kot primarni | statični profili ob predobdelavi; meritvena referenca — javni demo primerek pa je VMESNA rešitev v kodi (glej R11) |
+| **Valhalla** (routing) | OSS | **MIT** (COPYING, preverjeno 13.10.2026) | 3.9.1 | **IZBRANO — primarni (2.65.0 faza 2 PoC: javni FOSSGIS primerek + `VALHALLA_BASE_URL` override)** | auto/peš/kolo + multimodalno, vgrajen costmatrix/TSP, nizek pomnilniški odtis |
+| OSRM | OSS | BSD-2 | 26.10.0 | ZAVRNITI kot primarni | statični profili ob predobdelavi; meritvena referenca — javni demo je bil VMESNA rešitev do 2.64.0 (v fazi 2 PoC 2.65.0 ukinjen iz kode — glej R11) |
 | GraphHopper OSS | OSS | Apache-2.0 | 11.1 | ZAVRNITI | Java ops brez funkcionalne prednosti |
 | OR-Tools | OSS | Apache-2.0 | 9.15 | ZAVRNITI | overkill za VRP 3–15 postankov |
 | Vroom | OSS | BSD-2 | 1.15.0 | PREIZKUSITI (faza 3) | šele časovna okna/več vozil; naravna zveza z Valhalla |
@@ -230,7 +230,7 @@ Pravila: `verified` SAMO po prijavi/identiteti ponudnika (glej 6c); OSM-izpeljan
    [+ faza 3: Vroom; MapLibre/PMTiles ob potrebi]
 ```
 
-Pravilo: **vsako pravilo/utež pregledna + testirana** (obstoječi standard zaklepov); uteži NISO „objektivno najboljše“ — dokumentiran hevristični izbor, empirična ovrednotenje šele z uporabniškimi podatki. Iskrenostni kanon routingu (`source: "osrm" | "heuristic"`, hevristika nikoli prikazana kot realna pot) se iz faze 2 OHRANI ena-ob-ena na Valhalla.
+Pravilo: **vsako pravilo/utež pregledna + testirana** (obstoječi standard zaklepov); uteži NISO „objektivno najboljše“ — dokumentiran hevristični izbor, empirična ovrednotenje šele z uporabniškimi podatki. Iskrenostni kanon routingu se je v fazi 2 OHRANIL ena-ob-ena (2.65.0): `source: "valhalla" | "heuristic"`, hevristika nikoli prikazana kot realna pot.
 
 ---
 
@@ -241,7 +241,7 @@ Pravilo: **vsako pravilo/utež pregledna + testirana** (obstoječi standard zakl
 | **0 — dokument** | #35 raziskava oddana + osvežena na v2.60.0 | ✅ (07f1f9e + ta refresh) | 0 | — |
 | **(F0–F5 #41)** | večdržavni sloj: 10 držav, 74 destinacij, /drzava, sitemap 738 × 6, affiliate × 10, čezmejni prehodi, NLU 74 | ✅ **MERGANO v produkcijo v2.54.0–v2.60.0** | 0 | — |
 | **1 (re-deizija 14. 10.)** | ploščice: verifikacija je REFUTIRALA fazo, kot je bila napisana — OpenFreeMap javni primerek = vektorski (Leaflet ne more direktno); re-deizija: MapLibre PoC (iz faze 6 premaknjena naprej na podlagi NOVIH dejstev) ALI status quo OSMF pri lahkotni uporabi do faze 2 infra; ATTRIBUTIONS.md ostaja obveznost pred vsako menjavo | ◐ **PoC ODDAN (2.63.0)**: MapLibre 6.14.0 + OFM Liberty na `/zemljevid?zemljevid=vektorji` (74 markerjev, atribucija vidna, CSP en host, chunk 277 kB gzip se nalaga šele v PoC, privzeti Leaflet nespremenjen; ATTRIBUTIONS.md izpolnjen) — **odločitev ŠE VEDNO lastniška** (MapLibre vs status quo vs self-host) | 0 EUR (obe poti) | eno-vzdrževalec OFM (self-host ista koda); paket MapLibre +4–7× (merjeno ≈6,6×) |
-| **2 (2–4 tedni)** | Valhalla self-host: Geofabrik izvozi → graf za 10 držav; zamenjava OSRM demo (R11); 2-opt optimizer + zaklepi | ⬜ ODPRTA (OSRM demo = vmesna rešitev z iskrenostnim kanonom) | VPS **[nepotrjena cena]** | obremenitev VPS pri rasti |
+| **2 (2–4 tedni)** | Valhalla: zamenjava javnega primerka s self-host nad Geofabrik izvozi za 10 držav; 2-opt optimizer + zaklepi | ◐ **PoC ODDAN (2.65.0)**: `road-routing-server.ts` + `/api/plan/directions` na JAVNEM FOSSGIS primerku `valhalla1.openstreetmap.de` (BJS; curl verifikacija 14. 10.: `trip.status 0`, `summary length/time`, shape polyline6 — dekoder 1e6 ena-ob-ena, noge staknjene brez mejnih dvojnikov); kanon OHRANJEN (cache 24 h/600, breaker 4→10 min, hevristika izrecno označena); UI oznake OSRM→Valhalla v 6 jezikih; ATTRIBUTIONS.md v istem PR-ju — **self-host = `VALHALLA_BASE_URL`, koda ISTA**; 2-opt ostaja šele ob potrebah | VPS **[nepotrjena cena]** (samo za self-host) | obremenitev VPS pri rasti; fair-use javnega primerka (cache+breaker+rate kanon) |
 | **3 (1–2 tedna)** | Photon self-host (autocomplete); Nominatim javni ostane samo za demo; Vroom šele za časovna okna | ◐ **PoC ODDAN (2.64.0)**: strežniški `/api/geocode` (javni Photon BJS `photon.komoot.io`, `lang=en` — `sl` javni primerek NE podpira, HTTP 400, verificirano curl 14. 10.) + prijavnica `/za-ponudnike` dobi krajevno iskanje (zadetek izpolni kraj/regijo/državo/koordinati; filtrirano na 10 kanonskih držav; atribucija OSM vidna; ROČNI VNOS ostaja vedno) — self-host = `PHOTON_BASE_URL`, koda ISTA; Vroom ostaja šele za časovna okna | 0 | fair-use javnega primerka (cache+breaker+rate kanon) |
 | **4 (1–3 tedni)** | Provider model (pogl. 6a) + prijava/verifikacija/dedup/report — **osnova Listing+moderacija že stojita; Destination.country je rešen (F0)**; kuracija onkraj kanona 74 | ✅ **4a+4b ZAKLJUČENA (2.61.0/2.62.0)**: Prisma `Provider`+`ProviderReport`, čista logika (normalizacija imena, geohash, dedupKey, 12-mesečni potek preverjanja, valuta iz COUNTRIES meta — testno zaklenjeno), POST `/api/providers/report` + javna prijava `/api/providers/apply` (dedup 409, claimed+draft — NIKOLI samodejna objava) + admin `/api/admin/providers` (publish/unpublish/suspend/verify, AuditLog, fail-closed) + prijavnica `/za-ponudnike` + admin zavihek Ponudniki; kuracija onkraj kanona 74 ostaja človeško delo | 0 (človeški čas kuracije je glavni strošek) | svežina podatkov |
 | **5 (šele ob obsegu)** | Viator sandbox pilot; meritve prikazi/kliki/povpraševanja (diagnostika brez osebnih podatkov); PLUS paket ponudnikov | ⬜ ODPRTA | 0 do odobritve | pogodbeni pogoji |
@@ -285,7 +285,7 @@ Merila za sprožitev rasti: presežek OSMF/OpenFreeMap poštene uporabe, p95 rou
 | R8 | obremenitev javnih servisov (Nominatim 1 req/s) | operativna | cache + rate limit + Photon (2.64.0 PoC: javni primerek ZA strežniškim `/api/geocode` — odjemalec ga ne vidi; cache 24 h/600 + breaker 4→10 min + rate 30/min; self-host `PHOTON_BASE_URL` od faze 3) |
 | R9 | rezervacije → odgovornost za plačilo/odpoved | poslovno-pravna | samo redirect/request mode; nikoli lasten booking brez pogodbe; lažni gumbi NE |
 | R10 | MapLibre 2.0 prelomi | tehnična | Leaflet ostane v fazi 1–3; MapLibre šele v fazi 6 na zamrznjeni verziji |
-| **R11** | **routing je danes odvisen od javnega OSRM demo strežnika** (`router.project-osrm.org` — BJS za lahkotno uporabo, brez SLA; omejitve uporabe veljajo tudi brez formalne politike ploščic) | operativna | obstoječi mitigaciji v kodi: cache 24 h/600 + circuit breaker (4 napake → 10 min) + iskren hevristični fallback z izrecno oznako; trajna rešitev faza 2: Valhalla self-host z istim iskrenostnim kanonom |
+| **R11** | **routing je odvisen od JAVNEGA primerka** — od 2.65.0 (faza 2 PoC) javni Valhalla FOSSGIS `valhalla1.openstreetmap.de` (BJS za lahkotno uporabo; prej OSRM demo `router.project-osrm.org`) | operativna | obstoječe mitigacije v kodi: cache 24 h/600 + circuit breaker (4 napake → 10 min) + iskren hevristični fallback z izrecno oznako; trajna rešitev: **Valhalla self-host — `VALHALLA_BASE_URL` override, koda ISTA (kanon faze 2, izveden kot PoC 2.65.0)** |
 
 ---
 
@@ -296,8 +296,7 @@ Merila za sprožitev rasti: presežek OSMF/OpenFreeMap poštene uporabe, p95 rou
 - OpenFreeMap — https://www.openfreemap.org/ („completely free … no limits“, self-host izrecno dokumentiran — preverjeno prek uradne strani)
 - OSMF tile politika — https://operations.osmfoundation.org/policies/tiles/
 - Geofabrik izvozi — https://download.geofabrik.de/ (izvozi za vseh 10 držav kanona obstajajo, dnevna svežina — ponovno potrjeno 14. 10. 2026)
-- Valhalla — https://github.com/valhalla/valhalla (COPYING: **MIT**, potrjeno prek raw datoteke; verzija 3.9.1)
-- OSRM — https://github.com/Project-OSRM/osrm-backend (BSD-2); javni demo `router.project-osrm.org` (uporabljen v kodi — R11)
+- Valhalla — https://github.com/valhalla/valhalla (COPYING: **MIT**, potrjeno prek raw datoteke; verzija 3.9.1); javni primerek FOSSGIS `valhalla1.openstreetmap.de` (BJS; `/route?json=…` verificirano curl 14. 10. 2026: trip.status 0, summary length/time, shape polyline6 — `lang`/`units` podprta; v kodi od 2.65.0)
 - GraphHopper — https://github.com/graphhopper/graphhopper (Apache-2.0)
 - OR-Tools — https://github.com/google/or-tools (Apache-2.0)
 - Vroom — https://github.com/VROOM-Project/vroom (BSD-2)
@@ -316,4 +315,4 @@ Merila za sprožitev rasti: presežek OSMF/OpenFreeMap poštene uporabe, p95 rou
 
 ---
 
-*Zaključek (osvežen 14. 10. 2026, 2.64.0): platforma je izvedljiva z 0 EUR licenčnih stroškov in brez AI. Balkanska ekspanzija (F0–F5, #41) je zaprla podatkovno-modelirno vrzel; faza 4a+4b (Provider sloj + prijava/moderacija) je zaključena v 2.61.0/2.62.0; faza 1 je dobila izveden PoC (2.63.0: MapLibre + OpenFreeMap na `?zemljevid=vektorji`, merjeno 277 kB gzip, privzeti Leaflet nespremenjen, ATTRIBUTIONS.md stoji) — polna menjava ploščic ostaja lastniška re-deizija; faza 3 je dobila izveden PoC (2.64.0: strežniški `/api/geocode` nad javnim Photon BJS + krajevno iskanje v prijavnici ponudnika, ročni vnos ostaja, self-host = `PHOTON_BASE_URL`). Ostajajo: Valhalla self-host (lastniški VPS), lastniška re-deizija faze 1, faza 5 Viator (odobritev) ter materializacija Postgres tabel (db:pg:deploy, PRODUCTION-CUTOVER). Odločitve ostanejo reverzibilne in majhne.*
+*Zaključek (osvežen 14. 10. 2026, 2.65.0): platforma je izvedljiva z 0 EUR licenčnih stroškov in brez AI. Balkanska ekspanzija (F0–F5, #41) je zaprla podatkovno-modelirno vrzel; faza 4a+4b (Provider sloj + prijava/moderacija) je zaključena v 2.61.0/2.62.0; faza 1 je dobila izveden PoC (2.63.0: MapLibre + OpenFreeMap na `?zemljevid=vektorji`, merjeno 277 kB gzip, privzeti Leaflet nespremenjen, ATTRIBUTIONS.md stoji); faza 3 je dobila izveden PoC (2.64.0: strežniški `/api/geocode` nad javnim Photon BJS + krajevno iskanje v prijavnici ponudnika, ročni vnos ostaja, self-host = `PHOTON_BASE_URL`); faza 2 je dobila izveden PoC (2.65.0: routing na javnem Valhalla FOSSGIS primerku — R11 OSRM demo ukinjen, iskrenostni kanon ena-ob-ena, self-host = `VALHALLA_BASE_URL`). Ostajajo: Valhalla/Photon self-host na lastniškem VPS, lastniška re-deizija faze 1, faza 5 Viator (odobritev) ter materializacija Postgres tabel (db:pg:deploy, PRODUCTION-CUTOVER). Odločitve ostanejo reverzibilne in majhne.*

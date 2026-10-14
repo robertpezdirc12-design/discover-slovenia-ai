@@ -4,22 +4,23 @@ import * as routeModule from "@/app/api/plan/directions/route";
 import { POST } from "@/app/api/plan/directions/route";
 
 /**
- * PLAN-DIRECTIONS (POLIR3 A, 2.30.0; POLIR5 A, 2.32.0) — enotski preizkusi
- * strežniškega OSRM proxyja /api/plan/directions Z MAKETO globalnega fetch
- * (0 omrežja: noben preizkus ne gre na internet; fixture-ji so DEJANSKI
- * odgovori javnega OSRM demo strežnika, ujeti 2026-10-12 na točno določenih
- * koordinatah registra — Bled→Ljubljana 20 točk, več-točkovni dan
- * Bled;Vintgar;Bohinj 66 točk).
+ * PLAN-DIRECTIONS (POLIR3 A, 2.30.0; POLIR5 A, 2.32.0; #35 faza 2, 2.65.0)
+ * — enotski preizkusi strežniškega proxyja /api/plan/directions Z MAKETO
+ * globalnega fetch (0 omrežja: noben preizkus ne gre na internet; vir je
+ * zdaj JAVNI VALHALLA primerek FOSSGIS — prej OSRM demo; fixture-ji so
+ * native trip odgovori te oblike: trip.status 0, legs[…].summary
+ * {length km, time s}, legs[…].shape = Encoded Polyline 1e6).
  *
  * Kanoni (vzorec start-anywhere + go-offline maketa fetch):
  *  - validacija fail-closed 400 (dnevi/točke/števila/bbox registra);
- *  - pretvorba OSRM [lon, lat] → Leaflet [lat, lon];
+ *  - geometrija = dekodirani leg-shape-i [lat, lon], staknjeni brez
+ *    podvojenih mejnih točk (Leaflet vrstni red ŽE ustreza);
  *  - predpomnilnik po zaokroženih koordinatah (2. klic NE kliče fetch);
  *  - fail-closed PO DNEVIH (padec enega dneva ne podre ostalih);
  *  - TimeoutError → iskren status "straight";
  *  - oblika odgovora { source, days } + omejitev 60/min po odjemalcu;
- *  - POLIR5 A: IZMERJENI distanceM/durationS iz istega OSRM odgovora —
- *    aditivna polji, veljavno le kot celo število ≥ 0; negativna/nekončna/
+ *  - POLIR5 A: IZMERJENI distanceM/durationS iz ISTEGA trip.summary —
+ *    aditivni poli, veljavno le kot celo število ≥ 0; negativna/nekončna/
  *    manjkajoča vrednost → fail-closed "straight" ZA TISTI dan (in dan se
  *    NE predpomni); predpomnilnik hrani VSE TROJE (geometry, distanceM,
  *    durationS) pod istim ključem.
@@ -49,22 +50,73 @@ function jsonRes(status: number, body: unknown): Response {
   });
 }
 
+// ── Encoded Polyline 1e6 kodirnik (testni dvojček decodePolyline6) ────────
+
+function zigzag(n: number): number {
+  return n < 0 ? -n * 2 - 1 : n * 2;
+}
+
+function encodePolyline6(coords: [number, number][]): string {
+  let lastLat = 0;
+  let lastLng = 0;
+  let out = "";
+  const chunk = (v: number): void => {
+    let x = zigzag(v);
+    while (x >= 0x20) {
+      out += String.fromCharCode((0x20 | (x & 0x1f)) + 63);
+      x >>= 5;
+    }
+    out += String.fromCharCode(x + 63);
+  };
+  for (const [lat, lng] of coords) {
+    const la = Math.round(lat * 1e6);
+    const lo = Math.round(lng * 1e6);
+    chunk(la - lastLat);
+    chunk(lo - lastLng);
+    lastLat = la;
+    lastLng = lo;
+  }
+  return out;
+}
+
 /**
- * OSRM odgovor ob uspehu (oblika geometry.geojson, [lon, lat]).
- * POLIR5 A: privzeti distance/duration sta ŽIVI ujeti vrednosti iz raziskave
- * 2026-10-11-polir5.md, preizkus B (Bled→Vintgar→Bohinj: 21551 m / 2173 s) —
- * proxy zdaj iz ISTEGA odgovora bere ves trojček.
+ * Valhalla odgovor ob uspehu (native trip). POLIR5 A: privzeti length/time
+ * sta ŽIVI ujeti vrednosti (preizkus B: Bled→Vintgar→Bohinj = 21,551 km /
+ * 2173 s) — proxy zdaj iz ISTEGA trip.summary bere ves trojček.
+ * `legs` > 1 razdeli shape na več nog (Valhalla za več lokacij vrača nogo
+ * na lokacijo; nogi si delita mejno točko — proxy jo stakne brez dvojnikov).
  */
-function osrmOk(
-  coordinates: [number, number][],
-  distance: number = 21_551,
-  duration: number = 2_173
+function valhallaOk(
+  coordsLonLat: [number, number][],
+  lengthKm: number = 21.551,
+  timeS: number = 2_173,
+  legs: number = 1
 ): unknown {
+  const pts = coordsLonLat.map(
+    ([lon, lat]) => [lat, lon] as [number, number]
+  );
+  const shapes: string[] = [];
+  if (legs === 1) {
+    shapes.push(encodePolyline6(pts));
+  } else {
+    const cut = Math.round(pts.length / legs);
+    for (let i = 0; i < legs; i++) {
+      const start = Math.max(0, i * cut - (i > 0 ? 1 : 0));
+      const end = i === legs - 1 ? pts.length : (i + 1) * cut;
+      shapes.push(encodePolyline6(pts.slice(start, end)));
+    }
+  }
   return {
-    code: "Ok",
-    routes: [
-      { geometry: { type: "LineString", coordinates }, distance, duration },
-    ],
+    trip: {
+      status: 0,
+      status_message: "Found route between points",
+      units: "kilometers",
+      legs: shapes.map((shape) => ({
+        summary: { length: lengthKm / legs, time: timeS / legs },
+        shape,
+      })),
+      summary: { length: lengthKm, time: timeS },
+    },
   };
 }
 
@@ -106,7 +158,7 @@ function drPost(body: unknown, xff: string): Promise<Response> {
   );
 }
 
-// ── koordinate registra (slovenia-data.ts) — [lon, lat] (OSRM vrstni red) ─
+// ── koordinate registra (slovenia-data.ts) — [lon, lat] (vhodni vrstni red) ─
 
 const BLED: [number, number] = [14.0944, 46.3683];
 const VINTGAR: [number, number] = [14.1167, 46.4];
@@ -118,14 +170,21 @@ const PTUJ: [number, number] = [15.8772, 46.4198];
 const PIRAN: [number, number] = [13.5729, 45.5296];
 const KOPER: [number, number] = [13.7294, 45.5467];
 
-const OSRM_URL = (points: [number, number][]): string =>
-  "https://router.project-osrm.org/route/v1/driving/" +
-  points.map(([lon, lat]) => `${lon},${lat}`).join(";") +
-  "?overview=simplified&geometries=geojson";
+/** Pričakovan URL Valhalla (isti graditelj kot resolveDay). */
+const VALHALLA_URL = (points: [number, number][]): string =>
+  "https://valhalla1.openstreetmap.de/route?json=" +
+  encodeURIComponent(
+    JSON.stringify({
+      locations: points.map(([lon, lat]) => ({ lat, lon, type: "break" })),
+      costing: "auto",
+      shape_format: "polyline6",
+      units: "kilometers",
+    })
+  );
 
-// ── FIXTURE: DEJANSKI OSRM odgovori (ujeti 2026-10-12, koordinate registra)
+// ── FIXTURE: odgovori v native Valhalla obliki (koordinate registra)
 
-/** Bled→Ljubljana: 20 točk [lon, lat] (simplified geojson, 56,6 km). */
+/** Bled→Ljubljana: 20 točk [lon, lat] (1 noga, 56,6 km). */
 const FIXTURE_BLED_LJ: [number, number][] = [
   [14.095853, 46.370582], [14.107016, 46.376902], [14.122074, 46.366684],
   [14.134056, 46.368126], [14.149838, 46.36351], [14.16068, 46.367562],
@@ -138,7 +197,8 @@ const FIXTURE_BLED_LJ: [number, number][] = [
 
 /**
  * Več-točkovni dan Bled;Vintgar;Bohinj: 66 točk [lon, lat] (37,6 km) —
- * EN zahtevek pokrije celoten dan (raziskava POLIR3: „legs: 2").
+ * EN zahtevek pokrije celoten dan (raziskava POLIR3: „legs: 2" — fixture
+ * ima 2 nogi z deljeno mejno točko, proxy jih stakne nazaj v 66).
  */
 const FIXTURE_BVG_BOHINJ: [number, number][] = [
   [14.095853, 46.370582], [14.100674, 46.37247], [14.098192, 46.373192],
@@ -165,7 +225,7 @@ const FIXTURE_BVG_BOHINJ: [number, number][] = [
   [13.886396, 46.277817], [13.886216, 46.281653], [13.88333, 46.282459],
 ];
 
-/** Pričakovana pretvorba fixture v vrstni red [lat, lon] (Leaflet). */
+/** Pričakovana geometrija fixture v vrstnem redu [lat, lon] (Leaflet). */
 const toLatLng = (pts: [number, number][]): [number, number][] =>
   pts.map(([lon, lat]) => [lat, lon]);
 
@@ -173,7 +233,7 @@ const toLatLng = (pts: [number, number][]): [number, number][] =>
 
 describe("PLAN-DIRECTIONS — validacija telesa (fail-closed 400)", () => {
   test("① neveljavna telesa → 400 (različne oblike; 0 klicev fetch)", async () => {
-    mockFetch(() => jsonRes(200, osrmOk(FIXTURE_BLED_LJ)));
+    mockFetch(() => jsonRes(200, valhallaOk(FIXTURE_BLED_LJ)));
     const invalid: unknown[] = [
       "neveljaven json {{{", // JSON sintaksa
       null, // brez objekta
@@ -198,7 +258,7 @@ describe("PLAN-DIRECTIONS — validacija telesa (fail-closed 400)", () => {
   });
 
   test("② bbox registra LOČENO: lon/lat izven (13.0–20.0 / 41.0–47.2) → 400", async () => {
-    mockFetch(() => jsonRes(200, osrmOk(FIXTURE_BLED_LJ)));
+    mockFetch(() => jsonRes(200, valhallaOk(FIXTURE_BLED_LJ)));
     const out: unknown[] = [
       { days: [[[12.99, 46.36], LJ]] }, // lon pod
       { days: [[[20.01, 46.36], LJ]] }, // lon nad
@@ -219,7 +279,7 @@ describe("PLAN-DIRECTIONS — validacija telesa (fail-closed 400)", () => {
   });
 
   test("③ neveljavne zahteve NE porabijo kvote (validacija pred omejitvijo)", async () => {
-    mockFetch(() => jsonRes(200, osrmOk(FIXTURE_BLED_LJ)));
+    mockFetch(() => jsonRes(200, valhallaOk(FIXTURE_BLED_LJ)));
     // 20 neveljavnih s STEVILIM XFF …
     for (let i = 0; i < 20; i++) {
       const res = await drPost({ days: [[BLED]] }, "dr-val-3");
@@ -231,13 +291,13 @@ describe("PLAN-DIRECTIONS — validacija telesa (fail-closed 400)", () => {
   });
 });
 
-// ── USPEH OSRM (maketa) ───────────────────────────────────────────────────
+// ── USPEH VALHALLA (maketa) ───────────────────────────────────────────────
 
-describe("PLAN-DIRECTIONS — uspeh: pretvorba lon/lat → lat/lon + oblika", () => {
-  test("④ Bled→Ljubljana: 200, source, geometry PREOBRNJENA v [lat, lon] (20 točk)", async () => {
+describe("PLAN-DIRECTIONS — uspeh: dekodiran shape v [lat, lon] + oblika", () => {
+  test("④ Bled→Ljubljana: 200, source, geometry iz shape (20 točk [lat, lon])", async () => {
     mockFetch((url) => {
-      expect(url).toBe(OSRM_URL([BLED, LJ])); // točen URL OSRM
-      return jsonRes(200, osrmOk(FIXTURE_BLED_LJ));
+      expect(url).toBe(VALHALLA_URL([BLED, LJ])); // točen URL Valhalla
+      return jsonRes(200, valhallaOk(FIXTURE_BLED_LJ));
     });
     const res = await drPost({ days: [[BLED, LJ]] }, "dr-ok-4");
     expect(res.status).toBe(200);
@@ -252,35 +312,41 @@ describe("PLAN-DIRECTIONS — uspeh: pretvorba lon/lat → lat/lon + oblika", ()
       }[];
     };
     // oblika odgovora: source + days (kanon specifikacije)
-    expect(body.source).toBe("OSRM (OpenStreetMap)");
+    expect(body.source).toBe("Valhalla (OpenStreetMap)");
     expect(body.days.length).toBe(1);
     expect(body.days[0].day).toBe(0);
     expect(body.days[0].status).toBe("route");
-    // PREOBRAT vrstnega reda: OSRM [lon, lat] → Leaflet [lat, lon]
+    // dekodiran shape je ŽE v [lat, lon] (Leaflet vrstni red)
     expect(body.days[0].geometry).toEqual(toLatLng(FIXTURE_BLED_LJ));
     expect(body.days[0].geometry.length).toBe(20);
     expect(body.days[0].geometry[0]).toEqual([46.370582, 14.095853]);
     expect(body.days[0].geometry[19]).toEqual([46.056898, 14.5058]);
-    // POLIR5 A: ADITIVNI poli — IZMERJENI distanceM/durationS iz istega
-    // odgovora (cela števila, metri/sekunde); geometry ostaja nespremenjena
-    // (stari odjemalci, ki berejo samo geometry, se ne prelomijo).
+    // POLIR5 A: ADITIVNI poli — IZMERJENI distanceM/durationS iz ISTEGA
+    // trip.summary (cela števila, metri/sekunde); geometry ostaja
+    // nespremenjena (stari odjemalci, ki berejo samo geometry, ne prelomijo).
     expect(body.days[0].distanceM).toBe(21_551);
     expect(body.days[0].durationS).toBe(2_173);
     expect(Number.isInteger(body.days[0].distanceM)).toBe(true);
     expect(Number.isInteger(body.days[0].durationS)).toBe(true);
-    // zahtevek proti OSRM: GET (brez metode), JSON sprejem, signal prekinitve
+    // zahtevek proti Valhalla: GET (brez metode), JSON sprejem, pošten UA,
+    // signal prekinitve
     expect(fetchCalls.length).toBe(1);
     expect(fetchCalls[0].init?.method).toBeUndefined();
     expect(
       (fetchCalls[0].init?.headers as Record<string, string>)?.accept
     ).toBe("application/json");
+    expect(
+      (fetchCalls[0].init?.headers as Record<string, string>)?.[
+        "user-agent"
+      ]
+    ).toContain("DiscoverSlovenia-AI/");
     expect(fetchCalls[0].init?.signal).toBeDefined();
   });
 
-  test("⑤ več-točkovni dan Bled;Vintgar;Bohinj: EN fetch za CEL dan (66 točk)", async () => {
+  test("⑤ več-točkovni dan Bled;Vintgar;Bohinj: EN fetch za CEL dan (2 nogi → 66 točk brez dvojnikov)", async () => {
     mockFetch((url) => {
-      expect(url).toBe(OSRM_URL([BLED, VINTGAR, BOHINJ]));
-      return jsonRes(200, osrmOk(FIXTURE_BVG_BOHINJ));
+      expect(url).toBe(VALHALLA_URL([BLED, VINTGAR, BOHINJ]));
+      return jsonRes(200, valhallaOk(FIXTURE_BVG_BOHINJ, 21.551, 2_173, 2));
     });
     const res = await drPost(
       { days: [[BLED, VINTGAR, BOHINJ]] },
@@ -296,6 +362,7 @@ describe("PLAN-DIRECTIONS — uspeh: pretvorba lon/lat → lat/lon + oblika", ()
       }[];
     };
     expect(body.days[0].status).toBe("route");
+    // nogi sta staknjeni BREZ podvojene mejne točke → natanko 66 točk
     expect(body.days[0].geometry).toEqual(toLatLng(FIXTURE_BVG_BOHINJ));
     expect(body.days[0].geometry.length).toBe(66);
     // POLIR5 A: ŽIVI ujet vzorec iz raziskave 2026-10-11-polir5.md (preizkus
@@ -308,10 +375,10 @@ describe("PLAN-DIRECTIONS — uspeh: pretvorba lon/lat → lat/lon + oblika", ()
 
   test("⑥ dva dneva v eni zahtevi: dva fetcha, `day` = indeks v ZAHTEVI", async () => {
     mockFetch((url) => {
-      if (url === OSRM_URL([LJ, MARIBOR])) {
-        return jsonRes(200, osrmOk(FIXTURE_BLED_LJ));
+      if (url === VALHALLA_URL([LJ, MARIBOR])) {
+        return jsonRes(200, valhallaOk(FIXTURE_BLED_LJ));
       }
-      return jsonRes(200, osrmOk(FIXTURE_BVG_BOHINJ)); // CELJE→PTUJ
+      return jsonRes(200, valhallaOk(FIXTURE_BVG_BOHINJ)); // CELJE→PTUJ
     });
     const res = await drPost(
       { days: [[LJ, MARIBOR], [CELJE, PTUJ]] },
@@ -327,11 +394,11 @@ describe("PLAN-DIRECTIONS — uspeh: pretvorba lon/lat → lat/lon + oblika", ()
   });
 
   test("⑦ prazna tabela dni: 200 s praznim days (0 klicev fetch)", async () => {
-    mockFetch(() => jsonRes(200, osrmOk(FIXTURE_BLED_LJ)));
+    mockFetch(() => jsonRes(200, valhallaOk(FIXTURE_BLED_LJ)));
     const res = await drPost({ days: [] }, "dr-ok-7");
     expect(res.status).toBe(200);
     const body = (await res.json()) as { source: string; days: unknown[] };
-    expect(body.source).toBe("OSRM (OpenStreetMap)");
+    expect(body.source).toBe("Valhalla (OpenStreetMap)");
     expect(body.days).toEqual([]);
     expect(fetchCalls.length).toBe(0);
   });
@@ -341,7 +408,7 @@ describe("PLAN-DIRECTIONS — uspeh: pretvorba lon/lat → lat/lon + oblika", ()
 
 describe("PLAN-DIRECTIONS — predpomnilnik (ključ po zaokroženih koordinatah)", () => {
   test("⑧ isti dan 2× → fetch SAMO enkrat; odgovora sta enaka (deep equal)", async () => {
-    mockFetch(() => jsonRes(200, osrmOk(FIXTURE_BLED_LJ)));
+    mockFetch(() => jsonRes(200, valhallaOk(FIXTURE_BLED_LJ)));
     const body = { days: [[VINTGAR, BOHINJ]] };
     const a = await drPost(body, "dr-cache-8");
     const b = await drPost(body, "dr-cache-8");
@@ -352,7 +419,7 @@ describe("PLAN-DIRECTIONS — predpomnilnik (ključ po zaokroženih koordinatah)
   });
 
   test("⑨ koordinate, ki se zaokrožijo na isto vrednost → PREDPOMNILNIK (isti ključ)", async () => {
-    mockFetch(() => jsonRes(200, osrmOk(FIXTURE_BLED_LJ)));
+    mockFetch(() => jsonRes(200, valhallaOk(FIXTURE_BLED_LJ)));
     // 1. klic: točni koordinati (Bled→Vintgar — par, ki ga nihče prej ni uporabil)
     const a = await drPost(
       { days: [[[14.0944, 46.3683], [14.1167, 46.4]]] },
@@ -371,15 +438,15 @@ describe("PLAN-DIRECTIONS — predpomnilnik (ključ po zaokroženih koordinatah)
   });
 
   test("⑩ NEUSPEŠEN dan se NE predpomni (prehodna napaka ne zastrupi 24 ur)", async () => {
-    // 1. klic: OSRM odgovori 500 → dan iskreno "straight"
-    mockFetch(() => jsonRes(500, { code: "InternalError" }));
+    // 1. klic: Valhalla odgovori 500 → dan iskreno "straight"
+    mockFetch(() => jsonRes(500, { error_code: 102, error: "Internal error" }));
     const a = await drPost({ days: [[PIRAN, KOPER]] }, "dr-cache-10");
     expect(a.status).toBe(200);
     const bodyA = (await a.json()) as { days: { status: string }[] };
     expect(bodyA.days[0].status).toBe("straight");
     expect(fetchCalls.length).toBe(1);
-    // 2. klic: OSRM ozdravi → dan dobi pot (neuspeh NI bil predpomnjen)
-    mockFetch(() => jsonRes(200, osrmOk(FIXTURE_BLED_LJ)));
+    // 2. klic: Valhalla ozdravi → dan dobi pot (neuspeh NI bil predpomnjen)
+    mockFetch(() => jsonRes(200, valhallaOk(FIXTURE_BLED_LJ)));
     const b = await drPost({ days: [[PIRAN, KOPER]] }, "dr-cache-10");
     expect(fetchCalls.length).toBe(2); // ponovni poskus je RES šel v omrežje
     const bodyB = (await b.json()) as { days: { status: string }[] };
@@ -392,10 +459,10 @@ describe("PLAN-DIRECTIONS — predpomnilnik (ključ po zaokroženih koordinatah)
 describe("PLAN-DIRECTIONS — fail-closed PO DNEVIH (padec ne podre ostalih)", () => {
   test("⑪ en dan HTTP 500, drugi uspeh → straight + route (neodvisno)", async () => {
     mockFetch((url) => {
-      if (url === OSRM_URL([MARIBOR, PTUJ])) {
-        return jsonRes(500, { code: "InternalError" }); // prvi dan pade
+      if (url === VALHALLA_URL([MARIBOR, PTUJ])) {
+        return jsonRes(500, { error_code: 102, error: "Internal error" }); // prvi dan pade
       }
-      return jsonRes(200, osrmOk(FIXTURE_BLED_LJ)); // drugi dan uspe
+      return jsonRes(200, valhallaOk(FIXTURE_BLED_LJ)); // drugi dan uspe
     });
     const res = await drPost(
       { days: [[MARIBOR, PTUJ], [CELJE, LJ]] },
@@ -410,19 +477,25 @@ describe("PLAN-DIRECTIONS — fail-closed PO DNEVIH (padec ne podre ostalih)", (
     expect(body.days[1].geometry).toEqual(toLatLng(FIXTURE_BLED_LJ));
   });
 
-  test("⑫ NoRoute + slaba oblika geometry + InvalidValue → vsi iskreno straight", async () => {
+  test("⑫ brez poti (HTTP 400) + trip brez shape + trip status ≠ 0 → vsi iskreno straight", async () => {
     mockFetch((url) => {
-      if (url === OSRM_URL([PTUJ, MARIBOR])) {
-        return jsonRes(200, { code: "NoRoute", routes: [] }); // ni poti
-      }
-      if (url === OSRM_URL([LJ, CELJE])) {
-        // koda Ok, a geometry brez coordinates (slaba oblika)
-        return jsonRes(200, {
-          code: "Ok",
-          routes: [{ geometry: { type: "LineString" } }],
+      if (url === VALHALLA_URL([PTUJ, MARIBOR])) {
+        // Valhalla: brez poti → HTTP 400 (error_code 171)
+        return jsonRes(400, {
+          error_code: 171,
+          error: "No path could be found for input",
         });
       }
-      return jsonRes(400, { code: "InvalidValue" }); // OSRM 400
+      if (url === VALHALLA_URL([LJ, CELJE])) {
+        // status 0, a legs[0] BREZ shape (slaba oblika) → fail-closed
+        return jsonRes(200, {
+          trip: { status: 0, legs: [{ summary: { length: 1, time: 60 } }] },
+        });
+      }
+      // trip status ≠ 0 (npr. 1 — brez poti) s praznimi nogami
+      return jsonRes(200, {
+        trip: { status: 1, status_message: "No path", legs: [] },
+      });
     });
     const res = await drPost(
       { days: [[PTUJ, MARIBOR], [LJ, CELJE], [KOPER, PIRAN]] },
@@ -458,12 +531,12 @@ describe("PLAN-DIRECTIONS — fail-closed PO DNEVIH (padec ne podre ostalih)", (
 // ── IZMERE: distanceM/durationS (POLIR5 A, 2.32.0) ─────────────────────
 
 describe("PLAN-DIRECTIONS — izmere: validacija distanceM/durationS (fail-closed po dnevih)", () => {
-  test("⑯ negativna distance → iskren straight ZA TISTI dan (ne za vse; ni predpomnilnika)", async () => {
+  test("⑯ negativna length → iskren straight ZA TISTI dan (ne za vse; ni predpomnilnika)", async () => {
     mockFetch((url) => {
-      if (url === OSRM_URL([BLED, CELJE])) {
-        return jsonRes(200, osrmOk(FIXTURE_BLED_LJ, -1, 2_173)); // negativna razdalja
+      if (url === VALHALLA_URL([BLED, CELJE])) {
+        return jsonRes(200, valhallaOk(FIXTURE_BLED_LJ, -1, 2_173)); // negativna razdalja
       }
-      return jsonRes(200, osrmOk(FIXTURE_BVG_BOHINJ)); // zdrav dan
+      return jsonRes(200, valhallaOk(FIXTURE_BVG_BOHINJ)); // zdrav dan
     });
     const res = await drPost(
       { days: [[BLED, CELJE], [LJ, PTUJ]] },
@@ -486,13 +559,14 @@ describe("PLAN-DIRECTIONS — izmere: validacija distanceM/durationS (fail-close
     expect(body2.days[0].status).toBe("straight");
   });
 
-  test("⑰ nekončna duration (1e999 v JSON) → iskren straight", async () => {
+  test("⑰ nekončna time (1e999 v JSON) → iskren straight", async () => {
     // JSON.stringify(Infinity) vrne null, zato mora biti telo SESTAVLJENO
     // dobesedno — JSON.parse("1e999") da Number.POSITIVE_INFINITY.
+    const shape = encodePolyline6(toLatLng(FIXTURE_BLED_LJ));
     const raw =
-      '{"code":"Ok","routes":[{"geometry":{"type":"LineString",' +
-      '"coordinates":[[13.7294,45.5467],[15.6466,46.5565]]},' +
-      '"distance":21551,"duration":1e999}]}';
+      '{"trip":{"status":0,"legs":[{"summary":{"length":21.551,"time":1e999},' +
+      `"shape":"${shape}"}],` +
+      '"summary":{"length":21.551,"time":1e999}}}';
     mockFetch(
       () =>
         new Response(raw, {
@@ -507,27 +581,30 @@ describe("PLAN-DIRECTIONS — izmere: validacija distanceM/durationS (fail-close
     expect(fetchCalls.length).toBe(1);
   });
 
-  test("⑱ manjkajoča polja (stara oblika 2.30.0 brez distance/duration) → straight", async () => {
+  test("⑱ manjkajoča polja (trip.summary brez length/time) → straight", async () => {
     mockFetch((url) => {
-      if (url === OSRM_URL([PTUJ, CELJE])) {
-        // POVSEM stara oblika: SAMO geometry (odgovor, kakršnega je poslal
-        // živi OSRM pred 2.32.0 — proxy zdaj zahteva ves trojček)
+      if (url === VALHALLA_URL([PTUJ, CELJE])) {
+        // POVSEM slaba oblika: shape je, trip.summary MANJKA (proxy zahteva
+        // ves trojček — ne izmišljujemo vrednosti, ki jih Valhalla ni poslal)
         return jsonRes(200, {
-          code: "Ok",
-          routes: [
-            { geometry: { type: "LineString", coordinates: FIXTURE_BLED_LJ } },
-          ],
+          trip: {
+            status: 0,
+            legs: [{ shape: encodePolyline6(toLatLng(FIXTURE_BLED_LJ)) }],
+          },
         });
       }
-      // distance je, duration MANJKA → dan ni izmerjen (ne izmišljujemo)
+      // length je, time MANJKA → dan ni izmerjen
       return jsonRes(200, {
-        code: "Ok",
-        routes: [
-          {
-            geometry: { type: "LineString", coordinates: FIXTURE_BVG_BOHINJ },
-            distance: 21_551,
-          },
-        ],
+        trip: {
+          status: 0,
+          legs: [
+            {
+              summary: { length: 21.551, time: 2_173 },
+              shape: encodePolyline6(toLatLng(FIXTURE_BVG_BOHINJ)),
+            },
+          ],
+          summary: { length: 21.551 }, // time manjka
+        },
       });
     });
     const res = await drPost(
@@ -546,8 +623,8 @@ describe("PLAN-DIRECTIONS — izmere: validacija distanceM/durationS (fail-close
     expect(again.status).toBe(200);
   });
 
-  test("⑲ velik odgovor (dan 12 točk, geometry 89 točk) z vsemi tremi → predpomnjeno VSE TROJE (2. klic brez fetch)", async () => {
-    // 12-točkovni dan = zgornja meja validacije; 89 točk geometry = obseg
+  test("⑲ velik odgovor (dan 12 točk, shape 89 točk) z vsemi tremi → predpomnjeno VSE TROJE (2. klic brez fetch)", async () => {
+    // 12-točkovni dan = zgornja meja validacije; 89 točk shape = obseg
     // živega vzorca iz raziskave POLIR5 (preizkus B). Koordinate registra.
     const DAY_12: [number, number][] = [
       [14.0944, 46.3683], [14.1167, 46.4], [13.8833, 46.2833],
@@ -560,8 +637,9 @@ describe("PLAN-DIRECTIONS — izmere: validacija distanceM/durationS (fail-close
       (_, i) => [14.0944 + i * 0.0045, 46.3683 - i * 0.0035] // deterministično
     );
     mockFetch((url) => {
-      expect(url).toBe(OSRM_URL(DAY_12));
-      return jsonRes(200, osrmOk(BIG_89, 21_551, 2_173));
+      expect(url).toBe(VALHALLA_URL(DAY_12));
+      // 12 točk = 11 nog (Valhalla vrača nogo na lokacijo)
+      return jsonRes(200, valhallaOk(BIG_89, 21.551, 2_173, DAY_12.length - 1));
     });
     const req = { days: [DAY_12] };
     const a = await drPost(req, "dr-m-19");
@@ -591,7 +669,7 @@ describe("PLAN-DIRECTIONS — izmere: validacija distanceM/durationS (fail-close
 
 describe("PLAN-DIRECTIONS — omejitev 60/min po odjemalcu (XFF)", () => {
   test("⑭ 60 zahtev z istim XFF → 200; 61. → 429; drug odjemalec ne trpi", async () => {
-    mockFetch(() => jsonRes(200, osrmOk(FIXTURE_BLED_LJ)));
+    mockFetch(() => jsonRes(200, valhallaOk(FIXTURE_BLED_LJ)));
     const body = { days: [[MARIBOR, CELJE]] };
     let ok = 0;
     let limited = 0;
@@ -619,14 +697,19 @@ describe("PLAN-DIRECTIONS — pogodba modula (SAMO POST, kanoni proxyja)", () =>
       typeof (routeModule as unknown as Record<string, unknown>).GET
     ).toBe("undefined");
     const src = await Bun.file(ROUTE_SRC).text();
-    expect(src).toContain("router.project-osrm.org/route/v1/driving/");
-    expect(src).toContain("overview=simplified&geometries=geojson");
+    // #35 faza 2 (2.65.0): vir je javni Valhalla primerek FOSSGIS z
+    // override-om VALHALLA_BASE_URL (self-host = isti kanon kot faza 3).
+    expect(src).toContain("valhalla1.openstreetmap.de");
+    expect(src).toContain("/route");
+    expect(src).toContain("VALHALLA_BASE_URL");
+    expect(src).toContain('"polyline6"');
+    expect(src).toContain('"kilometers"'); // privzeta enota je MILJA — obvezno
     expect(src).toContain("AbortSignal.timeout(UPSTREAM_TIMEOUT_MS)"); // 8 s
     expect(src).toContain("8_000"); // prekinitev 8 s
     expect(src).toContain("24 * 60 * 60_000"); // TTL predpomnilnika 24 h
     expect(src).toContain("500"); // največ 500 vnosov
     expect(src).toContain("rateLimited"); // skupni kanon omejitve
-    // POLIR5 A: izmere iz ISTEGA odgovora (routes[0].distance/duration) —
+    // POLIR5 A: izmere iz ISTEGA odgovora (trip.summary.length/time) —
     // nikoli izpeljane iz geometry in nikoli iz hevristike.
     expect(src).toContain("distanceM");
     expect(src).toContain("durationS");

@@ -1,11 +1,13 @@
 /**
- * ROAD-ROUTING — OSRM odjemalec (src/lib/road-routing-server.ts) BREZ
- * pravega omrežja: vbrizgljan fetch/ura/timeout (kanon testne hiše).
+ * ROAD-ROUTING — Valhalla odjemalec (src/lib/road-routing-server.ts, #35
+ * faza 2 PoC 2.65.0) BREZ pravega omrežja: vbrizgljan fetch/ura/timeout
+ * (kanon testne hiše).
  *
  * Iskrenostne invariante: hevristika (haversine ×1,3 @ ~55 km/h) je VEDNO
- * označena source "heuristic" (nikoli "osrm"); NaN/negativne vrednosti in
- * prazne poti so neuspeh; circuit breaker 4 zaporedne napake → odprt 10 min;
- * cache 24 h / 600 (LRU); geometrija se redči na ~400 točk (ista pot).
+ * označena source "heuristic" (nikoli "valhalla"); NaN/negativne vrednosti
+ * in prazne/pokvarjene poti so neuspeh; circuit breaker 4 zaporedne napake
+ * → odprt 10 min; cache 24 h / 600 (LRU); geometrija se redči na ~400
+ * točk (ista pot).
  */
 
 import { describe, expect, test } from "bun:test";
@@ -14,15 +16,19 @@ import {
   BREAKER_OPEN_MS,
   BREAKER_THRESHOLD,
   buildCacheKey,
+  buildValhallaUrl,
   CACHE_CAP,
   CACHE_TTL_MS,
   CircuitBreaker,
+  decodePolyline6,
   formatCoordKey,
   GEOMETRY_CAP,
   heuristicLeg,
   haversineKmLocal,
-  OSRM_TIMEOUT_MS,
-  parseOsrmResponse,
+  VALHALLA_BASE_URL,
+  VALHALLA_PUBLIC_BASE_URL,
+  VALHALLA_TIMEOUT_MS,
+  parseValhallaResponse,
   RoadRouter,
   roundTo1,
   sampleGeometry,
@@ -32,25 +38,60 @@ import {
 const LJ = { lat: 46.0569, lng: 14.5058 };
 const BLED = { lat: 46.3683, lng: 14.0944 };
 
-/** Veljaven OSRM odgovor (route/v1/driving …?overview=full&geometries=geojson). */
-function osrmPayload(
-  distanceM: number,
-  durationS: number,
-  coordinates: [number, number][]
+// ── polyline6 kodirnik (testni dvojček decodePolyline6) ────────────────
+
+function zigzag(n: number): number {
+  return n < 0 ? -n * 2 - 1 : n * 2;
+}
+
+/** Kodira [lat, lng] pare v Encoded Polyline (natančnost 1e6). */
+function encodePolyline6(coords: [number, number][]): string {
+  let lastLat = 0;
+  let lastLng = 0;
+  let out = "";
+  const chunk = (v: number): void => {
+    let x = zigzag(v);
+    while (x >= 0x20) {
+      out += String.fromCharCode((0x20 | (x & 0x1f)) + 63);
+      x >>= 5;
+    }
+    out += String.fromCharCode(x + 63);
+  };
+  for (const [lat, lng] of coords) {
+    const la = Math.round(lat * 1e6);
+    const lo = Math.round(lng * 1e6);
+    chunk(la - lastLat);
+    chunk(lo - lastLng);
+    lastLat = la;
+    lastLng = lo;
+  }
+  return out;
+}
+
+/** Veljaven Valhalla odgovor (native trip, 1 noga = 2 lokaciji). */
+function valhallaPayload(
+  lengthKm: number,
+  timeS: number,
+  coords: [number, number][]
 ) {
   return {
-    code: "Ok",
-    routes: [
-      { distance: distanceM, duration: durationS, geometry: { coordinates } },
-    ],
+    trip: {
+      status: 0,
+      status_message: "Found route between points",
+      units: "kilometers",
+      legs: [
+        { summary: { length: lengthKm, time: timeS }, shape: encodePolyline6(coords) },
+      ],
+      summary: { length: lengthKm, time: timeS },
+    },
   };
 }
 
-/** Uspešen primer: Ljubljana → Bled, ~76,9 km / ~91 min, 3 točke [lng,lat]. */
-const VALID_OSRM = osrmPayload(76900, 5460, [
-  [14.5058, 46.0569],
-  [14.4, 46.2],
-  [14.0944, 46.3683],
+/** Uspešen primer: Ljubljana → Bled, ~76,9 km / ~91 min, 3 točke [lat,lng]. */
+const VALID_VALHALLA = valhallaPayload(76.9, 5460, [
+  [46.0569, 14.5058],
+  [46.2, 14.4],
+  [46.3683, 14.0944],
 ]);
 
 /** Fake fetch: vrne podani JSON (200) in šteje klice. */
@@ -132,12 +173,62 @@ describe("road-routing: ključ cache", () => {
   });
 });
 
-describe("road-routing: parseOsrmResponse", () => {
-  test("uspeh: km/min zaokroženi, [lng,lat] → [lat,lng]", () => {
-    const leg = parseOsrmResponse(VALID_OSRM);
+describe("road-routing: Valhalla URL in polyline6", () => {
+  test("buildValhallaUrl: base + /route?json= z locations [lat,lon], costing auto, polyline6, kilometers", () => {
+    const url = buildValhallaUrl("https://x.example", LJ, BLED);
+    expect(url.startsWith("https://x.example/route?json=")).toBe(true);
+    const json = JSON.parse(
+      decodeURIComponent(url.split("json=")[1] as string)
+    ) as {
+      locations: { lat: number; lon: number }[];
+      costing: string;
+      shape_format: string;
+      units: string;
+    };
+    expect(json.locations).toEqual([
+      { lat: LJ.lat, lon: LJ.lng },
+      { lat: BLED.lat, lon: BLED.lng },
+    ]);
+    expect(json.costing).toBe("auto");
+    expect(json.shape_format).toBe("polyline6");
+    expect(json.units).toBe("kilometers"); // privzeta enota je MILJA — obvezno
+  });
+
+  test("decodePolyline6: kodiranje ↔ dekodiranje je identiteta (lat, lng vrstni red)", () => {
+    const pts: [number, number][] = [
+      [46.0569, 14.5058],
+      [46.2, 14.4],
+      [46.3683, 14.0944],
+      [45.5, -13.25], // negativna delta (zigzag)
+    ];
+    expect(decodePolyline6(encodePolyline6(pts))).toEqual(pts);
+  });
+
+  test("decodePolyline6: prazen/prekratez/pokvarjen zapis → null (ne ugibamo)", () => {
+    expect(decodePolyline6("")).toBeNull();
+    expect(decodePolyline6("??")).toBeNull(); // koda pod 63
+    expect(
+      decodePolyline6("_p~iF") // 1 točka, prekinjeno
+    ).toBeNull();
+    // Prekinjen zapis (nepopoln par) → null
+    expect(decodePolyline6("c{a")).toBeNull();
+  });
+
+  test("privzeti BASE je javni FOSSGIS primerek (BJS); override gre prek env", () => {
+    expect(VALHALLA_PUBLIC_BASE_URL).toBe(
+      "https://valhalla1.openstreetmap.de"
+    );
+    // Brez env spremenljivke se razreši na javni primerek.
+    expect(VALHALLA_BASE_URL).toBe(VALHALLA_PUBLIC_BASE_URL);
+  });
+});
+
+describe("road-routing: parseValhallaResponse", () => {
+  test("uspeh: km/min zaokroženi, shape dekodiran v [lat,lng]", () => {
+    const leg = parseValhallaResponse(VALID_VALHALLA);
     expect(leg).not.toBeNull();
-    expect(leg?.source).toBe("osrm");
-    expect(leg?.km).toBe(76.9); // 76.900 m → 76,9 km
+    expect(leg?.source).toBe("valhalla");
+    expect(leg?.km).toBe(76.9); // summary.length 76,9 km
     expect(leg?.min).toBe(91); // 5.460 s → 91 min
     expect(leg?.geometry).toEqual([
       [46.0569, 14.5058],
@@ -148,10 +239,10 @@ describe("road-routing: parseOsrmResponse", () => {
 
   test("redčenje geometrije > 400 točk (ista pot, manjša ločljivost)", () => {
     const coords: [number, number][] = Array.from({ length: 1000 }, (_, i) => [
-      i / 1000, // lng 0 … 0,999
       45, // lat
+      i / 1000, // lng 0 … 0,999
     ]);
-    const leg = parseOsrmResponse(osrmPayload(50000, 3600, coords));
+    const leg = parseValhallaResponse(valhallaPayload(50, 3600, coords));
     expect(leg).not.toBeNull();
     expect(leg?.geometry.length).toBeLessThanOrEqual(GEOMETRY_CAP + 1);
     expect(leg?.geometry.length).toBeGreaterThanOrEqual(300); // resnično redčeno
@@ -159,50 +250,51 @@ describe("road-routing: parseOsrmResponse", () => {
     expect(leg?.geometry[leg!.geometry.length - 1]).toEqual([45, 0.999]); // zadnja
     // Neposredno: cap spo tudi pri 401 točkah
     const many: [number, number][] = Array.from({ length: 401 }, (_, i) => [
-      i,
       46,
+      i,
     ]);
     expect(sampleGeometry(many, 400).length).toBeLessThanOrEqual(
       GEOMETRY_CAP + 1
     );
   });
 
-  test("NaN/negativna varovalka: distance NaN, duration negativna → null", () => {
+  test("NaN/negativna varovalka: length NaN, time negativna → null", () => {
+    const c: [number, number][] = [
+      [46, 14],
+      [46.1, 14.1],
+    ];
     expect(
-      parseOsrmResponse(osrmPayload(Number.NaN, 600, [[14, 46], [14.1, 46.1]]))
+      parseValhallaResponse(valhallaPayload(Number.NaN, 600, c))
     ).toBeNull();
+    expect(parseValhallaResponse(valhallaPayload(-5, 600, c))).toBeNull();
     expect(
-      parseOsrmResponse(osrmPayload(-5, 600, [[14, 46], [14.1, 46.1]]))
+      parseValhallaResponse(valhallaPayload(10, Number.NaN, c))
     ).toBeNull();
-    expect(
-      parseOsrmResponse(osrmPayload(1000, Number.NaN, [[14, 46], [14.1, 46.1]]))
-    ).toBeNull();
-    expect(
-      parseOsrmResponse(osrmPayload(1000, -60, [[14, 46], [14.1, 46.1]]))
-    ).toBeNull();
+    expect(parseValhallaResponse(valhallaPayload(10, -60, c))).toBeNull();
   });
 
-  test("prazne poti / napačna koda / pokvarjena geometrija → null", () => {
-    expect(parseOsrmResponse({ code: "Ok", routes: [] })).toBeNull();
-    expect(parseOsrmResponse({ code: "NoRoute", routes: [{}] })).toBeNull();
-    expect(parseOsrmResponse(osrmPayload(1000, 60, [[14, 46]]))).toBeNull(); // 1 točka
-    expect(parseOsrmResponse(osrmPayload(1000, 60, []))).toBeNull();
+  test("slab status / prazne noge / pokvarjen shape → null", () => {
+    const c: [number, number][] = [
+      [46, 14],
+      [46.1, 14.1],
+    ];
     expect(
-      parseOsrmResponse(
-        osrmPayload(1000, 60, [
-          ["a", "b"],
-          [1, 2],
-        ] as unknown as [number, number][])
-      )
-    ).toBeNull(); // ne-številke
+      parseValhallaResponse({ trip: { status: 1, legs: [{}] } })
+    ).toBeNull(); // status ≠ 0 (NoRoute)
+    expect(parseValhallaResponse({ trip: { status: 0, legs: [] } })).toBeNull();
     expect(
-      parseOsrmResponse({
-        code: "Ok",
-        routes: [{ distance: 1000, duration: 60 }], // geometrija manjka
+      parseValhallaResponse({
+        trip: { status: 0, legs: [{ summary: { length: 1, time: 60 } }] },
       })
-    ).toBeNull();
-    expect(parseOsrmResponse(null)).toBeNull();
-    expect(parseOsrmResponse("not-an-object")).toBeNull();
+    ).toBeNull(); // shape manjka
+    expect(
+      parseValhallaResponse(
+        valhallaPayload(10, 60, [] as [number, number][])
+      )
+    ).toBeNull(); // prazen shape
+    expect(parseValhallaResponse(null)).toBeNull();
+    expect(parseValhallaResponse("not-an-object")).toBeNull();
+    expect(parseValhallaResponse({ nope: true })).toBeNull();
   });
 });
 
@@ -212,7 +304,7 @@ describe("road-routing: circuit breaker (vbrizgljiva ura)", () => {
     expect(BREAKER_OPEN_MS).toBe(10 * 60 * 1000);
     expect(CACHE_TTL_MS).toBe(24 * 60 * 60 * 1000);
     expect(CACHE_CAP).toBe(600);
-    expect(OSRM_TIMEOUT_MS).toBe(8000);
+    expect(VALHALLA_TIMEOUT_MS).toBe(8000);
   });
 
   test("4 zaporedne napake odprejo vezje za 10 min", () => {
@@ -249,11 +341,11 @@ describe("road-routing: circuit breaker (vbrizgljiva ura)", () => {
 });
 
 describe("road-routing: RoadRouter (vbrizgljan fetch — brez omrežja)", () => {
-  test("uspešen OSRM klic; ponovni klic istih koordinat streže iz cacheja (fetch 1×)", async () => {
-    const f = jsonFetch(VALID_OSRM);
+  test("uspešen Valhalla klic; ponovni klic istih koordinat streže iz cacheja (fetch 1×)", async () => {
+    const f = jsonFetch(VALID_VALHALLA);
     const router = new RoadRouter({ fetchImpl: f.impl });
     const first = await router.routeLeg(LJ, BLED);
-    expect(first.source).toBe("osrm");
+    expect(first.source).toBe("valhalla");
     expect(first.km).toBe(76.9);
     expect(first.min).toBe(91);
     const second = await router.routeLeg(LJ, BLED);
@@ -262,9 +354,9 @@ describe("road-routing: RoadRouter (vbrizgljan fetch — brez omrežja)", () => 
     expect(router.cacheSize()).toBe(1);
   });
 
-  test("cache poteče po 24 h (TTL) → ponoven klic na OSRM", async () => {
+  test("cache poteče po 24 h (TTL) → ponoven klic na Valhalla", async () => {
     let t = 0;
-    const f = jsonFetch(VALID_OSRM);
+    const f = jsonFetch(VALID_VALHALLA);
     const router = new RoadRouter({ fetchImpl: f.impl, now: () => t });
     await router.routeLeg(LJ, BLED);
     t = 23 * 60 * 60 * 1000; // 23 h — še veljavno
@@ -276,7 +368,7 @@ describe("road-routing: RoadRouter (vbrizgljan fetch — brez omrežja)", () => 
   });
 
   test("LRU izpodrivanje: cap 3 → najstarejši vnos izpadel in se ponovno pridobi", async () => {
-    const f = jsonFetch(VALID_OSRM);
+    const f = jsonFetch(VALID_VALHALLA);
     const router = new RoadRouter({ fetchImpl: f.impl, cacheCap: 3 });
     const pairs = [
       [{ lat: 40, lng: 14 }, { lat: 40.1, lng: 14.1 }],
@@ -315,7 +407,7 @@ describe("road-routing: RoadRouter (vbrizgljan fetch — brez omrežja)", () => 
     const impl = (async () => {
       calls += 1;
       if (fail) throw new Error("down");
-      return new Response(JSON.stringify(VALID_OSRM), {
+      return new Response(JSON.stringify(VALID_VALHALLA), {
         headers: { "content-type": "application/json" },
       });
     }) as FetchLike;
@@ -326,7 +418,7 @@ describe("road-routing: RoadRouter (vbrizgljan fetch — brez omrežja)", () => 
 
     fail = false;
     const ok = await router.routeLeg(LJ, BLED);
-    expect(ok.source).toBe("osrm"); // ponastavitev števca
+    expect(ok.source).toBe("valhalla"); // ponastavitev števca
 
     fail = true;
     // RAZLIČNE točke (uspešni odsek je v cacheju → ne bi šel na omrežje)
@@ -341,11 +433,11 @@ describe("road-routing: RoadRouter (vbrizgljan fetch — brez omrežja)", () => 
     expect(calls).toBe(7); // vezje NI blokiralo nobenega klica
   });
 
-  test("hevristika se ne cacha in NIKOLI ni označena kot osrm", async () => {
+  test("hevristika se ne cacha in NIKOLI ni označena kot valhalla", async () => {
     const f = failingFetch();
     const router = new RoadRouter({ fetchImpl: f.impl });
     const a = await router.routeLeg(LJ, BLED);
-    const b = await router.routeLeg(LJ, BLED); // pod pragom → spet poskusi OSRM
+    const b = await router.routeLeg(LJ, BLED); // pod pragom → spet poskusi Valhalla
     expect(f.calls()).toBe(2); // ni cacheja za hevristiko
     expect(a.source).toBe("heuristic");
     expect(b.source).toBe("heuristic");

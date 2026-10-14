@@ -349,7 +349,7 @@ export interface RouteLegInfo {
   to: string;
   km: number;
   min: number;
-  source: "osrm" | "heuristic";
+  source: "valhalla" | "heuristic";
   geometry: [number, number][];
 }
 
@@ -358,7 +358,7 @@ export interface JourneyRouteResponse {
   legs: RouteLegInfo[];
   totalKm: number;
   totalMin: number;
-  method: "osrm" | "heuristic" | "mixed";
+  method: "valhalla" | "heuristic" | "mixed";
   /** Samo pri preračunu z žive GPS: odsevana zaokrožena from + ciljni slug. */
   reroute?: { from: GeoPoint; to: string };
 }
@@ -391,7 +391,7 @@ export function isJourneyRouteResponse(v: unknown): v is JourneyRouteResponse {
     ) {
       return false;
     }
-    if (lg.source !== "osrm" && lg.source !== "heuristic") return false;
+    if (lg.source !== "valhalla" && lg.source !== "heuristic") return false;
     if (!Array.isArray(lg.geometry) || lg.geometry.length < 2) return false;
     for (const p of lg.geometry) {
       if (
@@ -410,5 +410,9 @@ export function isJourneyRouteResponse(v: unknown): v is JourneyRouteResponse {
   if (typeof o.totalMin !== "number" || !Number.isFinite(o.totalMin)) {
     return false;
   }
-  return o.method === "osrm" || o.method === "heuristic" || o.method === "mixed";
+  return (
+    o.method === "valhalla" ||
+    o.method === "heuristic" ||
+    o.method === "mixed"
+  );
 }

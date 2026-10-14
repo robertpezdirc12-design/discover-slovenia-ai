@@ -265,13 +265,14 @@ describe("PLAN-MAP — source-contract komponente", () => {
     expect(src).toContain('fetch("/api/plan/directions"');
     expect(src).toContain('method: "POST"');
     // ZATRDNA PREPOVED: nobena vrstica s fetch( ne sme kazati zunaj —
-    // OSRM kliče IZKLJUČNO strežniški proxy, komponenta nikoli neposredno
+    // Valhalla kliče IZKLJUČNO strežniški proxy, komponenta nikoli neposredno
     const fetchLines = src.split("\n").filter((ln) => ln.includes("fetch("));
     expect(fetchLines.length).toBeGreaterThan(0);
     for (const ln of fetchLines) {
       expect(ln).toContain('"/api/plan/directions"');
     }
     expect(src).not.toContain("router.project-osrm.org");
+    expect(src).not.toContain("valhalla1.openstreetmap.de");
     expect(src).not.toContain('fetch("http');
     // stanje poti VEZANO NA REFERENCO dni (kanon predogleda 2.29.0 — brez
     // setState v efektu) + zastareli odgovori se ignorirajo
@@ -339,18 +340,18 @@ describe("PLAN-MAP — i18n: vsi novi ključi imajo 6 jezikov", () => {
     }
   });
 
-  test("⑲ opomba o VOZLJIVI poti ×6 (POLIR3 A: OSRM/OpenStreetMap + urnik ostaja ocena)", async () => {
+  test("⑲ opomba o VOZLJIVI poti ×6 (POLIR3 A: Valhalla/OpenStreetMap + urnik ostaja ocena)", async () => {
     const src = await componentSrc();
-    // sl je dobeseden kanon (niz iz specifikacije POLIR3 A)
+    // sl je dobeseden kanon (niz iz specifikacije POLIR3 A; vir od 2.65.0 Valhalla)
     expect(src).toContain(
-      "Vozljiva pot (OSRM/OpenStreetMap); urnik načrta ostaja ocena."
+      "Vozljiva pot (Valhalla/OpenStreetMap); urnik načrta ostaja ocena."
     );
     for (const fragment of [
-      "Drivable route (OSRM/OpenStreetMap)", // en
-      "Percorso percorribile (OSRM/OpenStreetMap)", // it
-      "Befahrbare Route (OSRM/OpenStreetMap)", // de
-      "Itinéraire routable (OSRM/OpenStreetMap)", // fr
-      "Ruta transitable (OSRM/OpenStreetMap)", // es
+      "Drivable route (Valhalla/OpenStreetMap)", // en
+      "Percorso percorribile (Valhalla/OpenStreetMap)", // it
+      "Befahrbare Route (Valhalla/OpenStreetMap)", // de
+      "Itinéraire routable (Valhalla/OpenStreetMap)", // fr
+      "Ruta transitable (Valhalla/OpenStreetMap)", // es
       // urnik OSTAJA OCENA — iskrenost v vseh jezikih
       "urnik načrta ostaja ocena", // sl
       "the plan's schedule remains an estimate", // en

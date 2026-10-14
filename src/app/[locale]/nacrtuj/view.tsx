@@ -2132,7 +2132,7 @@ function PlanResult({
             {plan.coverageNote}
           </p>
           {/* POLIR5 A (2.32.0): SKUPNA IZMERJENA vrstica — SAMO nad izmerjenimi
-              dnevi (OSRM/OpenStreetMap); vidna TUDI v natisu (dnevi so vir
+              dnevi (Valhalla/OpenStreetMap); vidna TUDI v natisu (dnevi so vir
               resnice, izmerna pa je del povzetka, ne zemljevida). Ni nobenega
               izmerjenega dneva → vrstice NI (iskrena odsotnost, ne laž). */}
           {measuredSummary && measuredSummary.totalKm !== null && measuredSummary.totalMin !== null && (

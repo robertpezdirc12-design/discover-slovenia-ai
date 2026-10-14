@@ -4,7 +4,7 @@
  *
  * Iskrenostne invariante (issue #1 področje 1):
  *  - haversine po kanonu geo-distance izvirnika (R = 6371); Ljubljana→Bled
- *    ≈ 46,9 km premočno (cestna ocena ×1,3 ≈ 61 km; realna OSRM pot je
+ *    ≈ 46,9 km premočno (cestna ocena ×1,3 ≈ 61 km; realna Valhalla pot je
  *    ~77 km — ocena je pošteno razkrita kot približek, nikoli izmišljena);
  *  - ETA = premočrtna ×1,3 pri ~55 km/h (neveljaven vhod → 0, nikoli izmislek);
  *  - odklon brez routeCoords NI izmišljen: baza "straight", odklon 0
@@ -293,7 +293,7 @@ describe("go-gps: isJourneyRouteResponse (straža — klient ne zaupa žici)", (
     to: "bled",
     km: 61.0,
     min: 66,
-    source: "osrm",
+    source: "valhalla",
     geometry: [
       [46.0569, 14.5058],
       [46.2, 14.4],
@@ -307,7 +307,7 @@ describe("go-gps: isJourneyRouteResponse (straža — klient ne zaupa žici)", (
         legs: [okLeg],
         totalKm: 61.0,
         totalMin: 66,
-        method: "osrm",
+        method: "valhalla",
       })
     ).toBe(true);
     expect(
@@ -330,13 +330,13 @@ describe("go-gps: isJourneyRouteResponse (straža — klient ne zaupa žici)", (
   });
 
   test("zavrne: prazne noge, NaN/negativne vrednosti, slab source, kratka geometrija, slab method, ne-objekt", () => {
-    expect(isJourneyRouteResponse({ legs: [], totalKm: 1, totalMin: 1, method: "osrm" })).toBe(false);
+    expect(isJourneyRouteResponse({ legs: [], totalKm: 1, totalMin: 1, method: "valhalla" })).toBe(false);
     expect(
       isJourneyRouteResponse({
         legs: [{ ...okLeg, km: Number.NaN }],
         totalKm: 1,
         totalMin: 1,
-        method: "osrm",
+        method: "valhalla",
       })
     ).toBe(false);
     expect(
@@ -344,7 +344,7 @@ describe("go-gps: isJourneyRouteResponse (straža — klient ne zaupa žici)", (
         legs: [{ ...okLeg, min: -1 }],
         totalKm: 1,
         totalMin: 1,
-        method: "osrm",
+        method: "valhalla",
       })
     ).toBe(false);
     expect(
@@ -352,7 +352,7 @@ describe("go-gps: isJourneyRouteResponse (straža — klient ne zaupa žici)", (
         legs: [{ ...okLeg, source: "waze" }],
         totalKm: 1,
         totalMin: 1,
-        method: "osrm",
+        method: "valhalla",
       })
     ).toBe(false);
     expect(
@@ -360,7 +360,7 @@ describe("go-gps: isJourneyRouteResponse (straža — klient ne zaupa žici)", (
         legs: [{ ...okLeg, geometry: [[46, 14]] }], // 1 točka ≠ pot
         totalKm: 1,
         totalMin: 1,
-        method: "osrm",
+        method: "valhalla",
       })
     ).toBe(false);
     expect(
@@ -368,14 +368,14 @@ describe("go-gps: isJourneyRouteResponse (straža — klient ne zaupa žici)", (
         legs: [{ ...okLeg, geometry: [[46, 14], ["46", 14.1]] }],
         totalKm: 1,
         totalMin: 1,
-        method: "osrm",
+        method: "valhalla",
       })
     ).toBe(false);
     expect(
       isJourneyRouteResponse({ legs: [okLeg], totalKm: 1, totalMin: 1, method: "car" })
     ).toBe(false);
     expect(
-      isJourneyRouteResponse({ legs: [okLeg], totalKm: "61", totalMin: 66, method: "osrm" })
+      isJourneyRouteResponse({ legs: [okLeg], totalKm: "61", totalMin: 66, method: "valhalla" })
     ).toBe(false);
     expect(isJourneyRouteResponse(null)).toBe(false);
     expect(isJourneyRouteResponse("ok")).toBe(false);

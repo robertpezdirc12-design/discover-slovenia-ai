@@ -13,10 +13,11 @@ export const dynamic = "force-dynamic";
  * /api/journey/route — DVE obliki telesa POST:
  *
  * 1. { slugs: string[] } (faza 3, NESPREMENJENA oblika) — realne vozne
- *    poti med destinacijami iz kanonskega nabora (38) prek javnega OSRM
- *    strežnika (router.project-osrm.org), z iskreno hevristično zasilno
- *    potjo, kadar OSRM odpove (source "heuristic" — nikoli prikrito
- *    kot "osrm"; glej src/lib/road-routing-server.ts).
+ *    poti med destinacijami iz kanonskega nabora (38) prek javnega
+ *    Valhalla primerka FOSSGIS (valhalla1.openstreetmap.de, #35 faza 2 —
+ *    prej OSRM demo; self-host = VALHALLA_BASE_URL override), z iskreno
+ *    hevristično zasilno potjo, kadar Valhalla odpove (source "heuristic"
+ *    — nikoli prikrito kot "valhalla"; glej src/lib/road-routing-server.ts).
  *
  * 2. { from: {lat, lng}, to: "<slug>" } (issue #1 — PRERAČUN z živega
  *    GPS ob odklonu od poti): from je ZAOKROŽENA trenutna pozicija
@@ -26,9 +27,9 @@ export const dynamic = "force-dynamic";
  *    Odziv ima ISTO obliko { legs, totalKm, totalMin, method } (ena
  *    noga, from "gps") + dodatno polje reroute { from, to }.
  *
- * Kanon izvirnika: OSRM se kliče SAMO z usmerjanjem odsek-po-odsek
+ * Kanon izvirnika: Valhalla se kliče SAMO z usmerjanjem odsek-po-odsek
  * (javni strežnik ne sme biti preplavljen) in RoutingMethod je
- * osrm | heuristic | mixed.
+ * valhalla | heuristic | mixed.
  *
  * Validacija: slugs = 2–12 veljavnih slug-ov brez dvojnikov; from/to
  * in slugs ne smejo biti kombinirani (400 s slovenskim sporočilom).
@@ -66,7 +67,7 @@ interface JourneyLeg {
   to: string;
   km: number;
   min: number;
-  source: "osrm" | "heuristic";
+  source: "valhalla" | "heuristic";
   geometry: [number, number][];
 }
 
@@ -183,7 +184,7 @@ export async function POST(request: Request) {
     resolved.push(d);
   }
 
-  // ── Odseki: SEKVENČNO (concurrency guard za javni OSRM) ────────
+  // ── Odseki: SEKVENČNO (concurrency guard za javni Valhalla) ──────
   const legs: JourneyLeg[] = [];
   for (let i = 0; i + 1 < resolved.length; i++) {
     const from = resolved[i] as Destination;
@@ -203,10 +204,10 @@ export async function POST(request: Request) {
   const totalKm =
     Math.round(legs.reduce((sum, l) => sum + l.km, 0) * 10) / 10;
   const totalMin = Math.round(legs.reduce((sum, l) => sum + l.min, 0));
-  const allOsrn = legs.every((l) => l.source === "osrm");
+  const allValhalla = legs.every((l) => l.source === "valhalla");
   const allHeuristic = legs.every((l) => l.source === "heuristic");
-  const method: "osrm" | "heuristic" | "mixed" = allOsrn
-    ? "osrm"
+  const method: "valhalla" | "heuristic" | "mixed" = allValhalla
+    ? "valhalla"
     : allHeuristic
       ? "heuristic"
       : "mixed";

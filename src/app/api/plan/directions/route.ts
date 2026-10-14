@@ -3,24 +3,27 @@ import net from "node:net";
 import { NextResponse } from "next/server";
 
 import { rateLimited, tooManyRequests } from "@/lib/rate-limit";
+import { decodePolyline6 } from "@/lib/road-routing-server";
 
 /**
- * /api/plan/directions — SAMO POST: strežniški proxy na javni OSRM demo
- * strežnik (router.project-osrm.org, profil driving) za VOZLJIVO POT na
- * zemljevidu načrta (izdaja 2.30.0, POLIR3 skupina A).
+ * /api/plan/directions — SAMO POST: strežniški proxy na javni Valhalla
+ * primerek FOSSGIS (valhalla1.openstreetmap.de, costing auto; #35 faza 2
+ * PoC 2.65.0 — prej OSRM demo; self-host = VALHALLA_BASE_URL override)
+ * za VOZLJIVO POT na zemljevidu načrta (izdaja 2.30.0, POLIR3 skupina A).
  *
  * Zakaj strežniški proxy (kanon vremenskega proxyja /api/weather):
- *  - OSRM kliče STREŽNIK, ne brskalnik → v CSP NI novih zunanjih domen;
- *  - predpomnilnik + omejitev ščitita javni demo strežnik (vljudnost do
- *    prostega vira, ki ga uradna dokumentacija OSRM sama navaja kot primer).
+ *  - Valhalla kliče STREŽNIK, ne brskalnik → v CSP NI novih zunanjih domen;
+ *  - predpomnilnik + omejitev ščitita javni primerek (vljudnost do
+ *    prostega vira FOSSGIS).
  *
  * ISKRENOST (fail-closed PO DNEVIH): polna črta na zemljevidu nastane
- * IZKLJUČNO iz dejanske OSRM geometry. Katerikoli padec posameznega dneva
- * (timeout, NoRoute, InvalidValue, HTTP 5xx, slaba oblika odgovora) pomeni
- * za TISTI dan status "straight" — ostali dnevi so neodvisni, poti nikoli
- * ne izmišljamo. Odjemalec tedaj iskreno izriše črtkano premočrtno črto.
+ * IZKLJUČNO iz dejanske Valhalla geometry (dekodiran shape). Katerikoli
+ * padec posameznega dneva (timeout, status ≠ 0, InvalidValue, HTTP 5xx,
+ * slaba oblika odgovora) pomeni za TISTI dan status "straight" — ostali
+ * dnevi so neodvisni, poti nikoli ne izmišljamo. Odjemalec tedaj iskreno
+ * izriše črtkano premočrtno črto.
  *
- * Vir podatkov: OSRM (OpenStreetMap) — geometrije cest so iz projekta
+ * Vir podatkov: Valhalla (OpenStreetMap) — geometrije cest so iz projekta
  * OpenStreetMap (licenca ODbL); atribucija stoji v opombi pod zemljevidom.
  *
  *  - VHOD: { days: [[lon, lat], …][] } — koordinate SO izključno iz registra
@@ -28,20 +31,20 @@ import { rateLimited, tooManyRequests } from "@/lib/rate-limit";
  *    vseeno validiramo (fail-closed 400): tabela, ≤ 8 dni, vsak dan 2–12
  *    točk, števila, znotraj bbox-a registra (lon 13.0–20.0, lat 41.0–47.2 —
  *    SI·HR·ME·AL). Pošiljanje poljubnih uporabniških koordinat NE BI smelo
- *    biti mogoče; validacija je varovalka (OSRM sicer tiho pripenja na
- *    najbližjo cesto — glej raziskavo 2026-10-12-polir3.md, preizkus #3).
- *  - IZHOD 200: { source: "OSRM (OpenStreetMap)", days: [{ day, status:
+ *    biti mogoče; validacija je varovalka (usmerjevalnik sicer tiho pripenja
+ *    na najbližjo cesto — glej raziskavo 2026-10-12-polir3.md, preizkus #3).
+ *  - IZHOD 200: { source: "Valhalla (OpenStreetMap)", days: [{ day, status:
  *    "route", geometry: [[lat, lon], …], distanceM, durationS } | { day,
  *    status: "straight" }] } — `day` je INDEKS DNEVA V ZAHTEVI; geometry je
- *    PREOBRNJENA v vrstni red [lat, lon] (Leaflet). POLIR5 A (2.32.0):
- *    distanceM (celo število metrov) in durationS (celo število sekund) sta
- *    IZMERJENI vrednosti iz ISTEGA OSRM odgovora (routes[0].distance /
- *    routes[0].duration — 0 dodatnih poizvedb; raziskava 2026-10-11-polir5.md,
- *    preizkus B: Bled→Vintgar→Bohinj 21551 m / 2173 s). Odgovor je ADITIVEN:
- *    stari odjemalci, ki berejo samo geometry, se ne prelomijo.
- *    Slaba/manjkajoča/negativna/nekončna razdalja ali trajanje pomeni
+ *    [lat, lon] (Leaflet; Valhalla polyline6 dekodiran v [lat, lng] — vrstni
+ *    red ŽE ustreza, leg-shape-i se staknejo brez podvojenih mejnih točk).
+ *    POLIR5 A (2.32.0): distanceM (celo število metrov) in durationS (celo
+ *    število sekund) sta IZMERJENI vrednosti iz ISTEGA odgovora — zdaj
+ *    trip.summary.length (km, units=kilometers → ×1000) in trip.summary.time
+ *    (s). Odgovor je ADITIVEN: stari odjemalci, ki berejo samo geometry, se
+ *    ne prelomijo. Slaba/manjkajoča/negativna/nekončna vrednost pomeni
  *    fail-closed "straight" ZA TISTI DAN (enak kanon kot slaba geometry —
- *    nikoli ne izmišljujemo števil, ki jih OSRM ni izmeril).
+ *    nikoli ne izmišljujemo števil, ki jih Valhalla ni izmeril).
  *  - Predpomnilnik: pomnilniška Map, ključ "driving:" + koordinate zaokrožene
  *    na 4 decimalke (determinizem: isti vhod → isti ključ), TTL 24 h, največ
  *    500 vnosov (izmet najstarejšega). Vnos nosi VSE TROJE (geometry,
@@ -54,20 +57,33 @@ import { rateLimited, tooManyRequests } from "@/lib/rate-limit";
 export const dynamic = "force-dynamic";
 
 // ZDRAVJE OMREŽJA (empirično ugotovljeno v živi verifikaciji POLIR3 A):
-// router.project-osrm.org ima A in AAAA zapise. V okoljih z nedelujočim
+// javni usmerjevalniki imajo lahko A in AAAA zapise. V okoljih z nedelujočim
 // IPv6 privzeta resolucija (IPv6 pred IPv4 + happy-eyeballs 250 ms) obesi
 // fetch na nedosegljivem IPv6 naslovu — Node/undici občasno javi ETIMEDOUT
 // že po ~250 ms (že znana dirka happy-eyeballs), kar bi pomenilo NAKLJUČNO
 // črtkane črte, čeprav je strežnik zdrav. Nadomestek: prednost IPv4 pri
 // resoluciji (enakovredno NODE_OPTIONS=--dns-result-order=ipv4first) in
 // IZKLOP happy-eyeballs (ravno privzeto v Node 22) — 12/12 uspešnih
-// preizkusov proti živemu OSRM. Obe nastavitvi sta procesno-globalni,
-// idempotentni in varni: naslovi BREZ A zapisa se povežejo po IPv6
-// (vrstni red samo UREJA zapise, ne izključuje jih).
+// preizkusov proti živemu OSRM (preneseno na Valhalla — isti kanon). Obe
+// nastavitvi sta procesno-globalni, idempotentni in varni: naslovi BREZ A
+// zapisa se povežejo po IPv6 (vrstni red samo UREJA zapise, ne izključuje jih).
 dns.setDefaultResultOrder("ipv4first");
 net.setDefaultAutoSelectFamily(false);
 
-const OSRM_BASE = "https://router.project-osrm.org/route/v1/driving/";
+/**
+ * Javni Valhalla primerek FOSSGIS (BJS) — privzeti vir do self-host
+ * (faza 2, #35): nastavi VALHALLA_BASE_URL in koda ostane ISTA
+ * (isti override kot road-routing-server.ts). Sprejmemo samo http(s).
+ */
+function resolveDirectionsBaseUrl(): string {
+  const raw = process.env.VALHALLA_BASE_URL?.trim() ?? "";
+  if (raw.length > 0 && /^https?:\/\//.test(raw)) return raw;
+  return "https://valhalla1.openstreetmap.de";
+}
+
+const VALHALLA_ROUTE_URL = `${resolveDirectionsBaseUrl()}/route`;
+const ROUTING_USER_AGENT =
+  "DiscoverSlovenia-AI/2.65.0 (routing; sledi OpenStreetMap etiquette)";
 const UPSTREAM_TIMEOUT_MS = 8_000;
 
 const RATE_LIMIT = 60;
@@ -195,49 +211,63 @@ function cacheSet(key: string, route: DayRoute, now: number): void {
 }
 
 /**
- * Preveri obliko OSRM odgovora: geometry preobrne v vrstni red [lat, lon]
- * (Leaflet), iz ISTEGA routes[0] pa prebere še IZMERJENI distance (m) in
- * duration (s). Slaba oblika / manjkajoča / negativna / nekončna vrednost
- * katerekoli od treh → null (fail-closed po dnevih — en dan, ena odločitev:
- * dan z izmerjeno geometry a slabo razdaljo NI izmerjen dan).
+ * Preveri obliko Valhalla odgovora (native trip): geometry iz dekodiranih
+ * leg-shape-ov (staknjene brez podvojenih mejnih točk, [lat, lon] — Leaflet
+ * vrstni red ŽE ustreza), iz ISTEGA trip.summary pa prebere IZMERJENO
+ * length (km) in time (s). Slaba oblika / manjkajoča / negativna /
+ * nekončna vrednost katerekoli od treh → null (fail-closed po dnevih —
+ * en dan, ena odločitev: dan z izmerjeno geometrijo a slabo razdaljo NI
+ * izmerjen dan).
  */
-function parseDayRoute(data: unknown): DayRoute | null {
+function parseDayRoute(data: unknown, expectedLegs: number): DayRoute | null {
   if (typeof data !== "object" || data === null) return null;
-  const routes = (data as { routes?: unknown }).routes;
-  if (!Array.isArray(routes) || routes.length === 0) return null;
-  const route0 = routes[0] as {
-    geometry?: unknown;
-    distance?: unknown;
-    duration?: unknown;
+  const trip = (data as { trip?: unknown }).trip;
+  if (typeof trip !== "object" || trip === null) return null;
+  const t = trip as {
+    status?: unknown;
+    legs?: unknown;
+    summary?: unknown;
   };
-  const geometry = route0.geometry;
-  if (typeof geometry !== "object" || geometry === null) return null;
-  const coordinates = (geometry as { coordinates?: unknown }).coordinates;
-  if (!Array.isArray(coordinates) || coordinates.length < 2) return null;
+  if (t.status !== 0) return null; // 0 = "Found route between points"
+  if (!Array.isArray(t.legs) || t.legs.length !== expectedLegs) return null;
+
+  // IZMERJENI vrednosti iz ISTEGA odgovora (POLIR5 A): končni, nenegativni.
+  // trip.summary.length je km (units=kilometers) in time je v sekundah.
+  // Math.round je deterministična varovalka za decimalne vnose (nikoli
+  // ne izmišljujemo vrednosti, ki je Valhalla ni poslal).
+  const summary = t.summary;
+  if (typeof summary !== "object" || summary === null) return null;
+  const { length, time } = summary as { length?: unknown; time?: unknown };
+  if (!isFiniteNumber(length) || length < 0) return null;
+  if (!isFiniteNumber(time) || time < 0) return null;
+
+  // Geometry: stakni dekodirane shape-e vseh nog (brez podvojenih mejnih
+  // točk). Pokvarjen/prekratek shape → null (ne ugibamo).
   const out: [number, number][] = [];
-  for (const c of coordinates) {
-    if (!Array.isArray(c) || c.length !== 2) return null;
-    const [lon, lat] = c;
-    if (!isFiniteNumber(lon) || !isFiniteNumber(lat)) return null;
-    out.push([lat, lon]); // PREOBRAT: OSRM [lon, lat] → Leaflet [lat, lon]
+  for (let i = 0; i < t.legs.length; i++) {
+    const leg = t.legs[i] as { shape?: unknown } | null;
+    if (leg === null || typeof leg !== "object") return null;
+    if (typeof leg.shape !== "string" || leg.shape.length === 0) return null;
+    const decoded = decodePolyline6(leg.shape);
+    if (!decoded) return null;
+    for (const [lat, lng] of decoded) {
+      if (i > 0 && out.length > 0) {
+        const prev = out[out.length - 1] as [number, number];
+        if (prev[0] === lat && prev[1] === lng) continue; // mejna točka
+      }
+      out.push([lat, lng]);
+    }
   }
-  // IZMERJENI vrednosti iz istega odgovora (POLIR5 A): končni, nenegativni.
-  // OSRM praktično vrača cela števila; Math.round je deterministična
-  // varovalka za morebitne decimalne vnose (nikoli ne izmišljujemo vrednosti,
-  // ki je OSRM ni poslal).
-  const distance = route0.distance;
-  const duration = route0.duration;
-  if (!isFiniteNumber(distance) || distance < 0) return null;
-  if (!isFiniteNumber(duration) || duration < 0) return null;
+  if (out.length < 2) return null;
   return {
     geometry: out,
-    distanceM: Math.round(distance),
-    durationS: Math.round(duration),
+    distanceM: Math.round(length * 1000),
+    durationS: Math.round(time),
   };
 }
 
 /**
- * En dan: predpomnilnik → (zgrešil) OSRM. Katerikoli padec → null
+ * En dan: predpomnilnik → (zgrešil) Valhalla. Katerikoli padec → null
  * (iskrena črtkana povezava; ostali dnevi neodvisni — fail-closed po dnevih).
  */
 async function resolveDay(
@@ -248,26 +278,26 @@ async function resolveDay(
   const cached = cacheGet(key, now);
   if (cached) return cached;
 
-  const url =
-    OSRM_BASE +
-    points.map(([lon, lat]) => `${lon},${lat}`).join(";") +
-    "?overview=simplified&geometries=geojson";
+  // Valhalla zahteva [lat, lon] v locations (za razliko od OSRM [lon, lat]).
+  const json = JSON.stringify({
+    locations: points.map(([lon, lat]) => ({ lat, lon, type: "break" })),
+    costing: "auto",
+    shape_format: "polyline6",
+    units: "kilometers",
+  });
+  const url = `${VALHALLA_ROUTE_URL}?json=${encodeURIComponent(json)}`;
   try {
     const res = await fetch(url, {
       signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-      headers: { accept: "application/json" },
+      headers: {
+        accept: "application/json",
+        "user-agent": ROUTING_USER_AGENT,
+      },
     });
     if (!res.ok) return null; // 4xx/5xx → straight
-    const json: unknown = await res.json();
-    if (
-      typeof json !== "object" ||
-      json === null ||
-      (json as { code?: unknown }).code !== "Ok"
-    ) {
-      return null; // NoRoute / InvalidValue / … → straight
-    }
-    const route = parseDayRoute(json);
-    if (!route) return null; // slaba oblika (tudi distance/duration) → straight
+    const body: unknown = await res.json();
+    const route = parseDayRoute(body, points.length - 1);
+    if (!route) return null; // slaba oblika (tudi length/time) → straight
     cacheSet(key, route, now); // predpomnimo SAMO uspeh (ves trojček)
     return route;
   } catch {
@@ -323,7 +353,7 @@ export async function POST(request: Request): Promise<Response> {
   );
 
   return NextResponse.json({
-    source: "OSRM (OpenStreetMap)",
+    source: "Valhalla (OpenStreetMap)",
     days: results,
   });
 }

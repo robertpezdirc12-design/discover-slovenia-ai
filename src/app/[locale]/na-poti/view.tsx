@@ -408,7 +408,7 @@ const L = {
     es: "El recálculo falló por ahora — reintenta.",
   },
   recalcResult: { sl: "Preračunana pot", en: "Recalculated route", it: "Percorso ricalcolato", de: "Neu berechnete Route", fr: "Itinéraire recalculé", es: "Ruta recalculada" },
-  recalcSourceOsrm: { sl: "OSRM — realna cestna pot", en: "OSRM — real road route", it: "OSRM — percorso stradale reale", de: "OSRM — echte Straßenroute", fr: "OSRM — itinéraire routier réel", es: "OSRM — ruta real por carretera" },
+  recalcSourceValhalla: { sl: "Valhalla — realna cestna pot", en: "Valhalla — real road route", it: "Valhalla — percorso stradale reale", de: "Valhalla — echte Straßenroute", fr: "Valhalla — itinéraire routier réel", es: "Valhalla — ruta real por carretera" },
   recalcSourceHeuristic: {
     sl: "ocena (premočrtna razdalja ×1,3 pri ~55 km/h)",
     en: "estimate (straight line ×1.3 at ~55 km/h)",
@@ -1282,7 +1282,7 @@ function GpsNavCard({
     targetId: string;
     km: number;
     min: number;
-    source: "osrm" | "heuristic";
+    source: "valhalla" | "heuristic";
     geometry: GeoPoint[];
   } | null>(null);
   const [recalcBusy, setRecalcBusy] = useState(false);
@@ -1579,8 +1579,8 @@ function GpsNavCard({
             </span>
             <span className="text-xs text-muted-foreground">
               (
-              {activeReroute.source === "osrm"
-                ? pick(l, L.recalcSourceOsrm)
+              {activeReroute.source === "valhalla"
+                ? pick(l, L.recalcSourceValhalla)
                 : pick(l, L.recalcSourceHeuristic)}
               )
             </span>

@@ -135,12 +135,12 @@ const L10N = {
     es: "Las conexiones son líneas rectas (no una ruta transitable) · Datos: OpenStreetMap",
   },
   routedNote: {
-    sl: "Vozljiva pot (OSRM/OpenStreetMap); urnik načrta ostaja ocena.",
-    en: "Drivable route (OSRM/OpenStreetMap); the plan's schedule remains an estimate.",
-    it: "Percorso percorribile (OSRM/OpenStreetMap); l'orario del piano resta una stima.",
-    de: "Befahrbare Route (OSRM/OpenStreetMap); der Zeitplan des Plans bleibt eine Schätzung.",
-    fr: "Itinéraire routable (OSRM/OpenStreetMap) ; l'horaire du plan reste une estimation.",
-    es: "Ruta transitable (OSRM/OpenStreetMap); el horario del plan sigue siendo una estimación.",
+    sl: "Vozljiva pot (Valhalla/OpenStreetMap); urnik načrta ostaja ocena.",
+    en: "Drivable route (Valhalla/OpenStreetMap); the plan's schedule remains an estimate.",
+    it: "Percorso percorribile (Valhalla/OpenStreetMap); l'orario del piano resta una stima.",
+    de: "Befahrbare Route (Valhalla/OpenStreetMap); der Zeitplan des Plans bleibt eine Schätzung.",
+    fr: "Itinéraire routable (Valhalla/OpenStreetMap) ; l'horaire du plan reste une estimation.",
+    es: "Ruta transitable (Valhalla/OpenStreetMap); el horario del plan sigue siendo una estimación.",
   },
   skippedNote: {
     sl: (n: number) =>

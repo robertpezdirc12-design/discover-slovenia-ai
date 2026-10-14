@@ -3202,3 +3202,59 @@ Datum: 2026-10-14 · Veja: `feat/r41-balkan-f2-v2.56.0` · Kanon #38
 - tsc 0 · eslint 0 · build OK
 - monthIndex lekcija: **1-based** (jan = 1) — F2 napaka ulovljen s testom
   "mesec se ujema z datumom", popravljen vseh 8.
+
+# R41-F3 — SEO: sitemap.xml + /drzava/[code] + hreflang/JSON-LD (2.57.0)
+
+Datum: 2026-10-14 · Veja: `feat/r41-balkan-f3-seo-2.57.0` @ `93e08bc` · PR: #46 (merged `185bf01`) · Produkcija: v2.57.0
+
+## Kaj je bilo narejeno
+- **NOV `src/app/sitemap.xml/route.ts` + `src/lib/sitemap-data.ts`** (čist gradnik,
+  pogodbene teste): 17 javnih statičnih poti + 106 entitet (74 destinacij +
+  10 državnih strani + 22 vodnikov) × 6 jezikov = **738 `<url>`** z polno
+  množico `xhtml:link` hreflang alternat (7/URL; x-default = sl) — vsaka
+  jezikovna različica samostosen vnos s polnim naborom alternat (Google
+  specifikacija za večjezična spletišča). Origin iz zahteve (kanon rss.xml);
+  zasebne poti (prijava/moja-potovanja/na-poti/potovanje/admin/owner) IZPUŠČENE.
+- **NOV `src/app/[locale]/drzava/[code]/page.tsx`** — per-country hub × 10:
+  hero (zastava + ime v aktivnem jeziku prek `countryName`), praktične
+  informacije (valuta/klicna/112/jezik — meta F0), destinacije države
+  (DestinationCard reuse), dogodki + lokali z **iskrenimi praznimi stanji**,
+  CTA na `?country=` filtre; neznana koda → notFound().
+- **NOV `src/lib/countries-seo.ts`**: SEO kanon 10 držav × 6 jezikov
+  (naslovi 8–38 zn, opisi 100–160, unikatni med državami IN proti SEO_PAGES)
+  + UI oznake × 6 jezikov + `countryGeoCenter` (središče IZPELJANO iz
+  kuriranih destinacij; prazna → null).
+- **jsonld.ts**: `countryTouristDestinationJsonLd` — TouristDestination z
+  geo izpeljanim iz nabora (null → geo izpuščen), image izpuščen (emoji
+  zastave, brez binarnih sredstev); CSP nonce (4. ld+json skripta).
+- **robots.txt**: Sitemap + Disallow zasebnih poti.
+- **Count-sync (lekcija F1)**: zastarel „38 kuriranih destinacij“ v
+  SEO_PAGES /destinacije + /zemljevid → **74** (vseh 6 jezikov) + NOVI
+  zaklepi ⑤a/⑤b, ki padejo ob prihodnjem driftu števca.
+- Verzija 2.57.0 (package.json, health, footer, sw.js) + zaklepi
+  (pwa-sw, p2-data-plane, seo-metadata ④a, hydration-nonce 3→4 ld+json).
+
+## Testi / vrata
+- bun test **2164/2164** (25 022 expect) — nov `tests/balkan-f3.test.ts` (18 testov)
+- tsc 0 · eslint 0 · build OK · Vercel preview v2.57.0
+- **E2E: 16/16** (5 zlata pot + 11 mobilni; ⑤ /drzava/BA × 5 prelomov,
+  ⑥ vseh 10 držav @ 375) — na previewju IN ponovljen **16/16 na produkciji** (2.9 min)
+- Produkcija: health 10 ok + ops:cron skip, build SHA = merge commit `185bf01`;
+  /sitemap.xml 738 URLjev; državne strani sl/en/fr h1 v pravem jeziku; 404 pošten
+
+## Lekcije
+1. **shadcn Button `whitespace-nowrap` je preliva napaka @320 px**: dolgi CTA
+   („Razišči destinacije s filtrom po državi“ ≈ 336 px) sploh ne pada v 320
+   viewport — E2E prelomni suite jo ulovi; fix `h-auto whitespace-normal
+   text-center`. Nauk: vsak NOV gumb s konceptno dolgim napisom na produktni
+   strani dobi `whitespace-normal` takoj, ne šele po E2E.
+2. **Vercel preview URL je mogoče dobiti iz GitHub check-runs** („Vercel
+   Preview Comments“ summary nosi `i-feel-slovenia-git-<slug>-<hash>...`):
+   commit status API da SAMO dashboard URL; alias je PER-BRANCH (isti hash
+   čez commite brancha), ne per-commit.
+3. **naslov ≤ 37 zn** (ne 38): pripona ` · Discover Slovenia AI` je 23 zn,
+   meja sestavljenega naslova 60 zn → 60−23 = 37. SEO_PAGES kanon je to
+   mimogrede držal; zaklep ①c zdaj uveljavlja oba odreza (8–38 ZA kratki +
+   sestavljen ≤ 60), kar je dosledno, ker ≥38 ni bil nikoli dosežen.
+4. **GitLab WAF 403 je tranzieren**: isti browser-UA push je ob 403 uspel na
+   2. poskus (retry ×3 z 10 s pavzo = deluje).

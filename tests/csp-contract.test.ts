@@ -77,15 +77,23 @@ describe("csp [enote]: buildCspHeader", () => {
     expect(prod).toContain("upgrade-insecure-requests");
   });
 
-  test("⑥ edini zunanji vir: OSM ploščice v img-src; connect-src 'self'", () => {
+  test("⑥ zunanji viri zaklenjeni: OSM (img) + OpenFreeMap PoC (img+connect)", () => {
     const csp = buildCspHeader({ nonce: NONCE });
     expect(csp).toContain(
-      "img-src 'self' data: blob: https://tile.openstreetmap.org"
+      "img-src 'self' data: blob: https://tile.openstreetmap.org https://tiles.openfreemap.org"
     );
-    // Inventura 2026-10-10: 0 absolutnih klientnih fetch (rg dokaz) — vsi
-    // zunanji API (vreme/OSRM/STO/FSQ) strežniško prek /api/*.
-    expect(csp).toContain("connect-src 'self'");
-    expect(csp).not.toMatch(/connect-src [^;]*https?:\/\//);
+    // Inventura 2026-10-14: EDINI klientni absolutni fetch = OpenFreeMap PoC
+    // (#35 faza 1, vektorski zemljevid, ?zemljevid=vektorji — nalaga se šele
+    // ob vstopu v PoC); vsi ostali zunanji API (vreme/OSRM/STO/FSQ) ostaja
+    // strežniško prek /api/*.
+    expect(csp).toContain("connect-src 'self' https://tiles.openfreemap.org");
+    // Noben DRUG zunanji host v connect-src (OFM dovoljena izjema):
+    const connect = csp
+      .split("; ")
+      .find((d) => d.startsWith("connect-src"))!;
+    expect(
+      connect.replace(/https:\/\/tiles\.openfreemap\.org/g, "")
+    ).not.toMatch(/https?:\/\//);
   });
 
   test("⑦ trdna jedra: object-src 'none', frame-ancestors 'none', base-uri/form-action 'self'", () => {

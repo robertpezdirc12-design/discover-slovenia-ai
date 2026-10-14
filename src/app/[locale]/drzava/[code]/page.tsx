@@ -128,7 +128,7 @@ export default async function CountryPage({ params }: Props) {
                 <DestinationCard key={d.id} d={d} priority={i < 3} />
               ))}
             </div>
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="h-auto whitespace-normal text-center">
               <Link href={{ pathname: "/destinacije", query: { country: c } }}>
                 {ui("ctaDestinacije")}
               </Link>
@@ -160,7 +160,7 @@ export default async function CountryPage({ params }: Props) {
                 </li>
               ))}
             </ul>
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="h-auto whitespace-normal text-center">
               <Link href={{ pathname: "/dogodki", query: { country: c } }}>
                 {ui("ctaDogodki")}
               </Link>

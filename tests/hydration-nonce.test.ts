@@ -153,10 +153,10 @@ describe("POLIR10: kanon nonce (nextjs.org CSP vodnik — middleware → glava �
   });
 });
 
-// ── ④ DEFENZIVNO: natanko 3 ld+json skripti v celem src/, vsaka z utišanjem ───
+// ── ④ DEFENZIVNO: natanko 4 ld+json skripti v celem src/, vsaka z utišanjem ───
 
-describe("POLIR10: defenzivni zaklep — NATANKO 3 ld+json skripti v src/, VSAKA z utišanjem", () => {
-  test("④ hoja po vsem src/ poišče natanko 3 ld+json elementa, vsi z nonce + suppressHydrationWarning (nobena nova brez utišanja)", () => {
+describe("POLIR10: defenzivni zaklep — NATANKO 4 ld+json skripti v src/, VSAKA z utišanjem", () => {
+  test("④ hoja po vsem src/ poišče natanko 4 ld+json elementa, vsi z nonce + suppressHydrationWarning (nobena nova brez utišanja)", () => {
     const najdeni: { datoteka: string; element: string }[] = [];
     for (const pot of srcDatoteke(SRC_KOREN)) {
       const cisto = brezBlokovnihKomentarjev(readFileSync(pot, "utf8"));
@@ -166,9 +166,10 @@ describe("POLIR10: defenzivni zaklep — NATANKO 3 ld+json skripti v src/, VSAKA
         }
       }
     }
-    // NATANKO 3 ld+json skripti v celotnem src/ (domov + destinacija + dogodki;
-    // 2.45.0 #38: nova skripta zahteva zavesten update tega zaklepa):
-    expect(najdeni.length).toBe(3);
+    // NATANKO 4 ld+json skripti v celotnem src/ (domov + destinacija + dogodki
+    // + državna stran; 2.57.0 #41 F3: nova skripta zahteva zavesten update
+    // tega zaklepa):
+    expect(najdeni.length).toBe(4);
     // vsaka ima tako utišanje KOT nonce (utrežena hidracija + CSP živ):
     for (const { datoteka, element } of najdeni) {
       expect(element, datoteka).toContain("suppressHydrationWarning");
@@ -181,6 +182,7 @@ describe("POLIR10: defenzivni zaklep — NATANKO 3 ld+json skripti v src/, VSAKA
     expect(poti).toEqual([
       "app/[locale]/destinacija/[slug]/page.tsx",
       "app/[locale]/dogodki/page.tsx",
+      "app/[locale]/drzava/[code]/page.tsx",
       "app/[locale]/page.tsx",
     ]);
   });

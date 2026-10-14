@@ -416,3 +416,26 @@ Work Log:
 
 Stage Summary:
 - Edini preostanek za zelen GitLab pipeline: lastnik ustvari klasčen PAT (read_api + read_repository + write_repository), ga zapiše v GitHub skrivnost GITLAB_TOKEN (in po potrebi GITLAB_PROJECT_PATH=markec-group1/discover-slovenia-ai) → sync.yml ali ročen push prenese branch → pipeline se požene samodejno (CI=true obnašanje je že podprto v playwright.config.ts).
+
+---
+Task ID: R35-REFRESH
+Agent: Z.ai Code (glavni orkestrator)
+Task: Nadaljevanje po "odlicno nadaljuj" — predviden merge PR #42 + F1; ugotovljeno stanje je bilo že močno napredovalo (F0–F5 vse mergano, #41 zaprta, produkcija v2.60.0) → preusmerjeno na edino odprto postavko: issue #35 (refresh raziskave).
+
+Work Log:
+- Usklajitev stanja: PR #42 že mergan (2026-10-13T18:50Z, 62dccd8); F0–F5 + follow-up vse na mainu (PR #42/#46/#48/#49/#50 → v2.54.0–v2.60.0); #41 ZAPRTA (2026-10-14T10:17Z, 12 komentarjev s dokazi); produkcija zdrava (health v2.60.0: 74 destinacij · 44 regij · 10 tipov · 10 držav); testi 2245/2245 + E2E 16/16 na produkciji.
+- Neodvisen produkcijski spot-check: /destinacije?country=HR 200, /drzava/GR 200, sitemap.xml 738 <url> / 5166 hreflang; /dogodki chips delno SSR (balkanski chipi pogojni) — ne blokira.
+- Lokalni klon /home/z/polir15-repo je IZGINIL → re-clone na 9230f20 + identiteta robertpezdirc12-design <robert.pezdirc12@gmail.com>.
+- Repo-pregled za #35: Leaflet 1.9.4 + tile.openstreetmap.org (še vedno!), road-routing-server.ts = OSRM odjemalec proti javnemu demo strežniku router.project-osrm.org (iskrenostni kanon, cache 24h/600, breaker, hevristika označena), supply registry 19 ponudnikov + COUNTRY_URL_NAMES ×10 (F4), detectBorderCrossings (F5), balkan-data.ts 36 destinacij (BA/RS/MK/XK/BG/GR ×6), NLU kanon 74 (2.60.0).
+- Ugotovitev: docs/research/balkan-platform-no-ai.md že obstaja (07f1f9e, v2.50.0, 282 vrstic, vseh 12 sekcij) — a STALE proti v2.50.0 (pravi "38 destinacij, 5 držav"; večdržavni sloj kot MANJKAJOČ).
+- Posodobitev dokumenta (e407acb, +102/−67): §2 repo-pregled na 9230f20 (routing OSRM odkritje!), §1 sodba ~80→~90 %, §5 pokritost 10 držav s števci iz kode, §9 faze (F0–F5 ✅; ostanejo faze 1–5), §11 NOVO R11 (javni OSRM demo strežnik = operativna odvisnost; mitigacije v kodi + Valhalla faza 2), §12 spot-check produkcije 14. 10.; ohranjene verifikacije 13. 10. (SDK matrika, partner API-ji, stroški).
+- PR #51 (mergeable=true, identiteta potrjena na GitHubu: author=committer=robertpezdirc12-design) → merge 4ebedb7 (merge_method=merge).
+- Komentar na #35 (id 6170528115): tabelarično F0–F5 zaprtje vrzeli + R11 + osvežena sodba.
+- Verifikacija: deployment 4ebedb7 SUCCESS (brez identitetnega bloka), health v2.60.0 ok.
+- GitLab parity: poln PAT ni več dostopen (prejšnje seje samo-v-pomnilniku + priporočen preklic; sync job je „HTTP Basic: Access denied") → parity ostaja na e942254; ZAPISANO iskreno, rešitev lastnik (svež PAT → sync.yml ali ročen push).
+
+Stage Summary:
+- Issue #35 je polno usklajen z realnostjo v2.60.0; PR #51 mergan (4ebedb7), produkcija uspešno redeployana in zdrava.
+- Ključni NOVI dokumentirani dejstvi: (1) routing v kodi je živ OSRM odjemalec proti javnemu demo strežniku (R11 → Valhalla faza 2 postane trajna rešitev); (2) F0–F5 je rešil 3 od 4 vrzeli izvirne raziskave #35 — platforma je ~90 % arhitekture #35.
+- Ostalo za prihodnost: faze 1–5 iz dokumenta (OpenFreeMap 1 URL + CSP, Valhalla, Photon, Provider katalog, Viator pilot); GitLab parity zaostanek (owner PAT); november — 9 neprivrjenih dogodkov.
+- Lekcija: pred načrtovanjem iz povzetka ZDAJ preveriti živo stanje (git log + issues + health) — vmesne seje so napredovale onkraj povzetka (PR #42 že mergan, F1–F5 zaključene).

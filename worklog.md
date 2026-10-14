@@ -3148,3 +3148,57 @@ Datum: 2026-10-13 · Veja: `feat/r41-balkan-f1-vsebina` @ `f888411` · PR: #44 (
    ne z merilom „kdo je prej“.
 
 ---
+
+# R41-F0/F1-MERGE-VER — merge verifikacija produkcije (2.54.0 + 2.55.0)
+
+Datum: 2026-10-14 · Produkcija: i-feel-slovenia.vercel.app
+
+## Kaj je bilo narejeno
+- **F0 (PR #42, 62dccd8)**: produkcija v2.54.0 potrjena — health 10 ok +
+  ops:cron skip, build SHA = merge commit, E2E 10/10.
+- **F1 (PR #44, 37ffed3)**: pre-merge neodvisna verifikacija (quota vzorec
+  0 korakov; preview 2.55.0; ohrid + rila-samostan 200) → merge →
+  produkcija v2.55.0 (poll 2×30 s) → health 10/11 → 6/6 balkanskih
+  destinacij 200 → /destinacije?country=HR → **E2E 10/10 na produkciji**.
+- **Kritično odkritje**: #41 avtomatsko zaprt 1 s po merge-u #42
+  (PR body "Closes #41 (F0 del)") — GitHub auto-close ne razume nianse.
+  Issue ponovno odprt + pojasnilo. Lekcija: za delne faze "Refs #N".
+- GitLab parity po obeh merge-ih (ls-remote), F1 branchi pobrisani.
+
+---
+
+# R41-F2 — Dogodki + lokali + doživetja (2.56.0)
+
+Datum: 2026-10-14 · Veja: `feat/r41-balkan-f2-v2.56.0` · Kanon #38
+
+## Kaj je bilo narejeno
+- **8 balkanskih dogodkov** (vseh 6 novih držav) z izrecnim `country`,
+  primarnim virom in `verifiedAt` 2026-10-14:
+  - POTRJENO: BEMUS Beograd (17.–30. 10. 2026, afisha.rs), TIFF67 Solun
+    (5.–15. 11. 2026, filmfestival.gr), Sarajevo Winter (7. 2.–21. 3.
+    2027, sarajevowinterfest.ba), DokuFest Prizren (6.–14. 8. 2027,
+    dokufest.com + uradni kanal)
+  - NEPOTRJENO (pošteno, kanon #38): SFF 33. (avg. 2027; sff.ba WAF v
+    peskovniku, živa po iskalnem kazalu), EXIT (jul. 2027), Ohridsko
+    poletje (poletje 2027), SIFF Sofija (mar. 2027 — uradna stran brez
+    dnevnega razpona; zunanji si nasprotujejo, ne ugibamo)
+- **6 lokali** (po 1 hotel na novo državo): Hotel Europe Sarajevo (1882),
+  Hotel Moskva Beograd (1908), Inex Olgica Ohrid, Hotel Theranda Prizren,
+  Sofia Balkan Palace (1956), Makedonia Palace Solun — opisi ×6 jezikov,
+  regije = ključi REGIONS_BALKAN, brez izmišljenih podrobnosti.
+- **Doživetja**: destSlugi obstoječih 6 tipov razširjeni z balkanskimi
+  destinacijami (Dinaridi: Durmitor/Kopaonik/Jahorina/Rugova; voda:
+  Kravica/Matka/Đerdap; ...) + **nov 7. tip `vinske-poti`** (Hercegovina,
+  Fruška gora, Trakija, Solun z okolico).
+- **8 AI slik** (1344×768, sharp, CONC=1 foreground — F1 lekcija).
+- Verzija 2.56.0 (package.json, sw.js, health route, footer).
+
+## Testi / vrata
+- bun test **2146/2146** (21 923 expect) — nov `tests/balkan-f2.test.ts`
+  (14 testov); posodobljene ključavnice: events-p0-qa38 (39), countries-f41
+  (31 SI + 8 izrecnih), jsonld (26 potrjenih, ㉓+④c), events-past ③c/③d/④b
+  (13 nepotrjenih, 8 dateEnd, 24 prihodnjih), map-pins (106 = 74+32),
+  lokali-data (10 držav), p2-data-plane + pwa-sw (2.56.0)
+- tsc 0 · eslint 0 · build OK
+- monthIndex lekcija: **1-based** (jan = 1) — F2 napaka ulovljen s testom
+  "mesec se ujema z datumom", popravljen vseh 8.

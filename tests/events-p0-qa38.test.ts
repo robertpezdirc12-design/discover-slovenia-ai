@@ -195,9 +195,9 @@ function filterEvents(month: number | "all", category: EventCategory | "all") {
 }
 
 describe("events P0 (#38): regresija filtrov", () => {
-  test("③a brez filtrov = vseh 31 dogodkov (razdvojitev P0 2. serije, ponastavitev)", () => {
-    expect(EVENTS.length).toBe(31);
-    expect(filterEvents("all", "all").length).toBe(31);
+  test("③a brez filtrov = vseh 39 dogodkov (F2: 31 SI kanona + 8 balkanskih #41)", () => {
+    expect(EVENTS.length).toBe(39);
+    expect(filterEvents("all", "all").length).toBe(39);
   });
 
   test("③b filter po mesecu: februar najde Kurentovanje (potrjen 3. feb)", () => {

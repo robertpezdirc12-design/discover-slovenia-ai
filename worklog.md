@@ -529,3 +529,27 @@ Stage Summary:
 - 2334/2334 testov (+16) · tsc 0 · eslint 0 · build OK · E2E 16/16 produkcija · health v2.64.0 ok.
 - Stanje faz: 0/F0–F5/4a+4b ✅ · 1 ◐ lastniška re-deizija · 3 ◐ self-host odločitev · 2 ⬜ lastniški VPS · 5 ⬜ odobritev · db:pg:deploy (PRODUCTION-CUTOVER) lastniško.
 - Lekcija 4: javni BJS servisi omejijo peskovnik po hitrih zaporednih iskanjih — zlata pot preverjaj z vključenim breakerjem in iskrenim "ni na voljo" stanjem (ne le z uspešnim tokom); testiraj OBE degradacijski poti v brskalniku.
+
+---
+Task ID: R35-FAZA2
+Agent: Z.ai Code (session web-3612f14e, trace 1a13beed02cd3f05)
+Task: #35 faza 2 — Valhalla routing (zamenjava OSRM demo / R11; PoC kanon faz 1+3); sprožil "odlicno nadaljuj".
+
+Work Log:
+- STATUS DRIFT SPET ZAJET: povzetek je govoril main @ 4ebedb7 (2.60.0) — realnost 2.64.0 (faza 4a+4b ✅, faza 1 ◐ PoC 2.63.x, faza 3 ◐ PoC 2.64.0); prebran dokument §9/§13 → izbrana faza 2 (Valhalla) kot naslednji izvedljiv korak po vzorcu PoC faza 3 (javni BJS + override = self-host brez spremembe kode); doc vrstica §2d je izrecno dovoljevala "zamenjava BASE URL + formata odgovora je dovolj".
+- VERIFIKACIJA PRED IMPLEMENTACIJO (curl): javni Valhalla FOSSGIS valhalla1.openstreetmap.de — /route?json={locations,costing auto,shape_format polyline6,units kilometers} → trip.status 0, legs[0].summary {length km, time s}, shape Encoded Polyline 1e6; brez units pride MILJA (ujeto v dokumentaciji + test).
+- 2.65.0 (PR #58, merge 9235a70): road-routing-server.ts — kirurška zamenjava (iskrenostni kanon ENA-OB-ENA: cache 24h/600 LRU, breaker 4→10 min, NaN/negativna varovalka, hevristika haversine×1,3@55 izrecno označena, redčenje >400 točk, node:https family:4, UA 2.65.0); NOVO: buildValhallaUrl, decodePolyline6 (bad shape → null), parseValhallaResponse (trip.status 0 gate); source "valhalla"|"heuristic"; VALHALLA_BASE_URL override (http(s) guard, vzorec PHOTON_BASE_URL); /api/plan/directions — isti override + multi-leg stikanje BREZ podvojenih mejnih točk (expectedLegs = točke-1 gate), distanceM/durationS iz ISTEGA trip.summary (POLIR5 A), pošten UA dodan; UI oznake OSRM→Valhalla ×6 jezikov (travel-map routeMethod, na-poti recalcSourceValhalla, plan-map routedNote) + go-gps source guard; parseOsrmResponse/osrmFetch UKINJENI (0 referenc na OSRM v src).
+- Testi: road-routing 22 (polyline6 kodirnik-dekoder identiteta v testu + realna oblika fixtures; slaba shape/status/NaN → null), plan-directions 19 (valhallaOk fixtures: 1 noga + 2 nogi z deljeno mejo + 11 nog za 12 točk; fail-closed po dnevih ohranjen; pogodba proxyja = valhalla host + VALHALLA_BASE_URL + polyline6 + kilometers), go-gps/plan-map/p2-data-plane/pwa-sw literali. Ujeti med razvojem: (1) testni kodirnik napačno sestavljen (delimiter napaka) → popravljen; (2) fixture z 1 nogo za 12-točkovni dan → 11 nog (expectedLegs gate ga je ujel); (3) toContain URL template ne pade dobesedno → razbit na 2 aserciji.
+- Dekoder preverjen PROTI ŽIVEMU odgovoru: 1077 točk LJ→Bled, first [46.056898,14.5058] last [46.370582,14.095853] ≈ registru; redčenje 1077→360.
+- 2338/2338 testov (+4) · tsc 0 · eslint 0 · build ok.
+- CI na PR: joba NIKOLI zagnana — GitHub Billing "recent account payments have failed" (anotacija; enako main 38618468295 + PR #57; kvota/billing lastniško, potrjen vzorec) + sync (GitLab PAT) → merge po hišnem precedensu z izrecnim iskrenim zapisom v commit message; mergeable true (0 konfliktov).
+- PRODUKCIJA 2.65.0 (po ~50 s deploy): health ok 11/11; POST /api/plan/directions Bled→LJ = source "Valhalla (OpenStreetMap)", route, 1074 točk, 56 618 m / 2 992 s; POST /api/journey/route = method "valhalla", 56,6 km / 50 min, 359 točk — R11 OSRM demo UKINJEN iz produkcije.
+- Komentarji: #35 id 6177353772 (faza 2 PoC + dokazi + CI billing razkritje + stanje faz); PR #58 ustvarjen in mergan (squash).
+
+Stage Summary:
+- Faza 2 = ◐ PoC ODDAN in DELUJOČ na produkciji (2.65.0): routing na javnem Valhalla FOSSGIS primerku po iskrenostnem kanonu; self-host = VALHALLA_BASE_URL override (lastniška odločitev — VPS [nepotrjena cena]); 2-opt optimizer ostaja šele ob obsegu.
+- R11 mitigacija je zdaj KONKRETNA: OSRM demo odvisnost ukinjena iz kode; edina operativna odvisnost = javni Valhalla (isti OSM izvor, MIT motor, cache+breaker+rate kanon).
+- 2338 testov (26 134 expect) · health v2.65.0 ok · živa Valhalla pot na produkciji potrjena na obeh API-jih.
+- Stanje faz: 0/F0–F5/4a+4b ✅ · 1 ◐ lastniška re-deizija · 2 ◐ self-host (VPS) · 3 ◐ self-host · 5 ⬜ odobritev · db:pg:deploy (PRODUCTION-CUTOVER) lastniško.
+- Ostalo lastniško: GitHub Actions Billing (CI vrata mrtva od 2.64.0 — jobi se ne zagnejo), GitLab PAT (parity), november 9 dogodkov, brskalniška zlata pot na produkciji za Valhalla (UI oznake vidne na /nacrtuj in /na-poti).
+- Lekcija 5 (nov): "units=kilometers" je OBVEZEN pri Valhalla (privzeto MILJA) — ujet v dokumentaciji PRED implementacijo in zaklenjen s testom; podobne "tihe privzeto drugače" pasti pri menjavi motorja išči v POGODBI odgovora (trip.status === 0 namesto code === "Ok").

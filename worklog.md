@@ -573,3 +573,22 @@ Stage Summary:
 - Lekcija 6 (nova): pri menjavi motorja sistematično preišči VSE poglede za oznake vira — `rg "OSRM" src/` na nivoju nizov (ne samo diff-komponente); zlata pot na TISTEM pogledu, ki je bil v diff-u izpuščen, je edini zanesljiv ujetnik. Dodatek k lekciji 1: negativni zaklep (OSRM=0) v testih prepreči povratek.
 - Stanje faz: 0/F0–F5/4a+4b ✅ · 1 ◐ lastniška re-deizija · 2 ◐ self-host · 3 ◐ self-host · 5 ⬜ odobritev · db:pg:deploy lastniško · GitHub Actions Billing (CI mrtva od 2.64.0) lastniško · GitLab PAT lastniško · november 9 dogodkov lastniško.
 - Vsa SAMOSTOJNA dela iz #35 so zdaj ODPORANA: preostanek = izrecno lastniške odločitve (re-deizija zemljevida, self-hosti, Viator odobritev, VPS, CI billing, GitLab PAT, db:pg:deploy, datumi dogodkov).
+
+---
+Task ID: R35-RUNBOOK
+Agent: Z.ai Code (session web-3612f14e, trace 1a13c6f6612bd359)
+Task: #35 — zadnja samostojna vrzel: self-host runbook faze 2/3 (raziskava VPS cene + merjene Geofabrik vrstice); sprožil "odlicno nadaljuj".
+
+Work Log:
+- Živo stanje preverjeno: BREZ odklona tokrat (main @ 25b0553 = 2.65.1 + evidence; health ok; #35 zadnji komentar 6178716306 = moj; 0 odprti PR; 1 odprt issue = #35).
+- Ocena preostanka: dogodki "nepotrjeni" so pošteno preverjeni ŠE DANES (uradne strani brez 2026 datumov) — nič za potrditi; db:pg:deploy/CI/GitLab PAT/Viator = lastniško; izbrana edina preostala samostojna postavka: lastniški blokatorji faze 2/3 "VPS [nepotrjena cena]" → raziskava + runbook.
+- RAZISKAVA (web-search + prva roka): Geofabrik PBF 10 držav IZMERJENO s Content-Range (izdaja 13. 10.: SI 299 · HR 191 · BA 154 · ME 32 · AL 51 · RS 229 · MK 28 (URL je 'macedonia' NE 'north-macedonia' — 404!) · XK 29 · BG 167 · GR 326 = 1 506 MB); planet priporočila (Valhalla 32–64 GB RAM build, Photon 95 GB disk/64 GB RAM) vs naša regija (8–16 GB RAM); Hetzner CX42 8 vCPU/16 GB/160 GB = 16,40 EUR/mes (uradni news jun. 2024), deljeni vCPU od 5,99 EUR/mes, CX32 4/8/80 (sparecores); FOSSGIS javni demo = fair-usage + rate limits → lastni VPS MORA SAM dodati rate limit; gis-ops/docker-valhalla (build+serve+update_cron); komoot/photon uradni vs rtuszik/photon-docker (neuradno = R3 lekcija o en-vzdrževalcu); prebuilt Photon indeksi po državi (~62 GB world za primerjavo).
+- 2.65.2 (PR #60, merge d40fc6d): NOVO docs/SELF-HOST-RUNBOOK.md (7 poglavij: merjene vrstice, Valhalla, Photon, VPS ponudba z viri, izvedba 9 korakov ocena 1 dan + rollback unset env, kaj se NE spremeni, viri z datumi); dokument §9 faza 2 'VPS [nepotrjena cena]' → 'podprto 16,40 EUR/mes' + §10 VPS vrstica osvežena (viri + 'preveri pred naročilom') + header na v2.65.2; verzija 2.65.2 (6 mest + testni literali; zgodovinske reference 2.65.1 v testih/komentarjih ostanejo).
+- Vrata: 2338/2338 testov (26 137 expect) · tsc 0 · eslint 0 · build OK; docs-only (0 UI) → brskalniška zlata pot NI potrebna (kanon: lekcija 1 velja za vidne spremembe); CI (billing) + sync (PAT) lastniško — merge po precedensu.
+- PRODUKCIJA 2.65.2 (build d40fc6d): health ok (ops:cron pričakovan); veja očiščena (lokalno + remote).
+- Komentarji: #35 id 6179706911 (runbook + izračun 0 EUR vs 16,40 EUR/mes + stanje); PR #60 ustvarjen in mergan (squash).
+
+Stage Summary:
+- Faza 2/3 self-host = ZDAJ POPOLNOMA LASTNIŠKA ODLOČITEV Z VSEMI ŠTEVILKI: 0 EUR (javna primera + kanon) vs ≈ 16,40 EUR/mes (CX42, ena instanca za obe službi, SLA nad katerim vladaš); koda ISTA (override), preklop/rollback = minut redeploya; izvedba = 9 korakov runbooka (ocena 1 dan).
+- Lekcija 7 (nova): Geofabrik URL za Severno Makedonijo je 'macedonia' (NE 'north-macedonia' → 404); planet-priporočila velikosti NISO prenosljiva na regionalni build — vedno izmeri lasten obseg PBF pred sizing odločitvijo.
+- Stanje #35: VSA samostojna dela ZDAJ res zaključena (faze 0/F0–F5/4a+4b ✅ · 1/2/3 ◐ PoC + runbook · priprave na self-host popolne) — preostanek 100 % lastniški: re-deizija zemljevida, self-host potrditev (runbook pripravljen), Viator odobritev, db:pg:deploy, CI billing, GitLab PAT, 9 novembrskih dogodkov (če se uradne strani osvežijo — preverjeno 14. 10.).

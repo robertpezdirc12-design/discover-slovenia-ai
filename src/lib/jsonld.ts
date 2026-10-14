@@ -264,6 +264,52 @@ export function eventsJsonLd(
 }
 
 /**
+ * TouristDestination za /drzava/[code] v danem jeziku (#41 Faza 3, 2.57.0).
+ * ISKRENOSTNI KANON (enak kot touristDestinationJsonLd zgoraj):
+ *  · name/description = 6-jezični SEO kanon države (src/lib/countries-seo)
+ *    v AKTIVNEM jeziku — prekrivni prevodi obstajajo, zato jih tudi uporabimo;
+ *  · geo = središče, IZPELJANO iz kuriranih destinacij države (min/max oklep
+ *    → sredina, countryGeoCenter) — ni izmišljene koordinate; null center
+ *    (država brez vsebine) → geo polje IZPUŠČENO (pošteno, ne ugibamo);
+ *  · image IZPUŠČEN — države nimajo lastnih binarnih sredstev (pravilo
+ *    emoji zastav), izmišljene slike ne izpisujemo.
+ */
+export interface CountryTouristDestinationLd {
+  "@context": "https://schema.org";
+  "@type": "TouristDestination";
+  name: string;
+  description: string;
+  url: string;
+  geo?: { "@type": "GeoCoordinates"; latitude: number; longitude: number };
+}
+
+export function countryTouristDestinationJsonLd(
+  code: string,
+  locale: string,
+  name: string,
+  description: string,
+  center: { lat: number; lng: number } | null,
+): CountryTouristDestinationLd {
+  const lang = asPickLocale(locale);
+  return {
+    "@context": "https://schema.org",
+    "@type": "TouristDestination",
+    name,
+    description,
+    url: `${JSONLD_SITE_ORIGIN}${localePrefixPath(lang)}/drzava/${code}`,
+    ...(center
+      ? {
+          geo: {
+            "@type": "GeoCoordinates",
+            latitude: center.lat,
+            longitude: center.lng,
+          },
+        }
+      : {}),
+  };
+}
+
+/**
  * Varno telo za <script type="application/ld+json" dangerouslySetInnerHTML>:
  * JSON.stringify + ubežniška zamenjava '<' → \u003c (kanon Next.js JSON-LD
  * vodnika). Izpis nikoli ne more vsebovati zaporedja </script> — ni odprtega

@@ -19,6 +19,10 @@
  *   kot na namiznem, z dotikom (hasTouch).
  * ④ ZEMLJEVID UPORABEN: /zemljevid na mobilnem — Leaflet vsebnik, zoom
  *   kontrola in OSM atribucija so vidni in dostopni.
+ * ⑤ DRŽAVNA STRAN (#41 F3, 2.57.0): /drzava/BA × 5 širin — hero viden,
+ *   brez vodoravnega preliva (pravilo: vsaka nova državna stran mora
+ *   opraviti 5-prelomni suite).
+ * ⑥ VSEH 10 DRŽAV (#41 F3): /drzava/[code] @ 375 px — hero + preliv.
  *
  * Izolacija: svež kontekst na test (prazen localStorage — isti vzorec
  * kot golden-path.e2e.ts).
@@ -161,4 +165,55 @@ test("④ zemljevid: Leaflet vsebnik + zoom + OSM atribucija @ 390 px", async ({
   const atribucija = page.locator(".leaflet-control-attribution").first();
   await expect(atribucija).toBeVisible();
   await expect(atribucija).toContainText("OpenStreetMap");
+});
+
+// ── ⑤ — državna landing stran brez vodoravnega preliva (#41 F3) ──────────
+// Pravilo #41: „E2E mobilni prelomi: vsaka nova državna stran mora
+// opraviti 5-prelomni suite." BA = prva F3 landing stran z vso vsebino
+// (destinacije + dogodki + lokali) — en test na širino (svež tab).
+
+for (const sirina of SIRINE) {
+  test(`⑤ državna stran /drzava/BA brez vodoravnega preliva @ ${sirina}px`, async ({
+    page,
+  }) => {
+    test.setTimeout(90_000);
+
+    await page.setViewportSize({ width: sirina, height: 800 });
+    await gotoTrdo(page, "/drzava/BA");
+
+    // hero: zastava + ime države v aktivnem jeziku
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+
+    const preliv = await page.evaluate(() => {
+      const el = document.scrollingElement;
+      return el ? el.scrollWidth - el.clientWidth : 0;
+    });
+    expect(
+      preliv,
+      `/drzava/BA @ ${sirina}px: vodoravni preliv ${preliv}px`
+    ).toBeLessThanOrEqual(1);
+  });
+}
+
+// ── ⑥ — vseh 10 državnih strani uporabnih na mobilnem (@375) ─────────────
+
+test("⑥ /drzava/[code]: vseh 10 držav brez preliva + hero @ 375 px", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+
+  await page.setViewportSize({ width: 375, height: 800 });
+  const KODE = ["SI", "HR", "ME", "AL", "BA", "RS", "MK", "XK", "BG", "GR"];
+  for (const kod of KODE) {
+    await gotoTrdo(page, `/drzava/${kod}`);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    const preliv = await page.evaluate(() => {
+      const el = document.scrollingElement;
+      return el ? el.scrollWidth - el.clientWidth : 0;
+    });
+    expect(
+      preliv,
+      `/drzava/${kod} @ 375px: vodoravni preliv ${preliv}px`
+    ).toBeLessThanOrEqual(1);
+  }
 });

@@ -145,7 +145,7 @@ describe("seo metadata: pageMetadata sestava", () => {
   test("④a sl: unikaten title/description + canonical + hreflang z x-default", () => {
     const m = pageMetadata("sl", "/destinacije");
     expect(m.title).toBe("Destinacije v Sloveniji");
-    expect(m.description).toContain("38 kuriranih destinacij");
+    expect(m.description).toContain("74 kuriranih destinacij");
     const alts = m.alternates!;
     const lang = (alts.languages ?? {}) as Record<string, string>;
     expect(alts.canonical).toBe("/destinacije");

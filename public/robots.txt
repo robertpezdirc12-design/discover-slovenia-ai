@@ -12,3 +12,15 @@ Allow: /
 
 User-agent: *
 Allow: /
+# Zasebne/uporabniške poti niso za indeksacijo (#41 F3, 2.57.0).
+Disallow: /admin
+Disallow: /owner
+Disallow: /prijava
+Disallow: /moj-profil
+Disallow: /notifikacije
+Disallow: /moja-potovanja
+Disallow: /na-poti
+Disallow: /potovanje
+
+# Generiran sitemap (#41 F3): /sitemap.xml (hreflang alternates × 6 jezikov).
+Sitemap: https://i-feel-slovenia.vercel.app/sitemap.xml

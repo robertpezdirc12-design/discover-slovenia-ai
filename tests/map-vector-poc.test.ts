@@ -142,4 +142,15 @@ describe("poc-vector [source-contract]: obveznosti kanona", () => {
     const pkg = JSON.parse(await src("package.json"));
     expect(pkg.dependencies["maplibre-gl"]).toMatch(/^[\^~]?6\.14\.0/);
   });
+
+  test("⑮ worker URL fix 2.63.1: config.WORKER_URL + datoteka v public/ z BSD glavo", async () => {
+    // MapLibre v6 računa worker URL iz import.meta.url — v bundlerju pade
+    // (odkrito z brskalniško verifikacijo produkcije 2.63.0, PR #55).
+    const s = await src("src/components/map/travel-map-vector-poc.tsx");
+    expect(s).toContain("mlConfig.WORKER_URL = ML_WORKER_URL");
+    expect(s).toContain('"/maplibre/maplibre-gl-worker.mjs?v=');
+    const w = await src("public/maplibre/maplibre-gl-worker.mjs");
+    expect(w).toContain("3-Clause BSD"); // licenčna glava — korektna redistribucija
+    expect(w.length).toBeGreaterThan(100_000); // pravi worker, ne placeholder
+  });
 });

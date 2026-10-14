@@ -3331,3 +3331,59 @@ Stage Summary:
    vključi pavze; curl z browser UA je za EU strani hitrejša pot.
 3. **Funkcijska UI roka (IJIFE) za pogojne bloke v JSX** ob pogojih, ki
    potrebujejo lokalne izpeljane vrednosti — brez posebne podkomponente.
+
+## R41-FOLLOWUP (2.60.0) — dolg iz F4: NLU cel kanon + kopna sinhronizacija
+- **Funkcionalno**: DEST_NEEDLES + DEST_NEEDLES_MIRROR 38 → 74 — vseh 36
+  balkanskih destinacij iz F1 (BA/RS/MK/XK/BG/GR × 6) dozdaj NI bilo
+  prepoznanih v start-anywhere (prilepi povezavo/besedilo) in plan-import
+  (KML/GPX). Igle ročno kurirane: slovenski skloni + dvojezične
+  transliteracije (Đerdap/Djerdap, Priština/Prishtina, Gjakova/Đakovica,
+  Halkidiki/Chalkidiki, Nesebar/Nessebar); red = vrstni red registra
+  (testno zaklenjen 1:1, 74/74).
+- **Zaščita pred lažnimi pozitivi**: izrecne oblike namesto generičnih
+  korenov, kjer je koren koliziven: blagaj→blagajna, prespa→prespan,
+  meteora→meteor/meter, kastoria→kastori (bobra), bansko→Banska Bystrica,
+  rila-samostan→rile, travnik→travniki (množina).
+- **Kopna sinhronizacija 38→74** (6 jezikov): heroLead domači,
+  iskrenostni kanon, zemljevid, nacrtuj (3), slovenia-pass, vir-podatkov,
+  tržnica coverage, go-data (2 sklopa), jsonld featureList ×6,
+  trip-chat-engine (3), API start-anywhere (2), journey/route (2),
+  komentarji (map-pins, go-gps, lokali, advisor, content-data,
+  itinerary-engine, slovenia-data).
+- **Follow-up copy commit (e942254)**: PR #50 ni zajel i18n metadata —
+  messages/{sl,en,it,de,fr,es}.json meta.description (38→74 IN obseg
+  „zahodni Balkan“→„cel Balkan“) + public/manifest.json (description +
+  bližnjica). Ugotovitev: copy popravek ob razširitvi kanona MORA preglediti
+  TUDI messages/ + public/, ne samo src/.
+- **Testi**: NOVI tests/balkan-followup.test.ts (57): obseg 74, red=register,
+  pogodba igel (koreni ≥3, izrecne ≥4), 39 pozitivnih povedi,
+  9 lažno-pozitivnih zaklepov, source-contract kopne sinhronizacije (18
+  datotek). Zrcalni sidri posodobljeni (plan-import KEYS, jsonld ⑧ 38→74).
+
+## Testi / vrata (2.60.0)
+- bun test **2245/2245** (25 859 expect; +57 nad F5) · tsc 0 · eslint 0 ·
+  build OK · verzija 2.60.0 (pkg/health/sw/footer)
+- PR #50 merged `fd50d4e` + follow-up `e942254` (direct main — deploy)
+
+## Produkcija (v2.60.0)
+- health: status ok, 10/11 startup (ops:cron skip = pričakovano)
+- **NOVA ZMOŽNOST ŽIVA**: POST /api/start-anywhere "Sarajevo, Mostar,
+  Ohrid, Solun, Meteora in Rilski samostan" → 6/6 matches (prej 0);
+  determinizem potrjen (2 klica, isti izhod)
+- copy na produkciji: meta ×6 jezikov + manifest = 74/cel Balkan
+- **E2E 16/16** na previewju (3,7 min) IN produkciji (2,9 min)
+- Platform parity: GitHub main `e942254` = GitLab main `e942254`
+
+## Lekcije (FOLLOWUP)
+1. **i18n metadata in PWA manifest so ločen kopni sloj**: `messages/*.json`
+   + `public/manifest.json` NISO v src/ — iskanje po src/ ni dovolj;
+   source-contract test je od zdaj pokriva (18 datotek).
+2. **Vrstni red zadetkov = vrstni red registra, NE besedila** — preverjevalni
+   test naj uporablja toContain (niz), ne toEqual (vrstni red).
+3. **Rebaza pred direct-main push po merge-u**: main je napredoval (PR merge
+   commit) → `git fetch github main && git rebase github/main` pred pushem;
+   v nasprotnem primeru non-fast-forward.
+4. **Edge cache za statične datoteke (manifest.json)** zaostane za
+   aplikacijo za ~1–3 min — verifikacija kopnih popravkov potrebuje
+   cache-buster + potrpežljivost po vrstnem redu: NLU (API) → meta
+   (SSR) → manifest (statična).

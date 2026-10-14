@@ -41,7 +41,7 @@ describe("lokali-data: obseg in integriteta", () => {
     }
   });
 
-  test("destinationSlug (če je) obstaja med 38 destinacijami", () => {
+  test("destinationSlug (če je) obstaja med 74 destinacijami", () => {
     const slugs = new Set(DESTINATIONS.map((d) => d.slug));
     for (const l of LOKALI) {
       if (l.destinationSlug) {

@@ -3,7 +3,7 @@
  * pinov iz kanonskih podatkov, zoom vrata 14/15, agregacija celic ~0,05°,
  * cap 500, invariante odgovora).
  *
- * Kanon iskrenosti: 38 destinacij (precision "exact") + 32 lokalov
+ * Kanon iskrenosti: 74 destinacij (precision "exact") + 32 lokalov
  * (precision "destination_center", izpeljane koordinate) = 64 krajev;
  * 2 lokala brez povezave na destinacijo sta IZPUŠČENA (nimajo koordinat).
  */

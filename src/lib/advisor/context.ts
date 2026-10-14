@@ -16,7 +16,7 @@ import { mapUpstreamDaily, type WeatherDay } from "@/lib/weather";
  * 100 % deterministično, 0 AI modelov, 0 AI žetonov).
  *
  * Skriptni svetovalec odgovarja IZKLJUČNO iz kanonskih virov:
- *  · register 38 destinacij (src/lib/slovenia-data.ts — zaupan vir),
+ *  · register 74 destinacij (src/lib/slovenia-data.ts — zaupan vir),
  *  · STO slovenia.info vsebina (data/sto-content.json — LOKALNA datoteka,
  *    0 omrežja; napisal jo je ingest cron),
  *  · trenutno vreme Open-Meteo (javni PODATKOVNI API, ne AI — enak vir

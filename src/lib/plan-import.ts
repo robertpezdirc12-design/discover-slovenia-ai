@@ -116,7 +116,7 @@ export interface ImportMatch {
   kind: "stem" | "exact" | "coords";
 }
 
-/** Rezultat ujemanja točk proti registru 38 destinacij. */
+/** Rezultat ujemanja točk proti registru 74 destinacij. */
 export interface ImportMatchResult {
   /** Zadeti kraji (vrstni red = vrstni red točk v datoteki; dedup po slugu). */
   matched: ImportMatch[];
@@ -625,7 +625,7 @@ function stripDiacriticsMirror(s: string): string {
 }
 
 /**
- * ZRCALO tabele DEST_NEEDLES — 38 destinacij registra, red = vrstni red
+ * ZRCALO tabele DEST_NEEDLES — 74 destinacij registra (38 + 36 balkanskih), red = vrstni red
  * registra (determinizem; prva zadeta igla velja). Vsebina MORA biti
  * bitno enaka kanonu (zaklenejo testi).
  */
@@ -695,6 +695,63 @@ export const DEST_NEEDLES_MIRROR: readonly DestNeedle[] = [
   // Gjirokastër: SL „Gjirokaster“ in EN/IT „Gjirokastra“ — dva korena.
   { dest: "gjirokaster", stems: [["gjirokast"], ["gjirokastr"]] },
   { dest: "saranda", stems: [["sarand"]] },
+
+  // ── Balkanska razširitev F1 (#41, 2.60.0) — 36 novih destinacij ────────
+  // Bitno enaka razširitvi kanona DEST_NEEDLES (src/lib/start-anywhere/
+  // match.ts); red = vrstni red registra (BA → RS → MK → XK → BG → GR).
+  { dest: "sarajevo", stems: [["sarajev"]] },
+  { dest: "mostar", stems: [["mostar"]] },
+  { dest: "kravica", stems: [["kravic"]] },
+  { dest: "jahorina", stems: [["jahorin"]] },
+  { dest: "blagaj", exact: ["blagaj", "blagaja", "blagaju", "blagajem"] },
+  {
+    dest: "travnik",
+    exact: ["travnik", "travnika", "travniku", "travnikom"],
+  },
+  { dest: "beograd", stems: [["beograd"]] },
+  { dest: "novi-sad", stems: [["nov", "sad"]] },
+  { dest: "kopaonik", stems: [["kopaonik"]] },
+  { dest: "derdap", stems: [["derdap"], ["djerdap"]] },
+  { dest: "sremski-karlovci", stems: [["sremski", "karlovc"]] },
+  { dest: "subotica", stems: [["subotic"]] },
+  { dest: "ohrid", stems: [["ohrid"]] },
+  { dest: "skopje", stems: [["skopj"]] },
+  { dest: "matka", stems: [["matka"]] },
+  { dest: "bitola", stems: [["bitol"]] },
+  {
+    dest: "prespa",
+    stems: [["prespansk"]],
+    exact: ["prespa", "prespi", "prespah"],
+  },
+  { dest: "mavrovo", stems: [["mavrov"]] },
+  { dest: "prizren", stems: [["prizren"]] },
+  { dest: "rugova", stems: [["rugov"]] },
+  {
+    dest: "brezovica",
+    exact: ["brezovica", "brezovice", "brezovico", "brezovici"],
+  },
+  { dest: "gjakova", stems: [["gjakov"], ["djakov"]] },
+  { dest: "gadime", stems: [["gadime"]] },
+  { dest: "prishtina", stems: [["pristina"], ["prishtina"]] },
+  { dest: "sofija", stems: [["sofij"]] },
+  { dest: "plovdiv", stems: [["plovdiv"]] },
+  {
+    dest: "rila-samostan",
+    stems: [["rila", "samostan"], ["rilski", "samostan"], ["rila", "monaster"]],
+    exact: ["rila", "rili", "rilo"],
+  },
+  { dest: "nesebar", stems: [["nesebar"], ["nessebar"]] },
+  { dest: "bansko", exact: ["bansko", "bansku", "banskog", "banskem"] },
+  { dest: "veliko-tarnovo", stems: [["veliko", "tarnov"], ["tarnov"]] },
+  { dest: "solun", stems: [["solun"]] },
+  { dest: "meteora", exact: ["meteora", "meteri", "metere", "meteoro"] },
+  {
+    dest: "kastoria",
+    exact: ["kastoria", "kastorijo", "kastorije", "kastoriji"],
+  },
+  { dest: "vergina", stems: [["vergin"]] },
+  { dest: "ioannina", stems: [["ioannin"]] },
+  { dest: "halkidiki", stems: [["halkidik"], ["chalkidik"]] },
 ];
 
 /**
@@ -783,7 +840,7 @@ function fmtKm(km: number): string {
 }
 
 /**
- * Ujemi točke datoteke s kanonskim registrom 38 destinacij.
+ * Ujemi točke datoteke s kanonskim registrom 74 destinacij.
  * Vrstni red zadetkov = vrstni red točk v datoteki; dedup po slugu (drugi
  * zadetek na isti kraj se prešteje v duplicateCount — iskreno poročano).
  * Najprej IME (kanon DEST_NEEDLES — prvi zadetek, registarski vrstni red),

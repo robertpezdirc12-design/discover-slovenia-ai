@@ -7,7 +7,8 @@ import { stripDiacritics } from "@/lib/advisor/context";
  * Kje bi bil AI model (Mindtrip Start Anywhere = video → LLM), je tu
  * SKRIPTA: ujemanje omenjenih krajev v poljubnem besedilu (prilepljena
  * povezava → strežniško prebrano besedilo, ali uporabnikovo besedilo)
- * proti KANONSKEMU registru 38 destinacij (src/lib/slovenia-data.ts).
+ * proti KANONSKEMU registru 74 destinacij (src/lib/slovenia-data.ts;
+ * 38 do F1, od 2.55.0 cel Balkan — igle sledijo registru od 2.60.0).
  *
  * Kanoni:
  *  · DETERMINIZEM: isti vhod → isti izhod; vrstni red registra (nikoli
@@ -47,7 +48,7 @@ export interface DestNeedle {
 }
 
 /**
- * KURIRANA TABELA — 38 destinacij registra.
+ * KURIRANA TABELA — 74 destinacij registra (38 + 36 balkanskih).
  * Red = vrstni red registra (determinizem; prva zadeta igla velja).
  */
 export const DEST_NEEDLES: readonly DestNeedle[] = [
@@ -116,6 +117,88 @@ export const DEST_NEEDLES: readonly DestNeedle[] = [
   // Gjirokastër: SL „Gjirokaster“ in EN/IT „Gjirokastra“ — dva korena.
   { dest: "gjirokaster", stems: [["gjirokast"], ["gjirokastr"]] },
   { dest: "saranda", stems: [["sarand"]] },
+
+  // ── Balkanska razširitev F1 (#41, 2.60.0) — 36 novih destinacij ────────
+  // Red = vrstni red registra (BA → RS → MK → XK → BG → GR). Vsaka igla
+  // ročno pregledana proti lažnim pozitivom (glej komentarje posameznih).
+  { dest: "sarajevo", stems: [["sarajev"]] },
+  { dest: "mostar", stems: [["mostar"]] },
+  // Kravica (slap): koren „kravic“ pokriva Kravica/Kravice/Kravicama.
+  { dest: "kravica", stems: [["kravic"]] },
+  { dest: "jahorina", stems: [["jahorin"]] },
+  // Blagaj: koren „blagaj“ bi zadel tudi „blagajna“ (blagajniško okno) →
+  // izrecne sklonjske oblike.
+  { dest: "blagaj", exact: ["blagaj", "blagaja", "blagaju", "blagajem"] },
+  // Travnik: tudi običajna samostalniška raba („travnik“ = trato) — v
+  // potovalnem besedilu deterministično ujamemo sklonjske oblike.
+  { dest: "travnik", exact: ["travnik", "travnika", "travniku", "travnikom"] },
+  { dest: "beograd", stems: [["beograd"]] },
+  // Novi Sad: korena „nov“+„sad“ pokrijeta tudi „Novega Sada“ (sklon);
+  // zaporedje besed preprečuje generični zadetek na samem „nov“.
+  { dest: "novi-sad", stems: [["nov", "sad"]] },
+  { dest: "kopaonik", stems: [["kopaonik"]] },
+  // Đerdap: SL folded „derdap“ + Madž.-srbska transliteracija „djerdap“.
+  { dest: "derdap", stems: [["derdap"], ["djerdap"]] },
+  // Sremski Karlovci: pridevnik „sremski“ je specifičen (Srem).
+  { dest: "sremski-karlovci", stems: [["sremski", "karlovc"]] },
+  { dest: "subotica", stems: [["subotic"]] },
+  // Ohrid: koren zadane tudi „ohridsk*“ (Ohridsko jezero).
+  { dest: "ohrid", stems: [["ohrid"]] },
+  { dest: "skopje", stems: [["skopj"]] },
+  { dest: "matka", stems: [["matka"]] },
+  { dest: "bitola", stems: [["bitol"]] },
+  // Prespa: koren „presp“ bi zadel „prespan“ (pretek. del. prespati) →
+  // koren „prespansk“ (Prespansko jezero) + izrecne oblike.
+  {
+    dest: "prespa",
+    stems: [["prespansk"]],
+    exact: ["prespa", "prespi", "prespah"],
+  },
+  { dest: "mavrovo", stems: [["mavrov"]] },
+  { dest: "prizren", stems: [["prizren"]] },
+  { dest: "rugova", stems: [["rugov"]] },
+  // Brezovica (Kosovo): homonim s slov. vasjo Brezovica — izrecne oblike
+  // (potovalni kontekst registrira smučarskicenter; dokumentirano tveganje).
+  {
+    dest: "brezovica",
+    exact: ["brezovica", "brezovice", "brezovico", "brezovici"],
+  },
+  // Gjakova: albansko „Gjakova“ + srbsko „Đakovica“ (fold „djakov“).
+  { dest: "gjakova", stems: [["gjakov"], ["djakov"]] },
+  { dest: "gadime", stems: [["gadime"]] },
+  // Priština: SL/SPS „pristina“ (fold š) + AL/EN „prishtina“.
+  { dest: "prishtina", stems: [["pristina"], ["prishtina"]] },
+  // Sofija: koren „sofij“ (Sofija je tudi osebno ime — potovalni kontekst).
+  { dest: "sofija", stems: [["sofij"]] },
+  { dest: "plovdiv", stems: [["plovdiv"]] },
+  // Rilski samostan: kombinacije „rila/rilski + samostan/monaster“ (gora
+  // Rila sama) + izrecni skloni gore („Rili“, „Rilo“); NE korena „rile“.
+  {
+    dest: "rila-samostan",
+    stems: [["rila", "samostan"], ["rilski", "samostan"], ["rila", "monaster"]],
+    exact: ["rila", "rili", "rilo"],
+  },
+  // Nesebar: bolg. transliteraciji „nesebar“/„nessebar“.
+  { dest: "nesebar", stems: [["nesebar"], ["nessebar"]] },
+  // Bansko: izrecne sklonjske oblike — koren „bansk“ bi zadel slovaška
+  // mesta (Banska Bystrica) in „banski svet“.
+  { dest: "bansko", exact: ["bansko", "bansku", "banskog", "banskem"] },
+  // Veliko Tarnovo: „tarnov“ je unikaten koren; kombinacija pokrije
+  // redkejšo rabo z „Veliko“ („veliko“ samo je generično).
+  { dest: "veliko-tarnovo", stems: [["veliko", "tarnov"], ["tarnov"]] },
+  { dest: "solun", stems: [["solun"]] },
+  // Meteora: izrecne oblike — korena „meteor“/„meter“ bi zadela
+  // meteorje/metre (generična besedila).
+  { dest: "meteora", exact: ["meteora", "meteri", "metere", "meteoro"] },
+  // Kastoria: izrecne oblike — koren „kastori“ bi zadel bobra (množ.).
+  {
+    dest: "kastoria",
+    exact: ["kastoria", "kastorijo", "kastorije", "kastoriji"],
+  },
+  { dest: "vergina", stems: [["vergin"]] },
+  { dest: "ioannina", stems: [["ioannin"]] },
+  // Halkidiki: grška transliteraciji „halkidiki“/„chalkidiki“.
+  { dest: "halkidiki", stems: [["halkidik"], ["chalkidik"]] },
 ];
 
 // ── ujemanje ─────────────────────────────────────────────────────────────

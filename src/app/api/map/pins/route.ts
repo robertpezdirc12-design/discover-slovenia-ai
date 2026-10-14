@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
  * Rekonstrukcija produkcijskega pins API-ja (oblika 1:1, preverjeno živo
  * na i-feel-slovenia.vercel.app 2026-10-07). Produkcija streže FSQ Open
  * Places (125.445 krajev) — te množice v peskovniku ni, zato ta route
- * pošteno streže LASTNE kanonske podatke (38 destinacij + 26 lokalov s
+ * pošteno streže LASTNE kanonske podatke (74 destinacij + 32 lokalov s
  * povezavo na destinacijo; koordinate lokalov so izpeljane iz središča
  * destinacije in tako označene — precision "destination_center").
  *

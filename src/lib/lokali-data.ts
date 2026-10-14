@@ -44,7 +44,7 @@ export interface Lokal {
   /** Slovenščina je vir zapisa; en je prevod kuracije. */
   description: { sl: string; en: string; it: string; de: string; fr: string; es: string };
   weather: WeatherFit;
-  /** Povezava na kanonsko destinacijo, kadar je kraj med 38 destinacijami. */
+  /** Povezava na kanonsko destinacijo, kadar je kraj med 74 destinacijami. */
   destinationSlug?: string;
   /** Uredniško izpostavljeni (razvrščanje "Izpostavljeni" iz produkcije). */
   featured?: boolean;

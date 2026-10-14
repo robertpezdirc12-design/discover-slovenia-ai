@@ -13,7 +13,7 @@
  *  5. IDEJE ZATE (iz P1-A preferenc — ISTI reason slovar kot priporočila
  *     @AI/načrtovalnika: proračun/sezona/interesi; personalizacija OFF →
  *     iskrena ploščica z linkom na /moj-profil);
- *  6. V BLIŽINI (enkratna GPS fiksacija → haversine do registra 38
+ *  6. V BLIŽINI (enkratna GPS fiksacija → haversine do registra 74
  *     destinacij — 100 % klient, 0 strežniških klicev; zavrnjeno/neznano →
  *     iskrena stanja);
  *  7. ODPRTE NALOGE (deterministične: poti brez datumov, profil brez
@@ -928,7 +928,7 @@ function NearbyCard({
 
   // Enkratna fiksacija (getCurrentPosition — lažja od watchPosition Go Mode).
   // ZASEBNOST: položaj živi samo v tem stanju; haversine teče klientno nad
-  // registrom 38 destinacij — 0 strežniških klicev z lego.
+  // registrom 74 destinacij — 0 strežniških klicev z lego.
   const onFind = useCallback(() => {
     if (state === "loading") return;
     if (typeof navigator === "undefined" || !navigator.geolocation) {

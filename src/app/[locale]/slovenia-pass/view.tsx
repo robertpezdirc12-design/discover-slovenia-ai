@@ -54,32 +54,32 @@ export default function SloveniaPassPage() {
     how: {
       sl: [
         { h: "Načrtuj", b: "Sestavi AI načrt potovanja po Sloveniji — vsak načrt prinese točke." },
-        { h: "Obišči", b: "Potuj po regijah iz našega kanonskega nabora 38 destinacij in zbiraj značke po regijah." },
+        { h: "Obišči", b: "Potuj po regijah iz našega kanonskega nabora 74 destinacij in zbiraj značke po regijah." },
         { h: "Odkleni", b: "Z več regijami in točkami odklenjuješ stopnje pasa — potovanje kot igra." },
       ],
       en: [
         { h: "Plan", b: "Build an AI travel plan around Slovenia — every plan brings points." },
-        { h: "Visit", b: "Travel through regions from our canonical set of 38 destinations and collect badges by region." },
+        { h: "Visit", b: "Travel through regions from our canonical set of 74 destinations and collect badges by region." },
         { h: "Unlock", b: "More regions and points unlock pass levels — travel as a game." },
       ],
       it: [
         { h: "Pianifica", b: "Crea un piano di viaggio AI per la Slovenia — ogni piano porta punti." },
-        { h: "Visita", b: "Viaggia tra le regioni del nostro set canonico di 38 destinazioni e colleziona badge per regione." },
+        { h: "Visita", b: "Viaggia tra le regioni del nostro set canonico di 74 destinazioni e colleziona badge per regione." },
         { h: "Sblocca", b: "Più regioni e punti sbloccano i livelli del pass — viaggiare come un gioco." },
       ],
       de: [
         { h: "Planen", b: "Erstelle einen KI-Reiseplan durch Slowenien — jeder Plan bringt Punkte." },
-        { h: "Besuchen", b: "Reise durch die Regionen unseres kanonischen Sets aus 38 Destinationen und sammle Abzeichen je Region." },
+        { h: "Besuchen", b: "Reise durch die Regionen unseres kanonischen Sets aus 74 Destinationen und sammle Abzeichen je Region." },
         { h: "Freischalten", b: "Mehr Regionen und Punkte schalten Pass-Stufen frei — Reisen als Spiel." },
       ],
       fr: [
         { h: "Planifier", b: "Crée un plan de voyage IA en Slovénie — chaque plan rapporte des points." },
-        { h: "Visiter", b: "Voyage à travers les régions de notre ensemble canonique de 38 destinations et collecte des badges par région." },
+        { h: "Visiter", b: "Voyage à travers les régions de notre ensemble canonique de 74 destinations et collecte des badges par région." },
         { h: "Débloquer", b: "Plus de régions et de points débloquent des niveaux du pass — voyager comme un jeu." },
       ],
       es: [
         { h: "Planifica", b: "Crea un plan de viaje con IA por Eslovenia — cada plan da puntos." },
-        { h: "Visita", b: "Viaja por las regiones de nuestro conjunto canónico de 38 destinos y colecciona insignias por región." },
+        { h: "Visita", b: "Viaja por las regiones de nuestro conjunto canónico de 74 destinos y colecciona insignias por región." },
         { h: "Desbloquea", b: "Más regiones y puntos desbloquean niveles del pase — viajar como un juego." },
       ],
     },

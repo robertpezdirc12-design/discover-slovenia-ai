@@ -660,12 +660,12 @@ describe("plan-import — L10N: novi ključi ×6 jezikov dobesedno", () => {
       es: "El archivo tiene más de 200 puntos — se usan los primeros 200.",
     },
     importNoMatch: {
-      sl: "V datoteki nisem prepoznal nobenega kraja iz registra (38 destinacij).",
-      en: "No place from the register (38 destinations) was recognized in the file.",
-      it: "Nel file non è stato riconosciuto nessun luogo del registro (38 destinazioni).",
-      de: "In der Datei wurde kein Ort aus dem Register (38 Reiseziele) erkannt.",
-      fr: "Aucun lieu du registre (38 destinations) n'a été reconnu dans le fichier.",
-      es: "No se reconoció ningún lugar del registro (38 destinos) en el archivo.",
+      sl: "V datoteki nisem prepoznal nobenega kraja iz registra (74 destinacij).",
+      en: "No place from the register (74 destinations) was recognized in the file.",
+      it: "Nel file non è stato riconosciuto nessun luogo del registro (74 destinazioni).",
+      de: "In der Datei wurde kein Ort aus dem Register (74 Reiseziele) erkannt.",
+      fr: "Aucun lieu du registre (74 destinations) n'a été reconnu dans le fichier.",
+      es: "No se reconoció ningún lugar del registro (74 destinos) en el archivo.",
     },
     importReadError: {
       sl: "Datoteke ni bilo mogoče prebrati — poskusi znova.",

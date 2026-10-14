@@ -11,7 +11,7 @@
  *  · featureList vsebuje IZKLJUČNO funkcije, ki res obstajajo v kodi
  *    (preverjeno proti README/2.24–2.27: deterministični motor, Go Mode s
  *    PWA offline, 6 jezikov, PDF, .ics, skupinske poti, skriptni @AI
- *    svetovalec z viri Open-Meteo/STO, 38 kuriranih destinacij);
+ *    svetovalec z viri Open-Meteo/STO, 74 kuriranih destinacij);
  *  · offers.price = "0" — načrtovanje JE brezplačno (checkout je demo
  *    fail-closed, brez Stripe ključev ni nobenega plačila);
  *  · TouristDestination ima samo polja, ki res obstajajo v podatkih
@@ -59,7 +59,7 @@ const FEATURES: PickDict<string[]> = {
     "Izvoz dogodkov v koledar (.ics)",
     "Deljene skupinske poti (vabila, ankete, rezervacije, klepet)",
     "@AI svetovalec z živimi viri (Open-Meteo, STO slovenia.info) — deterministične skripte, 0 AI modelov",
-    "38 kuriranih destinacij (SI · HR · ME · AL)",
+    "74 kuriranih destinacij (cel Balkan — 10 držav)",
   ],
   en: [
     "Deterministic travel planner — the same input always yields the same plan (0 AI)",
@@ -69,7 +69,7 @@ const FEATURES: PickDict<string[]> = {
     "Calendar export (.ics)",
     "Shared group trips (invitations, polls, reservations, chat)",
     "@AI advisor with live sources (Open-Meteo, STO slovenia.info) — deterministic scripts, 0 AI models",
-    "38 curated destinations (SI · HR · ME · AL)",
+    "74 curated destinations (the entire Balkans — 10 countries)",
   ],
   it: [
     "Pianificatore di viaggio deterministico — lo stesso input dà sempre lo stesso piano (0 AI)",
@@ -79,7 +79,7 @@ const FEATURES: PickDict<string[]> = {
     "Esportazione degli eventi nel calendario (.ics)",
     "Viaggi di gruppo condivisi (inviti, sondaggi, prenotazioni, chat)",
     "Consulente @AI con fonti in tempo reale (Open-Meteo, STO slovenia.info) — script deterministici, 0 modelli AI",
-    "38 destinazioni curate (SI · HR · ME · AL)",
+    "74 destinazioni curate (tutti i Balcani — 10 paesi)",
   ],
   de: [
     "Deterministischer Reiseplaner — dieselbe Eingabe ergibt immer denselben Plan (0 KI)",
@@ -89,7 +89,7 @@ const FEATURES: PickDict<string[]> = {
     "Kalenderexport (.ics)",
     "Geteilte Gruppenreisen (Einladungen, Umfragen, Reservierungen, Chat)",
     "@AI-Berater mit Live-Quellen (Open-Meteo, STO slovenia.info) — deterministische Skripte, 0 KI-Modelle",
-    "38 kuratierte Reiseziele (SI · HR · ME · AL)",
+    "74 kuratierte Reiseziele (der ganze Balkan — 10 Länder)",
   ],
   fr: [
     "Planificateur de voyage déterministe — la même entrée donne toujours le même plan (0 IA)",
@@ -99,7 +99,7 @@ const FEATURES: PickDict<string[]> = {
     "Export des événements vers le calendrier (.ics)",
     "Voyages de groupe partagés (invitations, sondages, réservations, chat)",
     "Conseiller @AI avec sources en direct (Open-Meteo, STO slovenia.info) — scripts déterministes, 0 modèle d'IA",
-    "38 destinations curatées (SI · HR · ME · AL)",
+    "74 destinations curatées (tous les Balkans — 10 pays)",
   ],
   es: [
     "Planificador de viajes determinista — la misma entrada da siempre el mismo plan (0 IA)",
@@ -109,7 +109,7 @@ const FEATURES: PickDict<string[]> = {
     "Exportación de eventos al calendario (.ics)",
     "Viajes de grupo compartidos (invitaciones, encuestas, reservas, chat)",
     "Asesor @AI con fuentes en vivo (Open-Meteo, STO slovenia.info) — guiones deterministas, 0 modelos de IA",
-    "38 destinos curados (SI · HR · ME · AL)",
+    "74 destinos curados (todos los Balcanes — 10 países)",
   ],
 };
 

@@ -1,7 +1,7 @@
 /**
  * SLOVENIA-DATA — kanonski nabor destinacij Discover-Slovenia-AI.
  *
- * Vir resnice: 38 destinacij 1:1 iz živega produkcjskega API-ja
+ * Vir resnice: 74 destinacij 1:1 iz živega produkcjskega API-ja (38 do F1, cel Balkan od 2.55.0)
  * (snapshots/render-api-destinations.json, i-feel-slovenia 1.190.0,
  * zajeto 2026-10-06). Slovenska vsebina je kanon; angleški prevodi
  * so prekrivni slovarji po istem ID-ju (kanon izvirnika).

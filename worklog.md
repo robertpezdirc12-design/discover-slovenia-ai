@@ -460,3 +460,30 @@ Stage Summary:
 - Ključna lekcija: "PREIZKUSITI (PoC)" sodbe v raziskavi so OBVEZNOST, ne opcija — verifikacija pred implementacijo je zajela refutacijo v istem PR-ju in prihranila napačen deploy.
 - Peskovniška varnost: NIKOLI zaupati globalnim env (DATABASE_URL cilja drug projekt!) — vedno ekspliciten override per-repo.
 - Ostaja: 4b (UI + db:pg:deploy), faza 1 re-deizija (lastniška odločitev MapLibre/self-host/status quo), faza 2 (Valhalla/R11), faza 3 (Photon), november (9 dogodkov).
+
+---
+Task ID: R35-F4B
+Agent: Z.ai Code (glavni orkestrator)
+Task: Nadaljevanje po "odlicno nadaljuj" — faza 4b iz #35 (prijava/moderacija UI + admin). Pred delom preverjen živi status: PR #52 (faza 4a, 2.61.0) že mergan, faza 1 REFUTIRANA (OpenFreeMap = vektorski) — preusmerjeno iz povzetkovega plana "faza 1" na dejansko naslednjo fazo 4b.
+
+Work Log:
+- Status drift spet zajet NA ČASU: main 94110ed (2.61.0), lokalni klon še vedno obstajal, branch iz trenutnega maina (feat/r35-f4b-provider-ui-2.62.0).
+- Prebran dokument §6c/§9 + faza 4a kanon (provider-model.ts, report route, prisma Provider/ProviderReport) — 4b obseg = prijava UI + moderacija + admin (po dokumentu §9 tabelo).
+- NOVO src/lib/provider-moderation.ts (čista prehodna logika: publish/unpublish/suspend/verify + report resolve/dismiss; verify ne spreminja statusa).
+- NOVO POST /api/providers/apply (javna prijava: claimed+draft NIKOLI samodejna objava, bookingMode="none" zaklenjen, valuta iz COUNTRIES meta, jeziki normalizirani, dedup geohash-7+ime → 409, rate 5/min, isCanonCountry 10, L1).
+- NOVO /api/admin/providers (GET vrsta + POST odločitve; isAdminSession fail-closed ×2, AuditLog ×2, 409 prehodi, varovalka pred tujimi statusi).
+- NOVO src/components/providers/provider-apply-form.tsx (6 jezikov, 10 držav, 8 kategorij, iskreni napis "osnutek — čaka pregled", ročni koordinati z opombo faza 3) + žica na /za-ponudnike; admin/view.tsx 4. zavihek "Ponudniki" (filter, kartice, dejanja, vrsta prijav napak).
+- Verzija 2.62.0 (6 virov) + tests/provider-f4b.test.ts (8 enotnih + 14 source-contract).
+- PASTI UJETE: (1) TS1005 — narekovaj "v FR nizu → popravljeno na " ; (2) FR tu-kanon vrata ujela vous/votre v NOVI komponenti → tu-prepis (i18n-core deluje kot zasnovano); (3) TS2724 — ProviderStatus iz provider-model, ne moderation; (4) test not.toContain ujel lasten komentar z literalom → preformuliran.
+- Vrata: tsc 0 · eslint 0 · bun test 2299/2299 (+22) · build OK (nove rute registrirane) · commit 92d9f59 (identiteta potrjena na GitHubu) → PR #53.
+- CI RDEČA — RAZČIŠČENO z anotacijo: "The job was not started because recent account payments have failed…" = GitHub Actions KVOTA/Billing (job-i 2 s fail, niso se zagnali); isti rdeči vzorec na 4ebedb7 (PR #51, čisto .md!) in 2810b01 → NI kodna regresija; sync = znan GitLab PAT blok. Iskren komentar na PR #53 (id 6171992117) → merge c2696f1 (vzorec PR #51/#52: lokalna vrata + produkcijski E2E).
+- Produkcija: health 2.62.0 ok · apply 400/405/500 L1 (Postgres tabela čaka db:pg:deploy — iskreno) · admin 403 fail-closed · /za-ponudnike SSR z prijavnico · /admin 200.
+- SPOT-CHECK ODKRIL SEO HROŠČA: page-level alternates padali na http://localhost:3000 (NEXT_PUBLIC_SITE_URL ni nastavljen; sitemap+JSON-LD pravilna!) → PR #54 (2.62.1): metadataBase = JSONLD_SITE_ORIGIN (kanon jsonld.ts) + 2 zaklepa; merge a343b43; živo potrjeno na produkciji (alternates → produkcijski host).
+- Playwright v svežem peskovniku: manjkajoči browser (1248) → install chromium → E2E **16/16 na produkciji** (3.0 min).
+- Komentar na #35 (id 6172405652) + repo worklog R35-F4B/R35-F4B-SEO.
+
+Stage Summary:
+- Faza 4b zaključena in v produkciji (v2.62.1): javna prijava ponudnikov z celotnega Balkana + skrbniška moderacija (statusi, verify z 12-mesečnim potekom, prijave napak) — vse skozi kanone #35 (nikoli samodejna objava, dedup, fail-closed, AuditLog).
+- Bonus SEO popravek 2.62.1 (page alternates iz dev izvora na produkcijski) — 1-vrstični fix + zaklepa, živo preverjen.
+- Ostalo iz §9: faza 1 re-deizija (lastnik), faza 2 Valhalla (R11), faza 3 Photon, faza 5 Viator (odobritev), db:pg:deploy (materializacija Provider tabel — owner PRODUCTION-CUTOVER), november 9 dogodkov, GitLab PAT.
+- Lekcija: CI rdeča ≠ kodna regresija — vedno preveriti trajanje job-a in anotacije (2 s fail = infra/kvota; .md-only PR z enako rdečo je dokaz). Lokalna vrata + produkcijski E2E so veljavna kvotno-neodvisna verifikacija.

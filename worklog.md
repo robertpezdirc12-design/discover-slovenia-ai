@@ -553,3 +553,23 @@ Stage Summary:
 - Stanje faz: 0/F0–F5/4a+4b ✅ · 1 ◐ lastniška re-deizija · 2 ◐ self-host (VPS) · 3 ◐ self-host · 5 ⬜ odobritev · db:pg:deploy (PRODUCTION-CUTOVER) lastniško.
 - Ostalo lastniško: GitHub Actions Billing (CI vrata mrtva od 2.64.0 — jobi se ne zagnejo), GitLab PAT (parity), november 9 dogodkov, brskalniška zlata pot na produkciji za Valhalla (UI oznake vidne na /nacrtuj in /na-poti).
 - Lekcija 5 (nov): "units=kilometers" je OBVEZEN pri Valhalla (privzeto MILJA) — ujet v dokumentaciji PRED implementacijo in zaklenjen s testom; podobne "tihe privzeto drugače" pasti pri menjavi motorja išči v POGODBI odgovora (trip.status === 0 namesto code === "Ok").
+
+---
+Task ID: R35-FAZA2-UI
+Agent: Z.ai Code (session web-3612f14e, trace 1a13c3234a61bbc1)
+Task: #35 — zaključek obvezne brskalniške zlate poti za fazo 2 (Valhalla) na produkciji; sprožil "odlicno nadaljuj".
+
+Work Log:
+- STATUS DRIFT SPET ZAJET: peskovnik resetiran (lokalni klon izginil), povzetek govoril main @ 4ebedb7 (2.60.0) — realnost main @ 9235a70 (2.65.0; faza 4a+4b ✅ + faze 1/3/2 PoC oddani, vse s komentarji na #35, worklog R35-FAZA2 že zapisan); re-klon + identiteta + prebran dokument §9 + worklog.
+- Izbrana edina neopravljena samostojna postavka iz R35-FAZA2: brskalniška zlata pot na produkciji za Valhalla UI (/nacrtuj + /na-poti).
+- ZLATA POT UJELA BUG (sistemski skok faze 2): 2.65.0 je popravil oznake travel-map/na-poti/plan-map, ampak spregledal measuredDay/measuredTotal v nacrtuj/view.tsx, potovanje/view.tsx in shared-trip-view.tsx — 36 nizov "izmerjeno (OSRM/OpenStreetMap)" ×6 jezikov, medtem ko številke prihajajo iz Valhalla; produkcija 2.65.0 /nacrtuj: "Skupaj izmerjeno: 68,0 km … (OSRM/…)" NAD "Vozljiva pot (Valhalla/…)" — nasprotje v istem pogledu (produkcija /na-poti recalc ni bil izveden: zahteva shranjeno pot; pokrit s testi + istim literal kanonom).
+- 2.65.1 (PR #59, merge 3e38432): 36 nizov OSRM→Valhalla v 3 pogledih + komentarji (plan-map, plan-map-data, pogledi); NEGATIVNI ZAKLEP: test ㉘ točno 13× Valhalla/OpenStreetMap + OSRM=0 v nacrtuj, test Ⓠ točno 12× obojestransko + OSRM=0 (ujet tudi lasten miscount 12→13 — obstoječi komentar z iste 2.65.0 revizije); verzija 2.65.1 (6 mest + testni literali); dokumentacija NI posebej osvežena (oznaka ni arhitektura; PR + komentar nosita kanon).
+- Vrata: 2338/2338 testov (26 137 expect) · tsc 0 · eslint 0 · build OK; brskalniška zlata pot LOKALNO PRED merge (lekcija 1 uveljavljena): Ljubljana→Bled 2 dnevi, vse oznake Valhalla, 0 napak; CI (GitHub Billing) + sync (GitLab PAT) lastniško blokirana — merge po hišnem precedensu z iskrenim zapisom.
+- PRODUKCIJA 2.65.1 (build 3e38432): health ok (ops:cron pričakovan); /nacrtuj zlata pot z agent-browserjem: vse 4 oznake Valhalla/OpenStreetMap, 0 napak; /zemljevid?zemljevid=vektorji (faza 1 PoC): 74 markerjev + atribucija OpenFreeMap + iskrena pasica — nedotaknjen; E2E 16/16 (3,2 min; opomba: Playwright chromium je moral biti ponovno nameščen v svežem peskovniku — okoljsko, ne aplikacijsko).
+- Komentarji: #35 id 6178716306 (zlata pot + 2.65.1 dokazi + nova lekcija 6); PR #59 ustvarjen in mergan (squash).
+
+Stage Summary:
+- Faza 2 = ◐ PoC ODDAN + UI OZNAKE ZDAJ DOSLEDNO Valhalla Povsod (2.65.1) — iskrenostni kanon popoln (motor + vsaka vidna oznaka vira); self-host = VALHALLA_BASE_URL (lastniška odločitev — VPS [nepotrjena cena]).
+- Lekcija 6 (nova): pri menjavi motorja sistematično preišči VSE poglede za oznake vira — `rg "OSRM" src/` na nivoju nizov (ne samo diff-komponente); zlata pot na TISTEM pogledu, ki je bil v diff-u izpuščen, je edini zanesljiv ujetnik. Dodatek k lekciji 1: negativni zaklep (OSRM=0) v testih prepreči povratek.
+- Stanje faz: 0/F0–F5/4a+4b ✅ · 1 ◐ lastniška re-deizija · 2 ◐ self-host · 3 ◐ self-host · 5 ⬜ odobritev · db:pg:deploy lastniško · GitHub Actions Billing (CI mrtva od 2.64.0) lastniško · GitLab PAT lastniško · november 9 dogodkov lastniško.
+- Vsa SAMOSTOJNA dela iz #35 so zdaj ODPORANA: preostanek = izrecno lastniške odločitve (re-deizija zemljevida, self-hosti, Viator odobritev, VPS, CI billing, GitLab PAT, db:pg:deploy, datumi dogodkov).

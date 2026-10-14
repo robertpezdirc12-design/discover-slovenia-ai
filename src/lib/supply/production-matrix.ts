@@ -278,7 +278,7 @@ export const PRODUCTION_MATRIX: readonly ProviderMatrixEntry[] = Object.freeze([
     gate: "env",
     envKeys: ["AFFILIATE_AIRALO_ID", "AFFILIATE_AIRALO_TMPL"],
     reasonSl:
-      "Affiliate eSIM povezava ŽIVA (P0-F): javne strani po državah ({country}-eSIM, vzorci preverjeni). Aktivacija provizije: partner program + TMPL. Partner API (OAuth2) čaka odobritev.",
+      "Affiliate eSIM povezava ŽIVA (P0-F): javne strani po državah ({country}-eSIM, vzorci preverjeni za cel Balkan — 10/10 držav, R41-F4 2.58.0). Aktivacija provizije: partner program + TMPL. Partner API (OAuth2) čaka odobritev.",
     stepsSl: [
       "Prijavi se v Airalo partner program",
       "Nastavi AFFILIATE_AIRALO_TMPL + AFFILIATE_AIRALO_ID",
@@ -306,7 +306,7 @@ export const PRODUCTION_MATRIX: readonly ProviderMatrixEntry[] = Object.freeze([
     gate: "env",
     envKeys: ["AFFILIATE_DISCOVERCARS_ID", "AFFILIATE_DISCOVERCARS_TMPL"],
     reasonSl:
-      "Affiliate najem povezava ŽIVA (P0-F): javne strani po državah/krajih ({country}/{dest}, vzorci preverjeni). Aktivacija provizije: affiliate program + TMPL. Search API inventar ostaja B4B pogodba.",
+      "Affiliate najem povezava ŽIVA (P0-F): javne strani po državah/krajih ({country}/{dest}, vzorci preverjeni za cel Balkan — 10/10 držav, R41-F4 2.58.0). Aktivacija provizije: affiliate program + TMPL. Search API inventar ostaja B4B pogodba.",
     stepsSl: [
       "Prijavi se v DiscoverCars affiliate program",
       "Nastavi AFFILIATE_DISCOVERCARS_TMPL + AFFILIATE_DISCOVERCARS_ID",

@@ -3275,3 +3275,24 @@ Datum: 2026-10-14 · Veja: `feat/r41-balkan-f3-seo-2.57.0` @ `93e08bc` · PR: #4
   verzija 2.58.0 na vseh mestih (pkg/health/sw/footer + 2 lock testa).
 - Dokazni sklad: tsc 0 · eslint 0 · 2167/2167 (25 080 expect) · build OK.
 
+
+---
+Task ID: R41-F4-PRODUKCIJA
+Agent: Z.ai (session web-3612f14e)
+Task: Merge PR #48 + produkcijska verifikacija v2.58.0 (F4 supply/booking)
+
+Work Log:
+- PR #48 merged (merge_method=merge) → merge commit cf23ec6
+- Produkcija health polling: 2.57.0 ×2 → **2.58.0** @ attempt 3 (~90 s)
+- Health: status ok, 10 startup ok + ops:cron skip (pričakovano)
+- 302 spot-checki produkcija: sarajevo→BA-eSIM, ohrid→macedonia/Ohrid,
+  prizren→kosovo-eSIM; regresija bled/zagreb/kotor pravilne
+- E2E proti PRODUKCIJI: **16/16 PASSED** (2,9 min)
+- GitLab main parity: 6b3e5c0..cf23ec6 (ročno — Actions sync na kvoti)
+- #41 komentar 6165375162 (F4 produkcija + odkrit dolg: zastarele
+  kopije "38 destinacij" v heroLead/zemljevid/go-data — follow-up)
+
+Stage Summary:
+- F4 ZAKLJUČENA: platforme usklajene @ cf23ec6 / v2.58.0
+- {country} predloge 10/10 držav živo preverjene (curl 200 2026-10-14)
+- Preostanek #41: samo še F5 (AI čezmejna potovanja)

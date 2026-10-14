@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
  * /api/destinations — 1:1 oblika produkcije: {destinations, total}.
  * Filtri (vsi neobvezni, med seboj kombinirljivi):
  *   ?region=gorenjska   — kanonski ID regije
- *   ?type=city          — kanonski ID tipa (9 tipov)
+ *   ?type=city          — kanonski ID tipa (10 tipov)
  *   ?q=bled             — iskanje po imenu/tagline/opisu (case-insensitive)
  * Brez filtrov vrne vseh 38 zapisov v kanonski vrstni redu.
  */

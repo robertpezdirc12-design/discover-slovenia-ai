@@ -167,6 +167,13 @@ export const INTEREST_DISPLAY: Record<string, InterestTranslations> = {
   "zicnica na dajti": { en: "Cable car to Dajti", it: "Funivia per il Dajti", de: "Seilbahn auf den Dajti", fr: "Téléphérique vers le Dajti", es: "Teleférico al Dajti" },
   "zicnica vogel": { en: "Vogel cable car", it: "Funivia del Vogel", de: "Seilbahn Vogel", fr: "Téléphérique du Vogel", es: "Teleférico del Vogel" },
 
+  // ── #41 F1 balkanski žetoni (novi bestFor med 36 destinacijami) ─────────
+  zima: { en: "winter", it: "inverno", de: "Winter", fr: "hiver", es: "invierno" },
+  zabava: { en: "nightlife", it: "vita notturna", de: "Nachtleben", fr: "vie nocturne", es: "vida nocturna" },
+  glasba: { en: "music", it: "musica", de: "Musik", fr: "musique", es: "música" },
+  arhitektura: { en: "architecture", it: "architettura", de: "Architektur", fr: "architecture", es: "arquitectura" },
+  obrt: { en: "crafts", it: "artigianato", de: "Handwerk", fr: "artisanat", es: "artesanía" },
+
   // ── bazni žetoni skript (NLU INTEREST_RULES + Start Anywhere
   //    TYPE_INTERESTS), ki med čipi ne nastopajo samostojno ───────────────
   gora: { en: "mountain", it: "montagna", de: "Berg", fr: "montagne", es: "montaña" },
@@ -178,6 +185,7 @@ export const INTEREST_DISPLAY: Record<string, InterestTranslations> = {
   soteska: { en: "gorge", it: "gola", de: "Schlucht", fr: "gorge", es: "garganta" },
   grad: { en: "castle", it: "castello", de: "Burg", fr: "château", es: "castillo" },
   reka: { en: "river", it: "fiume", de: "Fluss", fr: "rivière", es: "río" },
+  samostan: { en: "monastery", it: "monastero", de: "Kloster", fr: "monastère", es: "monasterio" },
 };
 
 /**

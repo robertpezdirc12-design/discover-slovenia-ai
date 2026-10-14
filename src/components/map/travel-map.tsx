@@ -103,6 +103,8 @@ const TYPE_COLORS: Record<DestinationType, string> = {
   coast: "#2A9D8F",
   gorge: "#6B8E23",
   lake: "#1E7F86",
+  // #41 F1: utišana sljiva — zemeljska paleta, brez indigo/modre (#38).
+  monastery: "#6E4B7A",
   mountain: "#8D6E63",
   river: "#48A9A6",
   spa: "#C2586E",

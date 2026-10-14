@@ -21,6 +21,7 @@
  */
 
 import { pick } from "./i18n-pick";
+import { REGIONS_BALKAN, DESTINATIONS_BALKAN } from "./balkan-data";
 
 /**
  * Države (#41 Faza 0, 2.54.0): SI + HR/ME/AL (izhodišče) + BA/RS/MK/XK/BG/GR
@@ -46,6 +47,7 @@ export type DestinationType =
   | "coast"
   | "gorge"
   | "lake"
+  | "monastery"
   | "mountain"
   | "river"
   | "spa";
@@ -89,7 +91,7 @@ export interface Destination {
   provenance: DestinationProvenance;
 }
 
-/** Vseh 38 destinacij (SI 22 · HR 8 · ME 4 · AL 4 · 21 regij · 9 tipov). */
+/** Vseh 74 destinacij (SI 22 · HR 8 · ME 4 · AL 4 · #41 F1: BA 6 · RS 6 · MK 6 · XK 6 · BG 6 · GR 6 · 44 regij · 10 tipov). */
 export const DESTINATIONS: Destination[] = [
   {
     id: "bled",
@@ -931,6 +933,9 @@ export const DESTINATIONS: Destination[] = [
     featured: false,
     provenance: { kind: "internal", source: "Discover Slovenia — uredniška kuracija", verifiedAt: "2026-09-20" },
   },
+  // #41 Faza 1 (2.55.0): 36 balkanskih destinacij (BA/RS/MK/XK/BG/GR po 6)
+  // z regijami NUTS-ish in provenance kanonom #38 — vse v balkan-data.ts.
+  ...DESTINATIONS_BALKAN,
 ];
 
 /** Poišči destinacijo po slug-u (npr. "bled"); undefined, če ne obstaja. */
@@ -943,7 +948,7 @@ export function getFeaturedDestinations(): Destination[] {
   return DESTINATIONS.filter((d) => d.featured);
 }
 
-/** 21 regij s prikaznimi imeni (ključi so kanonski ID-ji iz dataseta). */
+/** 44 regij s prikaznimi imeni (21 izvirnik + 23 balkanskih, #41 F1). */
 export const REGIONS: Record<string, { sl: string; en: string; it: string; de: string; fr: string; es: string }> = {
   "gorenjska": { sl: "Gorenjska", en: "Upper Carniola", it: "Alta Carniola", de: "Oberkrain", fr: "Haute-Carniole", es: "Alta Carniola" },
   "osrednja": { sl: "Osrednja Slovenija", en: "Central Slovenia", it: "Slovenia centrale", de: "Zentralslowenien", fr: "Slovénie centrale", es: "Eslovenia central" },
@@ -969,6 +974,9 @@ export const REGIONS: Record<string, { sl: string; en: string; it: string; de: s
   "severna-crna-gora": { sl: "Severna Črna gora", en: "Northern Montenegro", it: "Montenegro settentrionale", de: "Nordmontenegro", fr: "Monténégro septentrional", es: "Montenegro septentrional" },
   "osrednja-albanija": { sl: "Osrednja Albanija", en: "Central Albania", it: "Albania centrale", de: "Zentralalbanien", fr: "Albanie centrale", es: "Albania central" },
   "juana-albanija": { sl: "Južna Albanija", en: "Southern Albania", it: "Albania meridionale", de: "Südalbanien", fr: "Albanie méridionale", es: "Albania meridional" },
+  // #41 Faza 1 (2.55.0): 23 balkanskih regij (BA/RS/MK/XK/BG/GR, NUTS-ish) —
+  // definicije in dokumentacija v balkan-data.ts.
+  ...REGIONS_BALKAN,
 };
 
 /** Prikazno ime regije (po locale; fallback = ključ). */
@@ -989,6 +997,8 @@ export const DEST_TYPES: Record<
   coast: { sl: "Obala", en: "Coast", it: "Costa", de: "Küste", fr: "Côte", es: "Costa" },
   gorge: { sl: "Soteska", en: "Gorge", it: "Gola", de: "Schlucht", fr: "Gorges", es: "Garganta" },
   lake: { sl: "Jezero", en: "Lake", it: "Lago", de: "See", fr: "Lac", es: "Lago" },
+  // #41 F1: iskrenostni kanon — Rila/Meteora/Blagaj (tekija) so samostani, ne „gradovi“.
+  monastery: { sl: "Samostan", en: "Monastery", it: "Monastero", de: "Kloster", fr: "Monastère", es: "Monasterio" },
   mountain: { sl: "Gorovje", en: "Mountains", it: "Montagne", de: "Gebirge", fr: "Montagnes", es: "Montañas" },
   river: { sl: "Reka", en: "River", it: "Fiume", de: "Fluss", fr: "Rivière", es: "Río" },
   spa: { sl: "Zdravilišče", en: "Spa", it: "Terme", de: "Kurort", fr: "Station thermale", es: "Balneario" },

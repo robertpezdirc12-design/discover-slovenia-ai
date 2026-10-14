@@ -3108,3 +3108,43 @@ Stage Summary:
 - **E2E regresija najdena in popravljena**: državni filter (#dest-country) je zdaj prvi Radix combobox na /destinacije — stara `getByRole("combobox").first()/nth(1)` lokatorja sta v zlati poti in mobilnem testu zadela napačen select (2/10 faila: "Gorenjska" nikoli ponujena). Fix: semantični ID lokatorji `#dest-region` / `#dest-type` (e2e/golden-path.e2e.ts, e2e/mobile.e2e.ts). Ponovni teki: 10/10 na v2.54.0 previewju in ponovljen 10/10 na finalnem headu 0171254 (2,6 min).
 - **GitLab WAF bypass**: `git push`/`fetch` proti gitlab.com s privzetim git UA = 403; z `-c http.userAgent="Mozilla/5.0 …"` push normalno preide (zrcalo usklajeno: 88ef727 → 0171254 forced update). Isti vzorec kot API klici z browser UA (glapi.sh).
 - Dokazni sklad F0 @ 0171254: lokalna vrata (tsc 0, eslint 0, 2111/2111, 18531 expect, build OK) + Vercel preview v2.54.0 (health ok, 10/11 startup ok + ops:cron skipped) + E2E 10/10 (zlata pot + mobilni, 5 prelomov) + GitLab zrcalo parity. Actions runa na 0171254 = 0 korakov v obeh jobih (isti kvotni vzorec — zabeleženo pošteno, ni signal o kodi).
+# R41-F1 — Balkanska ekspanzija Faza 1: vsebina (2.55.0)
+
+Datum: 2026-10-13 · Veja: `feat/r41-balkan-f1-vsebina` @ `f888411` · PR: #44 (open)
+
+## Kaj je bilo narejeno
+- **36 novih destinacij** (po 6 na državo BA/RS/MK/XK/BG/GR) po specifikaciji #41 F1,
+  v novi datoteki `src/lib/balkan-data.ts` (merge v `slovenia-data.ts`).
+- **23 novih regij** (NUTS-ish) → 44; **nov tip `monastery`** (×6 jezikov) → 10 tipov
+  (iskrenostni kanon #38: Rila/Meteora/Blagaj-tekija niso „gradovi“).
+- Provenance: uradni NTO viri preverjeni živi (tourismbih.com, serbia.travel,
+  macedonia-timeless.com, tourism.government.bg, visitgreece.gr); XK pošteno
+  `internal` (uradni NTO portal ni potrjen — web-search 2026-10-13).
+- **36 AI ilustrativnih slik** (public/content/*.jpg, batch SDK+sharp skript).
+- Kanonski besednjak aktivnosti (re-uporaba 129 žetonov) + 5 novih bestFor prevodov
+  (zima/zabava/glasba/arhitektura/obrt) + samostan.
+- **Načrtovalnik ×2→×3 afiniteta** (QA regresija: mesto z OMEMBO jezera je premagalo
+  pravi lake sidro ob rasti korpusa 38→74; ×3 obnovi dan-1=pravi-tip invarianto).
+- Data lock-i: 74/44/10, geografska vrata lng 28,8, FULL_BBOX zemljevida.
+- Verzija 2.55.0 (package.json, health, footer, sw.js).
+
+## Testi / gates
+- bun test **2130/2130** (21 306 expect) — vključno 19 novih testov `tests/balkan-f1.test.ts`
+- tsc 0 · eslint 0 · Vercel preview success (f888411) · **E2E 10/10 na previewju**
+- Spot-check: /destinacija/ohrid, /destinacija/rila-samostan, /content/meteora.jpg = 200
+
+## Vzporedni session (duplikat)
+- PR #43 (`feat/r41-f1-vsebina-2.55.0` @ fdc7d80) — neodvisna F1 implementacija;
+  zaprt kot duplikat (ostale 21 regij — krši NUTS-ish spec; 0 novih testov).
+  Vzet v F3 backlog: UNESCO WHC per-destinacijski sourceUrl (komentar 6155921110).
+
+## Lekcije
+1. **Rast korpusa lahko prelomi QA invariante načrtovalnika** — tipska afiniteta mora
+   prevladati nad besedilnimi omembami tudi ob 2× večjem korpusu (×3, dokumentirano v kodi).
+2. **Kanonski besednjak > nove prevode**: novi vnosi naj re-uporabljajo obstoječe
+   aktivnosti/bestFor žetone — sicer interestChips invarianta zahteva 100+ novih prevodov.
+3. Vzporedni agenti na istem repozitoriju potrebujejo koordinacijo na nivoju branch
+   imen (pravilo: `feat/r41-<faza>-<opis>`) — duplikati se rešijo z objektivno primerjavo,
+   ne z merilom „kdo je prej“.
+
+---

@@ -172,7 +172,7 @@ export function MobileTabBar() {
                       <Link
                         href={link.href}
                         onClick={() => setMoreOpen(false)}
-                        className="flex min-h-11 items-center rounded-md px-3 py-2.5 text-sm font-medium text-foreground/90 hover:bg-accent hover:text-accent-foreground"
+                        className="flex min-h-11 items-center rounded-xl px-3 py-2.5 text-sm font-medium text-foreground/90 transition-colors hover:bg-accent hover:text-accent-foreground"
                       >
                         {link.label}
                       </Link>
@@ -190,7 +190,7 @@ export function MobileTabBar() {
                           <Link
                             href={link.href}
                             onClick={() => setMoreOpen(false)}
-                            className="flex min-h-11 items-center rounded-md px-3 py-2.5 text-sm text-foreground/80 hover:bg-accent hover:text-accent-foreground"
+                            className="flex min-h-11 items-center rounded-xl px-3 py-2.5 text-sm text-foreground/80 transition-colors hover:bg-accent hover:text-accent-foreground"
                           >
                             {link.label}
                           </Link>

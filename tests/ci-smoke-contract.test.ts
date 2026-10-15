@@ -171,6 +171,49 @@ describe("p0j [source-contract]: dim piše poročilo, readiness je iskren", () =
   });
 });
 
+// ── E2E vrata: produkcijski način + seed (2.65.3) ──────────────────────────
+
+describe("p0j [source-contract]: e2e teče nad produkcijskim buildom + seed (2.65.3)", () => {
+  test("⑮ e2e (GitLab): seed + standalone + E2E_BASE_URL, dev webServer PREPOVEDAN", async () => {
+    const yml = await src(".gitlab-ci.yml");
+    const commandLines = yml
+      .split("\n")
+      .filter((l) => !l.trim().startsWith("#"))
+      .filter((l) => /^\s*-\s/.test(l));
+    // Seed — brez njega zlata pot ne najde Bleda (sveža baza = 0 destinacij):
+    expect(commandLines.some((l) => l.includes("bun prisma/seed.ts"))).toBe(true);
+    // Produkcijski način: standalone strežnik + E2E_BASE_URL (testiramo,
+    // kar pošiljamo — lekcija 1 uporabljena tudi na CI):
+    expect(commandLines.some((l) => l.includes("reports/e2e-server.log"))).toBe(
+      true
+    );
+    expect(
+      commandLines.some((l) => l.includes('E2E_BASE_URL="http://localhost:${PORT}"'))
+    ).toBe(true);
+    // Dev-mode webServer je v CI PREPOVEDAN: turbopack panic + dev prekrivanja
+    // falijo overflow teste (ujeto z lokalno CI-paritetno verifikacijo 15.10.):
+    expect(commandLines.some((l) => l.includes("next dev"))).toBe(false);
+  });
+
+  test("⑯ e2e (GitHub): ista pariteta — seed + standalone + E2E_BASE_URL, dev webServer PREPOVEDAN", async () => {
+    const yml = await src(".github/workflows/ci.yml");
+    const commandLines = yml
+      .split("\n")
+      .filter((l) => !l.trim().startsWith("#"))
+      .filter((l) => !/^\s*-?\s*name:/.test(l));
+    expect(commandLines.some((l) => l.includes("bun prisma/seed.ts"))).toBe(true);
+    expect(commandLines.some((l) => l.includes("reports/e2e-server.log"))).toBe(
+      true
+    );
+    expect(
+      commandLines.some((l) =>
+        l.includes('E2E_BASE_URL="http://localhost:3100"')
+      )
+    ).toBe(true);
+    expect(commandLines.some((l) => l.includes("next dev"))).toBe(false);
+  });
+});
+
 // ── Kanonični skripti + higiena ────────────────────────────────────────────
 
 describe("p0j [source-contract]: db:materialize je varen kanon", () => {

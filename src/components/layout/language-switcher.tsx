@@ -60,7 +60,7 @@ export function LanguageSwitcher({ overHero = false }: { overHero?: boolean }) {
       <DropdownMenuTrigger
         aria-label={label}
         className={
-          "inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-bold tracking-wide transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none " +
+          "inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-bold tracking-wide transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transition-none " +
           (overHero
             ? // nad herojem: bela steklena tabletka (≥ 4,5:1 v obeh temah)
               "border-white/40 bg-white/10 text-white hover:bg-white/20"

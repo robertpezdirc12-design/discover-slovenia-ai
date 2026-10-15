@@ -748,7 +748,7 @@ export function HomeView({
       <section aria-labelledby="teme" className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="mb-7 flex items-end justify-between gap-4">
           <div>
-            <h2 id="teme" className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 id="teme" className="text-3xl font-bold tracking-tight sm:text-4xl">
               {t("themesKicker")}
             </h2>
             <p className="mt-2 max-w-2xl text-muted-foreground">{t("themesLead")}</p>

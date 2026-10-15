@@ -535,7 +535,7 @@ export default function DataSourcePage() {
              kartico 305 px > 288 px tracka (1 px sub-pixel preliva @320,
              WCAG 1.4.10); min-w-0 dovoli skrčenje, URL se poravna v
              p-5 padding (ne raznese več strani). */
-          <Card key={s.name} className="min-w-0 rounded-2xl border-border/70 shadow-sm transition-all duration-200 hover:border-primary/25 hover:shadow-md">
+          <Card key={s.name} className="min-w-0">
             <CardContent className="p-5">
               <p className="text-sm font-bold">{s.name}</p>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.desc}</p>

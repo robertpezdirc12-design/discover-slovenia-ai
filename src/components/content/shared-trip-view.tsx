@@ -839,7 +839,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
                 v DOM pod VSEMI zavihki (Pot/Sodelovanje/Ankete/Klepet/
                 Rezervacije), zato ena napaka povzroča preliv povsod. */}
             <div className="grid gap-4 sm:grid-cols-2 print:hidden">
-              <Card className="min-w-0 rounded-2xl border-border/70 shadow-sm">
+              <Card className="min-w-0">
                 <CardContent className="p-5">
                   <h3 className="flex items-center gap-2 text-sm font-bold">
                     <QrCode className="size-4 text-primary" aria-hidden="true" />
@@ -864,7 +864,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
                 </CardContent>
               </Card>
               {/* POLIR7: min-w-0 tudi na kartici vira — isti predmet mreže. */}
-              <Card className="min-w-0 rounded-2xl border-primary/25 bg-gradient-to-br from-primary/[0.07] to-card shadow-sm">
+              <Card className="min-w-0 border-primary/25 bg-primary/5">
                 <CardContent className="flex flex-col justify-start p-5">
                   <h3 className="flex items-center gap-2 text-sm font-bold">
                     <CloudUpload className="size-4 text-primary" aria-hidden="true" />
@@ -1124,7 +1124,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
               veji (defensivecss „Minimum Content Size In CSS grid"): nowrap URL
               pod QR kodo raznese stolpec mreže na ozkih ekranih. */}
           <div className="mt-10 grid gap-4 sm:grid-cols-2 print:hidden">
-            <Card className="min-w-0 rounded-2xl border-border/70 shadow-sm">
+            <Card className="min-w-0">
               <CardContent className="p-5">
                 <h3 className="flex items-center gap-2 text-sm font-bold">
                   <QrCode className="size-4 text-primary" aria-hidden="true" />
@@ -1144,7 +1144,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
               </CardContent>
             </Card>
             {/* POLIR7: min-w-0 tudi na kartici vira — isti predmet mreže. */}
-            <Card className="min-w-0 rounded-2xl border-primary/25 bg-gradient-to-br from-primary/[0.07] to-card shadow-sm">
+            <Card className="min-w-0 border-primary/25 bg-primary/5">
               <CardContent className="flex flex-col justify-start p-5">
                 <h3 className="flex items-center gap-2 text-sm font-bold">
                   <HardDrive className="size-4 text-primary" aria-hidden="true" />

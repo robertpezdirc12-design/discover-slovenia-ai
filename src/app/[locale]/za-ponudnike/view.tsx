@@ -227,7 +227,7 @@ export default function ForProvidersPage() {
       <h2 className="mt-12 text-xl font-bold tracking-tight">{t("howTitle")}</h2>
       <ol className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {S.map((step, i) => (
-          <li key={i} className="rounded-xl border bg-card p-4">
+          <li key={i} className="group rounded-2xl border-border/70 bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
             <span className="flex size-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
               {i + 1}
             </span>
@@ -243,7 +243,7 @@ export default function ForProvidersPage() {
         {packages.map((p) => (
           <Card
             key={pick(l, p.name)}
-            className={p.featured ? "border-primary shadow-md ring-1 ring-primary/30" : undefined}
+            className={p.featured ? "rounded-2xl border-primary shadow-md ring-1 ring-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg" : "rounded-2xl border-border/70 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg"}
           >
             <CardHeader>
               <div className="flex items-center justify-between gap-2">

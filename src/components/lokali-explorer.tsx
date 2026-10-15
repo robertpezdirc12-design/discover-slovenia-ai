@@ -287,7 +287,7 @@ export function LokaliExplorer() {
               <li key={x.id}>
                 <Card
                   className={cn(
-                    "flex h-full flex-col transition-all hover:-translate-y-0.5 hover:shadow-lg",
+                    "group flex h-full flex-col rounded-2xl border-border/70 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/35 hover:shadow-lg",
                     x.featured && "border-primary/35"
                   )}
                 >

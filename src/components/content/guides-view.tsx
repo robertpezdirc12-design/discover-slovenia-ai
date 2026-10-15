@@ -227,7 +227,7 @@ export function GuidesView() {
                       fill
                       loading="lazy"
                       sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                     />
                     <Badge className="absolute top-2 left-2">{pick(l, BLOG_CATEGORIES[a.category])}</Badge>
                   </div>

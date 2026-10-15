@@ -307,7 +307,7 @@ export function EventsView({ todayIso }: { todayIso?: string }) {
                                 fill
                                 loading="lazy"
                                 sizes="160px"
-                                className="aspect-square size-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                className="aspect-square size-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                               />
                             </div>
                             <div className="flex min-w-0 flex-1 flex-col gap-2 p-4 sm:p-5">

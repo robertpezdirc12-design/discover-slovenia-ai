@@ -131,7 +131,7 @@ export function ExperiencesView() {
                           loading="lazy"
                           sizes="120px"
                           aria-hidden={i > 0}
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          className="object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                         />
                       </div>
                     ))}

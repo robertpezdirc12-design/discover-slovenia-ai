@@ -1,5 +1,7 @@
 /**
- * SEED — napolni tabelo Destination iz kanonskega dataseta (38 zapisov).
+ * SEED — napolni tabelo Destination iz kanonskega dataseta (74 zapisov:
+ * slovenski + balkanski register; zgodovinski komentar "38" je popravljen
+ * 15. 10. 2026 — vrata berejo dejanski števec, ne komentarja).
  * Zagon: bun prisma/seed.ts (ali: bunx tsx prisma/seed.ts)
  *
  * Idempotentno: upsert po slug (ponovni zagon ne podvoji, ampak osveži).

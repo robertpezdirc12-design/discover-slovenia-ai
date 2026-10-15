@@ -30,6 +30,13 @@
 #                    chromium s sistemskimi odvisnostmi, webServer požene
 #                    `next dev` na 3100; artefakti (poročilo + sledi) se
 #                    naložijo tudi ob padcu.
+#   8. pg-live     — POSTGRESQL LIVE VRATA (2.66.0, issue #2 §2/§3): živ PG 17
+#                    v uporabniškem prostoru (npm binarke @embedded-postgres —
+#                    brez Docker services in root-a); shadow replay (migracije ≡
+#                    shema → prazna difa) → migrate deploy 0_init → idempotenca
+#                    → integrity (tabele ≡ modeli) → seed data plane. Lekcija 9
+#                    (lokalna CI-paritetna verifikacija 15. 10.) na podatkovno
+#                    plast: prvi cutover NE SME biti prvi zagon db:pg:deploy.
 #
 # ARTEFAKTI/REPORTI (§24): junit.xml + smoke-report.json + smoke.txt +
 # server.log se naložijo z when: always — tudi padec je dokaz, ne smeti.
@@ -50,6 +57,7 @@ stages:
   - typecheck
   - test
   - prisma
+  - pg-live
   - build
   - smoke
   - e2e
@@ -102,6 +110,23 @@ prisma-validate:
     # protokolu — CI-only dummy vrednost (brez povezave; globalni DATABASE_URL
     # je file: za ostale stopnje). db:pg:check je protokol-neodvisen.
     - DATABASE_URL="postgres://ci-skip:ci-skip@localhost:5432/ci_skip" bun run db:pg:validate
+
+pg-live:
+  stage: pg-live
+  script:
+    - bun install --frozen-lockfile
+    # 8. VRATA (2.66.0): živ PostgreSQL 17 v uporabniškem prostoru — skripta
+    # sama hidrira binarne knjižnice (kopije namesto symlinkov), postavi PG,
+    # izvede runbook §2+§3 sekvenco in ASERTIRA izhode (fail-closed).
+    # OPOMBA: oven/bun slika ima bun postinstall privzeto BLOKIRAN — skripta
+    # je zato namenoma neodvisna od postinstall hidracije (pg-symlinks.json).
+    - mkdir -p reports
+    - PG_LIVE_REPORT=reports/pg-live-report.json bun scripts/pg-live-verify.ts
+  artifacts:
+    when: always
+    paths:
+      - reports/
+    expire_in: 1 week
 
 build:
   stage: build

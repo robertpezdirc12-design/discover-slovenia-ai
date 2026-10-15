@@ -61,6 +61,14 @@ bunx prisma migrate diff \
 
 **Vrata:** oba `db:pg:*` koraka zelena; (opcijsko) prazna difa.
 
+> **IZVEDENO ŽIVO (15. 10. 2026 — dokaz, ne obljuba):** shadow replay je nad
+> živim PostgreSQL 17 vrnil natanko `-- This is an empty migration.`
+> (peskovnica, npm binarke @embedded-postgres, brez root-a; izmerjeno:
+> docs/evidence/pg-live-verify/summary.md). Od 2.66.0 je ta preverba
+> OBVEZNA CI vrata `pg-live` na OBEH platformah (GitLab stopnja + GitHub
+> korak; `scripts/pg-live-verify.ts`, testna zaklenitev ⑰–⑲ v
+> `tests/ci-smoke-contract.test.ts`) — prvi cutover ne sme biti prvi zagon.
+
 ## 3. MIGRATION DRY-RUN (na novi, PRAZNI bazi)
 
 ```bash
@@ -69,11 +77,13 @@ export DATABASE_URL="$NOVA_DATABASE_URL"
 bunx prisma migrate deploy --schema prisma/postgres/schema.prisma
 # Pričakovano: "applying migration 0_init" → "1 migration found … applied".
 
-# Štetje tabel (27 + _prisma_migrations):
+# Štetje tabel (ob 2.66.0: 29 tabel = 29 modelov v shemi + _prisma_migrations):
 DATABASE_URL="$NOVA_DATABASE_URL" bun run db:integrity
 ```
 
-**Vrata:** `migrate deploy` uspešen; integrity poročilo izpiše 27 tabel;
+**Vrata:** `migrate deploy` uspešen; integrity poročilo izpiše VSE tabele
+(ob 2.66.0: 29 — pričakovanje NI trdo-kodirano: CI vrata `pg-live` kalibrirajo
+proti številu modelov v shemi, da vrata ne zastarajo z rastjo);
 `prismaMigrations: 1`.
 
 ## 4. DATA INTEGRITY — BEFORE (zajem stanja STARE baze)
@@ -279,6 +289,7 @@ izpiše glasno opozorilo (⚠⚠⚠ RE-BASELINE) — to je zadnja obramba pred p
 
 | Datum | Korak | Rezultat | Dokaz (URL/SHA) | Izvajalec |
 |---|---|---|---|---|
+| 15. 10. 2026 | 2 + 3 PRED-VERIFIKACIJA (peskovnica, vgrajen PG 17.10) | ZELENO — shadow replay prazna difa · 0_init apliciran + idempotenca · integrity 29 tabel/1 migracija · seed 74+34 · 17/17 korakov (7,5 s) | `docs/evidence/pg-live-verify/summary.md` | agent (od 2.66.0 CI vrata `pg-live`) |
 | | 1 backup | | | |
 | | 6.1 dry-run | | | |
 | | 6.2 apply | | | |

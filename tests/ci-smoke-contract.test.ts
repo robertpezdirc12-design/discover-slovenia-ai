@@ -214,6 +214,75 @@ describe("p0j [source-contract]: e2e teče nad produkcijskim buildom + seed (2.6
   });
 });
 
+// ── PostgreSQL live vrata: živ PG 17 na OBEH platformah (2.66.0) ───────────
+
+describe("p0j [source-contract]: PostgreSQL live vrata — pg-live (2.66.0)", () => {
+  test("⑰ pg-live stopnja (GitLab) in korak (GitHub) obstajata v pravilnem vrstnem redu", async () => {
+    const gitlab = await src(".gitlab-ci.yml");
+    expect(gitlab).toContain("pg-live:");
+    expect(gitlab).toContain("stage: pg-live");
+    // Vrstni red: pg-live za suhimi prisma vrati, PRED build/smoke/e2e
+    // (podatkovna plast se dokaže pred porabo build minut):
+    const stages = gitlab.indexOf("- pg-live");
+    const prisma = gitlab.indexOf("- prisma");
+    const build = gitlab.indexOf("- build");
+    expect(stages).toBeGreaterThan(prisma);
+    expect(stages).toBeLessThan(build);
+    // Poročilo kot artefakt tudi ob padcu (isti vzorec kot smoke):
+    const commandLines = gitlab
+      .split("\n")
+      .filter((l) => !l.trim().startsWith("#"))
+      .filter((l) => /^\s*-\s/.test(l));
+    expect(
+      commandLines.some((l) =>
+        l.includes("PG_LIVE_REPORT=reports/pg-live-report.json"),
+      ),
+    ).toBe(true);
+    expect(gitlab).toContain("when: always");
+
+    const gh = await src(".github/workflows/ci.yml");
+    expect(
+      gh.includes("bun scripts/pg-live-verify.ts"),
+    ).toBe(true);
+    expect(gh).toContain("PG_LIVE_REPORT=reports/pg-live-report.json");
+  });
+
+  test("⑱ pg-live-verify.ts je fail-closed: asertira izhode + samokalibracija", async () => {
+    const code = await src("scripts/pg-live-verify.ts");
+    // Shadow replay mora ASERTIRATI prazno difo (migracije ≡ shema, §2):
+    expect(code).toContain("-- This is an empty migration.");
+    // Deploy + idempotenca + status morajo ASERTIRATI pričakovane nize (§3):
+    expect(code).toContain("All migrations have been successfully applied");
+    expect(code).toContain("No pending migrations to apply");
+    expect(code).toContain("Database schema is up to date");
+    // Samokalibracija: št. tabel ≡ št. modelov (brez trdo-kodiranih števil —
+    // vrata ostanejo zvesta, ko shema zraste):
+    expect(code).toContain("countModels");
+    // Data plane: seed števec "skupaj ≡ pričakovano" je asertiran:
+    expect(code).toContain("(pričakovano");
+    // Čistilo: SQLite klient se obnovi tudi ob napaki (nadaljnji CI koraki):
+    expect(code).toContain("db:generate");
+  });
+
+  test("⑲ bun 1.3.x okoljske pasti so zaklenjene v skripti", async () => {
+    const code = await src("scripts/pg-live-verify.ts");
+    // Hidracija knjižnic s KOPIJAMI (symlinki niso vedno dovoljeni; bun
+    // postinstall je blokiran — skripta je neodvisna od njega):
+    expect(code).toContain("pg-symlinks.json");
+    expect(code).toContain("cpSync");
+    // NIKOLI "localhost" kot host (Bun AggregateError quirk) — vedno 127.0.0.1:
+    expect(code).toContain('const HOST = "127.0.0.1"');
+    expect(code).not.toContain('host: "localhost"');
+    // Bun 1.3.x + import embedded-postgres izgubi process.exitCode (izhod 0
+    // tudi ob napaki — izmerjeno 15. 10.) → eksplicitni process.exit:
+    expect(code).toContain("process.exit(await main())");
+    // Dev odvisnost (binarke) je deklarirana — CI instalacija jih prinese:
+    const pkg = await Bun.file("package.json").json();
+    const devDeps = pkg.devDependencies as Record<string, string>;
+    expect(devDeps["embedded-postgres"]).toContain("17.");
+  });
+});
+
 // ── Kanonični skripti + higiena ────────────────────────────────────────────
 
 describe("p0j [source-contract]: db:materialize je varen kanon", () => {

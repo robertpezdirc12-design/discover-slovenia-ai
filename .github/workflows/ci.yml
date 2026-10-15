@@ -25,8 +25,8 @@
 # čas (sync.yml), CI pa je tiho miroval — ta vrata zdaj to mehansko
 # preprečujejo (source-contract test ci-smoke-contract).
 #
-# Kvota: zasebni repo = 2000 min/mes brezplačno; vrata (~5 min/push) +
-# E2E (~6 min/push, 2.47.0) + sync (~1 min/push) + keep-warm (dispatch) —
+# Kvota: zasebni repo = 2000 min/mes brezplačno; vrata (~7 min/push z PG live
+# vrati 2.66.0) + E2E (~8 min/push) + sync (~1 min/push) + keep-warm (dispatch) —
 # varno znotraj kvote pri običajnem tempu pushanja. Če repo postane javen: neomejeno.
 # =============================================================================
 
@@ -91,6 +91,17 @@ jobs:
           # postgres validate preverja OBLIKO env URL proti protokolu —
           # CI-only dummy vrednost (brez povezave do baze).
           DATABASE_URL="postgres://ci-skip:ci-skip@localhost:5432/ci_skip" bun run db:pg:validate
+
+      # ── ISSUE #2 §2/§3 (2.66.0): POSTGRESQL LIVE VRATA ───────────────────
+      # Živ PostgreSQL 17 v uporabniškem prostoru (npm binarke
+      # @embedded-postgres — brez Docker services in root-a): shadow replay
+      # (migracije ≡ shema → prazna difa) → migrate deploy 0_init →
+      # idempotenca → integrity (tabele ≡ modeli) → seed data plane.
+      # Lekcija 9: prvi cutover NE SME biti prvi zagon db:pg:deploy.
+      - name: PostgreSQL live vrata (deploy + integrity + seed nad vgrajenim PG 17)
+        run: |
+          mkdir -p reports
+          PG_LIVE_REPORT=reports/pg-live-report.json bun scripts/pg-live-verify.ts
 
       - name: Build (next build, standalone izhod)
         run: bun run build

@@ -138,13 +138,13 @@ describe("P2 §8 — health produkcjska pogodba (brez skrivnosti)", () => {
     expect(s).toContain("VERCEL_GIT_COMMIT_SHA");
     expect(s).toContain("GIT_COMMIT");
   });
-  test("verzija 2.65.3 (bump na vseh mestih)", async () => {
+  test("verzija 2.66.0 (bump na vseh mestih)", async () => {
     const health = await src("src/app/api/health/route.ts");
-    expect(health).toContain('version: "2.65.3"');
+    expect(health).toContain('version: "2.66.0"');
     const sw = await src("public/sw.js");
-    expect(sw).toContain('SW_VERSION = "2.65.3"');
+    expect(sw).toContain('SW_VERSION = "2.66.0"');
     const pkg = JSON.parse(await src("package.json"));
-    expect(pkg.version).toBe("2.65.3");
+    expect(pkg.version).toBe("2.66.0");
   });
 });
 

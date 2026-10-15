@@ -1,6 +1,6 @@
 {
   "name": "discover-slovenia-ai",
-  "version": "2.65.3",
+  "version": "2.66.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000 2>&1 | tee dev.log",
@@ -118,6 +118,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "bun-types": "^1.3.4",
+    "embedded-postgres": "17.10.0-beta.17",
     "eslint": "^9",
     "eslint-config-next": "^16.1.1",
     "tailwindcss": "^4",

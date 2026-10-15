@@ -601,7 +601,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
     copyNote === "private" ? (
       <div
         role="alert"
-        className="w-full rounded-lg border border-amber-400/60 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+        className="w-full rounded-xl border border-amber-400/60 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
       >
         <p className="font-semibold leading-relaxed">{pick(l, L.copyPrivate)}</p>
         {db?.role === "OWNER" ? (
@@ -632,7 +632,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
     ) : copyNote === "local" ? (
       <div
         role="alert"
-        className="w-full rounded-lg border border-amber-400/60 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+        className="w-full rounded-xl border border-amber-400/60 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
       >
         <p className="font-semibold leading-relaxed">{pick(l, L.copyLocal)}</p>
       </div>
@@ -1241,7 +1241,7 @@ function QrCanvas({ url, label }: { url: string; label: string }) {
       height={160}
       role="img"
       aria-label={label}
-      className="mt-3 rounded-lg border bg-white dark:bg-white"
+      className="mt-3 rounded-2xl border border-border/70 bg-white p-1 shadow-sm dark:bg-white"
     />
   );
 }

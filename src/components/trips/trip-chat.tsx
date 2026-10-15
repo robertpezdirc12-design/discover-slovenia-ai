@@ -476,7 +476,7 @@ export function TripChat({ shareId, createdAt, canPost, myName }: TripChatProps)
               {rateLimited ? (
                 <p
                   role="alert"
-                  className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400"
+                  className="flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400"
                 >
                   <AlertTriangle
                     className="mt-0.5 size-4 shrink-0"

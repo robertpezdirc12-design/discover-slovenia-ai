@@ -710,3 +710,23 @@ Stage Summary:
 - Lekcija 11 (nova): Vercel blokira deploye commitov z emailom brez GitHub računa; POGODBA: vsi commiti = `robertpezdirc12-design <robert.pezdirc12@gmail.com>`; preveri `git log --format='%an <%ae>'` pred pushom (agenta GIT identiteta ni fakultativna).
 - Postavka ⑦ PONOVO ODPRTA: GitLab PAT mrtv (401) — lastniški korak: svež PAT (api + read/write_repository); parity se obnovi z novim žetonom (možen še allow_force_push na protected main).
 - Stanje lastniških točk: ① ② ③ ④ ⑤ nespremenjene · ⑥ spend limit (natančna diagnostika poslana) · ⑦ nov PAT.
+
+---
+Task ID: R35-PAT-REJECTED
+Agent: Z.ai Code (session web-3612f14e, trace 1a13ea43119e5331)
+Task: #35 — lastnik poslal ISTI GitLab PAT + "nadaljuj" → re-validacija žetona in obnova parity (postavka ⑦).
+
+Work Log:
+- Re-validacija žetona (WAF-disciplina, 5 poskusov s kavami 25–120 s):
+  (a) API /user (PRIVATE-TOKEN header) → "Blocked - GitLab" HTML (WAF);
+  (b) git ls-remote Z žetonom → **aplikacijska zavrnitev**: "HTTP Basic: Access denied … token incorrect, expired, or improperly scoped" (2×, stabilno po kavah);
+  (c) API /user?private_token= (URL param) → CF edge 400 text/plain.
+- KLJUČNO SPOZNANJE ( popravek prejšnje runde ): prejšnji zaključek "žeton mrtev" je bil narejen na MEŠANEM dokazu (en pravi 401 JSON + WAF 400). Ta runda: 2 čista aplikacijska zavrnitvi skozi WAF → žeton je res zavrnjen na aplikacijskem nivoju (odpoklican / omejitev računa / skupinska IP omejitev markec-group1 — peskovniški IP HK; ne razločljivo od zunaj). Kontekst: isti žeton je VČERA pushal d40fc6d in ustvaril runnerja → neveljaven je postal MEDTEM.
+- Lekcija 8 dodatek: WAF flaga predvsem ZAHTEVNE Z ŽETONOM (brez žetona gredo skozi); "401 z API" NI vedno dokaz mrtvega žetona, dokler klic ni čisto skozi WAF — vedno več poti (git protokol + query-param) pred zaključkom.
+- WAF-disciplina: vsi poskusi ustavljeni po 2. stabilni aplikacijski zavrnitvi; brez hamranja.
+- #35 preverjen: 14 komentarjev, ni novih lastniških odgovorov; poročilo oddano → komentar **6187832061** (postavka ⑦: 3 možnosti rešitve za lastnika — svež žeton / ročni push 2 ukaza iz njegove mreže / preverba žetona+računa; + opomba allow_force_push na protected main).
+
+Stage Summary:
+- Postavka ⑦: parity SHA ostaja divergent (GitLab main @ 89b6695 = isto drevo kot a9f0e3c) — BLOKIRANO na neveljavnem žetonu; vse akcije dokumentirane za lastnika z gotovimi ukazi.
+- GitHub/Vercel: nespremenjeno zdravo (produkcija 2.66.0, main a9f0e3c); Actions billing zid aktiven.
+- Lekcija 9/10 nič novega; noben repo commit te runde (vse = infra diagnostika + poročila).

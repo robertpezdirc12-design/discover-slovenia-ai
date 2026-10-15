@@ -506,13 +506,13 @@ export function TripPolls({ shareId, createdAt, canCreate, canVote }: TripPollsP
           </p>
         ) : polls === null ? (
           <p
-            className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground"
+            className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-6 text-center text-sm text-muted-foreground"
             role="status"
           >
             {mounted ? "Nalagam ankete …" : L.loadingPolls[lang]}
           </p>
         ) : list.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+          <p className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-6 text-center text-sm text-muted-foreground">
             {mounted
               ? canCreate
                 ? "Še ni nobene ankete — postavi prvo vprašanje skupini!"
@@ -524,7 +524,7 @@ export function TripPolls({ shareId, createdAt, canCreate, canVote }: TripPollsP
             {list.map((poll) => (
               <li
                 key={poll.id}
-                className="rounded-lg border border-border p-4"
+                className="rounded-2xl border border-border/70 bg-card p-4 shadow-sm"
               >
                 <PollCard
                   poll={poll}

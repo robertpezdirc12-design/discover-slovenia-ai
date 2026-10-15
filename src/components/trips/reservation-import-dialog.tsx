@@ -427,7 +427,7 @@ export function ReservationImportDialog({
                 </div>
               </div>
 
-              <p className="flex items-start gap-2 rounded-lg border border-amber-500/50 bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+              <p className="flex items-start gap-2 rounded-xl border border-amber-500/50 bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
                 <ShieldCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                 {pick(l, L.attestationNote)}
               </p>

@@ -639,7 +639,7 @@ export function TripCollaboration({
             </p>
 
             {inviteUrl && (
-              <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
+              <div className="space-y-2 rounded-xl border border-border/70 bg-muted/30 p-4 shadow-sm">
                 <p className="flex flex-wrap items-center gap-2 text-xs font-medium">
                   <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
                   {inviteSent ? "Vabilo poslano — povezava (tudi za ročno deljenje):" : "Povezava vabila (ročno deli):"}
@@ -681,7 +681,7 @@ export function TripCollaboration({
               {(agg.collaborators ?? []).map((c) => (
                 <li
                   key={c.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/70 bg-card p-3 shadow-sm"
                 >
                   <div className="min-w-0 space-y-0.5">
                     <p className="truncate text-sm font-medium">

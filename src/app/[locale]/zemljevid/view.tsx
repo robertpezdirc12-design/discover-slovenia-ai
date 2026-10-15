@@ -181,7 +181,7 @@ export default function MapPage() {
         {stats.map((s) => (
           <div
             key={s.label}
-            className="rounded-xl border bg-card px-4 py-3 text-center sm:text-left"
+            className="rounded-2xl border-border/70 bg-gradient-to-br from-card to-muted/20 px-4 py-3 text-center shadow-sm sm:text-left"
           >
             <dt className="sr-only">{s.label}</dt>
             <dd>

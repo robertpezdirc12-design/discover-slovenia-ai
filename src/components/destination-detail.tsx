@@ -323,7 +323,7 @@ export function DestinationDetail({ d }: { d: Destination }) {
         </div>
 
         {/* Praktični podatki */}
-        <Card className="mt-8 overflow-hidden rounded-2xl border-border/70 shadow-sm">
+        <Card className="mt-8 overflow-hidden rounded-2xl border-border/70 bg-gradient-to-br from-card via-card to-muted/20 shadow-sm">
           <CardContent className="grid gap-x-8 gap-y-5 p-5 sm:grid-cols-2 sm:p-6 lg:grid-cols-3">
             <div className="flex items-center gap-2.5">
               <Star className="size-5 shrink-0 fill-primary text-primary" aria-hidden="true" />
@@ -363,7 +363,7 @@ export function DestinationDetail({ d }: { d: Destination }) {
             Iskrenost: dest je ta destinacija; letalska vrstica pokaže
             letališče po regiji; gorivo (samo SI) je odprt podatek brez
             partnerja in brez provizije. */}
-        <Card className="mt-8">
+        <Card className="mt-8 rounded-2xl border-border/70 shadow-sm">
           <CardHeader>
             <CardTitle className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
               {pick(l, L.bookTitle)}
@@ -466,7 +466,7 @@ export function DestinationDetail({ d }: { d: Destination }) {
         {/* Žetoni: poudarki / aktivnosti / najboljše za / sezona */}
         <div className="mt-8 grid gap-6 sm:grid-cols-2">
           {chipGroups.map((g) => (
-            <Card key={g.heading}>
+            <Card key={g.heading} className="rounded-2xl border-border/70 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                   {g.heading}
@@ -490,7 +490,7 @@ export function DestinationDetail({ d }: { d: Destination }) {
         <Separator className="my-8" />
 
         {/* Izvor zapisa (iskrenostni kanon) */}
-        <Card className="border-primary/25 bg-primary/5">
+        <Card className="rounded-2xl border-primary/25 bg-gradient-to-br from-primary/[0.08] via-primary/[0.04] to-card shadow-sm">
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-primary">
               {pick(l, L.provenance)}

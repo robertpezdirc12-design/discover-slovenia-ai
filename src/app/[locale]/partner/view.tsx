@@ -342,7 +342,7 @@ export default function PartnerPage() {
     <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
       <PageHeader kicker={t("kicker")} title={t("title")} lead={t("lead")} />
 
-      <Card className="mt-8">
+      <Card className="mt-8 rounded-2xl border-border/70 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <ShieldCheck className="size-4 text-primary" aria-hidden="true" />
@@ -356,7 +356,7 @@ export default function PartnerPage() {
 
       {/* Statistika */}
       <div className="mt-6 grid grid-cols-3 gap-3 sm:gap-4">
-        <Card>
+        <Card className="rounded-2xl border-border/70 shadow-sm">
           <CardContent className="p-4">
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Package className="size-3.5" aria-hidden="true" />
@@ -365,7 +365,7 @@ export default function PartnerPage() {
             <p className="mt-1 text-2xl font-bold tabular-nums">{data.totals.listings}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="rounded-2xl border-border/70 shadow-sm">
           <CardContent className="p-4">
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <ShoppingCart className="size-3.5" aria-hidden="true" />
@@ -374,7 +374,7 @@ export default function PartnerPage() {
             <p className="mt-1 text-2xl font-bold tabular-nums">{data.totals.sold}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="rounded-2xl border-border/70 shadow-sm">
           <CardContent className="p-4">
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Undo2 className="size-3.5" aria-hidden="true" />
@@ -404,7 +404,7 @@ export default function PartnerPage() {
 
       {/* Seznam vnosov */}
       {data.products.length === 0 ? (
-        <Card className="mt-6">
+        <Card className="mt-6 rounded-2xl border-border/70 shadow-sm">
           <CardHeader>
             <CardTitle className="text-base">{t("emptyTitle")}</CardTitle>
             <CardDescription>{t("emptyBody")}</CardDescription>
@@ -416,7 +416,7 @@ export default function PartnerPage() {
             const statusLabel =
               LISTING_STATUS_LABELS[row.status as keyof typeof LISTING_STATUS_LABELS];
             return (
-              <Card key={row.id} className="overflow-hidden">
+              <Card key={row.id} className="overflow-hidden rounded-2xl border-border/70 shadow-sm">
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">

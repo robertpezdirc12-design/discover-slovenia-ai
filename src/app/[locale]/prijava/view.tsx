@@ -220,7 +220,7 @@ export default function PrijavaPage() {
       </PageHeader>
 
       {alreadyIn ? (
-        <Card className="mt-8 border-primary/30 bg-primary/5">
+        <Card className="mt-8 rounded-2xl border-primary/30 bg-gradient-to-br from-primary/[0.07] to-card shadow-sm">
           <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
             <CheckCircle2 className="size-8 text-primary" aria-hidden="true" />
             <p className="text-base font-semibold">
@@ -237,7 +237,7 @@ export default function PrijavaPage() {
       ) : (
         <>
           {/* Demo račun — iskreno označen (javno geslo za preizkus) */}
-          <Card className="mt-6 border-amber-300/70 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30">
+          <Card className="mt-6 rounded-2xl border-amber-300/70 bg-amber-50 shadow-sm dark:border-amber-800 dark:bg-amber-950/30">
             <CardContent className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="text-sm font-semibold">{pick(l, L.demoTitle)}</p>
@@ -261,7 +261,7 @@ export default function PrijavaPage() {
             </CardContent>
           </Card>
 
-          <Card className="mt-6">
+          <Card className="mt-6 rounded-2xl border-border/70 shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <LogIn className="size-5 text-primary" aria-hidden="true" />
@@ -400,7 +400,7 @@ export default function PrijavaPage() {
 
       {/* Načrti ostanejo lokalni (zbirka Moja pot) — skupnostne pote v oblaku
           so nadgradnja, ne pogoj. */}
-      <Card className="mt-6">
+      <Card className="mt-6 rounded-2xl border-border/70 shadow-sm">
         <CardContent className="flex items-start gap-3 p-5">
           <HardDrive className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
           <div>
@@ -428,7 +428,7 @@ export default function PrijavaPage() {
       </Card>
 
       {/* Ponudniki */}
-      <Card className="mt-6">
+      <Card className="mt-6 rounded-2xl border-border/70 shadow-sm">
         <CardContent className="flex items-start justify-between gap-3 p-5">
           <div>
             <p className="text-sm font-semibold">{pick(l, L.providersTitle)}</p>

@@ -166,7 +166,7 @@ export function DestinationsExplorer() {
       />
 
       {/* Nadzorna vrstica: iskanje + filtri (država/regija/tip, #41 F0) */}
-      <div className="mt-8 grid grid-cols-2 gap-3 rounded-2xl border border-border/70 bg-card/70 p-3 shadow-sm sm:p-4 lg:grid-cols-[minmax(240px,1fr)_auto_auto_auto]">
+      <div className="mt-8 grid grid-cols-2 gap-3 rounded-2xl border border-border/70 bg-gradient-to-br from-card via-card to-muted/20 p-3 shadow-sm ring-1 ring-border/30 sm:p-4 lg:grid-cols-[minmax(240px,1fr)_auto_auto_auto]">
         <div className="relative col-span-2 min-w-0 lg:col-span-1">
           <Search
             className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
@@ -263,7 +263,7 @@ export function DestinationsExplorer() {
 
       {/* Mreža kartic */}
       {results.length > 0 ? (
-        <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {results.map((d, i) => (
             <DestinationCard key={d.slug} d={d} priority={i < 3} />
           ))}

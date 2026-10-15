@@ -249,7 +249,7 @@ export function CloudTripsSection() {
           {pick(l, { sl: "Nalagam pote v oblaku …", en: "Loading cloud trips …", it: "Caricamento dei viaggi nel cloud …", de: "Cloud-Reisen werden geladen …", fr: "Chargement des voyages dans le cloud …", es: "Cargando los viajes en la nube …" })}
         </p>
       ) : filtered.length === 0 ? (
-        <Card className="mt-4 border-dashed">
+        <Card className="mt-4 rounded-2xl border-dashed border-border/70 bg-muted/20 shadow-sm">
           <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
             <CloudUpload className="size-8 text-muted-foreground" aria-hidden="true" />
             <p className="text-sm text-muted-foreground">{pick(l, L.empty)}</p>
@@ -262,7 +262,7 @@ export function CloudTripsSection() {
         <ul className="mt-4 grid gap-3 sm:grid-cols-2">
           {filtered.map((trip) => (
             <li key={trip.shareId}>
-              <Card className="h-full">
+              <Card className="h-full rounded-2xl border-border/70 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-2">
                     <p className="min-w-0 font-semibold">{trip.title}</p>

@@ -377,7 +377,7 @@ function TripBookingsSummary() {
           {pick(l, BK_L.loading)}
         </p>
       ) : trips.length === 0 ? (
-        <Card className="mt-4 border-dashed">
+        <Card className="mt-4 rounded-2xl border-dashed border-border/70 bg-muted/20 shadow-sm">
           <CardContent className="flex flex-col items-center gap-2 p-6 text-center">
             <TicketCheck className="size-7 text-muted-foreground" aria-hidden="true" />
             <p className="text-sm text-muted-foreground">{pick(l, BK_L.empty)}</p>
@@ -388,7 +388,7 @@ function TripBookingsSummary() {
         <ul className="mt-4 grid gap-3 sm:grid-cols-2">
           {trips.map((t) => (
             <li key={t.shareId}>
-              <Card className="h-full">
+              <Card className="h-full rounded-2xl border-border/70 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
                 <CardContent className="flex flex-col gap-2 p-4">
                   <div className="flex items-start justify-between gap-2">
                     <p className="min-w-0 font-semibold">{t.title}</p>
@@ -553,7 +553,7 @@ export default function MyTripsPage() {
 
       {/* NA POTI badge */}
       {goContext && (
-        <Card className="mt-4 border-primary/40 bg-primary/5">
+        <Card className="mt-4 rounded-2xl border-primary/30 bg-gradient-to-br from-primary/[0.07] to-card shadow-sm">
           <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
             <p className="flex items-center gap-2 text-sm font-semibold">
               <span className="flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
@@ -610,7 +610,7 @@ export default function MyTripsPage() {
         {!ready ? (
           <Skeleton className="mt-4 h-40 w-full rounded-xl" />
         ) : items.length === 0 ? (
-          <Card className="mt-4 border-dashed">
+          <Card className="mt-4 rounded-2xl border-dashed border-border/70 bg-muted/20 shadow-sm">
             <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
               <MapPin className="size-8 text-muted-foreground" aria-hidden="true" />
               <p className="text-sm text-muted-foreground">
@@ -656,7 +656,7 @@ export default function MyTripsPage() {
             <ul className="mt-4 grid gap-3 sm:grid-cols-2">
               {enriched.map(({ item, dest }) => (
                 <li key={item.refId}>
-                  <Card className="h-full">
+                  <Card className="h-full rounded-2xl border-border/70 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
                     <CardContent className="flex items-start gap-3 p-4">
                       <span className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-lg border bg-card text-primary">
                         <StopKindIcon kind={dest?.type ?? "custom"} className="size-5" />
@@ -704,7 +704,7 @@ export default function MyTripsPage() {
                 </li>
               ))}
             </ul>
-            <Card className="mt-4">
+            <Card className="mt-4 rounded-2xl border-border/70 shadow-sm">
               <CardContent className="flex flex-wrap items-center justify-between gap-2 p-4 text-sm">
                 <span className="font-semibold">{pick(l, L.total)}</span>
                 <span className="flex flex-wrap items-center gap-2">
@@ -733,7 +733,7 @@ export default function MyTripsPage() {
         <p className="mt-1.5 text-sm text-muted-foreground">{pick(l, L.plansLead)}</p>
 
         {!lastPlan ? (
-          <Card className="mt-4 border-dashed">
+          <Card className="mt-4 rounded-2xl border-dashed border-border/70 bg-muted/20 shadow-sm">
             <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
               <RouteIcon className="size-8 text-muted-foreground" aria-hidden="true" />
               <p className="text-sm text-muted-foreground">{pick(l, L.noPlan)}</p>
@@ -746,7 +746,7 @@ export default function MyTripsPage() {
             </CardContent>
           </Card>
         ) : (
-          <Card className="mt-4">
+          <Card className="mt-4 rounded-2xl border-border/70 shadow-sm">
             <CardContent className="p-4 sm:p-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -792,7 +792,7 @@ export default function MyTripsPage() {
       {/* ISKRENO GOSTOVANJE — samo za neprijavljene (prijavljeni imajo
           poti v oblaku zgoraj; zbirka Moja pot je lokalna za vse) */}
       {sessionStatus !== "authenticated" ? (
-        <Card className="mt-10 border-dashed">
+        <Card className="mt-10 rounded-2xl border-dashed border-border/70 bg-muted/20 shadow-sm">
           <CardContent className="flex items-start gap-3 p-4">
             <HardDrive className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
             <div>

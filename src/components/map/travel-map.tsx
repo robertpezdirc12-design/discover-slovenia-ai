@@ -1445,7 +1445,7 @@ export default function TravelMap() {
             onChange={(e) => setQ(e.target.value)}
             placeholder={t("searchPlaceholder")}
             aria-label={t("searchLabel")}
-            className="h-12 rounded-xl border-border/70 bg-background pl-10 shadow-sm focus-visible:ring-primary/30"
+            className="h-12 rounded-xl border-border/70 bg-background pl-10 shadow-sm focus-visible:ring-primary"
           />
         </div>
         <Select value={region} onValueChange={setRegion}>

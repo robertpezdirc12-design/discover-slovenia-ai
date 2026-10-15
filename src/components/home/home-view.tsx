@@ -667,7 +667,7 @@ export function HomeView({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("searchPlaceholder")}
-              className="h-11 border-none bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent"
+              className="h-11 border-none bg-transparent shadow-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 dark:bg-transparent"
               autoComplete="off"
             />
             <Button type="submit" className="h-11 shrink-0 px-4 sm:px-6">

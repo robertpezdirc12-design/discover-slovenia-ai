@@ -17,6 +17,14 @@ const HOME = readFileSync(
   join(import.meta.dir, "../src/components/home/home-view.tsx"),
   "utf8"
 );
+const DESTINATION_FILTERS = readFileSync(
+  join(import.meta.dir, "../src/components/destinations-explorer.tsx"),
+  "utf8"
+);
+const PROVIDER_FORM = readFileSync(
+  join(import.meta.dir, "../src/components/providers/provider-apply-form.tsx"),
+  "utf8"
+);
 
 describe("map control accessibility", () => {
   test("filter and layer controls provide visible focus and respect reduced motion", () => {
@@ -32,6 +40,29 @@ describe("map control accessibility", () => {
     expect(MAP).toContain(
       "transition-all duration-200 motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
     );
+  });
+});
+
+describe("search and provider form focus visibility", () => {
+  test("homepage hero search never suppresses keyboard focus", () => {
+    expect(HOME).toContain(
+      'className="h-11 border-none bg-transparent shadow-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 dark:bg-transparent"'
+    );
+    expect(HOME).not.toContain("focus-visible:ring-0");
+  });
+
+  test("destination and map search inputs use a clear primary focus ring", () => {
+    expect(DESTINATION_FILTERS).toContain("focus-visible:ring-primary\"");
+    expect(DESTINATION_FILTERS).not.toContain("focus-visible:ring-primary/30");
+    expect(MAP).toContain("focus-visible:ring-primary\"");
+    expect(MAP).not.toContain("focus-visible:ring-primary/30");
+  });
+
+  test("native provider selects use a clear focus ring with contrast offset", () => {
+    expect(PROVIDER_FORM).toContain(
+      "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    );
+    expect(PROVIDER_FORM).not.toContain("focus-visible:ring-primary/30");
   });
 });
 

@@ -21,6 +21,14 @@ const NAVIGATION = readFileSync(
   join(import.meta.dir, "../src/components/layout/navigation.tsx"),
   "utf8"
 );
+const SHEET = readFileSync(
+  join(import.meta.dir, "../src/components/ui/sheet.tsx"),
+  "utf8"
+);
+const ACCORDION = readFileSync(
+  join(import.meta.dir, "../src/components/ui/accordion.tsx"),
+  "utf8"
+);
 const DESTINATION_FILTERS = readFileSync(
   join(import.meta.dir, "../src/components/destinations-explorer.tsx"),
   "utf8"
@@ -83,6 +91,25 @@ describe("search and provider form focus visibility", () => {
       "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     );
     expect(PROVIDER_FORM).not.toContain("focus-visible:ring-primary/30");
+  });
+});
+
+describe("shared overlay and accordion motion", () => {
+  test("sheet overlay/content suppress motion when reduced motion is preferred", () => {
+    expect(SHEET).toContain("motion-reduce:animate-none");
+    expect(SHEET).toContain("motion-reduce:transition-none");
+  });
+
+  test("sheet close has a visible focus ring and motion fallback", () => {
+    expect(SHEET).toContain(
+      "focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none"
+    );
+  });
+
+  test("accordion trigger and chevron respect reduced motion and focus offsets", () => {
+    expect(ACCORDION).toContain("transition-all motion-reduce:transition-none outline-none");
+    expect(ACCORDION).toContain("focus-visible:ring-offset-2 focus-visible:ring-offset-background");
+    expect(ACCORDION).toContain("transition-transform duration-200 motion-reduce:transition-none");
   });
 });
 

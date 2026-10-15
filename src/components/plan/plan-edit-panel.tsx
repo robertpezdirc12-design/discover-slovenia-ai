@@ -337,8 +337,8 @@ export function PlanEditPanel() {
   if (!ready) return null;
 
   return (
-    <Card className="mt-8">
-      <CardHeader>
+    <Card className="mt-8 overflow-hidden rounded-2xl border-border/70 shadow-sm">
+      <CardHeader className="border-b bg-muted/30 p-5 sm:p-6">
         <CardTitle className="flex items-center gap-2">
           <Wand2 className="h-5 w-5 text-primary" aria-hidden />
           {t("title")}
@@ -347,10 +347,10 @@ export function PlanEditPanel() {
           {t("desc")}
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5 p-5 sm:p-6">
         {/* §3: načrt iz osebnih preferenc (prijavljeni, interesi prisotni) */}
         {status === "authenticated" && prefValues.enabled && (
-          <div className="rounded-lg border p-3 sm:p-4">
+          <div className="rounded-2xl border border-border/70 bg-background/80 p-4 sm:p-5">
             <p className="flex items-center gap-2 text-sm font-semibold">
               <Brain className="h-4 w-4 text-primary" aria-hidden />
               {t("fromPrefs")}
@@ -405,13 +405,13 @@ export function PlanEditPanel() {
                 value={command}
                 onChange={(e) => setCommand(e.target.value)}
                 placeholder={t("ph")}
-                className="h-11"
+                className="h-12 rounded-xl border-border/70"
                 aria-label={t("title")}
                 maxLength={200}
               />
               <Button
                 type="submit"
-                className="min-h-11"
+                className="min-h-12 rounded-xl"
                 disabled={busy || command.trim().length === 0}
               >
                 {busy ? (
@@ -427,7 +427,7 @@ export function PlanEditPanel() {
                 <button
                   key={ex}
                   type="button"
-                  className="min-h-9 rounded-full border px-2.5 py-1 text-xs text-muted-foreground transition hover:border-primary hover:text-foreground"
+                  className="min-h-9 rounded-xl border border-border/70 bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-foreground"
                   onClick={() => setCommand(ex)}
                 >
                   {ex}
@@ -447,7 +447,7 @@ export function PlanEditPanel() {
             )}
 
             {proposal?.ok && proposal.plan && (
-              <div className="rounded-lg border border-primary/40 bg-primary/5 p-3 sm:p-4" role="status">
+              <div className="rounded-2xl border border-primary/30 bg-primary/[0.04] p-4 sm:p-5" role="status">
                 <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
                   {t("diffTitle")}
                 </p>

@@ -202,7 +202,17 @@ e2e:
     - (bun .next/standalone/server.js > reports/e2e-server.log 2>&1 & echo $! > server.pid)
     - SMOKE_BASE_URL="http://localhost:${PORT}" bun scripts/ci-wait-ready.ts
     - bunx playwright install --with-deps chromium
-    - E2E_BASE_URL="http://localhost:${PORT}" bun run e2e
+    # Lekcija 2.66.2 (pipeline 2950568131, job 17199051426): „bun run e2e“
+    # je pod oven/bun:1 (brez node-a) pognal playwright pod BUNOM. Bunov
+    # graditelj modulskega grafa EAGERNO rešuje playwright-core-ova LAZY
+    # opcijska require(„chromium-bidi/…“) (BiDi-over-CDP, paket ni nameščen)
+    # → AggregateError „2 errors building <e2e/*.e2e.ts>“ → „No tests found“.
+    # Playwright zato teče pod node (isti vzorec kot GitHub Actions):
+    # nameščen nodejs (trixie 20.x ≥ zahtevanih 18) + eksplicitna node
+    # invokacija (odprta proti bunovi politiki shebangov). Lokalno
+    # potrjeno nad produkcijskim buildom te veje: 16/16 zelenih.
+    - apt-get update -qq && apt-get install -y -qq nodejs
+    - E2E_BASE_URL="http://localhost:${PORT}" node node_modules/playwright/cli.js test
   after_script:
     - kill $(cat server.pid) 2>/dev/null || true
   artifacts:

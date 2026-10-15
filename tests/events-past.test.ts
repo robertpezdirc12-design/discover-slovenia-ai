@@ -111,28 +111,37 @@ describe("events-past (#38): živi kanon ob 2026-10-13", () => {
     expect(isEventPast(byId("kurentovanje-ptuj"), TODAY)).toBeFalse();
   });
 
-  test("③c nepotrjeni (13) niso nikoli pretekli", () => {
+  test("③c nepotrjeni (8) niso nikoli pretekli", () => {
     const unconfirmed = EVENTS.filter((e) => e.dateUnconfirmed);
     // 2.49.0: 13 → 11 (Zlata lisica + Planica); SDK serija 2026-10-13:
     // 11 → 9 (zimski festival februar 2027 + december v Ljubljani 27. 11.
     // 2026 potrjena); F2 #41 2.56.0: 9 → 13 (SFF 33., EXIT, Ohridsko
-    // poletje, SIFF Sofija — vsi pošteno nepotrjeni za 2027).
-    expect(unconfirmed.length).toBe(13);
+    // poletje, SIFF Sofija — vsi pošteno nepotrjeni za 2027);
+    // 2.66.2 (15.10.): 13 → 8 (SIFF 11.–21.3.2027, Tolminator
+    // 28.7.–1.8.2027, vigred 21.–23.5.2027, jurjevanje 21.–25.6.2027
+    // potrjeni; EXIT odstranjen — ukinjen).
+    expect(unconfirmed.length).toBe(8);
     expect(unconfirmed.every((e) => !isEventPast(e, TODAY))).toBeTrue();
   });
 
-  test("③d dateEnd izpolnjen IZKLJUČNO pri preverjenih razponih (8 zapisov)", () => {
+  test("③d dateEnd izpolnjen IZKLJUČNO pri preverjenih razponih (12 zapisov)", () => {
     const withEnd = EVENTS.filter((e) => e.dateEnd !== undefined).map((e) => e.id);
     // F2 #41 2.56.0: + BEMUS (17.–30.10.), TIFF Solun (5.–15.11.),
     // Sarajevo Winter (7.2.–21.3.), DokuFest (6.–14.8.2027).
+    // 2.66.2 (15.10.): + SIFF (11.–21.3.), Tolminator (28.7.–1.8.),
+    // vigred (21.–23.5.), jurjevanje (21.–25.6.) — vsi preverjeni razponi.
     expect(withEnd.sort()).toEqual([
       "bemus-beograd-2026",
       "celjski-sejem",
       "dokufest-prizren-2027",
+      "festival-soca",
       "festival-stara-trta",
+      "jurjevanje-bela-krajina",
       "planica-nordic-festival",
       "sarajevo-winter-2027",
+      "sofija-film-fest-2027",
       "tiff-solun-2026",
+      "vinska-vigred-maribor",
       "zlati-lisjak-smucanje",
     ]);
   });
@@ -155,8 +164,9 @@ describe("events-past (#38): Event JSON-LD izključitev zaključenih", () => {
     const graph = eventsJsonLd(EVENTS, "sl", TODAY)["@graph"];
     // 2.49.0: 16 → 18; SDK serija 2026-10-13: 18 → 20; F2 #41 2.56.0:
     // 20 → 24 (BEMUS, TIFF Solun, Sarajevo Winter, DokuFest — vsi
-    // potrjeni in prihodnji ob TODAY 2026-10-13).
-    expect(graph.length).toBe(24);
+    // potrjeni in prihodnji ob TODAY 2026-10-13); 2.66.2: 24 → 28
+    // (SIFF, Tolminator, vigred, jurjevanje — potrjeni 15.10.2026).
+    expect(graph.length).toBe(28);
     expect(graph.some((e) => e.startDate === "2026-11-05")).toBeTrue();
     expect(graph.some((e) => e.startDate === "2027-08-06")).toBeTrue();
     expect(graph.some((e) => e.startDate === "2026-10-17")).toBeTrue();
@@ -165,11 +175,15 @@ describe("events-past (#38): Event JSON-LD izključitev zaključenih", () => {
     expect(graph.some((e) => e.startDate === "2027-02-03")).toBeTrue();
     expect(graph.some((e) => e.startDate === "2027-02-15")).toBeTrue();
     expect(graph.some((e) => e.startDate === "2027-03-18")).toBeTrue();
+    expect(graph.some((e) => e.startDate === "2027-03-11")).toBeTrue(); // SIFF
+    expect(graph.some((e) => e.startDate === "2027-07-28")).toBeTrue(); // Tolminator
+    expect(graph.some((e) => e.startDate === "2027-05-21")).toBeTrue(); // vigred
+    expect(graph.some((e) => e.startDate === "2027-06-21")).toBeTrue(); // jurjevanje
   });
 
-  test("④c 2-argska forma (brez todayIso) NE filtrira zaključenih (26/39 kanon)", () => {
+  test("④c 2-argska forma (brez todayIso) NE filtrira zaključenih (30/38 kanon — 2.66.2)", () => {
     const graph = eventsJsonLd(EVENTS, "sl")["@graph"];
-    expect(graph.length).toBe(26);
+    expect(graph.length).toBe(30);
   });
 });
 

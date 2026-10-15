@@ -64,10 +64,15 @@ describe("events P0 (#38): potrditve primarnih virov", () => {
     expect(e.description).not.toContain("Dravi");
     // povezava na destinacijo: Metlika ni med 38 — najbližji kanon Bele krajine
     expect(e.destSlug).toBe("crnomelj");
-    // termin 2027 ni še objavljen (44. izdaja 2026: 15.–17. maj) → nepotrjen
-    expect(e.dateUnconfirmed).toBe(true);
-    expect(e.dateStart).toBe("");
-    expect(e.source).toBe("https://www.vinska-vigred.si");
+    // termin 2027 POTRJEN (2.66.2, verifikacija 2026-10-15,
+    // zgodovinska-mesta.si): 21.–23. maj 2027 (prozna potrditev
+    // organizatorja; isto polje strukturirano 19.–23.5. z postavitvijo)
+    expect(e.dateUnconfirmed).toBeUndefined();
+    expect(e.dateStart).toBe("2027-05-21");
+    expect(e.dateEnd).toBe("2027-05-23");
+    expect(e.dateLabel).toBe("21. – 23. maj 2027");
+    expect(e.source).toBe("https://www.zgodovinska-mesta.si/prireditve/vinska-vigred-v-beli-krajini/");
+    expect(e.verifiedAt).toBe("2026-10-15");
   });
 
   test("①d Planica: FIS finale SP 18.–21. marec 2027 (planica.si + sloski.si)", () => {
@@ -86,12 +91,18 @@ describe("events P0 (#38): potrditve primarnih virov", () => {
     expect(e.verifiedAt).toBe("2026-10-13");
   });
 
-  test("①e Jurjevanje: JUNIJ (62. izdaja 2026: 22.–28. junij) + lokacija po viru", () => {
+  test("①e Jurjevanje: JUNIJ + termin 2027 potrjen 21.–25.6. (zgodovinska-mesta.si)", () => {
     const e = byId("jurjevanje-bela-krajina");
     expect(e.monthIndex).toBe(6); // NE april
     expect(e.venue).toContain("Črnomelj");
-    expect(e.dateUnconfirmed).toBe(true);
-    expect(e.source).toBe("https://www.jurjevanje.si");
+    // termin 2027 POTRJEN (2.66.2, verifikacija 2026-10-15,
+    // zgodovinska-mesta.si — RIC Bela krajina): 21.–25. junij 2027
+    expect(e.dateUnconfirmed).toBeUndefined();
+    expect(e.dateStart).toBe("2027-06-21");
+    expect(e.dateEnd).toBe("2027-06-25");
+    expect(e.dateLabel).toBe("21. – 25. jun 2027");
+    expect(e.source).toBe("https://www.zgodovinska-mesta.si/prireditve/jurjevanje-v-beli-krajini/");
+    expect(e.verifiedAt).toBe("2026-10-15");
   });
 
   test("①f Zlata lisica: 29.–30. jan 2027 na Podkorenu (sloski.si) — NI „Zlati lisjak“ in ni Maribor", () => {
@@ -124,10 +135,10 @@ describe("events P0 (#38): potrditve primarnih virov", () => {
 
 describe("events P0 (#38): nepotrjeni datumi", () => {
   const UNCONFIRMED_IDS = [
-    "vinska-vigred-maribor",
-    "festival-soca",
+    // 2.66.2 (verifikacija 2026-10-15): vigred (21.–23.5.2027),
+    // festival-soca/Tolminator (28.7.–1.8.2027) in jurjevanje (21.–25.6.2027)
+    // so potrjeni — izločeni iz tega seznamu; ostala P0-sledenja:
     "blejski-danovski-festival",
-    "jurjevanje-bela-krajina",
     "pivo-in-cvetje-lasko",
   ];
   // QA 3. serija (2026-10-13): „zlati-lisjak-smucanje“ (→ Zlata lisica,
@@ -195,9 +206,9 @@ function filterEvents(month: number | "all", category: EventCategory | "all") {
 }
 
 describe("events P0 (#38): regresija filtrov", () => {
-  test("③a brez filtrov = vseh 39 dogodkov (F2: 31 SI kanona + 8 balkanskih #41)", () => {
-    expect(EVENTS.length).toBe(39);
-    expect(filterEvents("all", "all").length).toBe(39);
+  test("③a brez filtrov = vseh 38 dogodkov (F2: 31 SI kanona + 7 balkanskih #41 — EXIT odstranjen 2.66.2)", () => {
+    expect(EVENTS.length).toBe(38);
+    expect(filterEvents("all", "all").length).toBe(38);
   });
 
   test("③b filter po mesecu: februar najde Kurentovanje (potrjen 3. feb)", () => {
@@ -353,15 +364,17 @@ describe("events P0 3. serija (2026-10-13): korekcija + ponovna sledljivost", ()
     expect(e.monthIndex).toBe(7); // julij (seznam metal festivalov: „July“)
     expect(e.venue).toContain("Tolmin");
     expect(e.venue).toContain("Sotočje");
-    // termin 2027 neobjavljen → pošteno nepotrjen (kanon ②)
-    expect(e.dateUnconfirmed).toBe(true);
-    expect(e.dateStart).toBe("");
-    expect(e.dateLabel).toBe("datum še ni potrjen");
-    // vir dejansko prebran: Wikipedia MetalDays (Tolminator od 2023)
-    expect(e.source).toBe("https://en.wikipedia.org/wiki/MetalDays");
-    expect(e.verifiedAt).toBe("2026-10-13");
-    // organizatorjeva stran (tolminator.si) nedosegljiva → brez povezave
-    expect(e.website).toBeUndefined();
+    // termin 2027 POTRJEN (2.66.2, verifikacija 2026-10-15): tolminator.com
+    // (prava domena organizatorja — prejšnja „tolminator.si“ je bila napačna):
+    // „28 July - 1 August 2027“ + EARLY BIRD vstopnice v predprodaji
+    expect(e.dateUnconfirmed).toBeUndefined();
+    expect(e.dateStart).toBe("2027-07-28");
+    expect(e.dateEnd).toBe("2027-08-01");
+    expect(e.dateLabel).toBe("28. jul – 1. avg 2027");
+    // vir dejansko prebran (2.66.2): uradna stran organizatorja
+    expect(e.source).toBe("https://tolminator.com");
+    expect(e.verifiedAt).toBe("2026-10-15");
+    expect(e.website).toBe("https://tolminator.com");
     // destinacija ostane Soča (Tolmin je pokrit z vodičem reka-soca)
     expect(e.destSlug).toBe("reka-soca");
   });
@@ -384,12 +397,12 @@ describe("events P0 3. serija (2026-10-13): korekcija + ponovna sledljivost", ()
     // vsi izrecno ponovno preverjeni prek e-občina /DobiDogodke (0 zadetkov);
     // SDK serija (2026-10-13): ljubljanski del božičnih sejmov POTRJEN
     // (27. 11. 2026, visitljubljana.com) — iz seznama izločen, Maribor ostane.
+    // 2.66.2: festival-soca izločen — POTRJEN 28.7.–1.8.2027 (tolminator.com).
     const RECHECKED = [
       "bela-krajina-koline",
       "jamski-sejem-postojna",
       "bozicni-sejmi-maribor",
       "blejski-danovski-festival",
-      "festival-soca",
     ];
     for (const id of RECHECKED) {
       const e = byId(id);

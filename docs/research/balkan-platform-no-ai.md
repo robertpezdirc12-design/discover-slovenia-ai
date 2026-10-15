@@ -49,7 +49,7 @@
 - **Geokodiranje**: koordinate v registrih so ročno kurirane; uporabniški autocomplete naslovov ne obstaja.
 - **Listingi**: model + moderacija so; brez držav/regij, sezonskosti po #35, preverjanja ponudnika (verified/lastVerifiedAt) in kategorij iz pogl. 6.
 - **Jeziki**: 6 jezikov pokriva UI lupino; balkanski jeziki (hr/bos/sr/me/sq) so ARHITEKTURNO pripravljeni (PickLocale tip + predpona), a vsebinsko (registri) samo dvojezični (sl/en) + 6-jezična državna meta.
-- **Dogodki**: balkanski dogodki (8) so v kanonu z `eventCountry`; datumi deloma neprivrjeni (`dateUnconfirmed`) — iskrenostni kanon „nikoli ne ugibaj“ velja za vse države.
+- **Dogodki**: balkanski dogodki (7; EXIT Novi Sad odstranjen 15.10.2026 — festival ukinjen po izdaji 2025: Wikipedia „Years active 2000–2025“ + organizatorjev „global tour“) so v kanonu z `eventCountry`; termini 2027 potrjeni pri primarnih virih: SIFF Sofija 11.–21.3., Vinska vigred Metlika 21.–23.5., Jurjevanje 21.–25.6., Tolminator 28.7.–1.8.; ostali ostanejo iskreno nepotrjeni (`dateUnconfirmed`) — kanon „nikoli ne ugibaj“ velja za vse države.
 
 ### 2c. Kaj manjka (za cilj #35) — re-evaluirano 14. 10. 2026
 
@@ -113,25 +113,25 @@
 
 ---
 
-## 5. Pokritost držav in vrzeli (osveženo 14. 10. 2026 — kanon v2.60.0)
+## 5. Pokritost držav in vrzeli (osveženo 15. 10. 2026 — GTFS verifikacija + Valhalla meritve)
 
 Številke so iz registrov v kodi (`slovenia-data.ts` + `balkan-data.ts`), preverjene na `9230f20`:
 
 | država | destinacije v kanonu | routing (Geofabrik) | geokodiranje (OSM/Photon) | javni prevoz (GTFS) | vrzel |
 |---|---|---|---|---|---|
-| Slovenija | 22 | ✓ dnevni izvoz | ✓ | **0 datasetov** (podatki.gov.si CKAN, preverjeno 13.10.2026) | nacionalni GTFS |
-| Hrvaška | 8 | ✓ | ✓ | samo lokalni ZET (uradno objavljen) | nacionalni GTFS |
-| Bosna in Hercegovina | 6 (Sarajevo, Mostar, …) | ✓ | ✓ | 0 | POI sloj za ne-kanonska mesta |
-| Črna gora | 4 (Kotor, Budva, Podgorica, Durmitor) | ✓ | ✓ | 0 | POI sloj + obalna sezonskost |
-| Albanija | 4 (Tirana, Berat, Gjirokastër, Sarandë) | ✓ | ✓ | 0 | kvaliteta OSM cestnega omrežja **[nepotrjena — izmeriti na Valhalla grahu]** |
-| Srbija | 6 (Beograd, Novi Sad, …) | ✓ | ✓ | **[nepotrjeno]** | — |
-| Severna Makedonija | 6 (Ohrid, Skopje, …) | ✓ | ✓ | **[nepotrjeno]** | — |
-| Kosovo | 6 (Priština, Prizren, …) | ✓ | ✓ | **[nepotrjeno]** | — |
-| Bolgarija | 6 (Sofija, Plovdiv, Rila, …) | ✓ | ✓ | **[nepotrjeno]** | — |
-| Grčija | 6 (Solun, Meteora, …) | ✓ | ✓ | **[nepotrjeno]** | — |
-| **SKUPAJ** | **74 · 44 regij · 10 tipov** | 10/10 izvozi | ✓ | SI 0 · HR ZET · ostalo [nepotrjeno] | vsebinska kuracija onkraj kanona |
+| Slovenija | 22 | ✓ dnevni izvoz | ✓ | 6 v katalogu Mobility DB (LPP + 5 lokalnih); nacionalni CKAN 0 (13.10.2026) | nacionalni agregat |
+| Hrvaška | 8 | ✓ | ✓ | 4 (ZET + **HŽPP nacionalne železnice** ×2 + Gradski parking) | — |
+| Bosna in Hercegovina | 6 (Sarajevo, Mostar, …) | ✓ | ✓ | 1 (LivnoBus, lokalni) | POI sloj za ne-kanonska mesta |
+| Črna gora | 4 (Kotor, Budva, Podgorica, Durmitor) | ✓ | ✓ | 2 (**ŽPCG nacionalne železnice** + Podgorica Putevi) | obalna sezonskost |
+| Albanija | 4 (Tirana, Berat, Gjirokastër, Sarandë) | ✓ | ✓ | 3 (Tirana, Vlora, ShowMeBus) | cestna kvaliteta **izmerjena 15.10.2026: funkcionalna** (6/6 rut status 0, ±7–11 % od referenc, kontinuiteta ≤ baseline HR — vzorec 3 intercity + 3 reference) |
+| Srbija | 6 (Beograd, Novi Sad, …) | ✓ | ✓ | 7 (**Srbijavoz nacionalne železnice** + Beograd prigradski + Lasta, Niš Ekspres, Niš Direkcija, Kragujevac) | — |
+| Severna Makedonija | 6 (Ohrid, Skopje, …) | ✓ | ✓ | 2 (JSP Skopje + Makedonski železnici Transport) | — |
+| Kosovo | 6 (Priština, Prizren, …) | ✓ | ✓ | **0 (potrjeno 15.10.2026)** | javni prevoz |
+| Bolgarija | 6 (Sofija, Plovdiv, Rila, …) | ✓ | ✓ | 4 (Sofija ×2, Burgas, Pleven) | — |
+| Grčija | 6 (Solun, Meteora, …) | ✓ | ✓ | 4 (OASA Atene ×3 + TrainOSE) | — |
+| **SKUPAJ** | **74 · 44 regij · 10 tipov** | 10/10 izvozi | ✓ | **29 feedov / 10 držav (XK edina 0)** | vsebinska kuracija onkraj kanona |
 
-**Zaključek (osvežen):** prvotna „vrzel: celoten POI sloj“ za BA in „širitev SRB/MKD/KOS faza 3+“ sta **zaprta** (F1 kanon s provenance #38). Osnovni zemljevid/routing/geokodiranje pokrijejo vseh 10 držav iz istega ZDROJA (OSM); preostale vrzeli so javni prevoz (brez nacionalnih GTFS → OTP ostaja zavrnjen; avto/peš/kolo pokrije Valhalla) in kuracija onkraj kanonskih 74.
+**Zaključek (osvežen 15.10.2026):** prvotna „vrzel: celoten POI sloj“ za BA in „širitev SRB/MKD/KOS faza 3+“ sta **zaprta** (F1 kanon s provenance #38). Osnovni zemljevid/routing/geokodiranje pokrijejo vseh 10 držav iz istega ZDROJA (OSM). **NOVO dejstvo (15.10.2026, MobilityData katalog @ HEAD, 2488 GTFS schedule feedov — seznam prebran v celoti):** javni GTFS obstaja za 9/10 držav (29 feedov), tudi NACIONALNI železniški (Srbijavoz, HŽPP, ŽPCG, Makedonski železnici, TrainOSE) — premisa izključitve OTP („brez nacionalnega GTFS“) je za 6 držav padla; re-evaluacija OTP je odprto vprašanje za lastniško sodbo (zavrnjeno stanje ostaja, dokler lastnik ne presodi obsega). Kosovo edina brez vira. Preostale vrzeli: vsebinska kuracija onkraj kanonskih 74.
 
 ---
 
@@ -247,7 +247,7 @@ Pravilo: **vsako pravilo/utež pregledna + testirana** (obstoječi standard zakl
 | **5 (šele ob obsegu)** | Viator sandbox pilot; meritve prikazi/kliki/povpraševanja (diagnostika brez osebnih podatkov); PLUS paket ponudnikov | ⬜ ODPRTA | 0 do odobritve | pogodbeni pogoji |
 | **6 (opcija)** | MapLibre + PMTiles (offline/regionalni vektorji) | ⬜ opcija | 0 | paket +4–7× |
 
-**Zavrnjeno z utemeljitvijo** (ne vračati se k temu brez novih dejstev): OR-Tools, GraphHopper, OSRM kot PRIMARNI self-host (javni demo pa dovoljen kot vmesni BJS), OTP (dokler ni nacionalnega GTFS), OSMF javne ploščice v produkciji, MapTiler/Stadia free stopnji (izrecno ne-komercialne), Booking/GYG/Expedia pred odobritvijo.
+**Zavrnjeno z utemeljitvijo** (ne vračati se k temu brez novih dejstev): OR-Tools, GraphHopper, OSRM kot PRIMARNI self-host (javni demo pa dovoljen kot vmesni BJS), OTP (premisa „dokler ni nacionalnega GTFS“ je 15.10.2026 padla za 6 držav — glej §5; re-evaluacija počaka na lastniško sodbo obsega), OSMF javne ploščice v produkciji, MapTiler/Stadia free stopnji (izrecno ne-komercialne), Booking/GYG/Expedia pred odobritvijo.
 
 ---
 

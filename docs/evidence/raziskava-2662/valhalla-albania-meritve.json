@@ -1,0 +1,62 @@
+[
+ {
+  "route": "AL Tirana\u2192Shkod\u00ebr",
+  "status": 0,
+  "km": 98.4,
+  "ref_km": 92,
+  "dev_pct": 7.0,
+  "min": 113,
+  "pts": 1736,
+  "max_gap_km": 0.72
+ },
+ {
+  "route": "AL Tirana\u2192Vlor\u00eb",
+  "status": 0,
+  "km": 155.8,
+  "ref_km": 147,
+  "dev_pct": 6.0,
+  "min": 128,
+  "pts": 2481,
+  "max_gap_km": 1.35
+ },
+ {
+  "route": "AL\u2192ME Shkod\u00ebr\u2192Podgorica",
+  "status": 0,
+  "km": 60.6,
+  "ref_km": 68,
+  "dev_pct": -10.9,
+  "min": 99,
+  "pts": 2595,
+  "max_gap_km": 0.72
+ },
+ {
+  "route": "HR Zagreb\u2192Zadar",
+  "status": 0,
+  "km": 286.2,
+  "ref_km": 287,
+  "dev_pct": -0.3,
+  "min": 187,
+  "pts": 3828,
+  "max_gap_km": 3.88
+ },
+ {
+  "route": "GR Athens\u2192Patras",
+  "status": 0,
+  "km": 211.4,
+  "ref_km": 210,
+  "dev_pct": 0.7,
+  "min": 142,
+  "pts": 3931,
+  "max_gap_km": 2.07
+ },
+ {
+  "route": "MK Skopje\u2192Ohrid",
+  "status": 0,
+  "km": 171.2,
+  "ref_km": 170,
+  "dev_pct": 0.7,
+  "min": 177,
+  "pts": 3489,
+  "max_gap_km": 0.65
+ }
+]

@@ -21,7 +21,9 @@ const BALKAN_F2_EVENT_IDS = [
   "tiff-solun-2026",
   "sarajevo-winter-2027",
   "sofija-film-fest-2027",
-  "exit-novi-sad-2027",
+  // "exit-novi-sad-2027" — odstranjen (2.66.2): festival ukinjen po izdaji
+  // 2025 (Wikipedia več virov + organizatorjev „global tour“); iskrenostni
+  // kanon ne dopušča dogodka, ki ne obstaja.
   "ohridsko-leto-2027",
   "sarajevo-film-fest-2027",
   "dokufest-prizren-2027",
@@ -33,9 +35,9 @@ const balkanSlugs = new Set(DESTINATIONS.filter((d) => d.country !== "SI").map((
 const f2Events = EVENTS.filter((e) => BALKAN_F2_EVENT_IDS.includes(e.id));
 
 describe("balkan-f2 (#41 F2): dogodki po državah", () => {
-  test("8 novih balkanskih dogodkov z izrecno državo", () => {
-    expect(EVENTS.length).toBe(39);
-    expect(f2Events.length).toBe(8);
+  test("7 novih balkanskih dogodkov z izrecno državo (EXIT odstranjen 2.66.2)", () => {
+    expect(EVENTS.length).toBe(38);
+    expect(f2Events.length).toBe(7);
     for (const e of f2Events) expect(e.country).toBeDefined();
   });
 
@@ -48,7 +50,7 @@ describe("balkan-f2 (#41 F2): dogodki po državah", () => {
 
   test("potrjeni dogodki: ISO datum + veljaven razpon (dateEnd >= dateStart)", () => {
     const confirmed = f2Events.filter((e) => !e.dateUnconfirmed);
-    expect(confirmed.length).toBe(4);
+    expect(confirmed.length).toBe(5);
     for (const e of confirmed) {
       expect(e.dateStart).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       if (e.dateEnd) {
@@ -63,7 +65,7 @@ describe("balkan-f2 (#41 F2): dogodki po državah", () => {
 
   test("nepotrjeni dogodki: prazen dateStart + iskren napis (kanon #38)", () => {
     const unconfirmed = f2Events.filter((e) => e.dateUnconfirmed);
-    expect(unconfirmed.length).toBe(4);
+    expect(unconfirmed.length).toBe(2);
     for (const e of unconfirmed) {
       expect(e.dateStart).toBe("");
       expect(e.dateLabel).toContain("še ni potrjen");
@@ -73,7 +75,9 @@ describe("balkan-f2 (#41 F2): dogodki po državah", () => {
   test("provenance: vsak nov dogodek ima source + verifiedAt (website opcionalen po kanonu)", () => {
     for (const e of f2Events) {
       expect(e.source).toMatch(/^https?:\/\//);
-      expect(e.verifiedAt).toBe("2026-10-14");
+      // 2026-10-14 = izvirna F2 verifikacija; 2026-10-15 = 2.66.2 ponovna
+      // verifikacija (potrditev SIFF + Ohrid uradna stran).
+      expect(["2026-10-14", "2026-10-15"].includes(e.verifiedAt ?? "")).toBe(true);
       if (e.website) expect(e.website).toMatch(/^https?:\/\//);
     }
   });

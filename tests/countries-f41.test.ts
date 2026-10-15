@@ -122,11 +122,12 @@ describe("countries-f41 (#41 F0): državna meta", () => {
 
 describe("countries-f41 (#41 F0): eventCountry + državni filter", () => {
   test("②a default SI: 31 izvornih dogodkov ima implicitno SI; F2 balkanski izrecno (nepopremljen kanon #38)", () => {
-    expect(EVENTS.length).toBe(39);
+    expect(EVENTS.length).toBe(38);
     const si = EVENTS.filter((e) => e.country === undefined);
     expect(si.length).toBe(31);
     expect(si.every((e) => eventCountry(e) === "SI")).toBeTrue();
-    expect(EVENTS.filter((e) => e.country !== undefined).length).toBe(8);
+    // EXIT (RS) odstranjen 2.66.2 → 7 balkanskih
+    expect(EVENTS.filter((e) => e.country !== undefined).length).toBe(7);
   });
 
   test("②b izrecna vrednost je ohranjena (F2 bo zapisovala balkanske)", () => {

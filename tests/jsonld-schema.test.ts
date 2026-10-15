@@ -169,14 +169,16 @@ describe("jsonld [enote]: Event @graph (/dogodki, 2.45.0 — QA #38)", () => {
     (e) => e.dateStart === "" || e.dateUnconfirmed
   );
 
-  test("⑲ samo POTRJENI dogodki v @graph (kanonski zaklep 22/31, SDK serija 2.53.0)", () => {
+  test("⑲ samo POTRJENI dogodki v @graph (kanonski zaklep 30/38, verifikacija 2.66.2)", () => {
     const graph = eventsJsonLd(EVENTS, "sl")["@graph"];
     // zaklep: potrditev/razveljavitev datuma zahteva zavesten test
     // (2.49.0: 18 → 20; SDK serija 2026-10-13: 20 → 22; F2 #41 2.56.0:
-    // 22 → 26 — BEMUS, TIFF Solun, Sarajevo Winter, DokuFest potrjeni)
-    expect(graph.length).toBe(26);
-    expect(confirmed.length).toBe(26);
-    expect(unconfirmed.length).toBe(EVENTS.length - 26);
+    // 22 → 26 — BEMUS, TIFF Solun, Sarajevo Winter, DokuFest potrjeni;
+    // 2.66.2: 26 → 30 — SIFF, Tolminator, vigred, jurjevanje potrjeni;
+    // EXIT odstranjen — ukinjen)
+    expect(graph.length).toBe(30);
+    expect(confirmed.length).toBe(30);
+    expect(unconfirmed.length).toBe(EVENTS.length - 30);
     // noben nepotrjen zapis ne sme zaideti kot Event:
     const names = graph.map((g) => g.name);
     for (const u of unconfirmed) expect(names).not.toContain(u.title);
@@ -232,8 +234,9 @@ describe("jsonld [enote]: Event @graph (/dogodki, 2.45.0 — QA #38)", () => {
     const html = jsonldScriptHtml(eventsJsonLd(EVENTS, "de"));
     expect(html).not.toContain("</script>");
     const parsed = JSON.parse(html) as ReturnType<typeof eventsJsonLd>;
-    // 2.49.0: 18 → 20; SDK 2026-10-13: 20 → 22; F2 #41: 22 → 26 potrjenih
-    expect(parsed["@graph"].length).toBe(26);
+    // 2.49.0: 18 → 20; SDK 2026-10-13: 20 → 22; F2 #41: 22 → 26 potrjenih;
+    // 2.66.2: 26 → 30 (SIFF, Tolminator, vigred, jurjevanje)
+    expect(parsed["@graph"].length).toBe(30);
     expect(parsed["@graph"][0].name).toBe(confirmed[0].title);
   });
 

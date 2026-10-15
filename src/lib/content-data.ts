@@ -229,8 +229,15 @@ export const EVENTS: CommunityEvent[] = [
     monthIndex: 5,
     category: "hrana",
     title: "Vinska vigred — največji vinski festival",
-    dateStart: "",
-    dateLabel: "datum še ni potrjen",
+    // Termin 2027 POTRJEN (verifikacija 2026-10-15, zgodovinska-mesta.si —
+    // uradni prireditveni zapis, dejansko brano): „Vinska vigred v Beli
+    // krajini 2027 bo potekala od 21. do 23. maja“ — tridnevni termin,
+    // ujema z opisom „trije dnevi“. Isti zapis ima strukturirano polje
+    // „Datum: 19.05.2027 - 23.05.2027“ (vključno s postavitvijo);
+    // zapisujemo izrecno prozno potrditev organizatorja 21.–23.5.
+    dateStart: "2027-05-21",
+    dateEnd: "2027-05-23",
+    dateLabel: "21. – 23. maj 2027",
     venue: "Metlika, Bela krajina",
     price: "euro",
     featured: true,
@@ -239,9 +246,8 @@ export const EVENTS: CommunityEvent[] = [
     description:
       "Največji vinski festival v Sloveniji v Metliki v Beli krajini — trije dnevi vina, tradicije in glasbe. Vinski plac na Mestnem trgu s pokušinami metliške črnine, izbor najboljše belokranjske pogače in svečana izbira kraljice metliške črnine.",
     destSlug: "crnomelj",
-    dateUnconfirmed: true,
-    source: "https://www.vinska-vigred.si",
-    verifiedAt: "2026-10-12",
+    source: "https://www.zgodovinska-mesta.si/prireditve/vinska-vigred-v-beli-krajini/",
+    verifiedAt: "2026-10-15",
   },
   {
     id: "planica-nordic-festival",
@@ -303,8 +309,13 @@ export const EVENTS: CommunityEvent[] = [
     monthIndex: 6,
     category: "tradicija",
     title: "Jurjevanje v Beli krajini",
-    dateStart: "",
-    dateLabel: "datum še ni potrjen",
+    // Termin 2027 POTRJEN (verifikacija 2026-10-15, zgodovinska-mesta.si —
+    // uradni prireditveni zapis, dejansko brano): „Datum: 21.06.2027 -
+    // 25.06.2027“; izdaja 2026 je potekala 22.–28. junija (jurjevanje.si).
+    // Organizator: RIC Bela krajina.
+    dateStart: "2027-06-21",
+    dateEnd: "2027-06-25",
+    dateLabel: "21. – 25. jun 2027",
     venue: "Draga in Črnomelj, Bela krajina",
     price: "free",
     featured: false,
@@ -313,9 +324,8 @@ export const EVENTS: CommunityEvent[] = [
     description:
       "Najstarejši folklorni festival v Sloveniji, ki praznuje pomlad in belokranjsko tradicijo. Povorka pisanic, tradicionalni plesi v belokranjskih nošah in glasba steljnikov v Črnomlju.",
     destSlug: "crnomelj",
-    dateUnconfirmed: true,
-    source: "https://www.jurjevanje.si",
-    verifiedAt: "2026-10-12",
+    source: "https://www.zgodovinska-mesta.si/prireditve/jurjevanje-v-beli-krajini/",
+    verifiedAt: "2026-10-15",
   },
   {
     id: "festival-soca",
@@ -332,24 +342,28 @@ export const EVENTS: CommunityEvent[] = [
     // MetalDays (dejansko prebrana): „Since 2023 a new festival called
     // Tolminator has been held in Tolmin. The location is the same …“;
     // seznam metal festivalov: „Tolminator | Tolmin | 2023–present | July“.
-    // Termin 2027 NI objavljen; stran organizatorja (tolminator.si) je iz
-    // peskovnika nedosegljiva — povezave NE izmišljujemo (kanon ①d).
+    // Termin 2027 POTRJEN (verifikacija 2026-10-15): tolminator.com
+    // (organizator, dejansko brano — prejšnja opomba o „nedosegljivi
+    // domeni“ se nanaša na napačno domeno tolminator.si; prava je .com):
+    // „28 July - 1 August 2027, Tolmin, Slovenija“ + 2027 „EARLY BIRD“
+    // festivalske vstopnice že v predprodaji (tolminator.mojekarte.si).
     // Zgodovinski kontekst: opis zapisa (reggae/alternative) je ustrezal
     // ugasnjenemu Soča Reggae Riversplashu (2000-ih), ne obstoječi
     // prireditvi — izmišljeni „23. – 25. maj 2027“ je bil odstranjen že
     // 2026-10-12.
-    dateStart: "",
-    dateLabel: "datum še ni potrjen",
+    dateStart: "2027-07-28",
+    dateEnd: "2027-08-01",
+    dateLabel: "28. jul – 1. avg 2027",
     venue: "Sotočje Soče in Tolminke, Tolmin",
     price: "euro2",
     featured: false,
+    website: "https://tolminator.com",
     image: "/content/festival-soca.jpg",
     description:
       "Največji metal festival na Slovenskem se od 2023 goduje na sotočju Soče in Tolminke, na prizorišču, kjer je več kot dve desetletji potekal MetalDays. Trije dnevi na obrežjih smaragdne reke z brezkončnim kampom in festivalskimi plažami.",
     destSlug: "reka-soca",
-    dateUnconfirmed: true,
-    source: "https://en.wikipedia.org/wiki/MetalDays",
-    verifiedAt: "2026-10-13",
+    source: "https://tolminator.com",
+    verifiedAt: "2026-10-15",
   },
   {
     id: "ljubljanski-maraton",
@@ -390,12 +404,17 @@ export const EVENTS: CommunityEvent[] = [
   },
   {
     id: "pivo-in-cvetje-lasko",
-    monthIndex: 6,
+    monthIndex: 7,
     category: "festival",
     title: "Pivo in cvetje Laško",
     // QA #34→#38 (verifikacija 2026-10-12, pivoincvetje.si): termini za 2027
-    // še niso objavljeni — izmišljeni „13. – 15. jun 2027“ odstranjen;
-    // mesec 6 = pričakovano junijsko okno po zgodovini festivala.
+    // še niso objavljeni — izmišljeni „13. – 15. jun 2027“ odstranjen.
+    // KOREKCIJA MESECA (2026-10-15): mesec 6 → 7 — dokumentirana zgodovina
+    // je konsistentno JULIJSKA: 61. izdaja 10.–12. 7. 2026 (lasko.info +
+    // uradna FB objava organizatorja „nedelja, 12. julij 2026“), 60. izdaja
+    // 9. 7. 2025 (lasko.si), 53. izdaja 13.–16. julij (lasko.eu). Uradna
+    // stran pivoincvetje.si je iz peskovnika za JS-vprašanjem — termin
+    // 2027 ostaja iskreno nepotrjen (monthIndex = pričakovano okno).
     dateStart: "",
     dateLabel: "datum še ni potrjen",
     venue: "Center, Laško",
@@ -809,9 +828,15 @@ export const EVENTS: CommunityEvent[] = [
     category: "festival",
     title: "31. Mednarodni filmski festival v Sofiji",
     country: "BG",
-    dateStart: "",
-    dateLabel: "marec 2027 — datum še ni potrjen",
-    dateUnconfirmed: true,
+    // Termin 2027 POTRJEN (verifikacija 2026-10-15): siff.bg (organizator,
+    // dejansko brano; opomba: SSL certifikat strani je potekel — brano z
+    // curl -k): „will take place from 11 to 21 March 2027 in Sofia, with
+    // additional screenings scheduled through the end of March“ (31.
+    // izdaja). Neodvisno: vpisna platforma Eventival (vp.eventival.com)
+    // navaja „from March 11th till March 21st 2027“.
+    dateStart: "2027-03-11",
+    dateEnd: "2027-03-21",
+    dateLabel: "11. – 21. mar 2027",
     venue: "Narodna palača kulture, Sofija",
     price: "euro",
     featured: false,
@@ -821,31 +846,17 @@ export const EVENTS: CommunityEvent[] = [
       "Največji filmski dogodek v Bolgariji (od 1982) marca napolni dvorane Narodne palače kulture in mestnih kinematografov — izbor evropskega avtorskega filma s spremljajočimi projekcijami po Plovdivu, Burgasu in Varni.",
     destSlug: "sofija",
     source: "https://siff.bg/en",
-    verifiedAt: "2026-10-14",
+    verifiedAt: "2026-10-15",
   },
-  {
-    // RS, nepotrjeno (2026-10-14): exitfest.org (uradna stran) še ne
-    // objavlja datumov za 2027; wikipedia dokumentira izroček »štirje
-    // dnevi od drugega četrtka v juliju« na Petrovaradinski trdnjavi.
-    id: "exit-novi-sad-2027",
-    monthIndex: 7,
-    category: "glasba",
-    title: "EXIT festival",
-    country: "RS",
-    dateStart: "",
-    dateLabel: "julij 2027 — datum še ni potrjen",
-    dateUnconfirmed: true,
-    venue: "Petrovaradinska trdnjava, Novi Sad",
-    price: "euro2",
-    featured: false,
-    website: "https://www.exitfest.org/en",
-    image: "/content/exit-novi-sad-2027.jpg",
-    description:
-      "Nagrajeni glasbeni festival na Petrovaradinski trdnjavi (od 2000) — štirje dnevi elektronske, rock in hip-hop glasbe z razgledom na Podunavje. Izroček: začetek v drugem četrtku julija.",
-    destSlug: "novi-sad",
-    source: "https://www.exitfest.org/en",
-    verifiedAt: "2026-10-14",
-  },
+  // RS, 2027: EXIT festival NE obstaja več v tej obliki — zapis odstranjen
+  // (verifikacija 2026-10-15): Wikipedia (več virov): „Years active
+  // 2000–2025“, „The Exit festival itself was cancelled after the 2025
+  // edition“; organizatorji marca 2025 potrdili „there is no possibility
+  // that the [Exit] festival will be held in Serbia [in 2026]“ in
+  // napovedali „global tour“ (zadnji Novi Sad termin: 10.–13. julij 2025).
+  // exitfest.org se 2026 oglašuje kot „EXIT 2026 — Global Tour“.
+  // Izmišljanje terminov za odpovedani festival ni skladno z
+  // iskrenostnim kanonom; destinacija novi-sad ostaja (brez dogodka).
   {
     // MK, nepotrjeno (2026-10-14): ohridskoleto.com.mk (uradna stran,
     // 200 po preusmeritvi na /en/homepage/) še ne objavlja programa za
@@ -856,6 +867,11 @@ export const EVENTS: CommunityEvent[] = [
     category: "festival",
     title: "Ohridsko poletje",
     country: "MK",
+    // Poletje 2027 — ponovna verifikacija 2026-10-15 (ohridskoleto.com.mk,
+    // dejansko brano): 66. izdaja zaključena s svečanim zaprtjem
+    // 20.8.2026; fiksno letno okno 12. julij – 20. avgust od ustanovitve
+    // 1961. Program za 2027 ŠE NI objavljen — datum ostaja iskreno
+    // nepotrjen; monthIndex 7 = pričakovano julij – avgust.
     dateStart: "",
     dateLabel: "poletje 2027 — datum še ni potrjen",
     dateUnconfirmed: true,

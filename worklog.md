@@ -837,3 +837,16 @@ Work Log:
 Stage Summary:
 - Naloga iz trace 1a13f60e7fec1d91 ZAKLJUČENA: napaka analizirana (bun+playwright nezdružljivost, ne napaka veje), popravljena (c7eec8a9), dokazana (8/8 vrat zelenih), poročana (#35)
 - Ostalo za prihodnost: isti e2e fix potrebuje main (ali merge design veje) pred prvim pushom na main z e2e gate na GitLabu; build infra-flake opažen 1× (SaaS small runner)
+
+---
+Task ID: R35-OWNER-GITLAB-UI-FLOW (opazovanje)
+Agent: Z.ai Code (main session)
+Task: Potrditev lastniškega workflow-a (UI spremembe direktno na GitLabu) + spremljanje veje
+
+Work Log:
+- Owner pushal 3 commita po mojem fixu: d7f080a8 (pipeline 2951032958 failed), 419eab38 (2951201745 failed @ e2e, 310 s — realne asercije, fix živ), 8ea9a1a9 (2951321899 SUCCESS 733 s)
+- Veja design/premium-visual-refresh @ 8ea9a1a9 = vseh 8 vrat zelenih; e2e pod node 300+ s z realnimi asercijami (vrata delujejo kot zasnovana)
+- Izpostavljeno ownerju: main brez e2e fixa (prvi push na main pade); merge predlagan prek agenta (avtor po pogodbi → Vercel varno, Lekcija 11)
+
+Stage Summary:
+- Delitev dela potrjena in deluje: owner = UI na GitLabu, CI vrata = e2e kontrakti (16 testov), agent = infra/CI/analiza/merge

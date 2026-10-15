@@ -127,7 +127,7 @@ export function GuideDetail({ guide }: { guide: Guide }) {
         </h2>
         <p className="mt-1.5 text-sm text-muted-foreground">{pick(l, L.destsLead)}</p>
         {dests.length === 0 ? (
-          <p className="mt-4 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+          <p className="mt-4 rounded-xl border border-dashed border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
             {pick(l, L.noDests)}
           </p>
         ) : (

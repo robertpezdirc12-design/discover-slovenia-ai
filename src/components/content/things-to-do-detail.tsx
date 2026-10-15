@@ -283,7 +283,7 @@ export function ThingsToDoDetail({ d }: { d: Destination }) {
           {pick(l, L.activitiesTitle)}
         </h2>
         <div className="mt-5 grid gap-6 sm:grid-cols-2">
-          <Card>
+          <Card className="rounded-2xl border-border/70 shadow-sm">
             <CardHeader>
               <CardTitle className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                 {pick(l, L.activitiesTitle)}
@@ -297,7 +297,7 @@ export function ThingsToDoDetail({ d }: { d: Destination }) {
               ))}
             </CardContent>
           </Card>
-          <Card>
+          <Card className="rounded-2xl border-border/70 shadow-sm">
             <CardHeader>
               <CardTitle className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                 {pick(l, L.bestForTitle)}
@@ -313,7 +313,7 @@ export function ThingsToDoDetail({ d }: { d: Destination }) {
           </Card>
         </div>
 
-        <Card className="mt-6">
+        <Card className="mt-6 rounded-2xl border-border/70 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
               <CalendarDays className="size-4 text-primary" aria-hidden="true" />
@@ -363,7 +363,7 @@ export function ThingsToDoDetail({ d }: { d: Destination }) {
               // — ta rute NE obstaja (stran nikoli zgrajena) → vsak klik 404.
               // Iskrena preusmeritev na hub vodnikov, ki obstaja.
               href={`/vodici`}
-              className="group rounded-xl border bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-green"
+              className="group rounded-2xl border border-border/70 bg-card p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-green"
             >
               <p className="flex items-center gap-2 text-sm font-bold group-hover:text-primary">
                 <span aria-hidden="true">{theme.emoji}</span>
@@ -388,7 +388,7 @@ export function ThingsToDoDetail({ d }: { d: Destination }) {
         </h2>
         <div className="mt-5 space-y-3">
           {faq.map((item) => (
-            <Card key={item.q}>
+            <Card key={item.q} className="rounded-2xl border-border/70 shadow-sm">
               <CardContent className="p-5">
                 <h3 className="text-sm font-bold sm:text-base">{item.q}</h3>
                 <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{item.a}</p>

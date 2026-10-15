@@ -1397,7 +1397,7 @@ function PlannerApp() {
               {saResult.source.kind === "import" && saResult.truncated === true && (
                 <p className="text-sm text-muted-foreground">{pick(l, L.importTruncated)}</p>
               )}
-              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+              <div className="rounded-xl border border-primary/25 bg-gradient-to-br from-primary/[0.07] to-card p-3 text-sm">
                 <p className="font-semibold">{pick(l, L.saSuggestionTitle)}</p>
                 <p className="mt-1 text-muted-foreground">
                   {pick(l, L.saInterestsLabel)}:{" "}
@@ -1481,7 +1481,7 @@ function PlannerApp() {
       </ol>
 
       {/* OBRAZEC */}
-      <Card className="mt-3" id="nacrtuj-obrazec">
+      <Card className="mt-3 overflow-hidden rounded-2xl border-border/70 shadow-sm" id="nacrtuj-obrazec">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="size-5 text-primary" aria-hidden="true" />
@@ -1845,7 +1845,7 @@ function PlannerApp() {
         )}
 
         {!loading && !plan && !error && (
-          <Card>
+          <Card className="rounded-2xl border-border/70 shadow-sm">
             <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
               <RouteIcon className="size-10 text-muted-foreground" aria-hidden="true" />
               <p className="font-semibold">{pick(l, L.emptyTitle)}</p>
@@ -2088,7 +2088,7 @@ function PlanResult({
   return (
     <div>
       {/* Povzetek trak */}
-      <Card className="border-primary/30 bg-primary/5">
+      <Card className="rounded-2xl border-primary/30 bg-gradient-to-br from-primary/[0.07] to-card shadow-sm">
         <CardContent className="p-4 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0">
@@ -2173,7 +2173,7 @@ function PlanResult({
         if (docBlock.length === 0) return null;
         return (
           <div className="mt-6 print:break-inside-avoid">
-            <Card className="border-primary/30">
+            <Card className="rounded-2xl border-border/70 shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <RouteIcon className="size-4" aria-hidden="true" />
@@ -2213,7 +2213,7 @@ function PlanResult({
                     {docBlock.map((d) => (
                       <li
                         key={d.code}
-                        className="rounded-lg border bg-muted/30 p-3 text-sm leading-relaxed"
+                        className="rounded-xl border border-border/70 bg-muted/30 p-3 text-sm leading-relaxed"
                       >
                         <div className="flex flex-wrap items-center gap-2">
                           <span aria-hidden="true" className="text-base">{d.flag}</span>
@@ -2279,7 +2279,7 @@ function PlanResult({
           V natisu se zemljevid izpusti (print:hidden): kartice dneva so
           vir resnice, ploščice se natisnejo nezanesljivo. */}
       <div className="mt-6 print:hidden">
-        <Card>
+        <Card className="rounded-2xl border-border/70 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">{pick(l, L.mapTitle)}</CardTitle>
             <p className="text-xs text-muted-foreground">{pick(l, L.mapDesc)}</p>
@@ -2349,7 +2349,7 @@ function PlanResult({
             const mRow = measuredSummary?.rows[dayIdx];
             const est = mRow?.kind === "estimate" ? dayEstimate(stops) : null;
             return (
-              <Card key={dayIdx}>
+              <Card key={dayIdx} className="overflow-hidden rounded-2xl border-border/70 shadow-sm">
                 <CardHeader className="pb-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <CardTitle className="text-base">{dayTitle}</CardTitle>

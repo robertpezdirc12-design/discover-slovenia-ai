@@ -819,7 +819,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
                 — obstoječi natis (dnevi + noga) ostaja nedotaknjen. */}
             {totalStops >= 2 && (
               <div className="print:hidden">
-                <Card>
+                <Card className="rounded-2xl border-border/70 shadow-sm">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base">{pick(l, L.mapTitle)}</CardTitle>
                     <p className="text-xs text-muted-foreground">{pick(l, L.mapDesc)}</p>
@@ -839,7 +839,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
                 v DOM pod VSEMI zavihki (Pot/Sodelovanje/Ankete/Klepet/
                 Rezervacije), zato ena napaka povzroča preliv povsod. */}
             <div className="grid gap-4 sm:grid-cols-2 print:hidden">
-              <Card className="min-w-0">
+              <Card className="min-w-0 rounded-2xl border-border/70 shadow-sm">
                 <CardContent className="p-5">
                   <h3 className="flex items-center gap-2 text-sm font-bold">
                     <QrCode className="size-4 text-primary" aria-hidden="true" />
@@ -864,7 +864,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
                 </CardContent>
               </Card>
               {/* POLIR7: min-w-0 tudi na kartici vira — isti predmet mreže. */}
-              <Card className="min-w-0 border-primary/25 bg-primary/5">
+              <Card className="min-w-0 rounded-2xl border-primary/25 bg-gradient-to-br from-primary/[0.07] to-card shadow-sm">
                 <CardContent className="flex flex-col justify-start p-5">
                   <h3 className="flex items-center gap-2 text-sm font-bold">
                     <CloudUpload className="size-4 text-primary" aria-hidden="true" />
@@ -961,7 +961,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
       {localPlan === null ? (
         <>
           <PageHeader kicker={pick(l, L.kicker)} title={pick(l, L.notFoundTitle)} />
-          <p className="mt-4 rounded-lg border border-dashed p-4 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-4 rounded-xl border border-dashed border-border/70 bg-muted/20 p-4 text-sm leading-relaxed text-muted-foreground">
             {pick(l, L.notFoundBody)}
           </p>
           <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -1006,7 +1006,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
           </PageHeader>
 
           {/* Iskren pasice: shrani v oblak za sodelovanje v živo (48-a) */}
-          <Card className="mt-6 border-primary/30 bg-primary/5">
+          <Card className="mt-6 rounded-2xl border-primary/30 bg-gradient-to-br from-primary/[0.07] to-card shadow-sm">
             <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="flex items-center gap-2 text-sm font-semibold">
@@ -1107,7 +1107,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
               pogoj vsaj 2 točki skupaj, v natisu se izpusti (print:hidden). */}
           {localPlan.days.reduce((n, d) => n + d.locations.length, 0) >= 2 && (
             <div className="mt-10 print:hidden">
-              <Card>
+              <Card className="rounded-2xl border-border/70 shadow-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base">{pick(l, L.mapTitle)}</CardTitle>
                   <p className="text-xs text-muted-foreground">{pick(l, L.mapDesc)}</p>
@@ -1124,7 +1124,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
               veji (defensivecss „Minimum Content Size In CSS grid"): nowrap URL
               pod QR kodo raznese stolpec mreže na ozkih ekranih. */}
           <div className="mt-10 grid gap-4 sm:grid-cols-2 print:hidden">
-            <Card className="min-w-0">
+            <Card className="min-w-0 rounded-2xl border-border/70 shadow-sm">
               <CardContent className="p-5">
                 <h3 className="flex items-center gap-2 text-sm font-bold">
                   <QrCode className="size-4 text-primary" aria-hidden="true" />
@@ -1144,7 +1144,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
               </CardContent>
             </Card>
             {/* POLIR7: min-w-0 tudi na kartici vira — isti predmet mreže. */}
-            <Card className="min-w-0 border-primary/25 bg-primary/5">
+            <Card className="min-w-0 rounded-2xl border-primary/25 bg-gradient-to-br from-primary/[0.07] to-card shadow-sm">
               <CardContent className="flex flex-col justify-start p-5">
                 <h3 className="flex items-center gap-2 text-sm font-bold">
                   <HardDrive className="size-4 text-primary" aria-hidden="true" />
@@ -1292,7 +1292,7 @@ function PlanDays({
           const travelText = travelRows(dayIdx);
           return (
             <li key={day.day}>
-              <Card>
+              <Card className="rounded-2xl border-border/70 shadow-sm">
                 <CardContent className="p-5">
                   <h2 className="text-lg font-bold tracking-tight">
                     {dayLabel(day.day)}
@@ -1320,7 +1320,7 @@ function PlanDays({
                         return (
                           <li
                             key={`${day.day}-${i}-${loc.name}`}
-                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-background px-4 py-3"
+                            className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/70 bg-background px-4 py-3 shadow-sm"
                           >
                             <span className="flex min-w-0 items-center gap-3">
                               {loc.time ? (

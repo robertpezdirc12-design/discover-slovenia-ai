@@ -850,3 +850,21 @@ Work Log:
 
 Stage Summary:
 - Delitev dela potrjena in deluje: owner = UI na GitLabu, CI vrata = e2e kontrakti (16 testov), agent = infra/CI/analiza/merge
+
+---
+Task ID: R35-SYNC-GITLAB-GITHUB-VERCEL
+Agent: Z.ai Code (main session)
+Task: "sinhroniziraj github gitlab ker sem na gitlabu vmesnike spremenil in pushaj na vercel samo to naredi" (trace 1a13ff5593666e19)
+
+Work Log:
+- Head veje = 8ea9a1a9, pipeline 2951321899 SUCCESS (8/8 vrat) → zeleno luč; commit lista: 36 lastniških commitov (robertpezdirc8@gmail.com) + moj c7eec8a9
+- git fetch GitLab (WAF spustil): gitlab-premium @ 8ea9a1a9; **merge-base(main, veja) = e610828 = glava main** → čist potomec, brez konfliktov; 32 datotek, +306/−198, package.json nespremenjen (verzija ostaja 2.66.2)
+- Lokalna vrata ob merge-u: eslint 0 · tsc 0 · bun test 2344/2344 (26179 expect)
+- Merge **0232f9c** (--no-ff): avtor + committer = pogodba (robertpezdirc12-design <robert.pezdirc12@gmail.com>) — Lekcija 11 varno; **git diff gitlab-premium HEAD = 0** (drevo ≡ zeleni glavi veje)
+- Push: GitLab main e610828..0232f9c ✓ · GitHub main e610828..0232f9c ✓ → **parity SHA-exact obnovljena na 0232f9c**
+- Vercel deploy verifikacija: marker **"Izbor uredništva"** (nov editorial featured panel) na / — poll 1: 0, **poll 2 (≈70 s po pushu): 1 = ŽIVO**; /api/health ok, 2.66.2 (pričakovano — owner ni btempnil)
+- GitLab main pipeline 2951481035 (0232f9c) = running ob zaključku (vsebina identična zeleni veji → pričakovano zeleno)
+
+Stage Summary:
+- Sinhronizacija ZAKLJUČENA: GitHub = GitLab = 0232f9c; produkcija (Vercel) = novi premium UI živo; avtorstvo glavnega commita po pogodbi (Vercel vrata varna)
+- Lekcija 11 ponovno potrjena v praksi: merge commit z ne-verificiranim emailom bi bil nov stall — --no-ff + pogodbena avtorstva obvezna pri vsakem lastniškem merge-u z GitLaba (owner commiti so robertpezdirc8@gmail.com → vedno mergati z merge commitom, ne fast-forward!)

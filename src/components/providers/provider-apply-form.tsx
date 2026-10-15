@@ -315,7 +315,7 @@ export default function ProviderApplyForm() {
 
   if (done) {
     return (
-      <Card id="prijava-ponudnika" className="scroll-mt-24 border-primary/30">
+      <Card id="prijava-ponudnika" className="scroll-mt-24 rounded-2xl border-primary/30 bg-gradient-to-br from-primary/[0.05] to-card shadow-sm">
         <CardHeader>
           <div className="flex items-center gap-2">
             <ShieldCheck className="size-5 text-primary" aria-hidden="true" />
@@ -331,7 +331,7 @@ export default function ProviderApplyForm() {
   }
 
   return (
-    <Card id="prijava-ponudnika" className="scroll-mt-24">
+    <Card id="prijava-ponudnika" className="scroll-mt-24 rounded-2xl border-border/70 shadow-sm">
       <CardHeader>
         <CardTitle className="text-base">{t("title")}</CardTitle>
         <CardDescription>{t("lead")}</CardDescription>
@@ -409,7 +409,7 @@ export default function ProviderApplyForm() {
                 id="p-search-listbox"
                 role="listbox"
                 aria-label={t("searchLabel")}
-                className="absolute top-full right-0 left-0 z-20 mt-1 max-h-64 overflow-y-auto rounded-md border bg-background shadow-md"
+                className="absolute top-full right-0 left-0 z-20 mt-1 max-h-64 overflow-y-auto rounded-xl border border-border/70 bg-background shadow-xl"
               >
                 {searchState === "open" &&
                   searchHits.map((hit, i) => (

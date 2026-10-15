@@ -256,7 +256,7 @@ export function CheckoutModal({
           zaključka nakupa drsi ZNOTRAJ dialoga namesto da se odreže dno
           (shadcn-ui/ui #16); dvh namesto vh — mobilna vrstica brskalnika
           ne ukrade več spodnjega robu (enako vh na namizju). */}
-      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-md">
+      <DialogContent className="max-h-[85dvh] overflow-y-auto rounded-2xl border-border/70 shadow-2xl sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>{t("description")}</DialogDescription>
@@ -266,7 +266,7 @@ export function CheckoutModal({
           <div
             role="status"
             aria-live="polite"
-            className="flex flex-col gap-3 rounded-xl border border-primary/40 bg-primary/10 p-4"
+            className="flex flex-col gap-3 rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/[0.08] to-card p-4 shadow-sm"
           >
             <div className="flex items-center gap-2">
               <CheckCircle2
@@ -327,7 +327,7 @@ export function CheckoutModal({
         ) : (
           <div className="flex flex-col gap-4">
             {/* Izdelek */}
-            <div className="rounded-xl border bg-card p-4">
+            <div className="rounded-2xl border border-border/70 bg-gradient-to-br from-card to-muted/20 p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="leading-tight font-bold">{product.name}</p>

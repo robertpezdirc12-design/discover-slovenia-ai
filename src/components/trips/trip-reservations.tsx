@@ -1416,7 +1416,7 @@ export function TripReservations({
         : confirmTarget.row.stopName;
 
   return (
-    <Card>
+    <Card className="rounded-2xl border-border/70 shadow-sm">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <TicketCheck className="size-5 text-primary" aria-hidden="true" />
@@ -1487,7 +1487,7 @@ export function TripReservations({
               // ponujamo poti (iskrenost).
               const navDest = b.stopSlug ? getDestination(b.stopSlug) : null;
               return (
-                <li key={b.id} className="rounded-lg border p-3">
+                <li key={b.id} className="rounded-xl border border-border/70 bg-card p-3 transition-colors hover:bg-muted/20">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-xs font-medium text-muted-foreground">
                       Dan {b.dayIndex}

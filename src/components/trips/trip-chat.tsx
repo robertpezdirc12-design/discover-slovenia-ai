@@ -304,7 +304,7 @@ export function TripChat({ shareId, createdAt, canPost, myName }: TripChatProps)
 
   return (
     <section aria-label="Skupinski klepet" className="print-hide print:hidden">
-      <Card className="border-border/60">
+      <Card className="rounded-2xl border-border/70 shadow-sm">
         <CardContent className="p-4 sm:p-6">
           {/* === Naslov odseka + živost + števec === */}
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -359,7 +359,7 @@ export function TripChat({ shareId, createdAt, canPost, myName }: TripChatProps)
           {/* === Klepet — kronološki seznam z drsom === */}
           <div
             ref={scrollRef}
-            className="mt-4 max-h-96 space-y-4 overflow-y-auto pr-2"
+            className="mt-4 max-h-96 space-y-4 overflow-y-auto rounded-xl border border-border/60 bg-muted/15 p-3 pr-2"
             aria-label="Zgodovina klepeta"
           >
             {loadError ? (

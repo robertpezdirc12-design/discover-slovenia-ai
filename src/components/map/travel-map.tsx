@@ -821,7 +821,7 @@ function DestinationPopup({
 }) {
   return (
     <div className="w-[218px]">
-      <div className="relative aspect-[3/2] overflow-hidden rounded-md bg-muted">
+      <div className="relative aspect-[3/2] overflow-hidden rounded-lg bg-muted">
         <Image
           src={d.image}
           alt={`${d.name} — ${d.tagline}`}
@@ -2079,7 +2079,7 @@ export default function TravelMap() {
             {t("listTitle")} · {t("count")(results.length)}
           </p>
           {results.length === 0 ? (
-            <div className="rounded-xl border border-dashed p-6 text-center">
+            <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-6 text-center">
               <MapPin className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
               <p className="mt-2 text-sm font-semibold">{t("emptyTitle")}</p>
               <p className="mt-1 text-sm text-muted-foreground">{t("emptyLead")}</p>
@@ -2108,7 +2108,7 @@ export default function TravelMap() {
                       onClick={() => focusDestination(d)}
                       aria-current={active ? "true" : undefined}
                       className={cn(
-                        "flex w-full items-center gap-3 rounded-lg border bg-card p-2.5 text-left transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                        "group flex w-full items-center gap-3 rounded-xl border border-border/70 bg-card p-2.5 text-left transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                         active
                           ? "border-primary/60 shadow-md"
                           : "hover:border-primary/30 hover:shadow-sm"
@@ -2142,7 +2142,7 @@ export default function TravelMap() {
       {/* POLIR14: legenda na mobilnem zadnja (max-lg:order-7) — kot na
           namizju (DOM konec = mobilni konec); brez razreda bi v fleks
           koloni roota skočila na VRH (privzeti order:0 pred order-1…6). */}
-      <div className="mt-4 flex flex-col gap-3 rounded-xl border bg-card/60 p-4 sm:flex-row sm:items-center sm:justify-between max-lg:order-7">
+      <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-border/70 bg-gradient-to-br from-card to-muted/30 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between max-lg:order-7">
         <div>
           <p className="text-xs font-bold tracking-[0.12em] text-muted-foreground uppercase">
             {t("legend")}

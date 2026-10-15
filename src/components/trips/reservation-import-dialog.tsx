@@ -242,7 +242,7 @@ export function ReservationImportDialog({
           {pick(l, L.trigger)}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="max-h-[85dvh] overflow-y-auto rounded-2xl border-border/70 shadow-2xl sm:max-w-2xl">
         {/* POLIR11: dvh namesto vh — uvoz rezervacije ne sega več pod mobilno
             naslovno vrstico brskalnika (enako vh na namizju). */}
         <DialogHeader>
@@ -254,7 +254,7 @@ export function ReservationImportDialog({
         </DialogHeader>
 
         {done ? (
-          <div className="flex flex-col items-start gap-3 rounded-xl border border-primary/40 bg-primary/10 p-4">
+          <div className="flex flex-col items-start gap-3 rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/[0.08] to-card p-4 shadow-sm">
             <p className="flex items-center gap-2 font-bold text-primary">
               <ShieldCheck className="size-5" aria-hidden="true" />
               {pick(l, L.done)}
@@ -295,7 +295,7 @@ export function ReservationImportDialog({
           form && (
             <div className="flex flex-col gap-3">
               {parsed?.notes && parsed.notes.length > 0 && (
-                <ul className="max-h-32 space-y-1 overflow-y-auto rounded-lg bg-muted p-3 text-xs text-muted-foreground scrollbar-slim">
+                <ul className="max-h-32 space-y-1 overflow-y-auto rounded-xl border border-border/60 bg-muted/60 p-3 text-xs text-muted-foreground scrollbar-slim">
                   {parsed.notes.map((n, i) => (
                     <li key={i}>· {n}</li>
                   ))}

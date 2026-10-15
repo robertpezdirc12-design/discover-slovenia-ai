@@ -365,7 +365,7 @@ export function TripDatesPanel({
         )}
 
         {!tripDates ? (
-          <p className="mt-4 rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
+          <p className="mt-4 rounded-xl border border-dashed border-border/70 bg-muted/30 p-3 text-xs text-muted-foreground">
             {pick(l, L.noneYet)}
           </p>
         ) : (

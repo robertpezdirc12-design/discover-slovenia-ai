@@ -368,7 +368,7 @@ export function TripPolls({ shareId, createdAt, canCreate, canVote }: TripPollsP
   // RENDER
   // ========================================================================
   return (
-    <Card className="print-hide print:hidden overflow-hidden">
+    <Card className="print-hide print:hidden overflow-hidden rounded-2xl border-border/70 shadow-sm">
       <CardContent className="p-4 sm:p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -416,7 +416,7 @@ export function TripPolls({ shareId, createdAt, canCreate, canVote }: TripPollsP
           <form
             id="poll-form"
             onSubmit={(e) => void submitPoll(e)}
-            className="mb-6 space-y-3 rounded-lg border border-border bg-muted/30 p-4"
+            className="mb-6 space-y-3 rounded-xl border border-border/70 bg-muted/30 p-4"
           >
             <Input
               value={question}

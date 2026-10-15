@@ -73,7 +73,7 @@ export function PaymentReturnBanner() {
       <div
         role="status"
         aria-live="polite"
-        className="mb-6 flex items-start gap-3 rounded-xl border border-primary/40 bg-primary/10 p-4"
+        className="mb-6 flex items-start gap-3 rounded-2xl border border-primary/35 bg-gradient-to-br from-primary/[0.08] to-card p-4 shadow-sm"
       >
         <CheckCircle2
           className="mt-0.5 size-6 shrink-0 text-primary"
@@ -114,7 +114,7 @@ export function PaymentReturnBanner() {
       <div
         role="status"
         aria-live="polite"
-        className="mb-6 flex items-start gap-3 rounded-xl border bg-card p-4"
+        className="mb-6 flex items-start gap-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm"
       >
         <XCircle
           className="mt-0.5 size-6 shrink-0 text-muted-foreground"

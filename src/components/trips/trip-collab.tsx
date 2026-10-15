@@ -179,7 +179,7 @@ export function TripInviteBanner({
   const loggedIn = sessionStatus === "authenticated" && Boolean(session?.user);
 
   return (
-    <Card className="border-primary/40 ring-1 ring-primary/20">
+    <Card className="rounded-2xl border-primary/35 bg-gradient-to-br from-primary/[0.06] to-card shadow-sm ring-1 ring-primary/10">
       <CardContent className="space-y-3 p-4">
         <div className="flex items-center gap-2">
           <UserPlus className="h-4 w-4 text-primary" aria-hidden="true" />
@@ -484,7 +484,7 @@ export function TripCollaboration({
 
   if (loadError) {
     return (
-      <Card>
+      <Card className="rounded-2xl border-border/70 shadow-sm">
         <CardContent className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
           <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
           <span>Sodelovanje trenutno ni na voljo: {loadError}</span>
@@ -495,7 +495,7 @@ export function TripCollaboration({
 
   if (sessionStatus === "loading" && !agg) {
     return (
-      <Card>
+      <Card className="rounded-2xl border-border/70 shadow-sm">
         <CardContent className="p-4 text-sm text-muted-foreground" role="status">
           {L.loadingRevisions[lang]}
         </CardContent>
@@ -508,7 +508,7 @@ export function TripCollaboration({
   if (!agg) return null;
 
   return (
-    <Card>
+    <Card className="rounded-2xl border-border/70 shadow-sm">
       <CardHeader className="pb-3">
         <CardTitle className="flex flex-wrap items-center gap-2 text-base">
           <Users className="h-4 w-4" aria-hidden="true" />

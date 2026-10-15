@@ -168,7 +168,7 @@ export function LokaliExplorer() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <PageHeader kicker={t("kicker")} title={t("title")} lead={t("lead")}>
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {/* POLIR7 (2.34.0): whitespace-normal — badge.tsx osnova ima whitespace-nowrap,
@@ -184,7 +184,7 @@ export function LokaliExplorer() {
       </PageHeader>
 
       {/* ── Nadzorna vrstica ─────────────────────────────────────────── */}
-      <div className="mt-8 grid gap-3 md:grid-cols-[1fr_auto_auto_auto]">
+      <div className="mt-8 grid gap-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm sm:p-5 md:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
         <div className="relative">
           <Search
             className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
@@ -278,7 +278,7 @@ export function LokaliExplorer() {
           </Button>
         </motion.div>
       ) : (
-        <ul className="mt-6 grid list-none gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="mt-6 grid list-none gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {results.map((x) => {
             const cat = LOKAL_CATEGORIES[x.category];
             const weather = WEATHER_FIT_LABELS[x.weather];

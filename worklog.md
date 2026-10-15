@@ -667,3 +667,25 @@ Stage Summary:
 - Lekcija 9 (nova): CI konfiguracija je KODA, ki se mora izvesti vsaj enkrat lokalno pred prvim zares tekом — e2e job je bil od 2.52.0 TEORETIČNO rdeč (dev webServer + brez seeda), a tega nihče ni vedel, ker se ni nikoli zagnal (identity verification). Lokalna CI-paritetna verifikacija ga je ujela brez porabe lastniških minut.
 - Stanje: GitLab CI workaround = pripravljen 100 % (parity ✅ · runner registriran ✅ · YAML popravljen + dokazano lokalno 16/16 ✅) — ostaja SAMO lastniška preveritev istovetnosti (2 min, kartica/SMS).
 - Popravek prejšnjega zapisa: hipoteza o kvoti (R35-GITLAB-PAT) je bila ovržena že R35-GITLAB-CI-PROBE; to zapis potrjuje končno stanje.
+
+---
+Task ID: R35-PG-LIVE-2.66.0
+Agent: Z.ai Code (session web-3612f14e, trace 1a13e501cd1ff1a5)
+Task: #35 — "odlicno nadaljuj raziskuj razvija"; GitLab CI (identity verification) in GitHub Actions (billing) še čakata lastnika → samostojni razvoj: lekcija 9 (»CI/konfig je koda, ki se mora vsaj enkrat izvesti«) prenesena na podatkovno plast — db:pg:deploy je bil ŠE TEORETIČEN (runbook §2+§3 nikoli izvedeni).
+
+Work Log:
+- Re-ground (state-drift): main @ 176af1b = 2.65.3 (PR #61 že merge-an po prejšnjem povzetku); GitHub API potrjil, da Actions runi 15.10. ob 06:38–06:39 NISO startali — annotacija: "The job was not started because recent account payments have failed or your spending limit needs to be increased" (billing zid potrjen z dokazom, ne zgolj domnevo; sync.yml failure = isti vzorec). GitLab API iz peskovnice spet tih (WAF IP-flag) — promet minimaliziran.
+- ŽIVI PostgreSQL 17.11 v peskovnici (zonky user-space binarke, brez root-a): runbook §2 shadow replay → NATANKO "-- This is an empty migration." (migracije ≡ shema); §3 deploy → 0_init apliciran; idempotenca (2. deploy = no pending); migrate status up to date; db:integrity → 29 tabel / 1 migracija; db:pg:generate + seed NAD PG → 74 destinacij + 34 lokali; integrity ponovno → Destination 74/Listing 34. Vse ZELENO.
+- Ujeta 2 dokumentacijska drifta: runbook pričakuje 27 tabel (realno 29 = št. modelov), seed komentar trdi 38 (realno 74) — oba popravljena.
+- RAZVIJ: nov script scripts/pg-live-verify.ts (2.66.0) — celotna §2+§3+seed sekvenca kot fail-closed samokalibracijska CI vrata (17 korakov, ~7,5 s, asertira izhode ne zgolj exit kode; tabele ≡ modeli — brez trdo-kodiranih števil). Nova stopnja `pg-live` v .gitlab-ci.yml + nov korak v .github/workflows/ci.yml (pariteta; artefakt reports/pg-live-report.json tudi ob padcu). Testna zaklenitev ⑰–⑲ v tests/ci-smoke-contract.test.ts.
+- Bun 1.3.x pasti IZMERJENE in zaklenjene: (a) postinstall privzeto blokiran → @embedded-postgres binarke ne najdejo libicuuc.so.60 → skripta hidrira pg-symlinks.json s KOPIJAMI (peskovnica prepoveduje symlink-e); (b) Bun + host "localhost" → AggregateError (paketova createDatabase se obesi) → vse veze 127.0.0.1 + timeout 5s; (c) import embedded-postgres IZGUBI process.exitCode (izhod 0 tudi ob RDEČO — ročno dokazano) → ekspliciten process.exit(await main()). Kontrola: pg import SAM ni prizadet → db-integrity/cutover-gate/migrate-legacy zdravi.
+- Rdeča pot dokazana: zaseden port → REZULTAT: RDEČO + exit 1.
+- Vrata: bun install --frozen-lockfile ✓ · eslint 0 ✓ · tsc 0 ✓ · 2343/2343 testov (26166 expect, +3) ✓ · build standalone ✓ · obe CI YAML validni ✓ · pg-live 17/17 (7,5 s) ✓.
+- COMMIT 89b6695 (2.66.0, 16 datotek, +635/−17): push GitHub ✓ (176af1b..89b6695) + push GitLab ✓ (UA lekcija drži) — PARITETA OHRANJENA. Produkcija sledi main (Vercel) — pričakovano health 2.66.0 po deployu (CI/docs-only, brez UI spremembe → brskalniška zlata pot ni potrebna, kanon).
+- Dokazilna datoteka: docs/evidence/pg-live-verify/summary.md; runbook POPRAVLJEN (§2 živo-dokaz opomba, §3 27→29 samokalibracija, dnevnik pred-verifikacije vrstica).
+
+Stage Summary:
+- Owner-item ⑤ (db:pg:deploy/cutover): PODATKOVNA PLAST NI VEČ TEORETIČNA — shadow replay + deploy + idempotenca + seed dokazani nad živim PG 17; od 2.66.0 se ponavljajo na vsak push takoj, ko CI teče. Preostanek cutoverja ostaja lastniški (backup stare baze, migrate:legacy, health/E2E na produkciji).
+- Novo odkritje o GitHub Actions: runi se VIDÍ (created/completed) ampak "not started — payments have failed" — ključna diagnostika za lastnika: NI problem kvote minut, ampak SPEND LIMIT / plačilna metoda (Billing & plans → spending limit ≥ 0 ali veljavna kartica).
+- Verzija 2.66.0 · main = 89b6695 · GitLab = GitHub · produkcija se posodobi sama.
+- Lekcija 10 (nova): process.exitCode je pod bun 1.3.x nezanesljiv, če katerikoli import drži živ handle (embedded-postgres) — fail-closed skripte MORajo zaključiti z eksplicitnim process.exit(koda); test ⑲ to zaklene.

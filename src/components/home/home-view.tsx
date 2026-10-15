@@ -610,11 +610,19 @@ export function HomeView({
           pod glavo. Temne stopnje gradienta: svetli --primary (oklch 0.586)
           bi belo besedilo spodnesel na ~2–2,9:1 — izrecne temnozelene stopnje
           držijo ≥ 4,5:1 (via #0e5c28 = 8,15:1 za čisto belo). */}
-      <section className="relative -mt-16 overflow-hidden bg-gradient-to-br from-primary via-primary to-[#1e4f2d] text-white dark:from-[#0b4d20] dark:via-[#0e5c28] dark:to-[#063615]">
+      <section
+        className="relative -mt-16 overflow-hidden bg-[#0b3029] text-white"
+        style={{
+          backgroundImage:
+            "linear-gradient(90deg, rgba(5, 28, 25, 0.88) 0%, rgba(5, 28, 25, 0.62) 48%, rgba(5, 28, 25, 0.20) 100%), linear-gradient(0deg, rgba(5, 28, 25, 0.40), transparent 55%), url('https://images.unsplash.com/photo-1506377585622-bedcbb027afc?auto=format&fit=crop&w=2400&q=85')",
+          backgroundPosition: "center 48%",
+          backgroundSize: "cover",
+        }}
+      >
         {/* Dekorativni vzorec (radialne lise, brez zunanjih slik) */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_20%_20%,white_0,transparent_12%),radial-gradient(circle_at_80%_60%,white_0,transparent_16%)]"
+          className="pointer-events-none absolute inset-0 opacity-[0.08] [background-image:radial-gradient(circle_at_20%_20%,white_0,transparent_12%),radial-gradient(circle_at_80%_60%,white_0,transparent_16%)]"
         />
         <div className="relative mx-auto flex w-full max-w-7xl flex-col items-center px-4 py-16 text-center sm:px-6 sm:py-24 lg:px-8">
           {/* POLIR15-b (2.42.0): SEZONSKI ČIP nad kickerjem — sezonska

@@ -250,7 +250,7 @@ export function DestinationDetail({ d }: { d: Destination }) {
           Android) hero ne zajema več površine pod vrstico; dvh zavrnjen
           (WebKit #266835 — jank na tokovnih blokih); v brezglavem
           brskalniku svh ≡ vh (cap nespremenjen). */}
-      <div className="relative aspect-[21/9] max-h-[46svh] w-full overflow-hidden bg-muted">
+      <div className="relative min-h-[320px] max-h-[54svh] w-full overflow-hidden bg-muted sm:min-h-[380px] lg:min-h-[440px]">
         <Image
           src={d.image}
           alt={`${d.name} — ${d.tagline}`}
@@ -287,9 +287,9 @@ export function DestinationDetail({ d }: { d: Destination }) {
         )}
       </div>
 
-      <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         {l !== "sl" && pick(l, L.enNote) && (
-          <p className="mb-6 rounded-md border border-dashed border-primary/30 bg-primary/5 px-4 py-2.5 text-xs text-muted-foreground">
+          <p className="mb-6 rounded-xl border border-primary/25 bg-primary/[0.04] px-4 py-3 text-xs leading-relaxed text-muted-foreground">
             {pick(l, L.enNote)}
           </p>
         )}
@@ -323,8 +323,8 @@ export function DestinationDetail({ d }: { d: Destination }) {
         </div>
 
         {/* Praktični podatki */}
-        <Card className="mt-8">
-          <CardContent className="grid gap-x-8 gap-y-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
+        <Card className="mt-8 overflow-hidden rounded-2xl border-border/70 shadow-sm">
+          <CardContent className="grid gap-x-8 gap-y-5 p-5 sm:grid-cols-2 sm:p-6 lg:grid-cols-3">
             <div className="flex items-center gap-2.5">
               <Star className="size-5 shrink-0 fill-primary text-primary" aria-hidden="true" />
               <div>

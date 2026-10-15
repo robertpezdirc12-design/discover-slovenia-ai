@@ -771,3 +771,31 @@ Stage Summary:
 - Faza 3 (Photon self-host) = DOKAZANO IZVEDLJIVO (koda ista, override je edini korak); import regije ≈ 20–40 min; indeks ≈ 1,5–2,5 GB — sizing korekcija iz meritev, ne ocen.
 - Runbook zdaj ima 3 živo dokazane plasti: §2+§3 DB (2.66.0) · §3.1.1 Photon (2.66.1) · §1 merjene vrstice (2.65.2) — edina nedokazana: §4 Valhalla build (peskovniško neizvedljivo, VPS-ready).
 - Lekcija (manjša): peskovniški nohup/ozadnji procesi so žanjeani TUDI med rundami — vsi dolgi prenosi/delovne sekvence v ENEM ukazu z timeout; curl -C - resume za večje datoteke.
+
+---
+Task ID: R35-RAZISKUJ-2.66.2
+Agent: Z.ai Code (main session)
+Task: "nadaljuj raziskuj poliraj nadgrajuj" — raziskovalna verifikacija: termini dogodkov, GTFS za 10 držav, Valhalla meritve Albanije (vse nepotrjeno → preverjeno po iskrenostnem kanonu #38)
+
+Work Log:
+- Re-ground: repo @ 592b9fa (2.66.1), produkcija 2.66.1 živo; vse faze #35 oddane → izbrana vsebinska raziskava (3 plasti [nepotrjeno] → preverjeno)
+- CI probe: pipeline 2950120750 instant-fail 0 jobs → identity verification ŠE NEOPRAVLJENA (owner vrata nedotaknjena)
+- Dogodki: 13 dateUnconfirmed zapisov pregledanih; 13 web-search + primarne strani (siff.bg -k zaradi poteklega SSL, tolminator.com, zgodovinska-mesta.si ×2, ohridskoleto.com.mk, postojna.si, bled.si, visitmaribor.si via page_reader, wikipedia via page_reader)
+- POTRJENO: SIFF 11.–21.3.2027, Tolminator 28.7.–1.8.2027 (+ website dodan, prava domena .com), vigred 21.–23.5.2027, jurjevanje 21.–25.6.2027 (source+verifiedAt 2026-10-15)
+- ODSTRANJEN exit-novi-sad-2027 (+ slika): Wikipedia "Years active 2000–2025" / "cancelled after the 2025 edition" / "no possibility in Serbia [in 2026]" + global tour — tombstone komentar v kodi
+- KOREKCIJA pivo-in-cvetje-lasko monthIndex 6→7 (61. izdaja 10.–12.7.2026 lasko.info+FB, 60. 9.7.2025 lasko.si, 53. 13.–16.7. lasko.eu; pivoincvetje.si za JS-vprašanjem)
+- GTFS: MobilityData katalog @ HEAD prebran v celoti (git tree, 2488 feedov; GitHub contents API cap 1000 ujet in obvožen) → 29 feedov / 10 držav, XK 0 potrjeno; nacionalne železnice Srbijavoz/HŽPP/ŽPCG/MŽ/TrainOSE; opomba: Srbija = ISO rs- (ne sr-)
+- OTP premisa ("dokler ni nacionalnega GTFS") padla za 6 držav → §9 zapisana kot odprto vprašanje za lastniško sodbo (stanje zavrnitve ne spremenjeno samovoljno)
+- Valhalla AL meritve: 6 klicev FOSSGIS fair-use (5 s razmik), dekoder = decodePolyline6: 6/6 status 0; AL ±7–11 % od referenc; max gap AL 1,35 km < HR baseline 3,88 km → funkcionalno (vzorec 3+3, izrecno ne avdit)
+- Uveljavljeno: content-data.ts (4 potrditve + 1 odstranitev + 2 popravka), doc §2b/§5/§9, evidence raziskava-2662 (summary + surovi JSON), verzija 2.66.2 (6 mest), testni literali (balkan-f2 38/31/7/5/2, events-p0 38, events-past 8/12/28/30, countries-f41 38/7, jsonld 30/38; +8 asertov)
+- Vrata: eslint 0 · tsc 0 (1 tsc popravka: toContain→includes) · 2344/2344 (26179 expect)
+- Commit e610828 (avtor lastnik ✓ Lekcija 11) → push GitHub ✓ (592b9fa..e610828)
+- GitLab push: 2× 403 (WAF flag na git-potu; ls-remote tudi 403, API pa OK; gl-proxy tudi 403) → po ~5 min tišine push ✓ (592b9fa..e610828) — Lekcija 8 potrjena (hlajenje 75–120 s tudi za git-pot, kadar je IP flagan)
+- Poročilo: #35 komentar 6189651506
+
+Stage Summary:
+- 2.66.2 = verzija "preverjenih dejstev": 4 termini dogodkov potrjeni z primarnimi viri, 1 lažni dogodek (EXIT) odstranjen, 1 mesec popravljen, GTFS pokritost 10/10 držav kvantificirana (29 feedov, XK edina 0), AL cestna kvaliteta izmerjena
+- Dokument #35 je spet resničen do zadnjega podatka; OTP re-evaluacija = NOVO odprto vprašanje za lastnika (premisa padla, sodba lastniška)
+- Parity: GitHub = GitLab = e610828; Vercel deploy za e610828 v teku (check)
+- Preostalo owner-odvisno: GitLab IV, GitHub spend limit, Viator, db:pg:deploy, re-deizija, VPS self-host
+- Lekcija (nadgrajena L8): WAF flag na gitlab.com se lahko raztegne čez git-protokol (push+ls-remote) in lokalni proxy hkrati, medtem ko API pot ostane prosta; rešitev = tišina ≥ 5 min, potem EN klic

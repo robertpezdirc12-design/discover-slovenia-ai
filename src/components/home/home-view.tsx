@@ -697,6 +697,7 @@ export function HomeView({
               <Link href="/destinacije">{t("ctaExplore")}</Link>
             </Button>
           </div>
+          </div>
           {featured[1] && (
             <aside className="hidden lg:block">
               <Link

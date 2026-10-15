@@ -470,7 +470,7 @@ function PersonalBoardSkeleton({ t }: { t: (k: LabelKey) => string }) {
       </div>
 
       {/* Nalogovna kartica — realen naslov + prazno stanje (ena vrstica). */}
-      <Card className="mt-4 rounded-2xl border-border/70 shadow-sm" aria-hidden="true">
+      <Card className="mt-4" aria-hidden="true">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <CheckCircle2 className="size-5 text-primary" aria-hidden="true" />

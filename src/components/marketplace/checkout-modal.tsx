@@ -256,7 +256,7 @@ export function CheckoutModal({
           zaključka nakupa drsi ZNOTRAJ dialoga namesto da se odreže dno
           (shadcn-ui/ui #16); dvh namesto vh — mobilna vrstica brskalnika
           ne ukrade več spodnjega robu (enako vh na namizju). */}
-      <DialogContent className="max-h-[85dvh] overflow-y-auto rounded-2xl border-border/70 shadow-2xl sm:max-w-md">
+      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>{t("description")}</DialogDescription>

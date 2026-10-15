@@ -657,7 +657,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
     const canParticipate = canEdit || (loggedIn && db.role === "VIEWER");
 
     return (
-      <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
         {/* Trak vabila (?invite=…) — vrh strani, kot v izvirniku */}
         {inviteToken ? (
           <div className="mb-6">
@@ -709,7 +709,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
 
         {/* Zavihki: Pot | Sodelovanje | Rezervacije | Ankete | Klepet */}
         <Tabs defaultValue="pot" className="mt-6">
-          <TabsList className="w-full justify-start overflow-x-auto sm:w-auto">
+          <TabsList className="h-11 w-full justify-start gap-1 overflow-x-auto rounded-xl border border-border/70 bg-muted/70 p-1 shadow-sm sm:w-auto">
             <TabsTrigger value="pot" className="gap-1.5">
               <Route className="size-3.5" aria-hidden="true" />
               {pick(l, L.tabTrip)}
@@ -945,7 +945,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
 
   // ── 2+3. NI V BAZI → lokalna pote ali iskreno „ne najdem" ────────────
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
       {/* Trak vabila tudi tu (zasebna pot + ne sprejet vloga — vabilo vseeno
           živi; sprejem bo odklenil pot). */}
       {inviteToken ? (

@@ -614,7 +614,7 @@ export function HomeView({
         className="relative -mt-16 overflow-hidden bg-[#0b3029] text-white"
         style={{
           backgroundImage:
-            "linear-gradient(90deg, rgba(5, 28, 25, 0.88) 0%, rgba(5, 28, 25, 0.62) 48%, rgba(5, 28, 25, 0.20) 100%), linear-gradient(0deg, rgba(5, 28, 25, 0.40), transparent 55%), url('https://images.unsplash.com/photo-1506377585622-bedcbb027afc?auto=format&fit=crop&w=2400&q=85')",
+            "linear-gradient(90deg, rgba(5, 28, 25, 0.88) 0%, rgba(5, 28, 25, 0.62) 48%, rgba(5, 28, 25, 0.20) 100%), linear-gradient(0deg, rgba(5, 28, 25, 0.40), transparent 55%), url('/content/bled.jpg')",
           backgroundPosition: "center 48%",
           backgroundSize: "cover",
         }}
@@ -738,11 +738,16 @@ export function HomeView({
       <PersonalHomeSection gate={personalGate} />
 
       {/* ======== RAZIŠČI PO TEMAH ======== */}
-      <section aria-labelledby="teme" className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <h2 id="teme" className="text-2xl font-bold tracking-tight sm:text-3xl">
+      <section aria-labelledby="teme" className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mb-7 flex items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">{t("themesKicker")}</p>
+            <h2 id="teme" className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl"> className="text-2xl font-bold tracking-tight sm:text-3xl">
           {t("themesKicker")}
-        </h2>
-        <p className="mt-2 max-w-2xl text-muted-foreground">{t("themesLead")}</p>
+            </h2>
+            <p className="mt-2 max-w-2xl text-muted-foreground">{t("themesLead")}</p>
+          </div>
+        </div>
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-9 lg:gap-2">
           {(Object.keys(DEST_TYPES) as DestinationType[]).map((type) => {
             const Icon = TYPE_ICONS[type];
@@ -750,9 +755,9 @@ export function HomeView({
               <Link
                 key={type}
                 href={`/destinacije?type=${type}`}
-                className="group flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border bg-card p-4 text-center transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                className="group flex min-h-28 flex-col items-center justify-center gap-3 rounded-2xl border border-border/70 bg-card/80 p-4 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-card hover:shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
-                <span className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-all duration-300 group-hover:scale-105 group-hover:bg-primary group-hover:text-primary-foreground">
                   <Icon className="size-5" aria-hidden="true" />
                 </span>
                 <span className="text-sm font-semibold">{pick(l, DEST_TYPES[type])}</span>
@@ -768,12 +773,12 @@ export function HomeView({
       {/* ======== PRILJUBLJENE DESTINACIJE ======== */}
       <section
         aria-labelledby="priljubljene"
-        className="bg-muted/40 py-14"
+        className="bg-gradient-to-b from-muted/50 to-background py-16 sm:py-20"
       >
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 id="priljubljene" className="text-2xl font-bold tracking-tight sm:text-3xl">
+              <h2 id="priljubljene" className="text-3xl font-bold tracking-tight sm:text-4xl">
                 {t("popularTitle")}
               </h2>
               <p className="mt-2 max-w-2xl text-muted-foreground">{t("popularLead")}</p>
@@ -786,7 +791,7 @@ export function HomeView({
               <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
           </div>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map((d, i) => (
               <DestinationCard key={d.slug} d={d} priority={i < 3} />
             ))}
@@ -797,21 +802,21 @@ export function HomeView({
       {/* ======== PREVERJENI ITINERERJI ======== */}
       <section
         aria-labelledby="itinererji"
-        className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8"
+        className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
-        <p className="text-xs font-bold tracking-[0.18em] text-primary uppercase">
+        <p className="text-xs font-bold tracking-[0.2em] text-primary uppercase">
           {t("itinerariesKicker")}
         </p>
-        <h2 id="itinererji" className="mt-1.5 text-2xl font-bold tracking-tight sm:text-3xl">
+        <h2 id="itinererji" className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
           {t("itinerariesTitle")}
         </h2>
         <p className="mt-2 max-w-2xl text-muted-foreground">{t("itinerariesLead")}</p>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {PRESETS.map((p) => (
             <Link
               key={p.slug}
               href={`/nacrtuj?preset=${p.slug}`}
-              className="group flex min-h-36 flex-col justify-between rounded-xl border bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="group flex min-h-44 flex-col justify-between rounded-2xl border border-border/70 bg-gradient-to-br from-card via-card to-primary/[0.04] p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               <div>
                 <h3 className="text-base font-bold leading-snug group-hover:text-primary">
@@ -863,9 +868,9 @@ export function HomeView({
           (javno iskanje), gorivo pa NI provizijsko — vodi na lastni zemljevid. */}
       <section
         aria-labelledby="rezerviraj"
-        className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8"
+        className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
-        <h2 id="rezerviraj" className="text-2xl font-bold tracking-tight sm:text-3xl">
+        <h2 id="rezerviraj" className="text-3xl font-bold tracking-tight sm:text-4xl">
           {t("bookingTitle")}
         </h2>
         <p className="mt-2 max-w-2xl text-muted-foreground">{t("bookingLead")}</p>
@@ -873,7 +878,7 @@ export function HomeView({
           {BOOKING_PARTNERS.map((p) => {
             const Icon = CATEGORY_ICONS[p.category];
             return (
-              <Card key={p.id} className="flex flex-col">
+              <Card key={p.id} className="group flex flex-col overflow-hidden rounded-2xl border-border/70 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 <CardContent className="flex flex-1 flex-col p-5">
                   <div className="flex items-center gap-3">
                     <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">

@@ -465,7 +465,7 @@ export function PlanMap({
           wrapper diva (h-72 sm:h-80), usklajeno z ostalimi vgrajenimi
           zemljevidi projekta. */}
       <div
-        className="h-72 overflow-hidden rounded-xl border sm:h-80"
+        className="h-72 overflow-hidden rounded-2xl border border-border/70 shadow-sm sm:h-80"
         role="region"
         aria-label={mapLabel}
       >

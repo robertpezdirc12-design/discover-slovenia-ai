@@ -56,7 +56,7 @@ function DrawerContent({
       <DrawerPrimitive.Content
         data-slot="drawer-content"
         className={cn(
-          "group/drawer-content bg-background fixed z-50 flex h-auto flex-col shadow-2xl",
+          "group/drawer-content bg-background fixed z-50 flex h-auto flex-col border-border/70 shadow-2xl shadow-2xl",
           /* POLIR11: največja višina 80 dvh (ne več vh) — dno predala ne sega
              več pod mobilno naslovno vrstico brskalnika; dvh ≡ vh na namizju. */
           "data-[vaul-drawer-direction=top]:inset-x-0 data-[vaul-drawer-direction=top]:top-0 data-[vaul-drawer-direction=top]:mb-24 data-[vaul-drawer-direction=top]:max-h-[80dvh] data-[vaul-drawer-direction=top]:rounded-b-2xl data-[vaul-drawer-direction=top]:border-b data-[vaul-drawer-direction=top]:border-border/70",

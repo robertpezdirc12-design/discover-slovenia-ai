@@ -37,7 +37,7 @@ function Tab({
       aria-label={label}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex h-14 min-w-11 flex-col items-center justify-center gap-0.5 rounded-lg px-1 text-[10px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+        "flex h-14 min-w-11 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[10px] font-semibold transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
         active ? "text-primary" : "text-muted-foreground hover:text-foreground"
       )}
     >
@@ -102,7 +102,7 @@ export function MobileTabBar() {
       aria-label={pick(l, L.navLabel)}
       className="fixed inset-x-0 bottom-0 z-40 lg:hidden"
     >
-      <div className="border-t border-border/70 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/90">
+      <div className="border-t border-border/60 bg-background/95 shadow-[0_-8px_32px_-20px_rgba(0,0,0,0.35)] backdrop-blur-2xl supports-[backdrop-filter]:bg-background/88">
         <div className="mx-auto grid max-w-md grid-cols-5 items-center px-2 pt-1 pb-1 safe-area-bottom">
           <Tab href="/destinacije" label={pick(l, L.discover)} active={isActive("/destinacije")}>
             <Compass className="size-5" aria-hidden="true" />

@@ -118,9 +118,9 @@ describe("POLIR14 C: stanje mobileView", () => {
 // ── ③ SOURCE-CONTRACT: ovoj zemljevida pogojno skrit na mobilnem ───────────
 
 describe("POLIR14 D: ovoj zemljevida (pogojni max-lg:hidden)", () => {
-  test("③ ovoj: cn(\"overflow-hidden rounded-xl border shadow-sm\", mobileView === \"list\" && \"max-lg:hidden\")", () => {
+  test("③ ovoj: premium okvir zemljevida + pogojno skrivanje na mobilnem", () => {
     const ovoj = elementOkoli('aria-label={t("mapLabel")}', "<div");
-    expect(ovoj).toContain("overflow-hidden rounded-xl border shadow-sm");
+    expect(ovoj).toContain("overflow-hidden rounded-2xl border border-border/70 bg-card shadow-xl shadow-black/10");
     expect(ovoj).toContain('mobileView === "list" && "max-lg:hidden"');
     expect(ovoj).toContain("cn(");
   });
@@ -164,13 +164,13 @@ describe("POLIR14 C: Leaflet display:none past — invalidateSize", () => {
 // ── ⑥ SOURCE-CONTRACT: iskanje + regija v ENI vrstici na mobilnem ──────────
 
 describe("POLIR14 D: nadzorna vrstica (iskanje + regija ena vrstica)", () => {
-  test("⑥ iskalna vrstica: mt-4 grid grid-cols-[1fr_auto] gap-3 md:grid-cols-[1fr_auto_auto] lg:mt-8 max-lg:order-1 + SelectTrigger h-11 w-36 md:w-56", () => {
+  test("⑥ iskalna vrstica: premium filter panel ohrani mobilni vrstni red + SelectTrigger h-12 w-36 md:w-56", () => {
     expect(MAPA).toContain(
-      '"mt-4 grid grid-cols-[1fr_auto] gap-3 md:grid-cols-[1fr_auto_auto] lg:mt-8 max-lg:order-1"'
+      'className="mt-4 grid grid-cols-[1fr_auto] gap-3 rounded-2xl border border-border/70 bg-card/70 p-3 shadow-sm sm:p-4 md:grid-cols-[1fr_auto_auto] lg:mt-8 max-lg:order-1"'
     );
     // ozka sprožilna tipka regije na mobilnem (w-36), md+ nespremenjeno (w-56)
     expect(MAPA).toContain(
-      '<SelectTrigger className="h-11 w-36 md:w-56" aria-label={t("regionFilter")}>'
+      '<SelectTrigger className="h-12 w-36 rounded-xl border-border/70 bg-background shadow-sm md:w-56" aria-label={t("regionFilter")}>'
     );
     // reset gumb (pogojen) na mobilnem čez celo vrstico, md+ en stolpec
     expect(MAPA).toContain('className="h-11 col-span-2 md:col-span-1"');
@@ -205,7 +205,7 @@ describe("POLIR14 D: fleks kolona roota — vrstni red na mobilnem", () => {
   test("⑧ plasti pod zemljevidom: max-lg:order-5 (plasti) + max-lg:order-4 (mreža) + max-lg:flex max-lg:flex-col (root); podniz mreže ⑭ ostaja", () => {
     // root = flex stolpec samo <lg (namizje ostaja bločno po DOM)
     expect(MAPA).toContain(
-      '"mx-auto w-full max-w-7xl px-4 pb-12 sm:px-6 lg:px-8 max-lg:flex max-lg:flex-col"'
+      '"mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6 lg:px-8 max-lg:flex max-lg:flex-col"'
     );
     // vrstica plasti (Lokali/Bencinske/POI/Pot) dobi order-5 NA KONCU
     expect(MAPA).toContain(
@@ -214,9 +214,9 @@ describe("POLIR14 D: fleks kolona roota — vrstni red na mobilnem", () => {
     // mreža zemljevid+seznam dobi order-4 NA KONCU; ZAKLEP reflow-320 ⑭:
     // podniz grid gap-4 lg:grid-cols-[1fr_340px] OSTAJA v razredu
     expect(MAPA).toContain(
-      '"mt-4 grid gap-4 lg:grid-cols-[1fr_340px] max-lg:order-4"'
+      '"mt-5 grid gap-5 lg:grid-cols-[1fr_340px] max-lg:order-4"'
     );
-    expect(MAPA).toContain("grid gap-4 lg:grid-cols-[1fr_340px]");
+    expect(MAPA).toContain("grid gap-5 lg:grid-cols-[1fr_340px]");
   });
 });
 
@@ -257,7 +257,7 @@ describe("POLIR14 B: statistika /zemljevid", () => {
       '"mt-4 grid grid-cols-[1fr_auto] gap-3 md:grid-cols-[1fr_auto_auto] lg:mt-8 max-lg:order-1"'
     );
     expect(STRAN).toContain(
-      '"mt-4 grid gap-4 lg:grid-cols-[1fr_340px] max-lg:order-4"'
+      '"mt-5 grid gap-5 lg:grid-cols-[1fr_340px] max-lg:order-4"'
     );
     expect(STRAN).toContain('className="hidden space-y-2 lg:block"');
   });

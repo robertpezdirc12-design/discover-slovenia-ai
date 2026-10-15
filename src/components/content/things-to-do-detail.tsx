@@ -157,7 +157,7 @@ export function ThingsToDoDetail({ d }: { d: Destination }) {
   ];
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-4xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
       <Link
         href={`/destinacija/${d.slug}`}
         className="inline-flex min-h-9 items-center gap-1.5 text-sm font-medium text-primary hover:underline"
@@ -186,7 +186,7 @@ export function ThingsToDoDetail({ d }: { d: Destination }) {
       )}
 
       {/* Praktična kartica */}
-      <Card className="mt-8">
+      <Card className="mt-8 overflow-hidden rounded-2xl border-border/70 shadow-sm">
         <CardContent className="grid gap-x-8 gap-y-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
           <div className="flex items-center gap-2.5">
             <Star className="size-5 shrink-0 fill-primary text-primary" aria-hidden="true" />
@@ -251,7 +251,7 @@ export function ThingsToDoDetail({ d }: { d: Destination }) {
         <ul className="mt-5 grid gap-3 sm:grid-cols-2">
           {d.highlights.map((h, i) => (
             <li key={h}>
-              <Card className="group overflow-hidden py-0 transition-all hover:shadow-md">
+              <Card className="group overflow-hidden rounded-2xl border-border/70 py-0 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
                   <Image
                     src={d.image}

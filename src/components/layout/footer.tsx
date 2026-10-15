@@ -114,8 +114,8 @@ export function Footer() {
   ];
 
   return (
-    <footer className="mt-auto border-t bg-muted/40">
-      <div className="mx-auto w-full max-w-7xl px-4 pt-12 pb-8 sm:px-6 lg:px-8">
+    <footer className="mt-auto border-t border-border/70 bg-gradient-to-b from-muted/30 to-muted/70">
+      <div className="mx-auto w-full max-w-7xl px-4 pt-14 pb-8 sm:px-6 sm:pt-16 lg:px-8">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
           {/* Znamka */}
           <div className="lg:col-span-1">
@@ -165,7 +165,7 @@ export function Footer() {
           </nav>
         </div>
 
-        <div className="mt-10 flex flex-col gap-2 border-t pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-12 flex flex-col gap-3 border-t border-border/70 pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p>
             © 2026 Discover Slovenia AI. {t("madeIn")}. {t("affiliate")}
           </p>

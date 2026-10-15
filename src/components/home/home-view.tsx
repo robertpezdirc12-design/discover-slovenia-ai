@@ -604,19 +604,27 @@ export function HomeView({
     <div className="w-full">
       {/* ======== HERO ======== */}
       {/* POLIR9 (WCAG 1.4.3): -mt-16 zavleče hero pod prozorno sticky glavo
-          (h-16) — glava z belo pisavo sedi na zelenem, ne na belem telesu
-          (živa napaka: nevidna glava @scroll 0, svetla tema). py-16/24
-          absorbira 64 px glave, zato vsebina (kicker/h1/uvod/iskalnik) ostane
-          pod glavo. Temne stopnje gradienta: svetli --primary (oklch 0.586)
-          bi belo besedilo spodnesel na ~2–2,9:1 — izrecne temnozelene stopnje
-          držijo ≥ 4,5:1 (via #0e5c28 = 8,15:1 za čisto belo). */}
-      <section className="relative -mt-16 overflow-hidden bg-gradient-to-br from-primary via-primary to-[#1e4f2d] text-white dark:from-[#0b4d20] dark:via-[#0e5c28] dark:to-[#063615]">
+          (h-16), zato bela navigacija ostane na fotografiji, ne na belem telesu.
+          Vsebina ostane pod glavo zaradi py-20/28. Preliv je neodvisen od
+          svetle/temne teme; najmanj 0,64 neprosojnosti temne plasti na DESNEM
+          robu pomeni približno 5,3:1 tudi nad najsvetlejšim (belim) pikslom
+          fotografije — nad pragom WCAG AA 4,5:1 za navadno belo besedilo. */}
+      <section
+        className="relative -mt-16 overflow-hidden bg-[#0b3029] text-white"
+        style={{
+          backgroundImage:
+            "linear-gradient(90deg, rgba(5, 28, 25, 0.84) 0%, rgba(5, 28, 25, 0.70) 48%, rgba(5, 28, 25, 0.64) 100%), linear-gradient(0deg, rgba(5, 28, 25, 0.40), transparent 55%), url('/content/bled.jpg')",
+          backgroundPosition: "center 48%",
+          backgroundSize: "cover",
+        }}
+      >
         {/* Dekorativni vzorec (radialne lise, brez zunanjih slik) */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_20%_20%,white_0,transparent_12%),radial-gradient(circle_at_80%_60%,white_0,transparent_16%)]"
+          className="pointer-events-none absolute inset-0 opacity-[0.08] [background-image:radial-gradient(circle_at_20%_20%,white_0,transparent_12%),radial-gradient(circle_at_80%_60%,white_0,transparent_16%)]"
         />
-        <div className="relative mx-auto flex w-full max-w-7xl flex-col items-center px-4 py-16 text-center sm:px-6 sm:py-24 lg:px-8">
+        <div className="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-7 px-4 py-20 text-left sm:gap-10 sm:px-6 sm:py-28 lg:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.7fr)] lg:px-8">
+          <div className="max-w-3xl">
           {/* POLIR15-b (2.42.0): SEZONSKI ČIP nad kickerjem — sezonska
               afiniteta po vzoru Švice (sezonski koledar kampanj) in Irske
               (dogodek kot pripovedovalec): ST MMDD okna + izvorni SI
@@ -645,7 +653,7 @@ export function HomeView({
             onSubmit={onSearch}
             role="search"
             aria-label={t("searchLabel")}
-            className="mt-8 flex w-full max-w-xl items-center gap-2 rounded-xl bg-white/95 p-1.5 shadow-xl backdrop-blur"
+            className="mt-8 flex w-full max-w-2xl items-center gap-2 rounded-2xl bg-white/95 p-1.5 shadow-2xl shadow-black/20 backdrop-blur"
           >
             <Search
               className="ml-2 size-5 shrink-0 text-muted-foreground"
@@ -668,7 +676,7 @@ export function HomeView({
           </form>
 
           {/* CTA gumba */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <div className="mt-6 flex flex-wrap items-center justify-start gap-3">
             <Button
               asChild
               size="lg"
@@ -689,23 +697,59 @@ export function HomeView({
               <Link href="/destinacije">{t("ctaExplore")}</Link>
             </Button>
           </div>
-
-          {/* Statistika nabora */}
-          <dl className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-white/85">
-            {(["d", "c", "r"] as const).map((k, i) => (
-              <React.Fragment key={k}>
-                {i > 0 && (
-                  <span aria-hidden="true" className="hidden text-white/50 sm:inline">
-                    ·
+          </div>
+          {featured[1] && (
+            <aside data-testid="featured-destination-panel" className="block">
+              <Link
+                href={`/destinacija/${featured[1].slug}`}
+                className="group relative block min-h-[280px] overflow-hidden rounded-[1.75rem] sm:min-h-[330px] lg:min-h-[390px] border border-white/20 bg-[#0b3029] shadow-2xl shadow-black/30 transition-transform duration-500 hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#0b3029]"
+                style={{
+                  backgroundImage: `linear-gradient(0deg, rgba(4, 24, 21, 0.96) 0%, rgba(4, 24, 21, 0.58) 38%, rgba(4, 24, 21, 0.04) 100%), url(\"${featured[1].image}\")`,
+                  backgroundPosition: "center",
+                  backgroundSize: "cover",
+                }}
+              >
+                <span className="absolute top-5 left-5 inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/25 px-3 py-1.5 text-[10px] font-bold tracking-[0.16em] text-white uppercase backdrop-blur-md">
+                  <Sparkles className="size-3.5" aria-hidden="true" />
+                  {pick(l, { sl: "Izbor uredništva", en: "Editor's pick", it: "Scelta della redazione", de: "Redaktionstipp", fr: "Le choix de la rédaction", es: "Selección editorial" })}
+                </span>
+                <span className="absolute inset-x-0 bottom-0 p-7 text-white">
+                  <span className="mb-2 block text-xs font-semibold tracking-[0.16em] text-white/75 uppercase">
+                    {pick(l, { sl: "Odkrij Slovenijo", en: "Discover Slovenia", it: "Scopri la Slovenia", de: "Slowenien entdecken", fr: "Découvrir la Slovénie", es: "Descubre Eslovenia" })}
                   </span>
-                )}
-                <div className="flex items-baseline gap-1">
-                  <dt className="sr-only">{k}</dt>
-                  <dd>{pick(l, L.stats)[k]}</dd>
-                </div>
-              </React.Fragment>
-            ))}
-          </dl>
+                  <span className="block text-3xl font-bold tracking-tight text-balance">{featured[1].name}</span>
+                  <span className="mt-2 line-clamp-3 block max-w-sm text-sm leading-relaxed text-white/85">{featured[1].tagline}</span>
+                  <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold">
+                    {pick(l, { sl: "Odkrij kraj", en: "Explore place", it: "Scopri il luogo", de: "Ort entdecken", fr: "Découvrir le lieu", es: "Descubrir el lugar" })}
+                    <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                  </span>
+                </span>
+              </Link>
+            </aside>
+          )}
+        </div>
+      </section>
+
+      {/* Hitri pregled — podatki so iz obstoječega kanoničnega nabora. */}
+      <section
+        className="border-b border-border/70 bg-background"
+        aria-label={pick(l, {
+          sl: "Pregled platforme",
+          en: "Platform overview",
+          it: "Panoramica della piattaforma",
+          de: "Plattformübersicht",
+          fr: "Aperçu de la plateforme",
+          es: "Resumen de la plataforma",
+        })}
+      >
+        <div className="mx-auto grid w-full max-w-7xl grid-cols-3 divide-x divide-border/70 px-2 py-3 sm:px-6 lg:px-8">
+          {(["d", "c", "r"] as const).map((k) => (
+            <div key={k} className="flex min-w-0 items-center justify-center px-1.5 py-3 text-center sm:px-4 sm:py-4">
+              <p className="text-xs font-bold leading-tight tracking-tight text-foreground sm:text-base lg:text-lg">
+                {pick(l, L.stats)[k]}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -730,11 +774,15 @@ export function HomeView({
       <PersonalHomeSection gate={personalGate} />
 
       {/* ======== RAZIŠČI PO TEMAH ======== */}
-      <section aria-labelledby="teme" className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <h2 id="teme" className="text-2xl font-bold tracking-tight sm:text-3xl">
-          {t("themesKicker")}
-        </h2>
-        <p className="mt-2 max-w-2xl text-muted-foreground">{t("themesLead")}</p>
+      <section aria-labelledby="teme" className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mb-7 flex items-end justify-between gap-4">
+          <div>
+            <h2 id="teme" className="text-3xl font-bold tracking-tight sm:text-4xl">
+              {t("themesKicker")}
+            </h2>
+            <p className="mt-2 max-w-2xl text-muted-foreground">{t("themesLead")}</p>
+          </div>
+        </div>
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-9 lg:gap-2">
           {(Object.keys(DEST_TYPES) as DestinationType[]).map((type) => {
             const Icon = TYPE_ICONS[type];
@@ -742,9 +790,9 @@ export function HomeView({
               <Link
                 key={type}
                 href={`/destinacije?type=${type}`}
-                className="group flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border bg-card p-4 text-center transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                className="group flex min-h-28 flex-col items-center justify-center gap-3 rounded-2xl border border-border/70 bg-card/80 p-4 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-card hover:shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
-                <span className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-all duration-300 group-hover:scale-105 group-hover:bg-primary group-hover:text-primary-foreground">
                   <Icon className="size-5" aria-hidden="true" />
                 </span>
                 <span className="text-sm font-semibold">{pick(l, DEST_TYPES[type])}</span>
@@ -760,12 +808,12 @@ export function HomeView({
       {/* ======== PRILJUBLJENE DESTINACIJE ======== */}
       <section
         aria-labelledby="priljubljene"
-        className="bg-muted/40 py-14"
+        className="bg-gradient-to-b from-muted/50 to-background py-16 sm:py-20"
       >
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 id="priljubljene" className="text-2xl font-bold tracking-tight sm:text-3xl">
+              <h2 id="priljubljene" className="text-3xl font-bold tracking-tight sm:text-4xl">
                 {t("popularTitle")}
               </h2>
               <p className="mt-2 max-w-2xl text-muted-foreground">{t("popularLead")}</p>
@@ -778,7 +826,7 @@ export function HomeView({
               <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
           </div>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map((d, i) => (
               <DestinationCard key={d.slug} d={d} priority={i < 3} />
             ))}
@@ -789,21 +837,21 @@ export function HomeView({
       {/* ======== PREVERJENI ITINERERJI ======== */}
       <section
         aria-labelledby="itinererji"
-        className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8"
+        className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
-        <p className="text-xs font-bold tracking-[0.18em] text-primary uppercase">
+        <p className="text-xs font-bold tracking-[0.2em] text-primary uppercase">
           {t("itinerariesKicker")}
         </p>
-        <h2 id="itinererji" className="mt-1.5 text-2xl font-bold tracking-tight sm:text-3xl">
+        <h2 id="itinererji" className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
           {t("itinerariesTitle")}
         </h2>
         <p className="mt-2 max-w-2xl text-muted-foreground">{t("itinerariesLead")}</p>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {PRESETS.map((p) => (
             <Link
               key={p.slug}
               href={`/nacrtuj?preset=${p.slug}`}
-              className="group flex min-h-36 flex-col justify-between rounded-xl border bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="group flex min-h-44 flex-col justify-between rounded-2xl border border-border/70 bg-gradient-to-br from-card via-card to-primary/[0.04] p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               <div>
                 <h3 className="text-base font-bold leading-snug group-hover:text-primary">
@@ -855,9 +903,9 @@ export function HomeView({
           (javno iskanje), gorivo pa NI provizijsko — vodi na lastni zemljevid. */}
       <section
         aria-labelledby="rezerviraj"
-        className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8"
+        className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
-        <h2 id="rezerviraj" className="text-2xl font-bold tracking-tight sm:text-3xl">
+        <h2 id="rezerviraj" className="text-3xl font-bold tracking-tight sm:text-4xl">
           {t("bookingTitle")}
         </h2>
         <p className="mt-2 max-w-2xl text-muted-foreground">{t("bookingLead")}</p>
@@ -865,7 +913,7 @@ export function HomeView({
           {BOOKING_PARTNERS.map((p) => {
             const Icon = CATEGORY_ICONS[p.category];
             return (
-              <Card key={p.id} className="flex flex-col">
+              <Card key={p.id} className="group flex flex-col overflow-hidden rounded-2xl border-border/70 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 <CardContent className="flex flex-1 flex-col p-5">
                   <div className="flex items-center gap-3">
                     <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">

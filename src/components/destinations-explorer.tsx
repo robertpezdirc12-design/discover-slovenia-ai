@@ -158,7 +158,7 @@ export function DestinationsExplorer() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
       <PageHeader
         kicker={pick(l, L.kicker)}
         title={pick(l, L.title)}
@@ -166,8 +166,8 @@ export function DestinationsExplorer() {
       />
 
       {/* Nadzorna vrstica: iskanje + filtri (država/regija/tip, #41 F0) */}
-      <div className="mt-8 grid gap-3 md:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto]">
-        <div className="relative">
+      <div className="mt-8 grid grid-cols-2 gap-3 rounded-2xl border border-border/70 bg-card/70 p-3 shadow-sm sm:p-4 lg:grid-cols-[minmax(240px,1fr)_auto_auto_auto]">
+        <div className="relative col-span-2 min-w-0 lg:col-span-1">
           <Search
             className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
             aria-hidden="true"
@@ -180,17 +180,17 @@ export function DestinationsExplorer() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={pick(l, L.searchPlaceholder)}
-            className="h-11 pl-9"
+            className="h-12 rounded-xl border-border/70 bg-background pl-10 shadow-sm focus-visible:ring-primary/30"
             autoComplete="off"
           />
         </div>
 
-        <div>
+        <div className="min-w-0">
           <label htmlFor="dest-country" className="sr-only">
             {pick(l, L.countryLabel)}
           </label>
           <Select value={country} onValueChange={setCountry}>
-            <SelectTrigger id="dest-country" className="h-11 w-full md:w-56">
+            <SelectTrigger id="dest-country" className="h-12 w-full rounded-xl border-border/70 bg-background shadow-sm lg:w-56">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="max-h-96">
@@ -204,12 +204,12 @@ export function DestinationsExplorer() {
           </Select>
         </div>
 
-        <div>
+        <div className="min-w-0">
           <label htmlFor="dest-region" className="sr-only">
             {pick(l, L.regionLabel)}
           </label>
           <Select value={region} onValueChange={setRegion}>
-            <SelectTrigger id="dest-region" className="h-11 w-full md:w-52">
+            <SelectTrigger id="dest-region" className="h-12 w-full rounded-xl border-border/70 bg-background shadow-sm lg:w-52">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="max-h-96">
@@ -223,12 +223,12 @@ export function DestinationsExplorer() {
           </Select>
         </div>
 
-        <div>
+        <div className="col-span-2 min-w-0 lg:col-span-1">
           <label htmlFor="dest-type" className="sr-only">
             {pick(l, L.typeLabel)}
           </label>
           <Select value={type} onValueChange={setType}>
-            <SelectTrigger id="dest-type" className="h-11 w-full md:w-44">
+            <SelectTrigger id="dest-type" className="h-12 w-full rounded-xl border-border/70 bg-background shadow-sm lg:w-44">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -263,7 +263,7 @@ export function DestinationsExplorer() {
 
       {/* Mreža kartic */}
       {results.length > 0 ? (
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {results.map((d, i) => (
             <DestinationCard key={d.slug} d={d} priority={i < 3} />
           ))}
@@ -278,7 +278,7 @@ export function DestinationsExplorer() {
           initial={reduceMotion ? false : { opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.18, ease: "easeOut" }}
-          className="mt-6 rounded-xl border border-dashed p-6 text-center sm:p-10"
+          className="mt-6 rounded-2xl border border-dashed border-border/70 bg-muted/20 p-6 text-center sm:p-10"
         >
           <SearchX
             className="mx-auto size-8 text-muted-foreground"

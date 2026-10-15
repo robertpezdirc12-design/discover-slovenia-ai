@@ -249,8 +249,8 @@ export function DestinationDetail({ d }: { d: Destination }) {
           viewporta: pri VIDNI naslovni vrstici (iOS Safari / Chrome
           Android) hero ne zajema več površine pod vrstico; dvh zavrnjen
           (WebKit #266835 — jank na tokovnih blokih); v brezglavem
-          brskalniku svh ≡ vh (cap nespremenjen). */}
-      <div className="relative aspect-[21/9] max-h-[46svh] w-full overflow-hidden bg-muted">
+          brskalniku svh ≡ vh. Tudi odzivna minimalna višina ostane znotraj 54svh. */}
+      <div className="relative min-h-[min(320px,54svh)] max-h-[54svh] w-full overflow-hidden bg-muted sm:min-h-[min(380px,54svh)] lg:min-h-[min(440px,54svh)]">
         <Image
           src={d.image}
           alt={`${d.name} — ${d.tagline}`}
@@ -287,9 +287,9 @@ export function DestinationDetail({ d }: { d: Destination }) {
         )}
       </div>
 
-      <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         {l !== "sl" && pick(l, L.enNote) && (
-          <p className="mb-6 rounded-md border border-dashed border-primary/30 bg-primary/5 px-4 py-2.5 text-xs text-muted-foreground">
+          <p className="mb-6 rounded-xl border border-primary/25 bg-primary/[0.04] px-4 py-3 text-xs leading-relaxed text-muted-foreground">
             {pick(l, L.enNote)}
           </p>
         )}
@@ -323,8 +323,8 @@ export function DestinationDetail({ d }: { d: Destination }) {
         </div>
 
         {/* Praktični podatki */}
-        <Card className="mt-8">
-          <CardContent className="grid gap-x-8 gap-y-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
+        <Card className="mt-8 overflow-hidden rounded-2xl border-border/70 shadow-sm">
+          <CardContent className="grid gap-x-8 gap-y-5 p-5 sm:grid-cols-2 sm:p-6 lg:grid-cols-3">
             <div className="flex items-center gap-2.5">
               <Star className="size-5 shrink-0 fill-primary text-primary" aria-hidden="true" />
               <div>

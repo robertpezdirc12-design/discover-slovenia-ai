@@ -48,7 +48,7 @@ function MapSkeleton() {
   return (
     <div
       aria-busy="true"
-      className="mx-auto w-full max-w-7xl px-4 pb-12 sm:px-6 lg:px-8 max-lg:flex max-lg:flex-col"
+      className="mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6 lg:px-8 max-lg:flex max-lg:flex-col"
     >
       {/* order-1: iskanje + regija (+ prostor ponovitve/md+ števec). */}
       <div className="mt-4 grid grid-cols-[1fr_auto] gap-3 md:grid-cols-[1fr_auto_auto] lg:mt-8 max-lg:order-1">
@@ -78,7 +78,7 @@ function MapSkeleton() {
       </div>
       {/* order-4: mapa + seznam — višina mape = DOBESEDNO isti razredni niz
           kot MapContainer (travel-map.tsx) → 0 px premika ob naložitvi. */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_340px] max-lg:order-4">
+      <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_340px] max-lg:order-4">
         <Skeleton className="h-[62svh] min-h-80 rounded-xl sm:h-[70svh] lg:h-[calc(100svh-15rem)] lg:min-h-[540px]" />
         <div className="hidden space-y-2 lg:block">
           <Skeleton className="h-4 w-40" />

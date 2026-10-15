@@ -41,8 +41,8 @@
  *     (×2), reservation-import-dialog, trip-reservations, admin, partner.
  *
  *  IZVEN OBSEGA (namerno): zemljevidi h-[62svh]/h-[70svh] (travel-map,
- *  zemljevid/view) in hero max-h-[46svh] (destination-detail) — LAYOUT
- *  bloki, ne overlay. POLIR12 (2.39.0) jih je PRESTAVIL na svh (stabilen
+ *  zemljevid/view) in hero max-h-[54svh] z odzivnimi minimalnimi višinami
+ *  (destination-detail) — LAYOUT bloki, ne overlay. POLIR12 (2.39.0) jih je PRESTAVIL na svh (stabilen
  *  najmanjši viewport); zaklep ⑬/⑭ sledi novemu stanju, polni pogodbi
  *  pa je prevzela tests/stable-viewport-heights.test.ts.
  *
@@ -303,8 +303,11 @@ describe("POLIR11: zaklep izven-obsega — zemljevid/hero LAYOUT bloki (svh od P
     expect(ZEMLJEVID_STRAN).toContain("h-[70svh]");
   });
 
-  test("⑭ destination-detail hero nosi max-h-[46svh] (POLIR12; aspect 21/9 layout)", () => {
-    expect(DESTINACIJA).toContain("max-h-[46svh]");
+  test("⑭ destination-detail hero ostaja znotraj max-h-[54svh] (POLIR12; odziven layout)", () => {
+    expect(DESTINACIJA).toContain("max-h-[54svh]");
+    expect(DESTINACIJA).toContain("min-h-[min(320px,54svh)]");
+    expect(DESTINACIJA).toContain("sm:min-h-[min(380px,54svh)]");
+    expect(DESTINACIJA).toContain("lg:min-h-[min(440px,54svh)]");
   });
 });
 

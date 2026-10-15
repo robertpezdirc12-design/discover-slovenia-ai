@@ -184,6 +184,10 @@ async function main(): Promise<number> {
         password: "ci",
         port: PORT,
         persistent: false,
+        // GitLab Docker runner izvaja opravilo kot root. Paket zato ustvari
+        // namenski OS račun za varno izvajanje initdb/postgres binark.
+        // Ta možnost je namenjena vsebnikom; ne spreminja app/produkcijske sheme.
+        createPostgresUser: true,
       });
     });
     await step("PG initialise + start", async () => {

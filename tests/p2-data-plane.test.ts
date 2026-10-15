@@ -9,7 +9,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { transformToPostgres } from "../scripts/pg-schema-sync";
+import { stripAnsiCsiSequences, transformToPostgres } from "../scripts/pg-schema-sync";
 
 async function src(path: string): Promise<string> {
   return Bun.file(path).text();
@@ -27,6 +27,11 @@ describe("P2 §1 — postgres shema (izpeljana, en vir resnice)", () => {
     expect(strip(pg, "postgresql")).toBe(strip(sqlite, "sqlite"));
   });
 
+  test("Prisma/Bunx ANSI progresijske sekvence se odstranijo pred SQL primerjavo", () => {
+    const cliOutput = "\u001b[2K\u001b[1G\u001b[2K\u001b[1G-- CreateSchema\n";
+    expect(stripAnsiCsiSequences(cliOutput)).toBe("-- CreateSchema\n");
+  });
+
   test("transformToPostgres: FAIL-CLOSED na @db. nativne tipe", () => {
     expect(() => transformToPostgres('model A { id String @id @db.VarChar(10) }')).toThrow(/@db\./);
   });
@@ -42,7 +47,7 @@ describe("P2 §1 — postgres shema (izpeljana, en vir resnice)", () => {
     expect(pg).toBe(transformToPostgres(sqlite)); // točno to, kar bi generiral sync
   });
 
-  test("baseline 0_init: 27 tabel + migration_lock postgresql", async () => {
+  test("baseline 0_init: ena tabela na model + migration_lock postgresql", async () => {
     const baseline = await src("prisma/postgres/migrations/0_init/migration.sql");
     const tables = (baseline.match(/CREATE TABLE/g) ?? []).length;
     const sqlite = await src("prisma/schema.prisma");

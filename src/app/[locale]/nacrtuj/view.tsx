@@ -739,7 +739,7 @@ export default function PlanPage({
   const { ctx: nextStepCtx, ready: nextStepReady } = useNextStepContext();
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
       <PageHeader kicker={pick(l, L.kicker)} title={pick(l, L.title)} lead={pick(l, L.lead)} />
       {/* POLIR13 (2.40.0): vrata so strežniška (piškotek
           dai:next-step-dismissed, ne več nextStepReady) + kartica se izriše
@@ -1256,7 +1256,7 @@ function PlannerApp() {
               type="button"
               onClick={() => applyPreset(p)}
               disabled={loading}
-              className="group flex min-h-36 flex-col justify-between rounded-xl border bg-card p-4 text-left transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
+              className="group flex min-h-40 flex-col justify-between rounded-2xl border border-border/70 bg-gradient-to-br from-card via-card to-primary/[0.04] p-5 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
             >
               <div>
                 <h3 className="text-sm font-bold leading-snug group-hover:text-primary">
@@ -1275,7 +1275,7 @@ function PlannerApp() {
 
       {/* P2 (2.25.0): START ANYWHERE — prilepi povezavo ali besedilo →
           skripta prepozna kraje (0 AI) in predlaga izhodišče. */}
-      <Card className="mt-8" id="zacni-kjerkoli">
+      <Card className="mt-8 overflow-hidden rounded-2xl border-border/70 shadow-sm" id="zacni-kjerkoli">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Link2 className="size-5 text-primary" aria-hidden="true" />
@@ -1283,7 +1283,7 @@ function PlannerApp() {
           </CardTitle>
           <p className="mt-1 text-sm text-muted-foreground">{pick(l, L.saLead)}</p>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5 p-5 sm:p-6">
           <div className="flex flex-col gap-2 sm:flex-row">
             <Input
               id="sa-input"
@@ -1346,7 +1346,7 @@ function PlannerApp() {
           )}
 
           {saResult && !saBusy && (
-            <div className="space-y-3 rounded-xl border bg-muted/40 p-4">
+            <div className="space-y-3 rounded-2xl border border-border/70 bg-muted/40 p-4 sm:p-5">
               <p className="text-xs text-muted-foreground">
                 {pick(l, L.saSource)}: {" "}
                 {saResult.source.kind === "url"

@@ -17,7 +17,7 @@
  *   B. stranski seznam — ul max-h-[62svh]/sm:max-h-[70svh]/lg: calc 100svh
  *   C. nalagalni skelet — Skeleton ZRCALI zemljevid (brez skoka ob
  *      naložitvi Leafleta)
- *   D. hero destinacije — aspect-[21/9] max-h-[46svh]
+ *   D. hero destinacije — max-h-[54svh], odzivna minimalna višina znotraj iste meje
  * Namizne lg: kalkulacije (prej dinamična enota) so svh — na namizju so
  * VSE enote identične (ni dinamičnega UI ⇒ ničelna vizualna sprememba).
  * MIN-h ščiti (min-h-80, lg:min-h-[540px]) ostajajo. POLIR11 dvh straže
@@ -168,12 +168,12 @@ describe("POLIR12 C: nalagalni skelet /zemljevid zrceli višino zemljevida", () 
 // ── ⑤ SOURCE-CONTRACT: hero destinacije — max-h v svh enotah ───────────────
 
 describe("POLIR12 D: hero destinacije — zgornja meja v svh enotah", () => {
-  test("⑤ destination-detail vsebuje max-h-[46svh] in NE max-h-[46vh] (cap pri vidni naslovni vrstici)", () => {
-    expect(DESTINACIJA).toContain("max-h-[46svh]");
-    expect(DESTINACIJA).not.toContain("max-h-[46vh]");
-    // identiteta bloka ostaja (aspect 21/9, polnilo, obrez) — samo enota se
-    // je zamenjala
-    expect(DESTINACIJA).toContain('className="relative aspect-[21/9] max-h-[46svh] w-full overflow-hidden bg-muted"');
+  test("⑤ destination-detail omeji hero na 54svh; minimalne višine ne presegajo iste meje", () => {
+    expect(DESTINACIJA).toContain("max-h-[54svh]");
+    expect(DESTINACIJA).not.toContain("max-h-[54vh]");
+    expect(DESTINACIJA).toContain("min-h-[min(320px,54svh)]");
+    expect(DESTINACIJA).toContain("sm:min-h-[min(380px,54svh)]");
+    expect(DESTINACIJA).toContain("lg:min-h-[min(440px,54svh)]");
   });
 });
 

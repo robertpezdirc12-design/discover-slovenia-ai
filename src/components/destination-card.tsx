@@ -50,14 +50,14 @@ export function DestinationCard({
       href={`/destinacija/${d.slug}`}
       aria-label={pick(l, L.toDetail)(d.name)}
       className={cn(
-        "group flex flex-col overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm transition-all duration-300",
+        "group flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-card text-card-foreground shadow-sm transition-all duration-300",
         "hover:-translate-y-1 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
         // Reduced-motion: brez dviga in senčnih prehodov (slika miruje).
         "motion-reduce:transition-none motion-reduce:hover:translate-y-0",
         className
       )}
     >
-      <div className="relative aspect-[3/2] overflow-hidden bg-muted">
+      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
         <Image
           src={d.image}
           alt={`${d.name} — ${d.tagline}`}
@@ -72,12 +72,12 @@ export function DestinationCard({
           </Badge>
         )}
       </div>
-      <div className="flex flex-1 flex-col gap-1.5 p-4">
+      <div className="flex flex-1 flex-col gap-2 p-5 sm:p-5">
         {/* Regija čisto zgoraj — zeleni kicker (akcent teme #2d6a3e). */}
         <p className="text-[11px] font-bold tracking-[0.1em] text-primary uppercase">
           {regionLabel(d.region, l)}
         </p>
-        <h3 className="text-lg leading-tight font-bold tracking-tight transition-colors group-hover:text-primary">
+        <h3 className="text-xl leading-tight font-bold tracking-tight transition-colors group-hover:text-primary">
           {d.name}
         </h3>
         <p className="line-clamp-2 text-sm text-muted-foreground">{d.tagline}</p>

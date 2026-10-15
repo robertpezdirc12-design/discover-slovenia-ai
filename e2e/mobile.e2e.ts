@@ -73,6 +73,9 @@ for (const sirina of SIRINE) {
     await page.setViewportSize({ width: sirina, height: 800 });
     for (const stran of STRANI) {
       await gotoTrdo(page, stran);
+      if (stran === "/") {
+        await expect(page.getByTestId("featured-destination-panel")).toBeVisible();
+      }
       const preliv = await page.evaluate(() => {
         const el = document.scrollingElement;
         return el ? el.scrollWidth - el.clientWidth : 0;

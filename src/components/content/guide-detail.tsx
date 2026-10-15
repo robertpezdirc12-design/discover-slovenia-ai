@@ -63,7 +63,7 @@ export function GuideDetail({ guide }: { guide: Guide }) {
   const related = guideSiblings(guide).slice(0, 3);
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-4xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
       <Link
         href="/vodici"
         className="inline-flex min-h-9 items-center gap-1.5 text-sm font-medium text-primary hover:underline"
@@ -136,7 +136,7 @@ export function GuideDetail({ guide }: { guide: Guide }) {
               <li key={d.slug}>
                 <Link
                   href={`/destinacija/${d.slug}`}
-                  className="group flex items-center justify-between gap-3 rounded-xl border bg-card p-4 transition-all hover:border-primary/40 hover:shadow-md focus-green"
+                  className="group flex items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-green"
                 >
                   <span>
                     <span className="block text-sm font-bold group-hover:text-primary">
@@ -159,7 +159,7 @@ export function GuideDetail({ guide }: { guide: Guide }) {
 
       {/* Preberi tudi */}
       {related.length > 0 && (
-        <Card className="mt-12">
+        <Card className="mt-12 overflow-hidden rounded-2xl border-border/70 shadow-sm">
           <CardHeader>
             <CardTitle className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
               {pick(l, L.related)}

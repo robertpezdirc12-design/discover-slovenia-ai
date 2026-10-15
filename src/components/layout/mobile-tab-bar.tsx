@@ -37,7 +37,7 @@ function Tab({
       aria-label={label}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex h-14 min-w-11 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[10px] font-semibold transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+        "flex h-14 min-w-11 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[10px] font-semibold transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transition-none",
         active ? "text-primary" : "text-muted-foreground hover:text-foreground"
       )}
     >
@@ -123,7 +123,7 @@ export function MobileTabBar() {
                 ? pick(l, L.myTripWith)(count)
                 : pick(l, L.myTrip)
             }
-            className="relative -mt-7 flex size-14 items-center justify-center self-start rounded-full bg-primary text-primary-foreground shadow-lg ring-4 ring-background transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="relative -mt-7 flex size-14 items-center justify-center self-start rounded-full bg-primary text-primary-foreground shadow-lg ring-4 ring-background transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:scale-100"
           >
             <Route className="size-6" aria-hidden="true" />
             {count > 0 && (
@@ -145,7 +145,7 @@ export function MobileTabBar() {
           <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
             <SheetTrigger
               className={cn(
-                "flex h-14 min-w-11 flex-col items-center justify-center gap-0.5 rounded-lg px-1 text-[10px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                "flex h-14 min-w-11 flex-col items-center justify-center gap-0.5 rounded-lg px-1 text-[10px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transition-none",
                 moreOpen
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
@@ -172,7 +172,11 @@ export function MobileTabBar() {
                       <Link
                         href={link.href}
                         onClick={() => setMoreOpen(false)}
-                        className="flex min-h-11 items-center rounded-xl px-3 py-2.5 text-sm font-medium text-foreground/90 transition-colors hover:bg-accent hover:text-accent-foreground"
+                        aria-current={isActive(link.href) ? "page" : undefined}
+                        className={cn(
+                          "flex min-h-11 items-center rounded-xl px-3 py-2.5 text-sm font-medium text-foreground/90 transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transition-none",
+                          isActive(link.href) && "bg-accent text-accent-foreground font-semibold"
+                        )}
                       >
                         {link.label}
                       </Link>
@@ -190,7 +194,11 @@ export function MobileTabBar() {
                           <Link
                             href={link.href}
                             onClick={() => setMoreOpen(false)}
-                            className="flex min-h-11 items-center rounded-xl px-3 py-2.5 text-sm text-foreground/80 transition-colors hover:bg-accent hover:text-accent-foreground"
+                            aria-current={isActive(link.href) ? "page" : undefined}
+                            className={cn(
+                              "flex min-h-11 items-center rounded-xl px-3 py-2.5 text-sm text-foreground/80 transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transition-none",
+                              isActive(link.href) && "bg-accent text-accent-foreground font-semibold"
+                            )}
                           >
                             {link.label}
                           </Link>

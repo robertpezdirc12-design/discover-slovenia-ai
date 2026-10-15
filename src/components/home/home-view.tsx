@@ -623,7 +623,8 @@ export function HomeView({
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 opacity-[0.08] [background-image:radial-gradient(circle_at_20%_20%,white_0,transparent_12%),radial-gradient(circle_at_80%_60%,white_0,transparent_16%)]"
         />
-        <div className="relative mx-auto flex w-full max-w-7xl flex-col items-start px-4 py-20 text-left sm:px-6 sm:py-28 lg:px-8">
+        <div className="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-10 px-4 py-20 text-left sm:px-6 sm:py-28 lg:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.7fr)] lg:px-8">
+          <div className="max-w-3xl">
           {/* POLIR15-b (2.42.0): SEZONSKI ČIP nad kickerjem — sezonska
               afiniteta po vzoru Švice (sezonski koledar kampanj) in Irske
               (dogodek kot pripovedovalec): ST MMDD okna + izvorni SI
@@ -696,7 +697,35 @@ export function HomeView({
               <Link href="/destinacije">{t("ctaExplore")}</Link>
             </Button>
           </div>
-
+          {featured[1] && (
+            <aside className="hidden lg:block">
+              <Link
+                href={`/destinacija/${featured[1].slug}`}
+                className="group relative block min-h-[390px] overflow-hidden rounded-[1.75rem] border border-white/20 bg-[#0b3029] shadow-2xl shadow-black/30 transition-transform duration-500 hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#0b3029]"
+                style={{
+                  backgroundImage: `linear-gradient(0deg, rgba(4, 24, 21, 0.96) 0%, rgba(4, 24, 21, 0.58) 38%, rgba(4, 24, 21, 0.04) 100%), url(\"${featured[1].image}\")`,
+                  backgroundPosition: "center",
+                  backgroundSize: "cover",
+                }}
+              >
+                <span className="absolute top-5 left-5 inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/25 px-3 py-1.5 text-[10px] font-bold tracking-[0.16em] text-white uppercase backdrop-blur-md">
+                  <Sparkles className="size-3.5" aria-hidden="true" />
+                  {pick(l, { sl: "Izbor uredništva", en: "Editor's pick", it: "Scelta della redazione", de: "Redaktionstipp", fr: "Le choix de la rédaction", es: "Selección editorial" })}
+                </span>
+                <span className="absolute inset-x-0 bottom-0 p-7 text-white">
+                  <span className="mb-2 block text-xs font-semibold tracking-[0.16em] text-white/75 uppercase">
+                    {pick(l, { sl: "Odkrij Slovenijo", en: "Discover Slovenia", it: "Scopri la Slovenia", de: "Slowenien entdecken", fr: "Découvrir la Slovénie", es: "Descubre Eslovenia" })}
+                  </span>
+                  <span className="block text-3xl font-bold tracking-tight text-balance">{featured[1].name}</span>
+                  <span className="mt-2 line-clamp-3 block max-w-sm text-sm leading-relaxed text-white/85">{featured[1].tagline}</span>
+                  <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold">
+                    {pick(l, { sl: "Odkrij kraj", en: "Explore place", it: "Scopri il luogo", de: "Ort entdecken", fr: "Découvrir le lieu", es: "Descubrir el lugar" })}
+                    <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                  </span>
+                </span>
+              </Link>
+            </aside>
+          )}
         </div>
       </section>
 

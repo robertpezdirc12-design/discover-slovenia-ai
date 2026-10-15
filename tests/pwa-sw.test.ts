@@ -36,10 +36,10 @@ import pkg from "../package.json";
 const ORIGIN = "https://app.example";
 
 describe("sw: konstante (verzija, lupina aplikacije, meje)", () => {
-  test("SW_VERSION je usklajena s package.json in trenutno izdajo 2.65.2", () => {
+  test("SW_VERSION je usklajena s package.json in trenutno izdajo 2.65.3", () => {
     // Kanarček ob izdaji: glava sw.js obljublja usklajenost s package.json —
     // pozabljen bump ob izdaji takoj pade na tem testu.
-    expect(swApi.SW_VERSION).toBe("2.65.2");
+    expect(swApi.SW_VERSION).toBe("2.65.3");
     expect(swApi.SW_VERSION).toBe(pkg.version);
   });
 

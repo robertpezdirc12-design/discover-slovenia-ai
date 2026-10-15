@@ -155,16 +155,35 @@ e2e:
   stage: e2e
   variables:
     DATABASE_URL: "file:/tmp/e2e.db"
+    PORT: "3100"
+    HOSTNAME: "0.0.0.0"
+    NEXTAUTH_SECRET: "ci-dummy-secret-samo-za-dim"
+    NEXTAUTH_URL: "http://localhost:3100"
   script:
     - bun install --frozen-lockfile
     - bunx prisma generate
+    # ZASNOVA 2.65.3 (lekcija iz lokalne CI-paritetne verifikacije 15. 10.,
+    # ujeta PRED zagonom na runnerjih — lekcija 1 uporabljena tudi na CI):
+    # (a) dev-mode webServer (`bunx next dev`) je turbopack PANIC-al in dev
+    # prekrivanja so falila mobilne overflow teste; (b) brez seeda zlata pot
+    # ni imela Bleda (sveža baza = 0 destinacij). E2E zato teče nad
+    # PRODUKCIJSKIM standalone buildom (isti vzorec kot smoke) + SEEJANA
+    # baza — testiramo to, kar pošiljamo (16/16 lokalno potrjeno).
     - rm -f /tmp/e2e.db /tmp/e2e.db-journal
     - bunx prisma db push --skip-generate
+    - bun prisma/seed.ts
+    - bun run build
+    - mkdir -p reports
+    - (bun .next/standalone/server.js > reports/e2e-server.log 2>&1 & echo $! > server.pid)
+    - SMOKE_BASE_URL="http://localhost:${PORT}" bun scripts/ci-wait-ready.ts
     - bunx playwright install --with-deps chromium
-    - bun run e2e
+    - E2E_BASE_URL="http://localhost:${PORT}" bun run e2e
+  after_script:
+    - kill $(cat server.pid) 2>/dev/null || true
   artifacts:
     when: always
     paths:
       - playwright-report/
       - test-results/
+      - reports/
     expire_in: 1 week

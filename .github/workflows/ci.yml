@@ -144,12 +144,14 @@ jobs:
   # ── E2E (issue #38 P1/P2, 2.47.0) ─────────────────────────────────────────
   # Playwright zlata pot (/destinacije → … → /na-poti, merilo „E2E pot od
   # dodajanja destinacije do napredka v »Na poti« uspe“) + mobilni projekt
-  # (širine 320–1440, Pixel 7). Teče vzporedno z „vrata“ (ločen runner,
-  # port 3100 se ne tičeta); strežnik požene Playwrightov webServer
-  # (`bunx next dev -p 3100`) na sveži SQLite bazi — reuseExistingServer
-  # je v CI izklopljen (playwright.config.ts), retries = 1, forbidOnly.
-  # Artefakti (HTML poročilo + sledi ob padcu) se naložijo tudi ob padcu.
-  # Kvota: +~6 min/push (glej opombo o kvoti v glavi).
+  # (širine 320–1440, Pixel 7). ZASNOVA 2.65.3 (lekcija iz lokalne
+  # CI-paritetne verifikacije 15. 10., lekcija 1 uporabljena tudi na CI):
+  # dev-mode webServer (`bunx next dev`) je turbopack PANIC-al in dev
+  # prekrivanja so falila overflow teste; brez seeda pa zlata pot ni imela
+  # Bleda. E2E zato teče nad PRODUKCIJSKIM standalone buildom (isti vzorec
+  # kot dim) + SEEJANA baza — testiramo to, kar pošiljamo. Teče vzporedno
+  # z „vrata“ (ločen runner, port 3100 se ne tičeta). Artefakti se naložijo
+  # tudi ob padcu. Kvota: +~8 min/push (glej opombo o kvoti v glavi).
   e2e:
     name: "E2E (Playwright: zlata pot + mobilni)"
     runs-on: ubuntu-latest
@@ -166,17 +168,42 @@ jobs:
       - name: Namestitev odvisnosti
         run: bun install --frozen-lockfile
 
-      - name: Prisma generate + sveža SQLite baza za E2E
+      - name: Prisma generate + sveža SEEJANA SQLite baza za E2E
         run: |
           bunx prisma generate
           rm -f /tmp/e2e.db /tmp/e2e.db-journal
           bunx prisma db push --skip-generate
+          # Seed (74 destinacij) — brez njega zlata pot ne najde Bleda:
+          bun prisma/seed.ts
+
+      - name: Build (next build, standalone izhod)
+        run: bun run build
+
+      - name: Zagon produkcijskega strežnika (standalone, port 3100)
+        run: |
+          mkdir -p reports
+          # HOSTNAME=0.0.0.0 + NEXTAUTH lutila (isti vzorec kot dim job):
+          DATABASE_URL="file:/tmp/e2e.db" PORT=3100 \
+            NEXTAUTH_SECRET="ci-dummy-secret-samo-za-dim" \
+            NEXTAUTH_URL="http://localhost:3100" \
+            HOSTNAME="0.0.0.0" \
+            bun .next/standalone/server.js > reports/e2e-server.log 2>&1 &
+          echo $! > server.pid
+
+      - name: Pripravljenost (do 30 s na /api/health)
+        run: bun scripts/ci-wait-ready.ts
+        env:
+          SMOKE_BASE_URL: http://localhost:3100
 
       - name: Playwright Chromium (z sistemskimi odvisnostmi)
         run: bunx playwright install --with-deps chromium
 
-      - name: E2E (zlata pot + mobilni projekt)
-        run: bun run e2e
+      - name: E2E (zlata pot + mobilni, produkcijski build)
+        run: E2E_BASE_URL="http://localhost:3100" bun run e2e
+
+      - name: Ustavitev strežnika
+        if: always()
+        run: kill $(cat server.pid) 2>/dev/null || true
 
       - name: Artefakti (playwright-report + test-results — tudi ob padcu)
         if: always()
@@ -186,4 +213,5 @@ jobs:
           path: |
             playwright-report/
             test-results/
+            reports/
           if-no-files-found: warn

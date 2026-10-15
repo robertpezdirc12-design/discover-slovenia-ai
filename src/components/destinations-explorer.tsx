@@ -166,7 +166,7 @@ export function DestinationsExplorer() {
       />
 
       {/* Nadzorna vrstica: iskanje + filtri (država/regija/tip, #41 F0) */}
-      <div className="mt-8 grid gap-3 md:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto]">
+      <div className="mt-8 grid gap-3 rounded-2xl border border-border/70 bg-card/70 p-3 shadow-sm sm:p-4 md:grid-cols-2 lg:grid-cols-[minmax(240px,1fr)_auto_auto_auto]">
         <div className="relative">
           <Search
             className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
@@ -180,7 +180,7 @@ export function DestinationsExplorer() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={pick(l, L.searchPlaceholder)}
-            className="h-11 pl-9"
+            className="h-12 rounded-xl border-border/70 bg-background pl-10 shadow-sm focus-visible:ring-primary/30"
             autoComplete="off"
           />
         </div>
@@ -190,7 +190,7 @@ export function DestinationsExplorer() {
             {pick(l, L.countryLabel)}
           </label>
           <Select value={country} onValueChange={setCountry}>
-            <SelectTrigger id="dest-country" className="h-11 w-full md:w-56">
+            <SelectTrigger id="dest-country" className="h-12 w-full rounded-xl border-border/70 bg-background shadow-sm md:w-56">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="max-h-96">
@@ -209,7 +209,7 @@ export function DestinationsExplorer() {
             {pick(l, L.regionLabel)}
           </label>
           <Select value={region} onValueChange={setRegion}>
-            <SelectTrigger id="dest-region" className="h-11 w-full md:w-52">
+            <SelectTrigger id="dest-region" className="h-12 w-full rounded-xl border-border/70 bg-background shadow-sm md:w-52">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="max-h-96">
@@ -228,7 +228,7 @@ export function DestinationsExplorer() {
             {pick(l, L.typeLabel)}
           </label>
           <Select value={type} onValueChange={setType}>
-            <SelectTrigger id="dest-type" className="h-11 w-full md:w-44">
+            <SelectTrigger id="dest-type" className="h-12 w-full rounded-xl border-border/70 bg-background shadow-sm md:w-44">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -263,7 +263,7 @@ export function DestinationsExplorer() {
 
       {/* Mreža kartic */}
       {results.length > 0 ? (
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {results.map((d, i) => (
             <DestinationCard key={d.slug} d={d} priority={i < 3} />
           ))}

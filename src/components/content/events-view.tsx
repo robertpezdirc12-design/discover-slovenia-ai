@@ -175,7 +175,7 @@ export function EventsView({ todayIso }: { todayIso?: string }) {
   const hasFilters = month !== "all" || category !== "all" || country !== "all";
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
       <PageHeader kicker={pick(l, L.kicker)} title={pick(l, L.title)} lead={pick(l, L.lead)}>
         <p className="mt-3 text-sm text-muted-foreground">{pick(l, L.metaNote)}</p>
       </PageHeader>
@@ -267,7 +267,7 @@ export function EventsView({ todayIso }: { todayIso?: string }) {
 
         {/* Seznam po mesecih */}
         {filtered.length === 0 ? (
-          <div className="mt-10 rounded-xl border border-dashed p-8 text-center">
+          <div className="mt-10 rounded-2xl border border-dashed border-border/70 bg-muted/20 p-8 text-center">
             <p className="text-sm text-muted-foreground">{pick(l, L.noEvents)}</p>
             {hasFilters && (
               <button
@@ -298,7 +298,7 @@ export function EventsView({ todayIso }: { todayIso?: string }) {
                     const dest = e.destSlug ? getDestination(e.destSlug) : undefined;
                     return (
                       <li key={e.id}>
-                        <Card className="group gap-0 overflow-hidden py-0 transition-all hover:shadow-lg">
+                        <Card className="group gap-0 overflow-hidden rounded-2xl border-border/70 py-0 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                           <div className="flex flex-row">
                             <div className="relative w-28 shrink-0 overflow-hidden bg-muted sm:w-40">
                               <Image

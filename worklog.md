@@ -750,3 +750,24 @@ Stage Summary:
 - **Postavka ⑦ Ponovno ZAPRTA**: parity SHA-exact (a9f0e3c), avtorstvo čisto, sync.yaml poverilnice sveže, allow_force_push dokumentiran (lastnik ga lahko izklopi).
 - Preostale vrata za zelen CI: SAMO identity verification (lastniški UI korak) + za GitHub Actions billing (spend limit) — vse ostalo pripravljeno in dokazano.
 - Stanje: main = a9f0e3c = GitLab main · produkcija 2.66.0 živo · Actions billing zid · GitLab CI identity verification.
+
+---
+Task ID: R35-PHOTON-LIVE-2.66.1
+Agent: Z.ai Code (session web-3612f14e, trace 1a13ec40af437c31)
+Task: #35 — "nadaljuj"; lekcija 9/10 (teorija → dokaz) prenesena na geokodirno plast: runbook §3 Photon živo dokazati v peskovnici.
+
+Work Log:
+- Re-ground: main @ a9f0e3c, ni novih lastniških odgovorov; peskovniške zmožnosti: Java 21 ✓, docker ✗, root ✗, RAM 2,7 Gi, disk 5,8 G, pasovna širina ~17 MB/s (Geofabrik test) do ~35 MB/s (R2 ogledalo).
+- Izkopan URL vzorec rtuszik/photon-docker (source: config.py + regions.py + check_remote.py): BASE_URL=r2.koalasec.org/public, path=/europe/slovenia/photon-db-slovenia-1.0-latest.tar.bz2 → **404**; regions.py: SI = db_available:false → **SI nima prebuilt DB indeksa** (samo DE/FR/AT/ES/NL/IN/JP…).
+- Ključni premik: photon 1.x nima PBF importa — JSON dump pot; ogledalo gosti **dnevne JSONL dump-e za VSE regije** (SI dump 52 MB, last-modified danes, MD5 ujema 5b144eb0…).
+- ŽIVO: dekompresija 52 MB → 680 MB (0,8 s, pip zstandard 0.25.0 — venv, --user ne dela) → `java -Xmx1400m -jar photon-1.3.0.jar import -import-file slovenia.jsonl` → **593 956 dokumentov / 141 s** → indeks **202 MB** → serve 2322.
+- Žive poizvedbe: /api?q=Bled → Bled, SI, 4260 ✓ · /api?q=Ljubljanski grad ✓ · /reverse → Pleteršnikova ulica, Ljubljana ✓ (tarče e2e zlate poti/2.64.0) — PHOTON_BASE_URL override bi skrml brez spremembe kode.
+- 2.66.1 (commit 592b9fa, avtor = lastnik ✓ lekcija 11): runbook §3.1 popravljen + nova §3.1.1 (živi dokaz + 2 popravka trditev: DB indeksi samo velike države; photon 1.x brez PBF importa) + docs/evidence/photon-live-verify/summary.md + verzija 6 mest + zaklenitev ⑳ (8 asertov).
+- Vrata: eslint 0 · tsc 0 · 2344/2344 (26174 expect, +8) · push GitHub ✓ + GitLab ✓ (a9f0e3c..592b9fa, fast-forward, brez WAF težav) → **Vercel success, produkcija 2.66.1 živo**.
+- Valhalla (§4) pošteno nedokazan: brez docker/cmake/root v peskovnici neizvedljiv — izvedljiv na VPS (runbook §4 pripravljen).
+- Poročilo: #35 komentar **6188736215**.
+
+Stage Summary:
+- Faza 3 (Photon self-host) = DOKAZANO IZVEDLJIVO (koda ista, override je edini korak); import regije ≈ 20–40 min; indeks ≈ 1,5–2,5 GB — sizing korekcija iz meritev, ne ocen.
+- Runbook zdaj ima 3 živo dokazane plasti: §2+§3 DB (2.66.0) · §3.1.1 Photon (2.66.1) · §1 merjene vrstice (2.65.2) — edina nedokazana: §4 Valhalla build (peskovniško neizvedljivo, VPS-ready).
+- Lekcija (manjša): peskovniški nohup/ozadnji procesi so žanjeani TUDI med rundami — vsi dolgi prenosi/delovne sekvence v ENEM ukazu z timeout; curl -C - resume za večje datoteke.

@@ -88,7 +88,7 @@ export function ExperiencesView() {
   } as const;
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
       <PageHeader kicker={pick(l, L.kicker)} title={pick(l, L.title)} lead={pick(l, L.lead)}>
         <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">
@@ -119,7 +119,7 @@ export function ExperiencesView() {
               .filter((d): d is NonNullable<typeof d> => Boolean(d));
             return (
               <li key={type.id}>
-                <Card className="group h-full gap-0 overflow-hidden py-0 transition-all hover:border-primary/40 hover:shadow-lg">
+                <Card className="group h-full gap-0 overflow-hidden rounded-2xl border-border/70 py-0 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
                   {/* Mozaik slik povezanih destinacij (prve 3) */}
                   <div className="grid h-28 grid-cols-3 gap-0.5 bg-muted">
                     {dests.slice(0, 3).map((d, i) => (

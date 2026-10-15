@@ -226,22 +226,30 @@ describe("POLIR9 A: temne stopnje hero gradienta (dark:from/via/to) ≥ 4,5:1", 
 // ── ④ SOURCE-CONTRACT: home-view.tsx — hero pod glavo + temne stopnje ────────
 
 describe("POLIR9 A: hero pod glavo (home-view.tsx, živa napaka nevidne glave)", () => {
-  test("④ hero sekcija: -mt-16 (pod h-16 sticky glavo) + svetle stopnje ostanejo + temne stopnje dodane", () => {
-    // -mt-16: hero se zavleče pod prozorno sticky glavo (h-16 na vseh
-    // lomnih točkah) — glava z belo pisavo sedi na zelenem, py-16/24
-    // absorbira 64 px, vsebina pa ostane pod glavo.
+  test("④ hero sekcija: -mt-16 + fotografija + preliv z WCAG AA kontrastom", () => {
     expect(
-      HOME.includes(
-        'className="relative -mt-16 overflow-hidden bg-gradient-to-br from-primary via-primary to-[#1e4f2d] text-white dark:from-[#0b4d20] dark:via-[#0e5c28] dark:to-[#063615]"'
-      )
+      HOME.includes('className="relative -mt-16 overflow-hidden bg-[#0b3029] text-white"')
     ).toBe(true);
-    // svetle stopnje OSTAJOJO (svetla tema je bila v redu: ≈4,9–6,3:1)
-    expect(HOME.includes("from-primary via-primary to-[#1e4f2d]")).toBe(true);
-    // temne stopnje (svetli --primary v temni temi ≈ rgb(0,178,0) je spodnesel
-    // belo besedilo na 1,8–2,9:1)
     expect(
-      HOME.includes("dark:from-[#0b4d20] dark:via-[#0e5c28] dark:to-[#063615]")
+      HOME.includes("linear-gradient(90deg, rgba(5, 28, 25, 0.84) 0%, rgba(5, 28, 25, 0.70) 48%, rgba(5, 28, 25, 0.64) 100%)")
     ).toBe(true);
+    expect(HOME.includes("url('/content/bled.jpg')")).toBe(true);
+
+    // Najslabši primer: bel piksel fotografije za najmanj neprosojnim
+    // delom preliva. Bela pisava mora ostati nad pragom WCAG AA 4,5:1.
+    const alpha = 0.64;
+    const rgb = [5, 28, 25].map((channel) =>
+      Math.round(channel * alpha + 255 * (1 - alpha))
+    );
+    const linear = rgb.map((channel) => {
+      const value = channel / 255;
+      return value <= 0.04045
+        ? value / 12.92
+        : ((value + 0.055) / 1.055) ** 2.4;
+    });
+    const luminance =
+      0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+    expect(1.05 / (luminance + 0.05)).toBeGreaterThanOrEqual(4.5);
   });
 });
 
@@ -308,16 +316,15 @@ describe("POLIR9 A: živi dokaz — izpostanjeni kršitvi v glavi nad herojem (8
 
 // ── ⑦ ZAKLEP: #1e4f2d ostaja KONČNA stopnja SVETLEGA gradienta ────────────────
 
-describe("POLIR9 A: zaklep svetle končne stopnje (prepreči zamenjavo stopenj)", () => {
-  test("⑦ to-[#1e4f2d] je svetla stopnja; temna končna stopnja je #063615 (ne obratno)", () => {
-    // Past iz raziskave: svetle in temne stopnje bi se lahko zamenjale —
-    // svetla končna #1e4f2d v temni temi bi dala beli le ≈4,5 na robu,
-    // temna #063615 v svetli pa bi vizuelno odstopala od znamke. Zaklep
-    // predpon: #1e4f2d BREZ dark:, #063615 Z dark:.
-    expect(HOME.includes("to-[#1e4f2d]")).toBe(true);
+describe("POLIR9 A: stabilen kontrast heroja v obeh temah", () => {
+  test("⑦ temna plast je neodvisna od teme in nikjer ne pade pod minimalno neprosojnost", () => {
+    // Hero uporablja fotografijo in fiksno temno prekrivno plast namesto
+    // theme-dependent --primary stopnje; skrajna desna alfa določa najslabši
+    // kontrast in se preverja tudi numerično v testu ④ zgoraj.
+    expect(HOME.includes("bg-[#0b3029] text-white")).toBe(true);
+    expect(HOME.includes("from-primary via-primary")).toBe(false);
     expect(HOME.includes("dark:to-[#1e4f2d]")).toBe(false);
-    expect(HOME.includes("dark:to-[#063615]")).toBe(true);
-    expect(HOME.includes("dark:from-[#0b4d20]")).toBe(true);
-    expect(HOME.includes("dark:via-[#0e5c28]")).toBe(true);
+    expect(HOME.includes("dark:to-[#063615]")).toBe(false);
+    expect(HOME.includes("rgba(5, 28, 25, 0.64) 100%")).toBe(true);
   });
 });

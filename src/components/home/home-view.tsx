@@ -604,17 +604,16 @@ export function HomeView({
     <div className="w-full">
       {/* ======== HERO ======== */}
       {/* POLIR9 (WCAG 1.4.3): -mt-16 zavleče hero pod prozorno sticky glavo
-          (h-16) — glava z belo pisavo sedi na zelenem, ne na belem telesu
-          (živa napaka: nevidna glava @scroll 0, svetla tema). py-16/24
-          absorbira 64 px glave, zato vsebina (kicker/h1/uvod/iskalnik) ostane
-          pod glavo. Temne stopnje gradienta: svetli --primary (oklch 0.586)
-          bi belo besedilo spodnesel na ~2–2,9:1 — izrecne temnozelene stopnje
-          držijo ≥ 4,5:1 (via #0e5c28 = 8,15:1 za čisto belo). */}
+          (h-16), zato bela navigacija ostane na fotografiji, ne na belem telesu.
+          Vsebina ostane pod glavo zaradi py-20/28. Preliv je neodvisen od
+          svetle/temne teme; najmanj 0,64 neprosojnosti temne plasti na DESNEM
+          robu pomeni približno 5,3:1 tudi nad najsvetlejšim (belim) pikslom
+          fotografije — nad pragom WCAG AA 4,5:1 za navadno belo besedilo. */}
       <section
         className="relative -mt-16 overflow-hidden bg-[#0b3029] text-white"
         style={{
           backgroundImage:
-            "linear-gradient(90deg, rgba(5, 28, 25, 0.88) 0%, rgba(5, 28, 25, 0.62) 48%, rgba(5, 28, 25, 0.20) 100%), linear-gradient(0deg, rgba(5, 28, 25, 0.40), transparent 55%), url('/content/bled.jpg')",
+            "linear-gradient(90deg, rgba(5, 28, 25, 0.84) 0%, rgba(5, 28, 25, 0.70) 48%, rgba(5, 28, 25, 0.64) 100%), linear-gradient(0deg, rgba(5, 28, 25, 0.40), transparent 55%), url('/content/bled.jpg')",
           backgroundPosition: "center 48%",
           backgroundSize: "cover",
         }}

@@ -166,7 +166,7 @@ export function DestinationsExplorer() {
       />
 
       {/* Nadzorna vrstica: iskanje + filtri (država/regija/tip, #41 F0) */}
-      <div className="mt-8 grid grid-cols-2 gap-3 rounded-2xl border border-border/70 bg-gradient-to-br from-card via-card to-muted/20 p-3 shadow-sm ring-1 ring-border/30 sm:p-4 lg:grid-cols-[minmax(240px,1fr)_auto_auto_auto]">
+      <div className="mt-7 grid grid-cols-2 gap-3 rounded-3xl border border-border/70 bg-gradient-to-br from-card via-card to-muted/20 p-3 shadow-[0_20px_60px_-38px_rgba(15,23,42,0.34)] ring-1 ring-foreground/[0.04] sm:mt-8 sm:p-5 lg:grid-cols-[minmax(240px,1fr)_auto_auto_auto]">
         <div className="relative col-span-2 min-w-0 lg:col-span-1">
           <Search
             className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"

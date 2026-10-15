@@ -181,7 +181,7 @@ export function EventsView({ todayIso }: { todayIso?: string }) {
       </PageHeader>
 
       {l === "en" && pick(l, L.enNote) && (
-        <p className="mt-6 rounded-md border border-dashed border-primary/30 bg-primary/5 px-4 py-2.5 text-xs text-muted-foreground">
+        <p className="mt-6 rounded-xl border border-dashed border-primary/25 bg-gradient-to-br from-primary/[0.06] to-card px-4 py-3 text-xs text-muted-foreground">
           {pick(l, L.enNote)}
         </p>
       )}
@@ -277,7 +277,7 @@ export function EventsView({ todayIso }: { todayIso?: string }) {
                   setCategory("all");
                   setCountry("all");
                 }}
-                className="mt-4 inline-flex min-h-9 items-center rounded-md border px-4 text-sm font-medium hover:bg-accent focus-green"
+                className="mt-4 inline-flex min-h-10 items-center rounded-xl border border-border/70 bg-card px-4 text-sm font-semibold shadow-sm transition-all hover:border-primary/30 hover:bg-muted/30 focus-green"
               >
                 {pick(l, L.clearFilters)}
               </button>
@@ -318,7 +318,7 @@ export function EventsView({ todayIso }: { todayIso?: string }) {
                                     {pick(l, L.pastEvent)}
                                   </Badge>
                                 )}
-                                <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground">
                                   <CatIcon className="size-3" aria-hidden="true" />
                                   {pick(l, EVENT_CATEGORIES[e.category])}
                                 </span>
@@ -385,7 +385,7 @@ export function EventsView({ todayIso }: { todayIso?: string }) {
                                     href={e.website}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex min-h-9 items-center gap-1.5 rounded-md border px-3 text-sm font-medium hover:bg-accent focus-green"
+                                    className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-border/70 bg-card px-3 text-sm font-medium transition-colors hover:border-primary/30 hover:bg-muted/30 focus-green"
                                   >
                                     {pick(l, L.website)}
                                     <ExternalLink className="size-3.5" aria-hidden="true" />
@@ -394,7 +394,7 @@ export function EventsView({ todayIso }: { todayIso?: string }) {
                                 {dest && (
                                   <Link
                                     href={`/destinacija/${dest.slug}`}
-                                    className="inline-flex min-h-9 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-primary hover:bg-primary/10 focus-green"
+                                    className="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 focus-green"
                                   >
                                     {pick(l, L.exploreDest)}
                                     <ArrowRight className="size-3.5" aria-hidden="true" />

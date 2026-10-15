@@ -180,7 +180,7 @@ export function ThingsToDoDetail({ d }: { d: Destination }) {
       </header>
 
       {l !== "sl" && pick(l, L.enNote) && (
-        <p className="mt-6 rounded-md border border-dashed border-primary/30 bg-primary/5 px-4 py-2.5 text-xs text-muted-foreground">
+        <p className="mt-6 rounded-xl border border-dashed border-primary/25 bg-gradient-to-br from-primary/[0.06] to-card px-4 py-3 text-xs text-muted-foreground">
           {pick(l, L.enNote)}
         </p>
       )}

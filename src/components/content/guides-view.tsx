@@ -101,7 +101,7 @@ export function GuidesView() {
   const GROUP_ORDER: GuideGroup[] = ["zimski", "domaci", "jadranski"];
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
       <PageHeader kicker={pick(l, L.kicker)} title={pick(l, L.title)} lead={pick(l, L.lead)}>
         <p className="mt-3 text-sm text-muted-foreground">{pick(l, L.metaNote)}</p>
       </PageHeader>
@@ -135,7 +135,7 @@ export function GuidesView() {
             <ul className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {guides.map((g) => (
                 <li key={g.slug}>
-                  <Card className="group h-full gap-0 overflow-hidden py-0 transition-all hover:border-primary/40 hover:shadow-lg">
+                  <Card className="group h-full gap-0 overflow-hidden rounded-2xl border-border/70 py-0 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
                     <CardContent className="flex min-h-56 flex-col p-4">
                       <p aria-label={g.flags.replace(/[^\p{L}\p{S}\s]/gu, "").trim() || undefined} className="text-lg">
                         {g.flags}
@@ -219,7 +219,7 @@ export function GuidesView() {
             const dest = a.destSlug ? getDestination(a.destSlug) : undefined;
             return (
               <li key={a.id}>
-                <Card className="group h-full gap-0 overflow-hidden py-0 transition-all hover:shadow-lg">
+                <Card className="group h-full gap-0 overflow-hidden rounded-2xl border-border/70 py-0 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                   <div className="relative aspect-video w-full overflow-hidden bg-muted">
                     <Image
                       src={a.image}

@@ -249,8 +249,8 @@ export function DestinationDetail({ d }: { d: Destination }) {
           viewporta: pri VIDNI naslovni vrstici (iOS Safari / Chrome
           Android) hero ne zajema več površine pod vrstico; dvh zavrnjen
           (WebKit #266835 — jank na tokovnih blokih); v brezglavem
-          brskalniku svh ≡ vh (cap nespremenjen). */}
-      <div className="relative min-h-[320px] max-h-[54svh] w-full overflow-hidden bg-muted sm:min-h-[380px] lg:min-h-[440px]">
+          brskalniku svh ≡ vh. Tudi odzivna minimalna višina ostane znotraj 54svh. */}
+      <div className="relative min-h-[min(320px,54svh)] max-h-[54svh] w-full overflow-hidden bg-muted sm:min-h-[min(380px,54svh)] lg:min-h-[min(440px,54svh)]">
         <Image
           src={d.image}
           alt={`${d.name} — ${d.tagline}`}

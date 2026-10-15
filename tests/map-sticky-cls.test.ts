@@ -71,7 +71,7 @@ describe("POLIR15-a: Leaflet zaprt v stacking context + sticky preklop", () => {
     const ovoj = elementOkoli(MAPA, 'aria-label={t("mapLabel")}');
     expect(ovoj).toContain("relative z-0 isolate");
     // overflow-hidden ostaja (popups so bili že vezani na ovoj).
-    expect(ovoj).toContain("overflow-hidden rounded-xl border shadow-sm");
+    expect(ovoj).toContain("overflow-hidden rounded-2xl border border-border/70 bg-card shadow-xl shadow-black/10");
   });
 
   test("② Leaflet CSS ostane NESPREMJEN (0 prepisov z-indexa v globals.css)", () => {
@@ -105,10 +105,10 @@ describe("POLIR15-d: CLS skeleta zemljevida (0,023 → 0)", () => {
   test("⑤ koren skeleta = koren TravelMap (flex kolona <lg, isti px/pb)", () => {
     expect(POGLED).toContain("max-lg:flex max-lg:flex-col");
     expect(POGLED).toContain(
-      "mx-auto w-full max-w-7xl px-4 pb-12 sm:px-6 lg:px-8 max-lg:flex max-lg:flex-col"
+      "mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6 lg:px-8 max-lg:flex max-lg:flex-col"
     );
     expect(MAPA).toContain(
-      "mx-auto w-full max-w-7xl px-4 pb-12 sm:px-6 lg:px-8 max-lg:flex max-lg:flex-col"
+      "mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6 lg:px-8 max-lg:flex max-lg:flex-col"
     );
   });
 
@@ -136,8 +136,8 @@ describe("POLIR15-d: CLS skeleta zemljevida (0,023 → 0)", () => {
 
   test("⑧ skelet zrcali mrežo zemljevid+seznam (grid 1fr_340px) in vrstice kontrol", () => {
     // Mreža (ista v obeh).
-    expect(MAPA).toContain("mt-4 grid gap-4 lg:grid-cols-[1fr_340px] max-lg:order-4");
-    expect(POGLED).toContain("mt-4 grid gap-4 lg:grid-cols-[1fr_340px] max-lg:order-4");
+    expect(MAPA).toContain("mt-5 grid gap-5 lg:grid-cols-[1fr_340px] max-lg:order-4");
+    expect(POGLED).toContain("mt-5 grid gap-5 lg:grid-cols-[1fr_340px] max-lg:order-4");
     // Iskanje+regija (isti grid, isti odmik).
     expect(POGLED).toContain(
       "mt-4 grid grid-cols-[1fr_auto] gap-3 md:grid-cols-[1fr_auto_auto] lg:mt-8 max-lg:order-1"

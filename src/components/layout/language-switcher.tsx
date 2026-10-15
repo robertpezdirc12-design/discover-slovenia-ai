@@ -72,8 +72,8 @@ export function LanguageSwitcher({ overHero = false }: { overHero?: boolean }) {
         <span aria-hidden="true">{activeShort}</span>
         <span className="sr-only">{localeName(locale)}</span>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-52">
-        <DropdownMenuLabel className="text-muted-foreground">
+      <DropdownMenuContent align="end" className="w-52 rounded-2xl border-border/70 p-1.5 shadow-xl">
+        <DropdownMenuLabel className="rounded-lg px-2.5 py-2 text-muted-foreground">
           {pick(locale, {
             sl: "Jezik",
             en: "Language",
@@ -92,7 +92,7 @@ export function LanguageSwitcher({ overHero = false }: { overHero?: boolean }) {
               onSelect={() => switchTo(opt.code)}
               aria-current={active ? "true" : undefined}
               className={cn(
-                "flex min-h-11 items-center justify-between gap-2 text-sm",
+                "flex min-h-11 items-center justify-between gap-2 rounded-xl px-3 text-sm transition-colors",
                 active && "font-semibold text-primary"
               )}
             >

@@ -1499,7 +1499,7 @@ export default function TravelMap() {
             onClick={() => setType("all")}
             aria-pressed={type === "all"}
             className={cn(
-              "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+              "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none",
               type === "all"
                 ? "border-primary bg-primary text-primary-foreground"
                 : "bg-background hover:border-primary/40 hover:text-primary"
@@ -1516,7 +1516,7 @@ export default function TravelMap() {
                 onClick={() => setType(active ? "all" : ty)}
                 aria-pressed={active}
                 className={cn(
-                  "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none",
                   active
                     ? "border-primary bg-primary text-primary-foreground"
                     : "bg-background hover:border-primary/40 hover:text-primary"
@@ -1594,7 +1594,7 @@ export default function TravelMap() {
           onClick={toggleLokali}
           aria-pressed={lokaliOn}
           className={cn(
-            "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+            "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none",
             lokaliOn
               ? "border-primary bg-primary text-primary-foreground"
               : "bg-background hover:border-primary/40 hover:text-primary"
@@ -1610,7 +1610,7 @@ export default function TravelMap() {
           onClick={toggleFuel}
           aria-pressed={fuelOn}
           className={cn(
-            "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+            "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none",
             fuelOn
               ? "border-primary bg-primary text-primary-foreground"
               : "bg-background hover:border-primary/40 hover:text-primary"
@@ -1627,7 +1627,7 @@ export default function TravelMap() {
           onClick={togglePoi}
           aria-pressed={poiOn}
           className={cn(
-            "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+            "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none",
             poiOn
               ? "border-primary bg-primary text-primary-foreground"
               : "bg-background hover:border-primary/40 hover:text-primary"
@@ -1704,7 +1704,7 @@ export default function TravelMap() {
             <button
               type="button"
               onClick={retryLokali}
-              className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-full px-3 text-xs font-semibold transition-colors hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-full px-3 text-xs font-semibold transition-colors motion-reduce:transition-none hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
             >
               <RotateCw className="size-3" aria-hidden="true" />
               {t("retry")}
@@ -1746,7 +1746,7 @@ export default function TravelMap() {
             <button
               type="button"
               onClick={retryFuel}
-              className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-full px-3 text-xs font-semibold transition-colors hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-full px-3 text-xs font-semibold transition-colors motion-reduce:transition-none hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
             >
               <RotateCw className="size-3" aria-hidden="true" />
               {t("retry")}
@@ -1792,7 +1792,7 @@ export default function TravelMap() {
             <button
               type="button"
               onClick={() => void onToggleRoute()}
-              className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-full px-3 text-xs font-semibold transition-colors hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-full px-3 text-xs font-semibold transition-colors motion-reduce:transition-none hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
             >
               <RotateCw className="size-3" aria-hidden="true" />
               {t("retry")}
@@ -1846,7 +1846,7 @@ export default function TravelMap() {
           <button
             type="button"
             onClick={retryPoi}
-            className="focus-green inline-flex h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-amber-600/50 bg-background px-4 text-xs font-semibold text-amber-900 transition-colors hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-900/50"
+            className="focus-green inline-flex h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-amber-600/50 bg-background px-4 text-xs font-semibold text-amber-900 transition-colors motion-reduce:transition-none hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-900/50"
           >
             <RotateCw className="size-3.5" aria-hidden="true" />
             {t("retry")}
@@ -2108,7 +2108,7 @@ export default function TravelMap() {
                       onClick={() => focusDestination(d)}
                       aria-current={active ? "true" : undefined}
                       className={cn(
-                        "group flex w-full items-center gap-3 rounded-xl border border-border/70 bg-card p-2.5 text-left transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                        "group flex w-full items-center gap-3 rounded-xl border border-border/70 bg-card p-2.5 text-left transition-all duration-200 motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none",
                         active
                           ? "border-primary/60 bg-primary/[0.04] shadow-md"
                           : "hover:border-primary/30 hover:bg-muted/30 hover:shadow-sm"

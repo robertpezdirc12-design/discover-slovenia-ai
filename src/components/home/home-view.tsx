@@ -702,7 +702,7 @@ export function HomeView({
             <aside data-testid="featured-destination-panel" className="block">
               <Link
                 href={`/destinacija/${featured[1].slug}`}
-                className="group relative block min-h-[280px] overflow-hidden rounded-[1.75rem] sm:min-h-[330px] lg:min-h-[390px] border border-white/20 bg-[#0b3029] shadow-2xl shadow-black/30 transition-transform duration-500 hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#0b3029]"
+                className="group relative block min-h-[280px] overflow-hidden rounded-[1.75rem] sm:min-h-[330px] lg:min-h-[390px] border border-white/20 bg-[#0b3029] shadow-2xl shadow-black/30 transition-transform duration-500 hover:-translate-y-1 motion-reduce:transition-none motion-reduce:hover:translate-y-0 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#0b3029]"
                 style={{
                   backgroundImage: `linear-gradient(0deg, rgba(4, 24, 21, 0.96) 0%, rgba(4, 24, 21, 0.58) 38%, rgba(4, 24, 21, 0.04) 100%), url(\"${featured[1].image}\")`,
                   backgroundPosition: "center",
@@ -721,7 +721,7 @@ export function HomeView({
                   <span className="mt-2 line-clamp-3 block max-w-sm text-sm leading-relaxed text-white/85">{featured[1].tagline}</span>
                   <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold">
                     {pick(l, { sl: "Odkrij kraj", en: "Explore place", it: "Scopri il luogo", de: "Ort entdecken", fr: "Découvrir le lieu", es: "Descubrir el lugar" })}
-                    <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                    <ArrowRight className="size-4 transition-transform group-hover:translate-x-1 motion-reduce:translate-x-0 motion-reduce:transition-none" aria-hidden="true" />
                   </span>
                 </span>
               </Link>

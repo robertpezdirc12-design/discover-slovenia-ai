@@ -193,7 +193,7 @@ export function OwnMarketplaceSection() {
         >
           {[0, 1, 2].map((i) => (
             <li key={i}>
-              <Card>
+              <Card className="rounded-2xl border-border/70 shadow-sm">
                 <Skeleton className="aspect-[3/2] w-full rounded-none" />
                 <CardContent className="flex flex-col gap-2.5 p-4">
                   <Skeleton className="h-4 w-24" />

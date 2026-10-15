@@ -270,12 +270,12 @@ export default function PrijavaPage() {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="signin">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="signin" className="gap-1.5">
+                <TabsList className="mb-5 h-11 w-full rounded-xl border border-border/70 bg-muted/60 p-1">
+                  <TabsTrigger value="signin" className="h-9 flex-1 gap-1.5 rounded-lg">
                     <LogIn className="size-3.5" aria-hidden="true" />
                     {pick(l, L.signInTab)}
                   </TabsTrigger>
-                  <TabsTrigger value="register" className="gap-1.5">
+                  <TabsTrigger value="register" className="h-9 flex-1 gap-1.5 rounded-lg">
                     <UserPlus className="size-3.5" aria-hidden="true" />
                     {pick(l, L.registerTab)}
                   </TabsTrigger>

@@ -348,7 +348,7 @@ export default function ProviderApplyForm() {
               id="p-category"
               name="category"
               required
-              className="border-input bg-background flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="flex h-11 w-full rounded-xl border border-border/70 bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             >
               {PROVIDER_CATEGORIES.map((c) => (
                 <option key={c} value={c}>
@@ -369,7 +369,7 @@ export default function ProviderApplyForm() {
               required
               defaultValue="SI"
               ref={countrySelectRef}
-              className="border-input bg-background flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="flex h-11 w-full rounded-xl border border-border/70 bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             >
               {ALL_COUNTRY_CODES.map((code) => (
                 <option key={code} value={code}>

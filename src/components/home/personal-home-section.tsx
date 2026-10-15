@@ -470,7 +470,7 @@ function PersonalBoardSkeleton({ t }: { t: (k: LabelKey) => string }) {
       </div>
 
       {/* Nalogovna kartica — realen naslov + prazno stanje (ena vrstica). */}
-      <Card className="mt-4" aria-hidden="true">
+      <Card className="mt-4 rounded-2xl border-border/70 shadow-sm" aria-hidden="true">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <CheckCircle2 className="size-5 text-primary" aria-hidden="true" />
@@ -498,7 +498,7 @@ function ContinueTripCard({
   l: string;
 }) {
   return (
-    <Card>
+    <Card className="rounded-2xl border-border/70 shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Route className="size-5 text-primary" aria-hidden="true" />
@@ -560,7 +560,7 @@ function AlertsCard({
   l: string;
 }) {
   return (
-    <Card>
+    <Card className="rounded-2xl border-border/70 shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Bell className="size-5 text-primary" aria-hidden="true" />
@@ -623,7 +623,7 @@ function WatchesCard({
   l: string;
 }) {
   return (
-    <Card>
+    <Card className="rounded-2xl border-border/70 shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <ListChecks className="size-5 text-primary" aria-hidden="true" />
@@ -723,7 +723,7 @@ function WeatherCard({
   }, [phase, upcoming, dateStart]);
 
   return (
-    <Card>
+    <Card className="rounded-2xl border-border/70 shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           {state === "ok" && day && (day.precipMm >= 5 || day.code >= 95) ? (
@@ -843,7 +843,7 @@ function IdeasCard({
   }, [prefs, lang]);
 
   return (
-    <Card>
+    <Card className="rounded-2xl border-border/70 shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Lightbulb className="size-5 text-primary" aria-hidden="true" />
@@ -969,7 +969,7 @@ function NearbyCard({
   }, [state]);
 
   return (
-    <Card>
+    <Card className="rounded-2xl border-border/70 shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <MapPin className="size-5 text-primary" aria-hidden="true" />

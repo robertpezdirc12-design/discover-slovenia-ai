@@ -583,7 +583,7 @@ export function TripCollaboration({
 
         {/* Vabila (samo lastnik) */}
         {role === "OWNER" && (
-          <div className="space-y-3 border-t pt-4">
+          <div className="space-y-3 rounded-xl border border-border/70 bg-muted/15 p-4">
             <div className="flex flex-wrap items-center gap-2">
               <UserPlus className="h-4 w-4" aria-hidden="true" />
               <p className="text-sm font-medium">Povabi sodelujočega</p>
@@ -669,7 +669,7 @@ export function TripCollaboration({
 
         {/* Seznam sodelujočih (samo lastnik) */}
         {role === "OWNER" && (
-          <div className="space-y-3 border-t pt-4">
+          <div className="space-y-3 rounded-xl border border-border/70 bg-muted/15 p-4">
             <p className="text-sm font-medium">Sodelujoči</p>
             {(!agg.collaborators || agg.collaborators.length === 0) && (
               <p className="text-xs text-muted-foreground">

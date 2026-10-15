@@ -337,7 +337,7 @@ export function TripChat({ shareId, createdAt, canPost, myName }: TripChatProps)
           {/* === @AI pas — vzorec W9 (povedano je točno to, kar se zgodi) === */}
           <div className="flex items-start gap-2.5 border-b border-border py-3">
             <span
-              className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
+              className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/10"
               aria-hidden="true"
             >
               <Bot className="size-4" />

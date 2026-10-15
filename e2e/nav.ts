@@ -1,32 +1,16 @@
 /**
- * NAV-HARDENING ZA E2E PROTI ODDALJENEMU CILJU (2.51.0, issue #38):
- * testi so bili napisani za localhost, kjer je hidracija App Routerja
- * takojšnja. Proti oddaljenemu originu (Vercel preview, `E2E_BASE_URL`)
- * sta se pokazali dve deterministični oviri:
+ * Stabilno čakanje na aplikacijo v oddaljenem/CI načinu.
  *
- *  1. `page.goto` z privzetim `waitUntil: "load"` pogosto abortira
- *     (net::ERR_ABORTED) prek počasnega proxyja — polna `load` faza
- *     s številnimi podviri je nestabilna.
- *  2. Klik takoj po navigaciji/fill-u tekmuje s hidracijo in App
- *     Router soft-nav (debounce iskanja sproži router.replace) —
- *     DOM se odcepi sredi klika („element was detached“) ali pa klik
- *     padе na še ne-hidrirano stran in se tiho izgubi.
- *
- * Rešitev: v oddaljenem načinu navigiramo z `domcontentloaded`, ob
- * mrežni napaki poskusimo ENKRAT znova, po navigaciji in po fill-u
- * pa počakamo `networkidle` (klik ne tekmuje več s podatkovnim tokom).
- * Lokalni teki (brez E2E_BASE_URL) ostanejo povsem nespremenjeni.
+ * Oddaljeni origini lahko ohranijo aktivne zahteve (slike, vremenski podatki,
+ * zemljevid ali druga omrežna aktivnost), zato `networkidle` ni zanesljiv
+ * predpogoj za klik. Po navigaciji čakamo na vidno vsebino strani in
+ * poskusimo kratko počakati na mirno omrežje; timeout omrežja ne blokira testa.
  */
 import { type Page } from "@playwright/test";
 
-/** Oddaljen način = E2E_BASE_URL je nastavljen (Vercel preview/produkcija). */
+/** CI uporablja E2E_BASE_URL, tudi kadar je cilj lokalni testni strežnik. */
 export const ODDALJENO = Boolean(process.env.E2E_BASE_URL);
 
-/**
- * Trd goto: v oddaljenem načinu `domcontentloaded` namesto `load` +
- * en ponovni poskus ob napaki (ERR_ABORTED je tranzieren) + `networkidle`
- * po navigaciji, da interakcije ne tekmujejo s hidracijo/soft-nav.
- */
 export async function gotoTrdo(page: Page, path: string): Promise<void> {
   for (let poskus = 0; ; poskus++) {
     try {
@@ -38,10 +22,24 @@ export async function gotoTrdo(page: Page, path: string): Promise<void> {
       if (poskus > 0 || !ODDALJENO) throw new Error(`goto ni uspel: ${path}`);
     }
   }
-  if (ODDALJENO) await page.waitForLoadState("networkidle");
+
+  if (ODDALJENO) {
+    // Čakaj na dejansko vsebino, ne na umiritev vsake omrežne zahteve.
+    await page.locator("#vsebina").waitFor({ state: "visible", timeout: 20_000 });
+    await page.locator("#vsebina h1").first().waitFor({ state: "visible", timeout: 20_000 });
+    // Kratek best-effort dodaten čas za hitro zaključene zahteve; nikoli ni
+    // trda ovira, če je prisotno dolgoživo omrežje ali počasna zunanja storitev.
+    await page.waitForLoadState("networkidle", { timeout: 1_500 }).catch(() => undefined);
+  }
 }
 
-/** Ustalitev po dejanjih, ki sprožijo debounce/soft-nav (npr. iskanje). */
+/** Po interakciji počakaj na naslednja okvirja prikaza, ne na globalni networkidle. */
 export async function ustaliSe(page: Page): Promise<void> {
-  if (ODDALJENO) await page.waitForLoadState("networkidle");
+  if (!ODDALJENO) return;
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      }),
+  );
 }

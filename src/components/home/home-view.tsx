@@ -623,7 +623,7 @@ export function HomeView({
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 opacity-[0.08] [background-image:radial-gradient(circle_at_20%_20%,white_0,transparent_12%),radial-gradient(circle_at_80%_60%,white_0,transparent_16%)]"
         />
-        <div className="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-10 px-4 py-20 text-left sm:px-6 sm:py-28 lg:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.7fr)] lg:px-8">
+        <div className="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-7 px-4 py-20 text-left sm:gap-10 sm:px-6 sm:py-28 lg:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.7fr)] lg:px-8">
           <div className="max-w-3xl">
           {/* POLIR15-b (2.42.0): SEZONSKI ČIP nad kickerjem — sezonska
               afiniteta po vzoru Švice (sezonski koledar kampanj) in Irske
@@ -699,10 +699,10 @@ export function HomeView({
           </div>
           </div>
           {featured[1] && (
-            <aside className="hidden lg:block">
+            <aside data-testid="featured-destination-panel" className="block">
               <Link
                 href={`/destinacija/${featured[1].slug}`}
-                className="group relative block min-h-[390px] overflow-hidden rounded-[1.75rem] border border-white/20 bg-[#0b3029] shadow-2xl shadow-black/30 transition-transform duration-500 hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#0b3029]"
+                className="group relative block min-h-[280px] overflow-hidden rounded-[1.75rem] sm:min-h-[330px] lg:min-h-[390px] border border-white/20 bg-[#0b3029] shadow-2xl shadow-black/30 transition-transform duration-500 hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#0b3029]"
                 style={{
                   backgroundImage: `linear-gradient(0deg, rgba(4, 24, 21, 0.96) 0%, rgba(4, 24, 21, 0.58) 38%, rgba(4, 24, 21, 0.04) 100%), url(\"${featured[1].image}\")`,
                   backgroundPosition: "center",
@@ -742,10 +742,10 @@ export function HomeView({
           es: "Resumen de la plataforma",
         })}
       >
-        <div className="mx-auto grid w-full max-w-7xl grid-cols-1 divide-y divide-border/70 px-4 py-2 sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:px-6 lg:px-8">
+        <div className="mx-auto grid w-full max-w-7xl grid-cols-3 divide-x divide-border/70 px-2 py-3 sm:px-6 lg:px-8">
           {(["d", "c", "r"] as const).map((k) => (
-            <div key={k} className="flex items-center justify-center px-4 py-3 text-center sm:py-4">
-              <p className="text-base font-bold tracking-tight text-foreground sm:text-lg">
+            <div key={k} className="flex min-w-0 items-center justify-center px-1.5 py-3 text-center sm:px-4 sm:py-4">
+              <p className="text-xs font-bold leading-tight tracking-tight text-foreground sm:text-base lg:text-lg">
                 {pick(l, L.stats)[k]}
               </p>
             </div>

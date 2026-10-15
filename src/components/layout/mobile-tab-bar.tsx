@@ -97,6 +97,11 @@ export function MobileTabBar() {
     [pathname]
   );
 
+  // Označi tudi zavihek „Več“, ko je odprta podstran iz dodatne navigacije.
+  const hasMoreActivePage = moreGroups.some((group) =>
+    group.links.some((link) => isActive(link.href))
+  );
+
   return (
     <nav
       aria-label={pick(l, L.navLabel)}
@@ -146,8 +151,8 @@ export function MobileTabBar() {
             <SheetTrigger
               className={cn(
                 "flex h-14 min-w-11 flex-col items-center justify-center gap-0.5 rounded-lg px-1 text-[10px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transition-none",
-                moreOpen
-                  ? "text-primary"
+                moreOpen || hasMoreActivePage
+                  ? "bg-accent text-primary"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >

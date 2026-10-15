@@ -29,6 +29,11 @@ describe("mobile navigation accessibility", () => {
     expect(activePageBindings).toHaveLength(2);
   });
 
+  test("More tab remains highlighted when a secondary section is open", () => {
+    expect(MOBILE_NAV).toContain("const hasMoreActivePage = moreGroups.some");
+    expect(MOBILE_NAV).toContain("moreOpen || hasMoreActivePage");
+  });
+
   test("mobile tab controls have visible focus and reduced-motion fallbacks", () => {
     expect(MOBILE_NAV).toContain("focus-visible:ring-offset-2");
     expect(MOBILE_NAV).toContain("motion-reduce:transition-none");

@@ -180,7 +180,7 @@ export function TrznicaExplorer({
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <PageHeader kicker={t("kicker")} title={t("title")} lead={t("lead")}>
         <div className="mt-4">
           {/* POLIR7 (2.34.0): whitespace-normal — badge.tsx osnova ima whitespace-nowrap,
@@ -209,8 +209,8 @@ export function TrznicaExplorer({
       <OwnMarketplaceSection />
 
       <Tabs defaultValue="experiences" className="mt-8">
-        <TabsList className="h-11 w-full max-w-md">
-          <TabsTrigger value="products" className="h-8 flex-1 text-sm">
+        <TabsList className="h-12 w-full max-w-lg rounded-xl border border-border/70 bg-muted/70 p-1.5 shadow-sm">
+          <TabsTrigger value="products" className="h-9 flex-1 rounded-lg text-sm">
             {t("tabProducts")}
           </TabsTrigger>
           <TabsTrigger value="experiences" className="h-8 flex-1 text-sm">

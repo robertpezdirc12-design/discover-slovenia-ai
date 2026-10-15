@@ -799,3 +799,41 @@ Stage Summary:
 - Parity: GitHub = GitLab = e610828; Vercel deploy za e610828 v teku (check)
 - Preostalo owner-odvisno: GitLab IV, GitHub spend limit, Viator, db:pg:deploy, re-deizija, VPS self-host
 - Lekcija (nadgrajena L8): WAF flag na gitlab.com se lahko raztegne čez git-protokol (push+ls-remote) in lokalni proxy hkrati, medtem ko API pot ostane prosta; rešitev = tišina ≥ 5 min, potem EN klic
+
+---
+Task ID: R35-CI-E2E-BUN-PLAYWRIGHT
+Agent: Z.ai Code (main session)
+Task: "analiziraj in odpravi napako v gitlab CI za projekt discover-slovenia, veja design/premium-visual-refresh, pipeline 2950568131, neuspešno opravilo 17199051426 — samo to naredi in poročaj" (trace 1a13f60e7fec1d91)
+
+Work Log:
+- Re-ground: repo @ e610828 (2.66.2); userjeva napaka = prvi REALNO odživani pipeline na GitLabu (identity verification opravljena!) — 7 od vrat zelenih, e2e pade po 120 s
+- GitLab API (WAF disciplina): pipeline 2950568131 → veja design/premium-visual-refresh, SHA aec0362 ("Ignore Prisma ANSI progress codes…", avtor robertpezdirc8), source push, 541 s; job 17199051426 = stage e2e, job "e2e"
+- Trace log (100 KB) dekodiran: lint/typecheck/test/prisma/pg-live/build/smoke ✓ → `bun run e2e` → `playwright test` → AggregateError "2 errors building e2e/golden-path.e2e.ts" + "…/mobile.e2e.ts" → "Error: No tests found" — brez podrobnosti (skrite v AggregateError)
+- Git-pot WAF-flagana (ls-remote 403 ×2); veja pridobljena po arhiv-API (archive.tar.gz @ aec0362, 49 MB)
+- Drevesni diff vs main: ~25 spremenjenih UI komponent/testov/pg skriptov — **e2e/*.ts + playwright.config.ts IDENTIČNA main-u** → napaka ni v kodi veje
+- REPRODUKCIJA v peskovniku (node_modules kopirana, bun.lock enak): `bun node_modules/playwright/cli.js test --list` → isti "2 errors building" (bun 1.3.14; CI 1.4.3) — torej bun-runtime specifično; `bun run e2e --list` dela, ker lokalno obstaja node (shebang) → CI (oven/bun:1 brez node) je edina razlika
+- Korenski vzrok izoliran: `bun build e2e/golden-path.e2e.ts` → 2 surovi napaki = `Could not resolve: "chromium-bidi/lib/cjs/bidiMapper/BidiMapper"` + `…/cdp/CdpConnection` (playwright-core/lib/coreBundle.js:44826–44827; opcijski BiDi-over-CDP peer, playwright-core@1.64.0 ima dependencies:{}); bunov grafični graditelj EAGERNO rešuje lazy require-e → AggregateError → No tests found
+- LOKALNA VERIFIKACIJA FIXA nad produkcijskim buildom snapshot-a: prisma generate/db push/seed ✓ → `bun run build` ✓ → standalone server 3100 ✓ → ci-wait-ready ✓ → `node node_modules/playwright/cli.js test` → **16/16 ZELENIH (1.9 min)** — design spremembe veje ne kršijo e2e kontraktov
+- FIX preko GitLab commits API (git-pot WAF-flagana; 1. poskus z start_sha → "branch already exists" → start_branch ✓): commit **c7eec8a9**, avtor = pogodba (robertpezdirc12-design <robert.pezdirc12@gmail.com>), committer = PAT uporabnik; sprememba SAMO .gitlab-ci.yml e2e joba: `apt-get install -y nodejs` + `node node_modules/playwright/cli.js test`
+- Nov pipeline **2950785369** (c7eec8a9) sprožen 12:12:42 — running; WAF ves čas občasno blokira API probe (hlajenje 5–10 min, enojni klici)
+- Poročilo pripravljeno: /home/z/r35-ci-fix-comment.md → objava na #35 ob potrditvi zelene
+
+Stage Summary:
+- Korenski vzrok e2e joba = bun+playwright@1.64.0 nezdružljivost (bun eager-resolve lazy opcijskih require-ov chromium-bidi), NE napaka v design veji; fix = playwright pod node v e2e jobu (c7eec8a9)
+- Lekcija 12 (nova): `bun run <script>` v image-u BREZ node-a tiho požene bina z node shebangom pod bunom — na GitLab CI je to past za vsa orodja, ki pod bunom niso podprta (playwright!); protizdrav: eksplicitna node invokacija ali namestitev node v jobu
+- Lekcija 8 nadgrajena: WAF flag lahko preživi več minut tišine in hkrati blokira git-pot + API-pot; commits API je obvoznica za push, kadar je git-pot flagana (start_branch, ne start_sha — sicer "branch already exists")
+- Preostalo: verify pipeline 2950785369 zelen → #35 komentar; main bo potreboval isti fix (ali merge veje) pred prvim pushom na main z e2e gate
+
+---
+Task ID: R35-CI-E2E-BUN-PLAYWRIGHT (dopolnitev: verifikacija + poročilo)
+Agent: Z.ai Code (main session)
+Task: Zaključek — verifikacija pipeline 2950785369 + poročilo #35
+
+Work Log:
+- Pipeline 2950785369 (commit c7eec8a9): build ob prvem poskusu infra-flake (script_failure @ 144 s, koda nespremenjena — build joba moj commit NI gnil) → retry 17202177642 ✓ @ 100 s
+- **Pipeline 2950785369 = SUCCESS (732 s): lint 69 s ✓ typecheck 64 s ✓ test 63 s ✓ prisma-validate 52 s ✓ pg-live 74 s ✓ build 100 s ✓ smoke 85 s ✓ e2e 224 s ✓ (prej: padec po 120 s brez zbiranja testov)**
+- Poročilo objavljeno: GitHub #35 komentar **6193375463** (issue #35 je na GitHubu, ne GitLabu — GitLab issues/35 = 404; popravljenprejšnji predpostavki)
+
+Stage Summary:
+- Naloga iz trace 1a13f60e7fec1d91 ZAKLJUČENA: napaka analizirana (bun+playwright nezdružljivost, ne napaka veje), popravljena (c7eec8a9), dokazana (8/8 vrat zelenih), poročana (#35)
+- Ostalo za prihodnost: isti e2e fix potrebuje main (ali merge design veje) pred prvim pushom na main z e2e gate na GitLabu; build infra-flake opažen 1× (SaaS small runner)

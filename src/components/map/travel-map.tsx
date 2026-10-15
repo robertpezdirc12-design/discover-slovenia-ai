@@ -1420,7 +1420,7 @@ export default function TravelMap() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 pb-12 sm:px-6 lg:px-8 max-lg:flex max-lg:flex-col">
+    <div className="mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6 lg:px-8 max-lg:flex max-lg:flex-col">
       {/* POLIR14 (2.41.0): MOBILNA GLAVA ZEMLJEVIDA — zemljevid najprej.
           Root postane na <lg FLEX STOLPEC + vrstni red razredov (order-1…7):
           iskanje → čipi → preklop → ZEMLJEVID/SEZNAM → plasti → pasice →
@@ -1433,7 +1433,7 @@ export default function TravelMap() {
           (grid-cols-[1fr_auto]); reset gumb čez celo vrstico (col-span-2).
           mt-4 namesto mt-8 na mobilnem — vsaka vrstica nad zemljevidom je
           draga; namizje (md/lg) IDENTIČNO (lg:mt-8). */}
-      <div className="mt-4 grid grid-cols-[1fr_auto] gap-3 md:grid-cols-[1fr_auto_auto] lg:mt-8 max-lg:order-1">
+      <div className="mt-4 grid grid-cols-[1fr_auto] gap-3 rounded-2xl border border-border/70 bg-card/70 p-3 shadow-sm sm:p-4 md:grid-cols-[1fr_auto_auto] lg:mt-8 max-lg:order-1">
         <div className="relative">
           <Search
             className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
@@ -1445,11 +1445,11 @@ export default function TravelMap() {
             onChange={(e) => setQ(e.target.value)}
             placeholder={t("searchPlaceholder")}
             aria-label={t("searchLabel")}
-            className="h-11 pl-9"
+            className="h-12 rounded-xl border-border/70 bg-background pl-10 shadow-sm focus-visible:ring-primary/30"
           />
         </div>
         <Select value={region} onValueChange={setRegion}>
-          <SelectTrigger className="h-11 w-36 md:w-56" aria-label={t("regionFilter")}>
+          <SelectTrigger className="h-12 w-36 rounded-xl border-border/70 bg-background shadow-sm md:w-56" aria-label={t("regionFilter")}>
             <SelectValue placeholder={t("allRegions")} />
           </SelectTrigger>
           <SelectContent className="max-h-72">
@@ -1859,7 +1859,7 @@ export default function TravelMap() {
           pasom (zemljevid čim višje v prvem zaslonu); podniz mreže
           (grid gap-4 lg:grid-cols-[1fr_340px]) OSTAJA — zaklep ⑭
           reflow-320; namizje nespremenjeno (split view). */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_340px] max-lg:order-4">
+      <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_340px] max-lg:order-4">
         {/* Zemljevid — a11y oznaka na ovojnem elementu (MapContainer ne
             sprejema ARIA atributov v tipih react-leaflet).
             POLIR12 (2.39.0): višina zemljevida v svh enotah (mobilni
@@ -1883,7 +1883,7 @@ export default function TravelMap() {
             nespremenjeni (vsi ostanejo znotraj ovoja, ki je že overflow-hidden). */}
         <div
           className={cn(
-            "relative z-0 isolate overflow-hidden rounded-xl border shadow-sm",
+            "relative z-0 isolate overflow-hidden rounded-2xl border border-border/70 bg-card shadow-xl shadow-black/10",
             mobileView === "list" && "max-lg:hidden"
           )}
           role="region"

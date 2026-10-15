@@ -624,7 +624,7 @@ export function HomeView({
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 opacity-[0.08] [background-image:radial-gradient(circle_at_20%_20%,white_0,transparent_12%),radial-gradient(circle_at_80%_60%,white_0,transparent_16%)]"
         />
-        <div className="relative mx-auto flex w-full max-w-7xl flex-col items-center px-4 py-16 text-center sm:px-6 sm:py-24 lg:px-8">
+        <div className="relative mx-auto flex w-full max-w-7xl flex-col items-start px-4 py-20 text-left sm:px-6 sm:py-28 lg:px-8">
           {/* POLIR15-b (2.42.0): SEZONSKI ČIP nad kickerjem — sezonska
               afiniteta po vzoru Švice (sezonski koledar kampanj) in Irske
               (dogodek kot pripovedovalec): ST MMDD okna + izvorni SI
@@ -653,7 +653,7 @@ export function HomeView({
             onSubmit={onSearch}
             role="search"
             aria-label={t("searchLabel")}
-            className="mt-8 flex w-full max-w-xl items-center gap-2 rounded-xl bg-white/95 p-1.5 shadow-xl backdrop-blur"
+            className="mt-8 flex w-full max-w-2xl items-center gap-2 rounded-2xl bg-white/95 p-1.5 shadow-2xl shadow-black/20 backdrop-blur"
           >
             <Search
               className="ml-2 size-5 shrink-0 text-muted-foreground"
@@ -676,7 +676,7 @@ export function HomeView({
           </form>
 
           {/* CTA gumba */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <div className="mt-6 flex flex-wrap items-center justify-start gap-3">
             <Button
               asChild
               size="lg"
@@ -698,22 +698,29 @@ export function HomeView({
             </Button>
           </div>
 
-          {/* Statistika nabora */}
-          <dl className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-white/85">
-            {(["d", "c", "r"] as const).map((k, i) => (
-              <React.Fragment key={k}>
-                {i > 0 && (
-                  <span aria-hidden="true" className="hidden text-white/50 sm:inline">
-                    ·
-                  </span>
-                )}
-                <div className="flex items-baseline gap-1">
-                  <dt className="sr-only">{k}</dt>
-                  <dd>{pick(l, L.stats)[k]}</dd>
-                </div>
-              </React.Fragment>
-            ))}
-          </dl>
+        </div>
+      </section>
+
+      {/* Hitri pregled — podatki so iz obstoječega kanoničnega nabora. */}
+      <section
+        className="border-b border-border/70 bg-background"
+        aria-label={pick(l, {
+          sl: "Pregled platforme",
+          en: "Platform overview",
+          it: "Panoramica della piattaforma",
+          de: "Plattformübersicht",
+          fr: "Aperçu de la plateforme",
+          es: "Resumen de la plataforma",
+        })}
+      >
+        <div className="mx-auto grid w-full max-w-7xl grid-cols-1 divide-y divide-border/70 px-4 py-2 sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:px-6 lg:px-8">
+          {(["d", "c", "r"] as const).map((k) => (
+            <div key={k} className="flex items-center justify-center px-4 py-3 text-center sm:py-4">
+              <p className="text-base font-bold tracking-tight text-foreground sm:text-lg">
+                {pick(l, L.stats)[k]}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
 

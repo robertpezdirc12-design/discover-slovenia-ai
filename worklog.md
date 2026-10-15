@@ -868,3 +868,20 @@ Work Log:
 Stage Summary:
 - Sinhronizacija ZAKLJUČENA: GitHub = GitLab = 0232f9c; produkcija (Vercel) = novi premium UI živo; avtorstvo glavnega commita po pogodbi (Vercel vrata varna)
 - Lekcija 11 ponovno potrjena v praksi: merge commit z ne-verificiranim emailom bi bil nov stall — --no-ff + pogodbena avtorstva obvezna pri vsakem lastniškem merge-u z GitLaba (owner commiti so robertpezdirc8@gmail.com → vedno mergati z merge commitom, ne fast-forward!)
+
+---
+Task ID: R35-CI-QUOTA-EXCEEDED + LOKALNA VERIFIKACIJA 4b368998
+Agent: Z.ai Code (main session)
+Task: Analiza padlih pipeline-ov iz ownerjevega GitLab UI prikaza (trace 1a140b8205150d5d): 4b368998 ×2 instant-fail, 393a5ead stuck+fail, 9bf2ad42 ×2, 36bd0717
+
+Work Log:
+- Failed jobs @ 4b368998: VSAH 8 jobov `ci_quota_exceeded` @ 0 s → **GitLab compute kvota izčrpana** (Free = 400 min/mesec; ~10+ polnih pipeline-ov danes × ~9–12 min); namespace markec-group1 (144207225), API ne izpostavlja števil (Free) — failure_reason je avtoritativni dokaz
+- "Stuck" 2952071578 (393a5ead) = job čaka brez kvote → POST cancel izveden (oz. v prehodu)
+- Padci pred ~45 min (4–9 min trajanja) = realni run-i, ki so dosegli konec kvote sredi pipeline-a; owner je iteriral (0416657 → 76dccf0 → 36bd071 → 9bf2ad4 → 393a5ea → 4b36899)
+- KVOTA NI CODE PROBLEM: lokalni CI-mirror na glavi 4b368998 (worktree + node_modules): eslint 0 · tsc 0 · bun test **2347/2347** (26192 expect; +3 ownerjevi reduced-motion kontraktni testi GREEN) · produkcijski build ✓ · **e2e 16/16 (1.9 min) pod node** ✓
+- Produkcija NEPRIZADETA: main @ 0232f9c, Vercel živo (marker "Izbor uredništva")
+
+Stage Summary:
+- Diagnoza: vse padce od ~13:20+ vzrok = izčrpana SaaS CI kvota, NE ownerjeva koda; glava 4b368998 = 100 % lokalno verifikirana (vsa vrata zelena)
+- Možnosti: (a) owner: kupiti CI minute / Premium / popraviti GitHub spend limit (2000 free min) / VPS runner (runbook); (b) vmesno: agent lokalno odživi vrata na vsak push + merge z --no-ff pogodbenim avtorstvom na zahtevo; (c) 1. 11. reset kvote
+- Lekcija 13: `ci_quota_exceeded` = instant-fail vseh jobov @ 0 s + "stuck" pipeline — ne zamenjevati z instant-fail-om identity verification (0 jobov) ali pravim padcih asercij (trajanje > 0)

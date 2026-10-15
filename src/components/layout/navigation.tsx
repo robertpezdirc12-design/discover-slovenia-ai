@@ -120,7 +120,7 @@ export function Navigation() {
       className={cn(
         "sticky top-0 z-40 w-full transition-all duration-300",
         glass
-          ? "border-b border-border/70 bg-background/85 shadow-[0_4px_24px_-12px_rgba(0,0,0,0.18)] backdrop-blur-xl supports-[backdrop-filter]:bg-background/75"
+          ? "border-b border-border/60 bg-background/90 shadow-[0_8px_32px_-18px_rgba(0,0,0,0.24)] backdrop-blur-2xl supports-[backdrop-filter]:bg-background/78"
           : "border-b border-transparent bg-transparent"
       )}
     >
@@ -193,7 +193,7 @@ export function Navigation() {
                 href={link.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  "rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                   active && !overHero && "text-primary",
                   overHero
                     ? active
@@ -211,7 +211,7 @@ export function Navigation() {
           <DropdownMenu>
             <DropdownMenuTrigger
               className={cn(
-                "inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "inline-flex items-center gap-1 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 overHero
                   ? "text-white/85 hover:bg-white/10 hover:text-white"
                   : "text-foreground/80 hover:bg-accent hover:text-accent-foreground"

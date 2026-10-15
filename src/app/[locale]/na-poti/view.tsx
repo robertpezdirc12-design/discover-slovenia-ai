@@ -621,7 +621,7 @@ function GoModeApp() {
       {!ready && <GoSkeleton />}
 
       {ready && !resolved && (
-        <Card>
+        <Card className="rounded-2xl border-border/70 shadow-sm">
           <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
             <Footprints className="size-10 text-muted-foreground" aria-hidden="true" />
             <p className="font-semibold">{pick(l, L.emptyTitle)}</p>
@@ -650,7 +650,7 @@ function GoModeApp() {
 
           {/* JUTRANJI UVOD — pred zagonom */}
           {!go && (
-            <Card className="mt-4 border-primary/30 bg-gradient-to-br from-primary/10 via-card to-primary/5">
+            <Card className="mt-4 rounded-2xl border-primary/30 bg-gradient-to-br from-primary/[0.08] via-card to-primary/[0.04] shadow-sm">
               <CardContent className="p-6">
                 <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight">
                   <Sunrise className="size-6 text-primary" aria-hidden="true" />
@@ -686,7 +686,7 @@ function GoModeApp() {
             <>
               {/* NOW kartica */}
               {current ? (
-                <Card className="mt-4 border-primary/40 shadow-md">
+                <Card className="mt-4 rounded-2xl border-primary/35 bg-gradient-to-br from-card to-primary/[0.04] shadow-md">
                   <CardHeader className="pb-3">
                     <CardTitle className="flex flex-wrap items-center justify-between gap-2">
                       <span className="flex items-center gap-2">
@@ -860,7 +860,7 @@ function GoModeApp() {
 
               {/* NEXT kartica */}
               {current && (
-                <Card className="mt-4">
+                <Card className="mt-4 rounded-2xl border-border/70 shadow-sm">
                   <CardContent className="p-5">
                     {next ? (
                       <>
@@ -986,7 +986,7 @@ function GoModeApp() {
               )}
 
               {/* DNEVNI NAPREDEK */}
-              <Card className="mt-4">
+              <Card className="mt-4 rounded-2xl border-border/70 shadow-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-sm">
                     <span className="flex items-center gap-2">
@@ -1020,7 +1020,7 @@ function GoModeApp() {
                             onClick={() => persist({ stopIndex: i })}
                             aria-current={isCurrent ? "true" : undefined}
                             title={pick(l, L.jumpTo)}
-                            className={`flex min-h-11 w-full items-center gap-3 rounded-lg border px-3 py-2 text-left text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
+                            className={`flex min-h-11 w-full items-center gap-3 rounded-xl border border-border/70 bg-card px-3 py-2 text-left text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
                               state === "current"
                                 ? "border-primary bg-primary/10"
                                 : state === "done"
@@ -1176,7 +1176,7 @@ function StopWeatherCard({
   const cached = showsCachedWeather({ online, hasWeather: weather !== null });
 
   return (
-    <Card className="mt-4">
+    <Card className="mt-4 rounded-2xl border-border/70 shadow-sm">
       <CardContent className="p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="flex items-center gap-2 text-sm font-bold tracking-wide text-muted-foreground uppercase">
@@ -1372,7 +1372,7 @@ function GpsNavCard({
   };
 
   return (
-    <Card className="mt-4 border-primary/30">
+    <Card className="mt-4 rounded-2xl border-primary/30 shadow-sm">
       <CardContent className="p-5">
         {/* Naslov + izklop sledenja (dotik ≥ 44 px) */}
         <div className="flex flex-wrap items-center justify-between gap-2">

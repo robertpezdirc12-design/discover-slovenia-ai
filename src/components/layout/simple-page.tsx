@@ -48,7 +48,7 @@ export function SimplePage({
 
       <div className="mt-10 grid gap-6 sm:grid-cols-2">
         {sections.map((s) => (
-          <Card key={s.heading} className="gap-3">
+          <Card key={s.heading} className="gap-3 rounded-2xl border-border/70 shadow-sm">
             <CardHeader>
               <CardTitle className="text-base">{s.heading}</CardTitle>
             </CardHeader>

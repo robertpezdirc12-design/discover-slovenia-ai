@@ -147,9 +147,9 @@ export default async function CountryPage({ params }: Props) {
         </h2>
         {events.length > 0 ? (
           <>
-            <ul className="divide-y rounded-xl border">
+            <ul className="divide-y divide-border/70 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
               {events.map((e) => (
-                <li key={e.id} className="flex flex-col gap-1 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <li key={e.id} className="flex flex-col gap-1 p-4 transition-colors hover:bg-muted/20 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="font-medium">{e.title}</p>
                     <p className="text-sm text-muted-foreground">
@@ -178,9 +178,9 @@ export default async function CountryPage({ params }: Props) {
           <span className="text-muted-foreground">({lokalList.length})</span>
         </h2>
         {lokalList.length > 0 ? (
-          <ul className="divide-y rounded-xl border">
+          <ul className="divide-y divide-border/70 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
             {lokalList.map((l) => (
-              <li key={l.id} className="flex flex-col gap-1 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <li key={l.id} className="flex flex-col gap-1 p-4 transition-colors hover:bg-muted/20 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="font-medium">{l.name}</p>
                   <p className="text-sm text-muted-foreground">{l.town}</p>

@@ -138,17 +138,30 @@ describe("P2 §8 — health produkcjska pogodba (brez skrivnosti)", () => {
     expect(s).toContain("VERCEL_GIT_COMMIT_SHA");
     expect(s).toContain("GIT_COMMIT");
   });
-  test("verzija 2.66.0 (bump na vseh mestih)", async () => {
+  test("verzija 2.66.1 (bump na vseh mestih)", async () => {
     const health = await src("src/app/api/health/route.ts");
-    expect(health).toContain('version: "2.66.0"');
+    expect(health).toContain('version: "2.66.1"');
     const sw = await src("public/sw.js");
-    expect(sw).toContain('SW_VERSION = "2.66.0"');
+    expect(sw).toContain('SW_VERSION = "2.66.1"');
     const pkg = JSON.parse(await src("package.json"));
-    expect(pkg.version).toBe("2.66.0");
+    expect(pkg.version).toBe("2.66.1");
   });
 });
 
 describe("P2 §2/§4 — dokumentacija runbooka in matrike", () => {
+  test("runbook §3.1.1: Photon živo dokazan (SI brez prebuilt DB indeksa → uradni jsonl import; 2.66.1)", async () => {
+    const md = await src("docs/SELF-HOST-RUNBOOK.md");
+    expect(md).toContain("### 3.1.1 ŽIVO DOKAZANO v peskovnici");
+    expect(md).toContain("db_available: false");
+    expect(md).toContain("593 956 dokumentov");
+    expect(md).toContain("202 MB");
+    expect(md).toContain("photon-dump-slovenia-master-latest.jsonl.zst");
+    const ev = await src("docs/evidence/photon-live-verify/summary.md");
+    expect(ev).toContain("5b144eb090290e33c8a89b32bb74fcf5");
+    expect(ev).toContain("593 956 dokumentov");
+    expect(ev).toContain("202 MB");
+  });
+
   test("PRODUCTION-CUTOVER.md: 10 korakov z ukazi + rollback", async () => {
     const md = await src("docs/PRODUCTION-CUTOVER.md");
     for (const korak of [

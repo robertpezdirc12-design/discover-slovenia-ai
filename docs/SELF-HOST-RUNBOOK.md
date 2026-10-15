@@ -5,7 +5,8 @@
 z viri in merjenimi vrsticami. **Koda se NE spremeni** — self-host je zgolj
 `VALHALLA_BASE_URL` / `PHOTON_BASE_URL` env override (kanon 2.65.0/2.64.0; testi zaklenjeni).
 
-- Napisano: 14. 10. 2026 · viri dostopani 14. 10. 2026 (izrecno označeno)
+- Napisano: 14. 10. 2026 · viri dostopani 14. 10. 2026 (izrecno označeno) ·
+  **osveženo 15. 10. 2026**: §3 Photon živo dokazan v peskovnici (§3.1.1)
 - Status: odločitev ostaja LASTNIŠKA (ta dokument je priprava, ne odločitev)
 - Varnostni pas: unset env → promet takoj nazaj na javna primerka (FOSSGIS / photon.komoot.io)
 
@@ -68,11 +69,34 @@ isti kanon kot aplikacijski rate limit na `/api/plan/directions`). UA etiquette 
 - Enostavneje: **rtuszik/photon-docker** (neuradna slika; sam prenese pregrađen indeks po
   državi/world; vir: github.com/rtuszik/photon-docker, 14. 10. 2026). ⚠️ Neuradna = ista
   lekcija kot OpenFreeMap en-vzdrževalec (R3): oceni vzdrževalca pred odvisnostjo.
-- Regionalna opcija: pregrađen indeks **po državi** (vir: chringel.dev vodič, jul. 2022 —
-  »prebuilt world and country wide search indexes … world ~62 GB, by country code«).
-  Za 10 držav pričakovano ≈ 1–3 GB indeksa (zapiši izmerjeno ob prvem buildu).
-- Ali build iz istih PBF-jev iz §1 (Photon `photon_index_builder`), če hočeš en vir podatkov
-  kot Valhalla (isti izvoz, isti datum — čista provenanca).
+- ⚠️ **POPRAVEK žive preverbe (15. 10. 2026)**: pregrađeni **DB** indeksi (rtuszik ogledalo
+  `r2.koalasec.org/public`) pokrivajo SAMO velike države (DE, FR, AT, ES, NL, PL, IN, JP …) —
+  **SI + balkanske države NISO med njimi** (`db_available: false` v regions.py; `si.tar.bz2`
+  in `photon-db-slovenia-1.0-latest.tar.bz2` = 404). Za našo regijo 10 držav je zato pot:
+  **uradni photon `import` iz JSONL dump-a** — ogledalo gosti dnevne dump-e za VSE regije
+  (`europe/slovenia/photon-dump-slovenia-master-latest.jsonl.zst`; last-modified = dnevni build).
+- ⚠️ Photon 1.x NIMA direktnega PBF importa (odstranjena nominatim-PBF pot): `import` sprejme
+  Nominatim PG bazo ALI JSON dump (NominatimDumpFile). Stara trditev »`photon_index_builder`
+  iz PBF-jev iz §1« NE drži več za photon ≥ 1.0 — enak vir podatkov dosežemo z dnevnim
+  JSONL dump-om ( isti OSM izvoz, data_timestamp v glavi dumpa).
+
+### 3.1.1 ŽIVO DOKAZANO v peskovnici (15. 10. 2026 — celoten uradni potek, brez dockera)
+
+- Viri: `photon-1.3.0.jar` (98 MB, komoot/photon releases, Java 21 ✓) +
+  `photon-dump-slovenia-master-latest.jsonl.zst` (**52 MB**, MD5 ujema, data_timestamp
+  2026-10-10). Dekompresija: 52 MB → **680 MB** JSONL (0,8 s, python zstandard).
+- Import: `java -Xmx1400m -jar photon-1.3.0.jar import -import-file slovenia.jsonl` →
+  **593 956 dokumentov v 141 s** (peskovnica, ~1 vCPU, 2,7 GB RAM — heap 1400 m je zadostoval).
+- Indeks `photon_data/` = **202 MB** (stara ocena »1–3 GB za 10 držav« je za SI realno
+  višja za red velikosti; za celotno regijo pričakuj ≈ 1,5–2,5 GB — meri ob buildu).
+- Serve: `java -jar photon-1.3.0.jar serve` (port 2322) → žive poizvedbe:
+  `/api?q=Bled` → Bled, Slovenija, 4260 @ 14.110, 46.368 ✓ ·
+  `/api?q=Ljubljanski grad` → Ljubljanski grad, Ljubljana ✓ ·
+  `/reverse?lon=14.5060&lat=46.0624` → Pleteršnikova ulica, Ljubljana ✓.
+- Jeziki indeksa: `[de, en, it, fr]` (sl NE — skladno z 2.64.0 ugotovitvijo »lang=sl 400«).
+- Dokazilna datoteka: `docs/evidence/photon-live-verify/summary.md`.
+- VPS implikacija: import SI je **2,5 min na 1 vCPU** — celotna regija (1 506 MB PBF-nivo)
+  realno ≈ 20–40 min enkratni import; heap 2–4 GB iz §3.2 ostane priporočen.
 
 ### 3.2 RAM/disk
 

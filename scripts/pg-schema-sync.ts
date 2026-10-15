@@ -173,9 +173,31 @@ async function main(): Promise<number> {
           if (current === fresh) {
             console.log("✓ baseline 0_init IDENTIČEN svežemu from-empty difu (migracije ≡ shema)");
           } else {
+            // Pokaži prvo razliko, da lahko odpravo naredimo varno:
+            // samodejni re-baseline bi lahko spremenil že uporabljeno migracijo.
+            const currentLines = current.split("\n");
+            const freshLines = fresh.split("\n");
+            let line = 0;
+            while (
+              line < currentLines.length &&
+              line < freshLines.length &&
+              currentLines[line] === freshLines[line]
+            ) {
+              line++;
+            }
             console.error(
-              "✗ baseline 0_init se RAZLIKUJE od svežega from-empty difa — poženi: bun run db:pg:baseline",
+              `✗ baseline 0_init se RAZLIKUJE od svežega from-empty difa — prva razlika v vrstici ${line + 1}.`,
             );
+            console.error(
+              `  0_init: ${JSON.stringify(currentLines[line] ?? "<konec datoteke>")}`,
+            );
+            console.error(
+              `  fresh:  ${JSON.stringify(freshLines[line] ?? "<konec datoteke>")}`,
+            );
+            console.error(
+              `  velikost: 0_init=${current.length}, fresh=${fresh.length} znakov; re-baseline ni bil izveden.`,
+            );
+            console.error("  Za varno diagnozo preveri dif — ne prepisuj migracije na slepo.");
             failed = true;
           }
         }

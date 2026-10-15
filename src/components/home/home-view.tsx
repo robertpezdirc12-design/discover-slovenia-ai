@@ -790,9 +790,9 @@ export function HomeView({
               <Link
                 key={type}
                 href={`/destinacije?type=${type}`}
-                className="group flex min-h-28 flex-col items-center justify-center gap-3 rounded-2xl border border-border/70 bg-card/80 p-4 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-card hover:shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                className="group flex min-h-28 flex-col items-center justify-center gap-3 rounded-2xl border border-border/70 bg-card/80 p-4 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-card hover:shadow-lg motion-reduce:transition-none motion-reduce:hover:translate-y-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
-                <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-all duration-300 group-hover:scale-105 group-hover:bg-primary group-hover:text-primary-foreground">
+                <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-all duration-300 group-hover:scale-105 group-hover:bg-primary group-hover:text-primary-foreground motion-reduce:transition-none motion-reduce:group-hover:scale-100">
                   <Icon className="size-5" aria-hidden="true" />
                 </span>
                 <span className="text-sm font-semibold">{pick(l, DEST_TYPES[type])}</span>
@@ -851,7 +851,7 @@ export function HomeView({
             <Link
               key={p.slug}
               href={`/nacrtuj?preset=${p.slug}`}
-              className="group flex min-h-44 flex-col justify-between rounded-2xl border border-border/70 bg-gradient-to-br from-card via-card to-primary/[0.04] p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="group flex min-h-44 flex-col justify-between rounded-2xl border border-border/70 bg-gradient-to-br from-card via-card to-primary/[0.04] p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg motion-reduce:transition-none motion-reduce:hover:translate-y-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               <div>
                 <h3 className="text-base font-bold leading-snug group-hover:text-primary">
@@ -861,7 +861,7 @@ export function HomeView({
               </div>
               <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-primary">
                 {t("ctaPlan")}
-                <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:translate-x-0 motion-reduce:transition-none" aria-hidden="true" />
               </span>
             </Link>
           ))}

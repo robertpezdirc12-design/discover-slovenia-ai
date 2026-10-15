@@ -152,7 +152,7 @@ export function Navigation() {
               : "text-foreground hover:text-primary"
           )}
         >
-          <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary shadow-md transition-transform group-hover:scale-105 sm:size-9">
+          <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary shadow-md transition-transform group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100 sm:size-9">
             {/* logo.svg — znak gore iz produkcije (30×30) */}
             <img
               src="/logo.svg"

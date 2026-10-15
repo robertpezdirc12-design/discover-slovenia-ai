@@ -17,6 +17,10 @@ const HOME = readFileSync(
   join(import.meta.dir, "../src/components/home/home-view.tsx"),
   "utf8"
 );
+const NAVIGATION = readFileSync(
+  join(import.meta.dir, "../src/components/layout/navigation.tsx"),
+  "utf8"
+);
 const DESTINATION_FILTERS = readFileSync(
   join(import.meta.dir, "../src/components/destinations-explorer.tsx"),
   "utf8"
@@ -89,6 +93,18 @@ describe("content-card image motion", () => {
         "motion-reduce:transition-none motion-reduce:group-hover:scale-100"
       );
     }
+  });
+});
+
+describe("homepage theme, preset and brand interaction motion", () => {
+  test("theme and preset cards keep still under reduced-motion preference", () => {
+    expect(HOME).toContain("motion-reduce:transition-none motion-reduce:hover:translate-y-0");
+    expect(HOME).toContain("motion-reduce:transition-none motion-reduce:group-hover:scale-100");
+  });
+
+  test("brand mark and preset arrow suppress decorative movement", () => {
+    expect(NAVIGATION).toContain("group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100");
+    expect(HOME).toContain("motion-reduce:translate-x-0 motion-reduce:transition-none");
   });
 });
 

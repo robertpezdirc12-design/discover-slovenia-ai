@@ -205,7 +205,7 @@ export default function KonzultacijaPage() {
     return (
       <div className="mx-auto w-full max-w-2xl px-4 py-10 sm:px-6 lg:px-8">
         <PageHeader kicker={t("kicker")} title={t("doneTitle")} />
-        <Card className="mt-8 border-primary/25 bg-primary/5">
+        <Card className="mt-8 rounded-2xl border-primary/25 bg-gradient-to-br from-primary/[0.07] to-card shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <MessageCircleHeart className="size-4 text-primary" aria-hidden="true" />
@@ -235,7 +235,7 @@ export default function KonzultacijaPage() {
                 {t("copy")}
               </Button>
             </div>
-            <p className="break-all rounded-lg border bg-card px-3 py-2 font-mono text-xs text-muted-foreground">
+            <p className="break-all rounded-xl border border-border/70 bg-muted/30 px-3 py-2 font-mono text-xs text-muted-foreground">
               {resultUrl}
             </p>
             <Button
@@ -261,7 +261,7 @@ export default function KonzultacijaPage() {
     <div className="mx-auto w-full max-w-2xl px-4 py-10 sm:px-6 lg:px-8">
       <PageHeader kicker={t("kicker")} title={t("title")} lead={t("lead")} />
 
-      <Card className="mt-8">
+      <Card className="mt-8 rounded-2xl border-border/70 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Sparkles className="size-4 text-primary" aria-hidden="true" />
@@ -274,7 +274,7 @@ export default function KonzultacijaPage() {
       </Card>
 
       <form onSubmit={onSubmit} className="mt-6 space-y-6" noValidate>
-        <Card>
+        <Card className="rounded-2xl border-border/70 shadow-sm">
           <CardHeader>
             <CardTitle className="text-base">{t("formTitle")}</CardTitle>
           </CardHeader>

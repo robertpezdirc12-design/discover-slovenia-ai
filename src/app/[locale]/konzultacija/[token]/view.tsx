@@ -289,7 +289,7 @@ export default function KonzultacijaTokenPage() {
       </div>
 
       {/* Vprašanje */}
-      <Card className="mt-6">
+      <Card className="mt-6 rounded-2xl border-border/70 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <HelpCircle className="size-4 text-primary" aria-hidden="true" />
@@ -346,7 +346,7 @@ export default function KonzultacijaTokenPage() {
       </Card>
 
       {/* Odgovor */}
-      <Card className="mt-4 border-primary/25">
+      <Card className="mt-4 rounded-2xl border-primary/25 bg-gradient-to-br from-primary/[0.05] to-card shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Lock className="size-4 text-primary" aria-hidden="true" />

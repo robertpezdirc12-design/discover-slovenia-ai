@@ -40,16 +40,16 @@ export function LegalPage({
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
       <PageHeader title={title} />
-      <p className="mt-2 text-sm text-muted-foreground">
+      <p className="mt-3 inline-flex rounded-full border border-border/70 bg-muted/30 px-3 py-1.5 text-xs font-medium text-muted-foreground">
         {updatedLabel}: {updated}
       </p>
       {intro && (
-        <p className="mt-4 text-base leading-relaxed text-muted-foreground">{intro}</p>
+        <p className="mt-5 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">{intro}</p>
       )}
 
-      <div className="mt-10 space-y-8">
+      <div className="mt-10 space-y-0 divide-y divide-border/70 rounded-2xl border border-border/70 bg-card px-5 sm:px-7">
         {sections.map((s, i) => (
-          <section key={s.id} id={s.id} aria-labelledby={`${s.id}-h`} className="scroll-mt-24">
+          <section key={s.id} id={s.id} aria-labelledby={`${s.id}-h`} className="scroll-mt-24 py-6 first:pt-6 last:pb-6 sm:py-7">
             <h2
               id={`${s.id}-h`}
               className="text-lg font-bold tracking-tight sm:text-xl"
@@ -57,9 +57,9 @@ export function LegalPage({
               <span className="mr-2 text-primary">{i + 1}.</span>
               {s.heading}
             </h2>
-            <div className="mt-3 space-y-3">
+            <div className="mt-3 max-w-3xl space-y-3">
               {s.paragraphs.map((p, j) => (
-                <p key={j} className="text-sm leading-relaxed text-muted-foreground sm:text-base">
+                <p key={j} className="text-sm leading-7 text-muted-foreground sm:text-base">
                   {p}
                 </p>
               ))}

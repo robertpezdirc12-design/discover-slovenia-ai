@@ -184,7 +184,7 @@ export function LokaliExplorer() {
       </PageHeader>
 
       {/* ── Nadzorna vrstica ─────────────────────────────────────────── */}
-      <div className="mt-8 grid gap-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm sm:p-5 md:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
+      <div className="mt-8 grid gap-3 rounded-2xl border border-border/70 bg-gradient-to-br from-card via-card to-muted/20 p-4 shadow-sm ring-1 ring-border/30 sm:p-5 md:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
         <div className="relative">
           <Search
             className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
@@ -257,7 +257,7 @@ export function LokaliExplorer() {
           initial={reduceMotion ? false : { opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.18, ease: "easeOut" }}
-          className="mt-6 rounded-xl border border-dashed p-6 text-center sm:p-10"
+          className="mt-6 rounded-2xl border border-dashed border-border/70 bg-muted/20 p-6 text-center sm:p-10"
         >
           <SearchX
             className="mx-auto size-8 text-muted-foreground"
@@ -367,7 +367,7 @@ export function LokaliExplorer() {
       )}
 
       {/* ── Iskrena opomba o obsegu podatkov ─────────────────────────── */}
-      <Card className="mt-10 border-primary/25 bg-primary/5">
+      <Card className="mt-10 rounded-2xl border-primary/25 bg-gradient-to-br from-primary/[0.07] to-card shadow-sm">
         <CardContent className="p-5">
           <p className="text-sm font-semibold text-primary">{t("honesty")}</p>
           <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
@@ -377,7 +377,7 @@ export function LokaliExplorer() {
       </Card>
 
       {/* ── CTA za ponudnike (po produkciji) ─────────────────────────── */}
-      <div className="mt-6 flex flex-col items-start justify-between gap-4 rounded-xl border bg-card p-6 sm:flex-row sm:items-center">
+      <div className="mt-6 flex flex-col items-start justify-between gap-4 rounded-2xl border border-border/70 bg-gradient-to-br from-card via-card to-primary/[0.04] p-6 shadow-sm sm:flex-row sm:items-center">
         <div>
           <h2 className="font-bold">{t("ctaTitle")}</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">{t("ctaLead")}</p>

@@ -184,3 +184,18 @@
     @apply outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
 }
+
+/* Dostopnost: spoštuj sistemsko nastavitev zmanjšanega gibanja.
+   Ne spreminjamo vsebine ali interakcij — omejimo samo animacijo/prehod
+   ter preprečimo gladko drsenje, ki lahko povzroča nelagodje. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+}

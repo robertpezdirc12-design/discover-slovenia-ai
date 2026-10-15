@@ -2110,8 +2110,8 @@ export default function TravelMap() {
                       className={cn(
                         "group flex w-full items-center gap-3 rounded-xl border border-border/70 bg-card p-2.5 text-left transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                         active
-                          ? "border-primary/60 shadow-md"
-                          : "hover:border-primary/30 hover:shadow-sm"
+                          ? "border-primary/60 bg-primary/[0.04] shadow-md"
+                          : "hover:border-primary/30 hover:bg-muted/30 hover:shadow-sm"
                       )}
                     >
                       <span

@@ -742,8 +742,8 @@ export function HomeView({
         <div className="mb-7 flex items-end justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">{t("themesKicker")}</p>
-            <h2 id="teme" className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl"> className="text-2xl font-bold tracking-tight sm:text-3xl">
-          {t("themesKicker")}
+            <h2 id="teme" className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+              {t("themesKicker")}
             </h2>
             <p className="mt-2 max-w-2xl text-muted-foreground">{t("themesLead")}</p>
           </div>

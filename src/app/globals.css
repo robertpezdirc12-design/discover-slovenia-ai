@@ -203,7 +203,8 @@
 
 /* MapLibre (#35): kontrole povečave naj bodo uporabne tudi s prstom.
    Pravilo je omejeno na MapLibre in ne posega v Leaflet kontrole. */
-.maplibregl-ctrl-group button {
+.maplibregl-ctrl-group .maplibregl-ctrl-zoom-in,
+.maplibregl-ctrl-group .maplibregl-ctrl-zoom-out {
   width: 44px;
   height: 44px;
 }

@@ -11,6 +11,11 @@ const MAP = readFileSync(
   "utf8",
 );
 
+const SKELETON = readFileSync(
+  join(import.meta.dir, "../src/app/[locale]/zemljevid/view.tsx"),
+  "utf8",
+);
+
 describe("map discovery: country filter", () => {
   test("country labels come from the canonical six-language country registry", () => {
     expect(MAP).toContain('import { countryLabel } from "@/lib/countries-data"');
@@ -55,8 +60,16 @@ describe("map discovery: country filter", () => {
     expect(MAP).toContain("t(\"listTitle\")");
   });
 
+  test("loading skeleton reserves the country selector and aligns large-screen columns", () => {
+    expect(SKELETON).toContain('lg:grid-cols-[minmax(200px,1fr)_auto_auto_auto]');
+    expect(SKELETON).toContain('className="h-12 w-full rounded-md"');
+    expect(SKELETON).toContain('className="h-12 w-36 rounded-md md:w-56"');
+    expect(SKELETON).toContain('className="col-span-2 h-12 w-full rounded-md md:col-span-1 md:w-48"');
+    expect(SKELETON).toContain('className="hidden h-11 w-28 rounded-md md:block"');
+  });
+
   test("country selector preserves the established mobile-first search/region row", () => {
-    expect(MAP).toContain('className="mt-4 grid grid-cols-[1fr_auto] gap-3 rounded-2xl border border-border/70 bg-card/70 p-3 shadow-sm sm:p-4 md:grid-cols-[1fr_auto_auto] lg:mt-8 max-lg:order-1"');
+    expect(MAP).toContain('className="mt-4 grid grid-cols-[1fr_auto] gap-3 rounded-2xl border border-border/70 bg-card/70 p-3 shadow-sm sm:p-4 md:grid-cols-[1fr_auto_auto] lg:grid-cols-[minmax(200px,1fr)_auto_auto_auto] lg:mt-8 max-lg:order-1"');
     expect(MAP).toContain('className="col-span-2 min-w-0 md:col-span-1"');
     expect(MAP).toContain('className="h-12 w-full rounded-xl border-border/70 bg-background shadow-sm md:w-48"');
   });

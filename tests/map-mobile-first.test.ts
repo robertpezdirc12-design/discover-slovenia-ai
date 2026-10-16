@@ -166,7 +166,7 @@ describe("POLIR14 C: Leaflet display:none past — invalidateSize", () => {
 describe("POLIR14 D: nadzorna vrstica (iskanje + regija ena vrstica)", () => {
   test("⑥ iskalna vrstica: premium filter panel ohrani mobilni vrstni red + SelectTrigger h-12 w-36 md:w-56", () => {
     expect(MAPA).toContain(
-      'className="mt-4 grid grid-cols-[1fr_auto] gap-3 rounded-2xl border border-border/70 bg-card/70 p-3 shadow-sm md:grid-cols-[1fr_auto_auto] lg:grid-cols-[minmax(200px,1fr)_auto_auto_auto] lg:mt-8 max-lg:order-1"'
+      'className="mt-4 grid grid-cols-[1fr_auto] gap-3 rounded-2xl border border-border/70 bg-card/70 p-3 shadow-sm sm:p-4 md:grid-cols-[1fr_auto_auto] lg:grid-cols-[minmax(200px,1fr)_auto_auto_auto] lg:mt-8 max-lg:order-1"'
     );
     // ozka sprožilna tipka regije na mobilnem (w-36), md+ nespremenjeno (w-56)
     expect(MAPA).toContain(

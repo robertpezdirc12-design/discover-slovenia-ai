@@ -98,3 +98,10 @@ sosednji marker. Cilji ostanejo ≥ 44×44 px; zmanjša se število hkratnih cil
 - **Namizni E2E: 2/2 PASSED (29,5 s).**
 - Ukaz: `E2E_BASE_URL=https://i-feel-slovenia-pidqp0mut-…vercel.app bunx playwright
   test --project=chromium-mobile` (+ `--project=chromium`).
+
+## Sinhronizacija zrcal (končno stanje)
+
+- GitHub PR #62 (open/draft) in GitLab `feat/maplibre-mobile-validation` sta usklajeni
+  na tej glavi; GitLab `main` je ostal pri `175e7fd` (2.67.1), produkcija nedotaknjena.
+- Vercel build-rate-limit je prehoden: vsak nov push = nov poskus deploymenta;
+  blokiran poskus se sam ne ponovi (merjeno ob 18:10 in 18:27 UTC).

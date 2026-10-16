@@ -280,7 +280,7 @@ for (const sirina of SIRINE) {
 
 // ── ⑥ — vseh 10 državnih strani uporabnih na mobilnem (@375) ─────────────
 
-test("⑥ /drzava/[code]: vseh 10 držav brez preliva + hero @ 375 px", async ({
+test("⑧ /drzava/[code]: vseh 10 držav brez preliva + hero @ 375 px", async ({
   page,
 }) => {
   test.setTimeout(120_000);

@@ -38,6 +38,14 @@ describe("destination discovery: active filter chips", () => {
     }
   });
 
+  test("accessible remove names announce each active filter's value", () => {
+    expect(EXPLORER).toContain('L.queryChip)} — ${q.trim()}');
+    expect(EXPLORER).toContain('L.countryChip)} — ${activeCountries.includes(country as (typeof activeCountries)[number]) ? countryName(l, country as (typeof activeCountries)[number]) : country}');
+    expect(EXPLORER).toContain('L.regionChip)} — ${Object.prototype.hasOwnProperty.call(REGIONS, region)');
+    expect(EXPLORER).toContain('L.typeChip)} — ${Object.prototype.hasOwnProperty.call(DEST_TYPES, type)');
+    expect(EXPLORER).toContain('import { countryLabel, countryName } from "@/lib/countries-data"');
+  });
+
   test("chip text is constrained on narrow viewports and close icons are decorative", () => {
     expect(EXPLORER.match(/max-w-\[min\(55vw,280px\)\] truncate/g)?.length ?? 0).toBe(4);
     expect(EXPLORER.match(/aria-hidden="true"/g)?.length ?? 0).toBeGreaterThanOrEqual(4);

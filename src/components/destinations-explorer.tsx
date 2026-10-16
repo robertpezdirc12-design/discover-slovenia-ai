@@ -24,7 +24,7 @@ import {
   filterDestinations,
   hasActiveFilters,
 } from "@/lib/destinations-filter";
-import { countryLabel } from "@/lib/countries-data";
+import { countryLabel, countryName } from "@/lib/countries-data";
 import {
   DEST_TYPES,
   DESTINATIONS,
@@ -338,7 +338,7 @@ export function DestinationsExplorer() {
               type="button"
               variant="outline"
               size="sm"
-              aria-label={`${pick(l, L.removeFilter)}: ${pick(l, L.queryChip)}`}
+              aria-label={`${pick(l, L.removeFilter)}: ${pick(l, L.queryChip)} — ${q.trim()}`}
               onClick={() => setQ("")}
               className="h-9 min-w-0 max-w-full justify-start gap-1.5 rounded-full px-3 text-xs"
             >
@@ -352,7 +352,7 @@ export function DestinationsExplorer() {
               type="button"
               variant="outline"
               size="sm"
-              aria-label={`${pick(l, L.removeFilter)}: ${pick(l, L.countryChip)}`}
+              aria-label={`${pick(l, L.removeFilter)}: ${pick(l, L.countryChip)} — ${activeCountries.includes(country as (typeof activeCountries)[number]) ? countryName(l, country as (typeof activeCountries)[number]) : country}`}
               onClick={() => setCountry("all")}
               className="h-9 min-w-0 max-w-full justify-start gap-1.5 rounded-full px-3 text-xs"
             >
@@ -370,7 +370,7 @@ export function DestinationsExplorer() {
               type="button"
               variant="outline"
               size="sm"
-              aria-label={`${pick(l, L.removeFilter)}: ${pick(l, L.regionChip)}`}
+              aria-label={`${pick(l, L.removeFilter)}: ${pick(l, L.regionChip)} — ${Object.prototype.hasOwnProperty.call(REGIONS, region) ? pick(l, REGIONS[region as keyof typeof REGIONS]) : region}`}
               onClick={() => setRegion("all")}
               className="h-9 min-w-0 max-w-full justify-start gap-1.5 rounded-full px-3 text-xs"
             >
@@ -386,7 +386,7 @@ export function DestinationsExplorer() {
               type="button"
               variant="outline"
               size="sm"
-              aria-label={`${pick(l, L.removeFilter)}: ${pick(l, L.typeChip)}`}
+              aria-label={`${pick(l, L.removeFilter)}: ${pick(l, L.typeChip)} — ${Object.prototype.hasOwnProperty.call(DEST_TYPES, type) ? pick(l, DEST_TYPES[type as DestinationType]) : type}`}
               onClick={() => setType("all")}
               className="h-9 min-w-0 max-w-full justify-start gap-1.5 rounded-full px-3 text-xs"
             >

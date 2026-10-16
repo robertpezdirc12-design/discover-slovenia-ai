@@ -37,7 +37,16 @@ const ADDED = {
   es: "Añadido a mi viaje",
 } as const;
 
+const LOCAL_STORAGE_NOTE = {
+  sl: "Shranjeno samo v tem brskalniku; ni povezano z računom.",
+  en: "Saved in this browser only; not linked to an account.",
+  it: "Salvato solo in questo browser; non collegato a un account.",
+  de: "Nur in diesem Browser gespeichert; nicht mit einem Konto verknüpft.",
+  fr: "Enregistré uniquement dans ce navigateur ; non lié à un compte.",
+  es: "Guardado solo en este navegador; no está vinculado a una cuenta.",
+} as const;
+
 /** Emit the same localized success confirmation from every add-to-trip surface. */
 export function notifyMyTripAdded(locale: string): void {
-  toast({ title: pick(locale, ADDED), action: <MyTripToastAction /> });
+  toast({ title: pick(locale, ADDED), description: pick(locale, LOCAL_STORAGE_NOTE), action: <MyTripToastAction /> });
 }

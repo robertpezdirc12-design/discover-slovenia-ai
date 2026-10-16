@@ -24,6 +24,15 @@ describe("add-to-my-trip feedback", () => {
     expect(ACTION).toContain("altText={label} asChild");
     expect(ACTION).toContain("export function notifyMyTripAdded(locale: string): void");
     expect(ACTION).toContain("title: pick(locale, ADDED)");
+    expect(ACTION).toContain("description: pick(locale, LOCAL_STORAGE_NOTE)");
+    for (const note of [
+      "Shranjeno samo v tem brskalniku; ni povezano z računom.",
+      "Saved in this browser only; not linked to an account.",
+      "Salvato solo in questo browser; non collegato a un account.",
+      "Nur in diesem Browser gespeichert; nicht mit einem Konto verknüpft.",
+      "Enregistré uniquement dans ce navigateur ; non lié à un compte.",
+      "Guardado solo en este navegador; no está vinculado a una cuenta.",
+    ]) expect(ACTION).toContain(note);
     for (const locale of ["sl:", "en:", "it:", "de:", "fr:", "es:"]) {
       expect(ACTION).toContain(locale);
     }

@@ -140,7 +140,7 @@ describe("POLIR15-d: CLS skeleta zemljevida (0,023 → 0)", () => {
     expect(POGLED).toContain("mt-5 grid gap-5 lg:grid-cols-[1fr_340px] max-lg:order-4");
     // Iskanje+regija (isti grid, isti odmik).
     expect(POGLED).toContain(
-      "mt-4 grid grid-cols-[1fr_auto] gap-3 md:grid-cols-[1fr_auto_auto] lg:mt-8 max-lg:order-1"
+      "mt-4 grid grid-cols-[1fr_auto] gap-3 md:grid-cols-[1fr_auto_auto] lg:grid-cols-[minmax(200px,1fr)_auto_auto_auto] lg:mt-8 max-lg:order-1"
     );
     // Čipi (isti ovoj + pb-1).
     expect(POGLED).toContain("relative mt-3 max-lg:order-2");

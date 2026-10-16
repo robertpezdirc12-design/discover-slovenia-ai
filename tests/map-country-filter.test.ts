@@ -42,6 +42,12 @@ describe("map discovery: country filter", () => {
     expect(MAP).toContain("setRegion(\"all\")");
   });
 
+  test("wide desktop keeps search, region, country and reset/count in one row", () => {
+    expect(MAP).toContain('lg:grid-cols-[minmax(200px,1fr)_auto_auto_auto]');
+    expect(MAP).toContain('md:grid-cols-[1fr_auto_auto]');
+    expect(MAP).toContain('className="h-11 col-span-2 md:col-span-1"');
+  });
+
   test("country selector preserves the established mobile-first search/region row", () => {
     expect(MAP).toContain('className="mt-4 grid grid-cols-[1fr_auto] gap-3 rounded-2xl border border-border/70 bg-card/70 p-3 shadow-sm sm:p-4 md:grid-cols-[1fr_auto_auto] lg:mt-8 max-lg:order-1"');
     expect(MAP).toContain('className="col-span-2 min-w-0 md:col-span-1"');

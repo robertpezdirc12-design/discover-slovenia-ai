@@ -1448,7 +1448,7 @@ export default function TravelMap() {
           (grid-cols-[1fr_auto]); reset gumb čez celo vrstico (col-span-2).
           mt-4 namesto mt-8 na mobilnem — vsaka vrstica nad zemljevidom je
           draga; namizje (md/lg) IDENTIČNO (lg:mt-8). */}
-      <div className="mt-4 grid grid-cols-[1fr_auto] gap-3 rounded-2xl border border-border/70 bg-card/70 p-3 shadow-sm sm:p-4 md:grid-cols-[1fr_auto_auto] lg:mt-8 max-lg:order-1">
+      <div className="mt-4 grid grid-cols-[1fr_auto] gap-3 rounded-2xl border border-border/70 bg-card/70 p-3 shadow-sm sm:p-4 md:grid-cols-[1fr_auto_auto] lg:grid-cols-[minmax(200px,1fr)_auto_auto_auto] lg:mt-8 max-lg:order-1">
         <div className="relative">
           <Search
             className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"

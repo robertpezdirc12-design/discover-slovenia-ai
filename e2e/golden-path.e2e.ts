@@ -176,6 +176,40 @@ test("ponovljivost: ista prednastavitev ×2 → isti načrt (determinizem)", asy
 }) => {
   test.setTimeout(60_000);
 
+  // PWA SW v svežem kontekstu prvič prevzame nadzor ~1–2 s po loadu →
+  // controllerchange → window.location.reload() (pwa/service-worker-register).
+  // Ta reload remonta /nacrtuj sredi poleta načrta (fetch 200 pride na mrtev
+  // mount — stanje se izgubi). Za TA test SW ni predmet preverjanja
+  // (determinizem motorja je klient+API logika) — blokiramo registracijo,
+  // da reload ne tekmuje z asercijami.
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator.serviceWorker, "register", {
+      value: () => Promise.reject(new Error("SW disabled in determinism E2E")),
+      configurable: true,
+    });
+  });
+
+  /** Hladna hidracija: gumb prednastavitve je viden iz SSR, handler pa se
+   * pripne šele po hidraciji — pod težkim bremenom peskovnika lahko klik
+   * pristane PRE handlerjev (načrta ni, API klic ne obstane). Omejeno
+   * ponavljamo klik (3×4 s) — NE obide determinizma: še vedno enaka
+   * prednastavitev ×2 → primerjava fingerprintov. */
+  const uporabiPreset = async (): Promise<void> => {
+    const save = page.getByRole("button", { name: "Shrani v Moja pot" });
+    for (let poskus = 0; poskus < 3; poskus++) {
+      await page
+        .getByRole("button", { name: /Miren vikend ob reki/ })
+        .click();
+      try {
+        await save.waitFor({ state: "visible", timeout: 4_000 });
+        return;
+      } catch {
+        // hidracija ni končana — ponovni klik
+      }
+    }
+    await expect(save).toBeVisible({ timeout: 15_000 }); // zadnja, jasna napaka
+  };
+
   const readPlanFingerprint = async (): Promise<unknown> => {
     const raw = await page.evaluate(() =>
       window.localStorage.getItem("dai:last-plan")
@@ -189,9 +223,8 @@ test("ponovljivost: ista prednastavitev ×2 → isti načrt (determinizem)", asy
   // 1. tek: en klik na prednastavitev sestavi načrt; SHRAINJE (dai:last-plan
   // se zapiše šele ob Shrani/Go — pričakovano vedenje, zaklep P1)
   await gotoTrdo(page, "/nacrtuj");
-  await page.getByRole("button", { name: /Miren vikend ob reki/ }).click();
+  await uporabiPreset();
   const saveBtn2 = page.getByRole("button", { name: "Shrani v Moja pot" });
-  await expect(saveBtn2).toBeVisible({ timeout: 15_000 });
   await saveBtn2.click();
   await expect(page.getByText("Shranjeno v Moja pot").first()).toBeVisible();
   const first = await readPlanFingerprint();
@@ -200,9 +233,8 @@ test("ponovljivost: ista prednastavitev ×2 → isti načrt (determinizem)", asy
   // 2. tek: ista prednastavitev po ponovnem vstopu (isti kontekst, ponovljen
   // obisk) — enako vedenje ob ponovitvi (kanon determinističnega motorja)
   await gotoTrdo(page, "/nacrtuj");
-  await page.getByRole("button", { name: /Miren vikend ob reki/ }).click();
+  await uporabiPreset();
   const saveBtn3 = page.getByRole("button", { name: "Shrani v Moja pot" });
-  await expect(saveBtn3).toBeVisible({ timeout: 15_000 });
   await saveBtn3.click();
   await expect(page.getByText("Shranjeno v Moja pot").first()).toBeVisible();
   const second = await readPlanFingerprint();

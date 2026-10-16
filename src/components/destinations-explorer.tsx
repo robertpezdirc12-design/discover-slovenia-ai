@@ -46,6 +46,8 @@ function destWord(l: string, n: number): string {
   return "destinacij";
 }
 
+type DestinationSort = "recommended" | "name-asc" | "name-desc";
+
 /**
  * RAZISKOVALKA DESTINACIJ — polna funkcionalna stran: iskanje po imenu/
  * tagline/opisu + filtra regija/tip + mreža kartic vseh 74 destinacij.
@@ -129,6 +131,10 @@ export function DestinationsExplorer() {
       es: "Ningún destino coincide con tu búsqueda o combinación de filtros. Prueba otra búsqueda o borra los filtros.",
     },
     resultsLabel: { sl: "Rezultati", en: "Results", it: "Risultati", de: "Ergebnisse", fr: "Résultats", es: "Resultados" },
+    sortLabel: { sl: "Razvrsti destinacije", en: "Sort destinations", it: "Ordina le destinazioni", de: "Reiseziele sortieren", fr: "Trier les destinations", es: "Ordenar destinos" },
+    sortRecommended: { sl: "Priporočeno", en: "Recommended", it: "Consigliate", de: "Empfohlen", fr: "Recommandées", es: "Recomendados" },
+    sortNameAsc: { sl: "Ime A–Ž", en: "Name A–Z", it: "Nome A–Z", de: "Name A–Z", fr: "Nom A–Z", es: "Nombre A–Z" },
+    sortNameDesc: { sl: "Ime Ž–A", en: "Name Z–A", it: "Nome Z–A", de: "Name Z–A", fr: "Nom Z–A", es: "Nombre Z–A" },
     activeFilters: { sl: "Aktivni filtri", en: "Active filters", it: "Filtri attivi", de: "Aktive Filter", fr: "Filtres actifs", es: "Filtros activos" },
     queryChip: { sl: "Iskanje", en: "Search", it: "Ricerca", de: "Suche", fr: "Recherche", es: "Búsqueda" },
     countryChip: { sl: "Država", en: "Country", it: "Paese", de: "Land", fr: "Pays", es: "País" },
@@ -142,6 +148,7 @@ export function DestinationsExplorer() {
   const [type, setType] = React.useState(searchParams.get("type") ?? "all");
   // #41 F0: ?country= iz URL (neznana vrednost → logika filtra vrne prazen rezultat).
   const [country, setCountry] = React.useState(searchParams.get("country") ?? "all");
+  const [sortBy, setSortBy] = React.useState<DestinationSort>("recommended");
 
   // Regije/države, ki dejansko nastopajo v naboru (kanonska vrstni red slovarja).
   // Logika filtra je izvlečena v @/lib/destinations-filter (2.47.0, #38:
@@ -149,10 +156,21 @@ export function DestinationsExplorer() {
   const activeRegions = React.useMemo(() => activeRegionKeys(DESTINATIONS), []);
   const activeCountries = React.useMemo(() => activeCountryKeys(DESTINATIONS), []);
 
-  const results = React.useMemo(
+  const filteredResults = React.useMemo(
     () => filterDestinations(DESTINATIONS, { q, region, type, country }),
     [q, region, type, country],
   );
+
+  // Privzeto ohranimo kurirani vrstni red registra; abecedni vrstni red je izrecna izbira.
+  const results = React.useMemo(() => {
+    const ordered = [...filteredResults];
+    if (sortBy === "name-asc") {
+      ordered.sort((a, b) => a.name.localeCompare(b.name, l, { sensitivity: "base", numeric: true }));
+    } else if (sortBy === "name-desc") {
+      ordered.sort((a, b) => b.name.localeCompare(a.name, l, { sensitivity: "base", numeric: true }));
+    }
+    return ordered;
+  }, [filteredResults, sortBy, l]);
 
   const hasFilters = hasActiveFilters({ q, region, type, country });
 
@@ -324,21 +342,39 @@ export function DestinationsExplorer() {
       )}
 
       {/* Števec zadetkov (+ ponastavitev) */}
-      <div className="mt-5 flex items-center justify-between gap-3">
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
         <p aria-live="polite" className="text-sm font-medium text-muted-foreground">
           {pick(l, L.count)(results.length)}
         </p>
-        {hasFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={reset}
-            className="h-9 gap-1 text-muted-foreground"
-          >
-            <X className="size-3.5" aria-hidden="true" />
-            {pick(l, L.reset)}
-          </Button>
-        )}
+        <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
+          <label htmlFor="dest-sort" className="sr-only">
+            {pick(l, L.sortLabel)}
+          </label>
+          <Select value={sortBy} onValueChange={(value) => setSortBy(value as DestinationSort)}>
+            <SelectTrigger
+              id="dest-sort"
+              className="h-9 w-40 rounded-full border-border/70 bg-background text-xs shadow-sm sm:w-44"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recommended">{pick(l, L.sortRecommended)}</SelectItem>
+              <SelectItem value="name-asc">{pick(l, L.sortNameAsc)}</SelectItem>
+              <SelectItem value="name-desc">{pick(l, L.sortNameDesc)}</SelectItem>
+            </SelectContent>
+          </Select>
+          {hasFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={reset}
+              className="h-9 gap-1 text-muted-foreground"
+            >
+              <X className="size-3.5" aria-hidden="true" />
+              {pick(l, L.reset)}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Mreža kartic */}

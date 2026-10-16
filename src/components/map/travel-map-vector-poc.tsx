@@ -183,6 +183,13 @@ export default function TravelMapVectorPoc() {
     const el = containerRef.current;
     if (!el) return;
 
+    // Ponovna inicializacija (npr. React StrictMode ali menjava jezika) začne
+    // iz čistega stanja in ne pusti stare napake/nabora markerjev.
+    setReady(false);
+    setFailed(false);
+    loadedRef.current = false;
+    markersRef.current.clear();
+
     const map = new MlMap({
       container: el,
       style: OFM_STYLE_URL,

@@ -33,6 +33,7 @@
 
 import {
   config as mlConfig,
+  LngLatBounds,
   Map as MlMap,
   Marker as MlMarker,
   NavigationControl,
@@ -101,6 +102,7 @@ export default function TravelMapVectorPoc() {
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const mapRef = React.useRef<MlMap | null>(null);
   const markersRef = React.useRef<Map<string, MlMarker>>(new Map());
+  const loadedRef = React.useRef(false);
   const tripItems = useMyTripList();
   const [ready, setReady] = React.useState(false);
   const [failed, setFailed] = React.useState(false);
@@ -202,6 +204,8 @@ export default function TravelMapVectorPoc() {
     );
 
     const onLoad = () => {
+      loadedRef.current = true;
+      setFailed(false);
       // 74 markerjev (kanon DESTINATIONS) — pike po tipu, enaka paleta kot
       // Leaflet različica; popup prek idiomatskega marker.setPopup (MapLibre
       // sam upravlja preklop odprt/zapr in zapiranje ob kliku na mapo —
@@ -279,8 +283,11 @@ export default function TravelMapVectorPoc() {
       setReady(true);
     };
 
-    const onError = () => {
-      // PoC iskrenost: napaka stile/ploščic (npr. CSP/blokada) je VIDLJIVA.
+    const onError = (event: { sourceId?: string }) => {
+      // Napaka posamezne ploščice po nalaganju ne razglasi celega zemljevida
+      // za pokvarjenega. Pred nalaganjem je napaka brez sourceId znak, da
+      // se slog/worker morda ne naloži; ob uspešnem load ostane karta uporabna.
+      if (loadedRef.current || event.sourceId) return;
       setFailed(true);
     };
 
@@ -293,6 +300,7 @@ export default function TravelMapVectorPoc() {
       map.remove();
       if (mapRef.current === map) mapRef.current = null;
       markersRef.current.clear();
+      loadedRef.current = false;
     };
   }, [l]);
 
@@ -314,12 +322,19 @@ export default function TravelMapVectorPoc() {
         essential: true,
       });
     } else if (filteredDestinations.length > 1) {
-      map.fitBounds(
-        filteredDestinations.map((item) => [item.coords.lng, item.coords.lat] as [number, number]),
-        { padding: 40, maxZoom: 8, duration: 250 },
-      );
+      const bounds = new LngLatBounds();
+      for (const item of filteredDestinations) {
+        bounds.extend([item.coords.lng, item.coords.lat]);
+      }
+      map.fitBounds(bounds, { padding: 40, maxZoom: 8, duration: 250 });
     }
   }, [ready, filteredDestinations]);
+
+  // Ko uporabnik preklopi s seznama nazaj na zemljevid, MapLibre znova
+  // izmeri vsebnik (skriti display:none je sicer lahko imel širino 0).
+  React.useEffect(() => {
+    if (mobileView === "map") mapRef.current?.resize();
+  }, [mobileView]);
 
   const L = {
     banner: {

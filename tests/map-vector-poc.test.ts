@@ -99,6 +99,26 @@ describe("poc-vector [source-contract]: PoC komponenta", () => {
   });
 });
 
+describe("poc-vector [source-contract]: mobilna uporabnost in funkcije", () => {
+  test("markerji imajo površino za dotik, dostopno ime in dodajanje v Mojo pot", async () => {
+    const s = await src("src/components/map/travel-map-vector-poc.tsx");
+    expect(s).toContain('document.createElement("button")');
+    expect(s).toContain("h-11 w-11");
+    expect(s).toContain('setAttribute("aria-label", d.name)');
+    expect(s).toContain('setAttribute("data-destination-slug", d.slug)');
+    expect(s).toContain("myTrip.add(d.slug, d.name, \"destination\", \"zemljevid\")");
+    expect(s).toContain("notifyMyTripAdded(l)");
+    expect(s).toContain("cooperativeGestures: true");
+  });
+
+  test("kontrole MapLibre imajo 44 px površino za dotik", async () => {
+    const s = await src("src/app/globals.css");
+    expect(s).toContain(".maplibregl-ctrl-group button");
+    expect(s).toContain("width: 44px;");
+    expect(s).toContain("height: 44px;");
+  });
+});
+
 describe("poc-vector [source-contract]: priklop na /zemljevid", () => {
   test("⑩ privzeti izris = Leaflet; PoC ŠELE ob ?zemljevid=vektorji", async () => {
     const s = await src("src/app/[locale]/zemljevid/view.tsx");

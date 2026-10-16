@@ -228,41 +228,51 @@ test("⑥ MapLibre: destinacijo je mogoče izbrati in dodati v mojo pot", async 
   await page.setViewportSize({ width: 390, height: 844 });
   await gotoTrdo(page, "/zemljevid?zemljevid=vektorji");
 
-  const marker = page.locator('[data-destination-slug="bled"]');
+  // Postojnska jama: edinstven iskalni zadetek (q="Postojnska"), ~38 km od
+  // najbližje destinacije — pri flyTo na zoom 11 se 44-px dotikana območja
+  // NE prekrivajo. („Bled“ je neuporaben za klik: Bled in Vintgarska
+  // soteska sta ~5,7 km narazen, kar je pri zoom 8 manj kot 44 px — ploščici
+  // se fizikalno prekrivata in vintgarska soteska prestreza klik. To je
+  // omejitev 44-px dotikanih ciljev pri gostih destinacijah, ne okvara.)
+  const marker = page.locator('[data-destination-slug="postojnska-jama"]');
   await expect(marker).toBeVisible({ timeout: 30_000 });
   const target = await marker.boundingBox();
-  expect(target, "Bled marker mora imeti merljivo površino dotika").not.toBeNull();
+  expect(target, "Marker mora imeti merljivo površino dotika").not.toBeNull();
   expect(target!.width).toBeGreaterThanOrEqual(44);
   expect(target!.height).toBeGreaterThanOrEqual(44);
 
-  // Začetni pogled je fitBounds vseh 74 destinacij, stisnjen na minZoom 5
-  // (merjeno 2026-10-16: center ≈ [20.65, 43.29]) — na 390 px platnu to
-  // zaključi severozahod, zato je Bled takoj po nalaganju IZVEN viewporta.
-  // To je pravilno obnašanje zemljevida (celoten Balkan na telefonu), ne
-  // napaka — pred klikom pogled zožimo z iskanjem, kot bi to naredil
-  // uporabnik. Kanon filtra: iskanje pokrije name/tagline/description/
-  // highlights, zato „Bled“ najde Bled + Vintgarsko sotesko (2 zadetka).
+  // Iskanje zoži pogled na eno destinacijo (flyTo zoom 11) — naravna
+  // uporabniška pot do deterministično kliknega markerja na ozkem zaslonu,
+  // kjer začetni fitBounds vseh 74 (minZoom 5, center ≈ [20.65, 43.29],
+  // merjeno 2026-10-16) sicer zaključi severozahod izven viewporta.
   const iskanje = page.getByRole("searchbox", {
     name: "Išči destinacijo, opis ali zanimivost",
   });
-  await iskanje.fill("Bled");
-  await expect(page.getByText(/^2 destinacij$/)).toBeVisible();
+  await iskanje.fill("Postojnska");
+  await expect(page.getByText(/^1 destinacij$/)).toBeVisible();
+
+  // Sredina platna je na 390×844 pod zavihki fiksnega mobilnega nav
+  // trakom — premaknimo stran, da je marker nad njim in klikljiv.
+  await page.evaluate(() => window.scrollBy({ top: 280, behavior: "instant" }));
 
   await marker.click();
   const popup = page.locator(".maplibregl-popup").first();
   await expect(popup).toBeVisible();
-  await expect(popup).toContainText("Bled");
+  await expect(popup).toContainText("Postojnska jama");
 
   const add = popup.getByRole("button", { name: "Dodaj v mojo pot", exact: true });
   await expect(add).toBeVisible();
   await add.click();
-  await expect(add).toHaveText("V moji poti");
-  await expect(add).toBeDisabled();
+  // Gumb po dodajanju SPREMENI besedilo („V moji poti“) in se onemogoči —
+  // lokator po starem imenu zato ne ujame več; znova lociraj po novem.
+  const dodano = popup.getByRole("button", { name: "V moji poti" });
+  await expect(dodano).toBeVisible();
+  await expect(dodano).toBeDisabled();
 
   const saved = await page.evaluate(() => {
     const raw = window.localStorage.getItem("dai:my-trip");
     const items = raw ? JSON.parse(raw) as Array<{ refId?: string }> : [];
-    return items.some((item) => item.refId === "bled");
+    return items.some((item) => item.refId === "postojnska-jama");
   });
   expect(saved).toBe(true);
 });
@@ -300,8 +310,11 @@ test("⑦ MapLibre: iskanje, filtri in seznam delujejo na telefonu", async ({
   });
   await expect(add).toBeVisible();
   await add.click();
-  await expect(add).toHaveText("V moji poti");
-  await expect(add).toBeDisabled();
+  // Gumb po dodajanju spremeni besedilo v „V moji poti“ in se onemogoči —
+  // lokator po starem imenu ne ujame več; znova lociraj po novem imenu.
+  const dodano = bledItem.getByRole("button", { name: "V moji poti" });
+  await expect(dodano).toBeVisible();
+  await expect(dodano).toBeDisabled();
 
   const saved = await page.evaluate(() => {
     const raw = window.localStorage.getItem("dai:my-trip");

@@ -8,9 +8,9 @@ const nextConfig: NextConfig = {
   // Predogledni pult (preview-chat-*.space-z.ai) streže/_next vire čez izvor —
   // Next.js 16 opozori, prihodnje veze pa to zahtevajo izrecno.
   allowedDevOrigins: ["*.space-z.ai"],
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  // 2.67.1: typescript.ignoreBuildErrors ODSTRANJEN — build znova uveljavlja
+  // TypeScript preverbo (prej je prikrival napake; typecheck job ostaja
+  // neodvisna vrata, build pa zdaj tudi sam ne gre skozi ob napakah).
   reactStrictMode: false,
   images: {
     // Lokalni logo.svg v zeleni ploščici navigacije (samo lastni viri).

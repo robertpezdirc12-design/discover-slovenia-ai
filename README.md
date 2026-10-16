@@ -14,6 +14,20 @@
 
 **Verzija: 2.54.0 — BALKANSKA EKSPANZIJA F0 (#41, 2026-10-13): CountryCode pokriva cel Balkan (10 držav: +BA/RS/MK/XK/BG/GR), državna meta countries-data (6 jezikov, valute, emergency, eSIM cone), CommunityEvent.country (opcijsko, default SI), državni filtri destinacij+dogodkov. DOKUMENT #35 (2026-10-13): docs/research/balkan-platform-no-ai.md — izvedljiv načrt balkanske platforme brez AI na 12 poglavij (merila sprejemanja #35): repo-pregled (obstoječe/nepopolno/manjkajoče/podvajanje), primerjalna matrika SDK (licenca kode ≠ ODbL podatkov — Valhalla MIT in Photon Apache-2.0 curl-potrjena), pokritost 5 držav (GTFS 0/5 preverjeno), podatkovni model Provider + postopek verifikacije, partner API status vse [nepotrjeno], arhitektura na obstoječem determinističnem engine, faze 1–6 (faza 1 = OpenFreeMap swap, reverzibilna), stroški ločeni na znane 0 EUR vs [nepotrjeno] ponudbe, register 10 tveganj, viri z datumi. 0 produkcijskih sprememb vedenja.
 
+**Verzija (produkcija): 2.67.1 — ZEMLJEVID VEKTORJI (PR #62, združen 2026-10-16):**
+neobvezni vektorski zemljevid `?zemljevid=vektorji` (MapLibre GL + OpenFreeMap,
+privzeti zemljevid ostaja Leaflet/OSM) z gručenjem markerjev po KVADRATNI
+invarianti dotikalnih ciljev 44×44 px — prekrivanje je osno (`|dx| < 44 IN
+|dy| < 44`), ne evklidsko (Soča↔Triglav evklidsko 45,0 px in
+Slovenj Gradec↔Dravograd 49,5 px se po oseeh prekrivata in sta v gruči).
+Klik gruče (44×44 px gumb s števcem) = fitBounds drill-down do
+ločitvenega zooma (`max(|dx|,|dy|) ≥ 44 px`) — vsaka destinacija postane
+posamezno izberljiva; cilji se nikoli ne pomanjšajo pod 44×44 px (zmanjša se
+število ciljev). Validacija: tsc 0 · eslint 0 · 2454/2454 enot (modul
+`src/lib/map-clustering.ts`, vključno z obema protiprimera in diagonalo 43/43)
+· mobilni E2E 20/20 + namizni 2/2 · Vercel predogled 20/20 + 2/2. Dokazila:
+`docs/evidence/maplibre-pr62-e2e/summary.md`.
+
 **Faza 2 (2.1.0):** skupnostne funkcije potovanja 1:1 iz izvorne kode (prijava,
 sodelovanje z vlogami/vabili/CAS, rezervacije, ankete, skupinski klepet z
 determinističnim @AI svetovalcem — 0 žetonov), **6 jezikov** (sl + en/it/de/fr/es),
@@ -30,6 +44,10 @@ ter testna vrata (86 testov) + GitLab CI.
 - **Deterministični načrtovalec** — `/api/itinerary` (interests/days/regija/sezona/
   budget → urnik 09:00–19:00, cene, geo-validacija sosednjih postankov)
 - **Leaflet zemljevid** — 38 markerjev, filtri, dodajanje v Mojo pot
+- **MapLibre vektorji (PoC, PR #62)** — `?zemljevid=vektorji`: MapLibre GL +
+  OpenFreeMap, gručenje po kvadratni invarianti 44×44 px (osno prekrivanje,
+  union-find verige, drill-down klik, `src/lib/map-clustering.ts`); privzeti
+  zemljevid ostaja Leaflet
 - **Go Mode „Na poti"** — NOW/NEXT kartice, napredek, persistenca (dai:go-trip)
 - **i18n** — 6 jezikov: SL (privzet, brez predpone) + EN/IT/DE/FR/ES (`/{jez}/*`)
   z delnimi slovarji in slovensko rezervo
@@ -121,7 +139,8 @@ Next.js 16 (App Router) · TypeScript 5 (strict) · Tailwind CSS 4 + shadcn/ui �
 Prisma ORM (SQLite za razvoj/peskovnik/CI; **PostgreSQL za produkcijo** —
 `prisma/postgres/schema.prisma` + versioned migracije, glej `docs/PRODUCTION-CUTOVER.md`;
 izvirna Neon Postgres shema z 39 modeli je klasificirana v
-`docs/RECOVERY-MODEL-MATRIX.md`) · next-intl · Leaflet/OSM · lucide-react
+`docs/RECOVERY-MODEL-MATRIX.md`) · next-intl · Leaflet/OSM · MapLibre GL +
+OpenFreeMap (PoC `?zemljevid=vektorji`) · lucide-react
 
 ## Razvoj
 
@@ -151,6 +170,16 @@ uporabnost zemljevida (Leaflet vsebnik + zoom + OSM atribucija):
 ```bash
 bun run e2e:mobile        # samo mobilni projekt; bun run e2e = obe projekta
 ```
+
+**E2E gručenja (PR #62)** — 20 mobilnih testov (prej 17) dopolnjenih s
+sprejemnimi testi zemljevida `?zemljevid=vektorji`: ⑩ Bled/Vintgar
+posamezno izberljiva iz gruče pri privzetem pogledu (brez iskanja, brez
+ročnega zooma; merjena 44 px in brez prekrivanja), ⑪ destinacija v gruči
+iz seznama → popup, ⑫ kvadratna invarianta (Soča+Triglav in
+Slovenj Gradec+Dravograd) z globalno meritvijo, da se noben par prikazanih
+44×44 ciljev ne prekriva. Modul `src/lib/map-clustering.ts` pokrije 19
+enot (projekcija, meja 43,9/44,0, diagonala, verige, oba protiprimera,
+osni ločitveni zoomi, invarianta kanona).
 
 **E2E v CI (2.47.0, issue #38)** — oba projekta tečeta tudi kot drugi job
 (`e2e`) v `.github/workflows/ci.yml`, vzporedno z „vrata“: sveža SQLite baza

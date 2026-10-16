@@ -170,7 +170,87 @@ test("④ zemljevid: Leaflet vsebnik + zoom + OSM atribucija @ 390 px", async ({
   await expect(atribucija).toContainText("OpenStreetMap");
 });
 
-// ── ⑤ — državna landing stran brez vodoravnega preliva (#41 F3) ──────────
+// ── ⑤ — vektorski MapLibre: mobilni prelomni paket ──────────────────────
+// Testira prototip ločeno od privzetega Leafleta. To je namerni gate pred
+// kakršnimkoli preklopom privzete karte; produkcijskih nastavitev ne spreminja.
+test("⑤ MapLibre: zemljevid, kontrola povečave in atribucija na 5 širinah", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+
+  for (const sirina of SIRINE) {
+    await page.setViewportSize({ width: sirina, height: 844 });
+    await gotoTrdo(page, "/zemljevid?zemljevid=vektorji");
+
+    await expect(page.locator("[data-poc-banner]")).toBeVisible();
+    await expect(page.locator(".maplibregl-canvas").first()).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.locator(".maplibregl-ctrl-zoom-in").first()).toBeVisible();
+
+    const attribution = page.locator(".maplibregl-ctrl-attrib").first();
+    await expect(attribution).toBeVisible();
+    // Na ozkih zaslonih je atribucija lahko strnjena v gumb; razširimo jo,
+    // da preverimo dejansko besedilo in ne zgolj prisotnost kontrolnika.
+    const attributionText = await attribution.innerText();
+    if (!attributionText.includes("OpenFreeMap")) {
+      const attributionButton = attribution.locator(".maplibregl-ctrl-attrib-button");
+      if (await attributionButton.isVisible().catch(() => false)) {
+        await attributionButton.click();
+      }
+    }
+    await expect(attribution).toContainText("OpenFreeMap");
+    await expect(attribution).toContainText("OpenStreetMap");
+
+    const horizontalOverflow = await page.evaluate(() => {
+      const el = document.scrollingElement;
+      return el ? el.scrollWidth - el.clientWidth : 0;
+    });
+    expect(
+      horizontalOverflow,
+      `MapLibre @ ${sirina}px: vodoravni preliv ${horizontalOverflow}px`,
+    ).toBeLessThanOrEqual(1);
+  }
+
+  expect(pageErrors, "JavaScript napake na mobilnem MapLibre").toEqual([]);
+});
+
+test("⑥ MapLibre: destinacijo je mogoče izbrati in dodati v mojo pot", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await gotoTrdo(page, "/zemljevid?zemljevid=vektorji");
+
+  const marker = page.locator('[data-destination-slug="bled"]');
+  await expect(marker).toBeVisible({ timeout: 30_000 });
+  const target = await marker.boundingBox();
+  expect(target, "Bled marker mora imeti merljivo površino dotika").not.toBeNull();
+  expect(target!.width).toBeGreaterThanOrEqual(44);
+  expect(target!.height).toBeGreaterThanOrEqual(44);
+
+  await marker.click();
+  const popup = page.locator(".maplibregl-popup").first();
+  await expect(popup).toBeVisible();
+  await expect(popup).toContainText("Bled");
+
+  const add = popup.getByRole("button", { name: "Dodaj v mojo pot", exact: true });
+  await expect(add).toBeVisible();
+  await add.click();
+  await expect(add).toHaveText("V moji poti");
+  await expect(add).toBeDisabled();
+
+  const saved = await page.evaluate(() => {
+    const raw = window.localStorage.getItem("dai:my-trip");
+    const items = raw ? JSON.parse(raw) as Array<{ refId?: string }> : [];
+    return items.some((item) => item.refId === "bled");
+  });
+  expect(saved).toBe(true);
+});
+
+// ── ⑦ — državna landing stran brez vodoravnega preliva (#41 F3) ──────────
 // Pravilo #41: „E2E mobilni prelomi: vsaka nova državna stran mora
 // opraviti 5-prelomni suite." BA = prva F3 landing stran z vso vsebino
 // (destinacije + dogodki + lokali) — en test na širino (svež tab).

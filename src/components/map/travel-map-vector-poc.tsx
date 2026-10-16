@@ -238,7 +238,7 @@ export default function TravelMapVectorPoc() {
     map.flyTo({
       center: [destination.coords.lng, destination.coords.lat],
       // Zoom 11 loči vsak par kanona DESTINATIONS (najgostejši par se
-      // potrebuje ≈ 10,2 — invarianta tests/map-clustering.test.ts ⑪).
+      // osno potrebuje ≈ 10,3 — invarianta tests/map-clustering.test.ts ⑪).
       zoom: Math.max(map.getZoom(), 11),
       essential: true,
     });

@@ -105,3 +105,46 @@ sosednji marker. Cilji ostanejo ≥ 44×44 px; zmanjša se število hkratnih cil
   na tej glavi; GitLab `main` je ostal pri `175e7fd` (2.67.1), produkcija nedotaknjena.
 - Vercel build-rate-limit je prehoden: vsak nov push = nov poskus deploymenta;
   blokiran poskus se sam ne ponovi (merjeno ob 18:10 in 18:27 UTC).
+
+---
+
+# Runda 3 — kvadratna (osna) invarianta prekrivanja (2026-10-16)
+
+**Pripomba lastnika:** evklidski pogoj `dx²+dy² < 44²` pri KVADRATNIH ciljih
+44 × 44 px dopušča prekrivanja — pravilno je `|dx| < 44 IN |dy| < 44`. Dva
+dokazana primera pri zoom 8: **Soča ↔ Triglav** (evklidsko 45,0 px!) in
+**Slovenj Gradec ↔ Dravograd** (evklidsko 49,5 px!) — oba para se po oseeh
+prekrivata, evklidska logika pa ju ne bi gručila.
+
+## Spremembe
+
+- `src/lib/map-clustering.ts`: NOVA `squaresOverlap(dx, dy, sidePx)` (osno
+  prekrivanje kvadratov); `groupOverlapping` gruči po `squaresOverlap`
+  (verige prekrivanj ostanejo ena skupina); `requiredSeparationZoom` temelji
+  na `max(|dx|, |dy|) ≥ 44` (vsaj ena os loči), ne na evklidski razdalji.
+- Meritve kanona @ z8 (osno): natanko 6 prekrivajočih parov — bled↔vintgar
+  8,1/16,7 · piran↔portorož 9,0/4,7 · **soca↔triglav 41,1/18,3** ·
+  **slovenj-gradec↔dravograd 30,8/38,8** · novi-sad↔sremski-karlovci 33,0/27,0 ·
+  skopje↔matka 36,6/0,3. Ločitve: piran↔portorož ~10,3 (najgostejši), bled↔vintgar
+  ~9,4, soca↔triglav ~8,1, slovenj-gradec↔dravograd ~8,2 — vse ≪ maxZoom 18.
+- Enota: 7 novih testov (③a meja 44 px po osi, ③b diagonala 43/43 = prekrivanje
+  kljub evklidsko 60,8, ③c ena os loči pri 45/43, ⑧a Soča/Triglav, ⑧b Slov.Gradec/
+  Dravograd, ⑨a/⑨b osne ločitvene povečave) + posodobljena invarianta ⑪ (≤ 10,35)
+  in ⑫ (6 parov @ z8, oba para lastnika med gručami).
+- E2E: NOVI sprejemni ⑫ — oba nova para posamezno izberljiva iz gruč (drill-down,
+  brez iskanja in ročnega zooma), popup + „Dodaj v mojo pot" za vse štiri;
+  GLOBALNA meritev po vsakem drill-downu: nobena dva prikazana 44 × 44 px cilja
+  se ne prekrivata (`preveriBrezPrekrivanja`). ⑩ dopolnjena z isto globalno
+  meritvijo; obstoječi testi (Bled/Vintgar, popup, filtri, seznam, 5 širin)
+  ohranjeni. Pomočnik `zapriPopup` (tipkovnica) — gumb × je lahko pod
+  kontrolnikom za povečavo (merjeno).
+
+## Vrata (lokalna produkcijska gradnja, standalone :3100, serviran z bun)
+
+- `tsc --noEmit` 0 · `eslint .` 0 · `bun test` **2454/2454** (26 715 expect)
+- `next build` ZELEN s TS preverbo · E2E mobilni **20/20 PASSED** (3,6 min)
+  · namizni 2/2 PASSED (23,3 s)
+- Lekcija: standalone strežnik MORI serviran z `bun` (kot v e2e-chunk.sh) —
+  `node .next/standalone/server.js` sproži neskončno preusmeritveno zanko
+  next-intl middleware (307 na isti URL, tudi s piškotkom NEXT_LOCALE) →
+  ERR_TOO_MANY_REDIRECTS; `bun` servira 200 direktno.

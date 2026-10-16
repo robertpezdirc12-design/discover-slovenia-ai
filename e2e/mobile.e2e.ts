@@ -29,6 +29,10 @@
  *   povečanja (sprejemni test odprave prekrivanja).
  * ⑪ SEZNAM → destinacija v gruči: klik imena v seznamu odpre popup
  *   (showDestination razpre gručo s poletom, popup po moveend).
+ * ⑫ GRUČENJE KVADRATNO (runda 3): Soča+Triglav in Slovenj Gradec+Dravograd
+ *   (evklidsko > 44 px, po oseeh pa prekrivanje — pripomba lastnika) sta
+ *   posamezno izberljiva iz gruč; GLOBALNA meritev po vsakem drill-downu:
+ *   nobena dva prikazana 44 × 44 px cilja se ne prekrivata.
  *
  * Izolacija: svež kontekst na test (prazen localStorage — isti vzorec
  * kot golden-path.e2e.ts).
@@ -493,6 +497,10 @@ test("⑩ MapLibre gručenje: Bled in Vintgarska soteska posamezno izberljiva (b
     `44-px cilja se po razpetju gruče ne smeta prekrivati (bled=${JSON.stringify(bledBox)}, vintgar=${JSON.stringify(vintgarBox)})`,
   ).toBe(true);
 
+  // GLOBALNA INVARIANTA (runda 3): tudi vsi OSTALI prikazani cilji na ekranu
+  // (markerji + gruče, vsi 44 × 44 px) se med seboj ne prekrivajo.
+  await preveriBrezPrekrivanja(page);
+
   // Vsaka destinacija posebej: popup z PRAVIM imenom + dodajanje v mojo pot.
   await bled.click();
   const bledPopup = page.locator(".maplibregl-popup").first();
@@ -558,4 +566,225 @@ test("⑪ MapLibre: destinacija v gruči iz seznama odpre popup (showDestination
   await expect(popup).toContainText("Vintgarska soteska");
   // Po letu (zoom ≥ 11) je marker posamezno viden — gruča je razprta:
   await expect(vintgar).toBeVisible();
+});
+
+// ── pomočnik runde 3 — GLOBALNA KVADRATNA INVARIANTA PR #62 ────────────────
+/** Zapri popup prek tipkovnice (fokus na gumb × + Enter): gumb za zapiranje
+ * je lahko položajno POD kontrolnikom za povečavo — Playwrightov .click()
+ * bi pri tem zajel ctrl-icon (merjeno pri Sočinem popupu po drill-downu);
+ * aktivacija s tipkovnico je realna dostopnostna pot in ne odvisi od
+ * hit-testinga položaja. */
+async function zapriPopup(
+  page: Page,
+  popup: ReturnType<typeof page.locator>,
+): Promise<void> {
+  await popup.locator(".maplibregl-popup-close-button").focus();
+  await page.keyboard.press("Enter");
+  await expect(popup).toBeHidden();
+}
+
+/** Meri VSE prikazane dotikalne cilje (markerji + gruče, vsi 44 × 44 px) in
+ * zagotovi, da se noben par ne prekriva (osno: vsaj ena os mora ločiti —
+ * enako pravilo, ki ga zaklepa squaresOverlap v map-clustering.ts).
+ * Pričakovan rezultat: prazen seznam prekrivanj. */
+async function preveriBrezPrekrivanja(page: Page): Promise<void> {
+  const prekrivanja = await page.evaluate(() => {
+    const cilji = [
+      ...document.querySelectorAll<HTMLButtonElement>(
+        "button[data-destination-slug], button[data-cluster]",
+      ),
+    ].filter((el) => el.style.display !== "none" && el.offsetWidth > 0);
+    const boxi = cilji.map((el) => {
+      const r = el.getBoundingClientRect();
+      return {
+        x: r.x,
+        y: r.y,
+        w: r.width,
+        h: r.height,
+        ime: el.getAttribute("aria-label") ?? "cilj",
+      };
+    });
+    const pari: string[] = [];
+    for (let i = 0; i < boxi.length; i++) {
+      for (let j = i + 1; j < boxi.length; j++) {
+        const a = boxi[i]!;
+        const b = boxi[j]!;
+        const sePrekrivata =
+          a.x < b.x + b.w - 0.5 &&
+          b.x < a.x + a.w - 0.5 &&
+          a.y < b.y + b.h - 0.5 &&
+          b.y < a.y + a.h - 0.5;
+        if (sePrekrivata) pari.push(`${a.ime} ↔ ${b.ime}`);
+      }
+    }
+    return pari;
+  });
+  expect(
+    prekrivanja,
+    "Nobena dva prikazana 44 × 44 px cilja se ne smeta prekrivati",
+  ).toEqual([]);
+}
+
+// ── ⑫ — runda 3: kvadratna invarianta (Soča/Triglav, Slov. Gradec/Dravograd)
+test("⑫ MapLibre gručenje (kvadratno): Soča+Triglav in Slovenj Gradec+Dravograd posamezno izberljiva — noben prikazan par ciljev se ne prekriva", async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await gotoTrdo(page, "/zemljevid?zemljevid=vektorji");
+
+  const soca = page.locator('[data-destination-slug="reka-soca"]');
+  const triglav = page.locator('[data-destination-slug="triglav"]');
+  const slovenjGradec = page.locator('[data-destination-slug="slovenj-gradec"]');
+  const dravograd = page.locator('[data-destination-slug="dravograd"]');
+
+  // Faza A — Soča ↔ Triglav (evklidsko 45,0 px @ z8, po oseeh prekrivanje):
+  await expect(soca).toHaveCount(1, { timeout: 30_000 });
+  await expect(soca).toBeHidden();
+  await expect(triglav).toBeHidden();
+  const socaGraca = page.locator('[data-cluster][aria-label*="Reka Soča"]').first();
+  await expect(socaGraca).toBeVisible({ timeout: 30_000 });
+
+  /** Je gruča znotraj klikljivega območja (viewport − fiksni nav trak)? */
+  const jeKlikljiva = async (graca: ReturnType<typeof page.locator>) => {
+    const box = await graca.boundingBox().catch(() => null);
+    const vp = page.viewportSize();
+    if (!box || !vp) return false;
+    const dno = vp.height - 120;
+    return (
+      box.x >= 8 &&
+      box.y >= 8 &&
+      box.x + box.width <= vp.width - 8 &&
+      box.y + box.height <= dno
+    );
+  };
+
+  await page.evaluate(() => window.scrollBy({ top: 280, behavior: "instant" }));
+  await page.evaluate(() => {
+    (document.querySelector(".maplibregl-canvas") as HTMLElement | null)?.focus();
+  });
+  for (let poskus = 0; poskus < 6; poskus++) {
+    if (await jeKlikljiva(socaGraca)) break;
+    await page.keyboard.press("ArrowLeft");
+    await page.waitForTimeout(450);
+  }
+  await expect
+    .poll(() => jeKlikljiva(socaGraca), "Gruča s Sočo mora biti po pano znotraj viewporta")
+    .toBe(true);
+
+  // Drill-down: klik gruče, dokler Soča ni posamezno vidna (max 4):
+  for (let poskus = 0; poskus < 4; poskus++) {
+    if (await soca.isVisible().catch(() => false)) break;
+    const aktivna = page
+      .locator('[data-cluster][aria-label*="Reka Soča"]')
+      .first();
+    await expect(aktivna).toBeVisible();
+    await aktivna.click();
+    await page.waitForTimeout(900);
+  }
+  await expect(soca).toBeVisible({ timeout: 20_000 });
+  await expect(triglav).toBeVisible();
+  // GLOBALNA INVARIANTA: noben prikazan cilj ne prekriva nobenega drugega:
+  await preveriBrezPrekrivanja(page);
+
+  await soca.click();
+  const socaPopup = page.locator(".maplibregl-popup").first();
+  await expect(socaPopup).toBeVisible();
+  await expect(socaPopup).toContainText("Reka Soča");
+  await socaPopup
+    .getByRole("button", { name: "Dodaj v mojo pot", exact: true })
+    .click();
+  await expect(socaPopup.getByRole("button", { name: "V moji poti" })).toBeDisabled();
+  await zapriPopup(page, socaPopup);
+
+  await triglav.click();
+  const triglavPopup = page.locator(".maplibregl-popup").first();
+  await expect(triglavPopup).toBeVisible();
+  await expect(triglavPopup).toContainText("Triglav");
+  await triglavPopup
+    .getByRole("button", { name: "Dodaj v mojo pot", exact: true })
+    .click();
+  await expect(
+    triglavPopup.getByRole("button", { name: "V moji poti" }),
+  ).toBeDisabled();
+  await zapriPopup(page, triglavPopup);
+
+  // Faza B — Slovenj Gradec ↔ Dravograd (evklidsko 49,5 px @ z8, po oseeh
+  // prekrivanje): svež privzeti pogled (ponovni dostop), isti vzorec:
+  await gotoTrdo(page, "/zemljevid?zemljevid=vektorji");
+  await expect(slovenjGradec).toHaveCount(1, { timeout: 30_000 });
+  await expect(slovenjGradec).toBeHidden();
+  await expect(dravograd).toBeHidden();
+  const sgGraca = page
+    .locator('[data-cluster][aria-label*="Slovenj Gradec"]')
+    .first();
+  await expect(sgGraca).toBeVisible({ timeout: 30_000 });
+
+  await page.evaluate(() => window.scrollBy({ top: 280, behavior: "instant" }));
+  await page.evaluate(() => {
+    (document.querySelector(".maplibregl-canvas") as HTMLElement | null)?.focus();
+  });
+  for (let poskus = 0; poskus < 6; poskus++) {
+    if (await jeKlikljiva(sgGraca)) break;
+    await page.keyboard.press("ArrowLeft");
+    await page.waitForTimeout(450);
+  }
+  await expect
+    .poll(
+      () => jeKlikljiva(sgGraca),
+      "Gruča s Slovenj Gradcem mora biti po pano znotraj viewporta",
+    )
+    .toBe(true);
+
+  for (let poskus = 0; poskus < 4; poskus++) {
+    if (await slovenjGradec.isVisible().catch(() => false)) break;
+    const aktivna = page
+      .locator('[data-cluster][aria-label*="Slovenj Gradec"]')
+      .first();
+    await expect(aktivna).toBeVisible();
+    await aktivna.click();
+    await page.waitForTimeout(900);
+  }
+  await expect(slovenjGradec).toBeVisible({ timeout: 20_000 });
+  await expect(dravograd).toBeVisible();
+  await preveriBrezPrekrivanja(page);
+
+  await slovenjGradec.click();
+  const sgPopup = page.locator(".maplibregl-popup").first();
+  await expect(sgPopup).toBeVisible();
+  await expect(sgPopup).toContainText("Slovenj Gradec");
+  await sgPopup
+    .getByRole("button", { name: "Dodaj v mojo pot", exact: true })
+    .click();
+  await expect(sgPopup.getByRole("button", { name: "V moji poti" })).toBeDisabled();
+  await zapriPopup(page, sgPopup);
+
+  await dravograd.click();
+  const draPopup = page.locator(".maplibregl-popup").first();
+  await expect(draPopup).toBeVisible();
+  await expect(draPopup).toContainText("Dravograd");
+  await draPopup
+    .getByRole("button", { name: "Dodaj v mojo pot", exact: true })
+    .click();
+  await expect(
+    draPopup.getByRole("button", { name: "V moji poti" }),
+  ).toBeDisabled();
+
+  // VSE ŠTIRI destinacije posebej dodane iz gruč (ločena izbirljivost):
+  const shranjene = await page.evaluate(() => {
+    const raw = window.localStorage.getItem("dai:my-trip");
+    const items = raw ? (JSON.parse(raw) as Array<{ refId?: string }>) : [];
+    return ["reka-soca", "triglav", "slovenj-gradec", "dravograd"].every(
+      (slug) => items.some((item) => item.refId === slug),
+    );
+  });
+  expect(
+    shranjene,
+    "Iz gruč morajo biti vse štiri destinacije posebej dodljive",
+  ).toBe(true);
+
+  expect(pageErrors, "JavaScript napake med kvadratnim gručenjem").toEqual([]);
 });

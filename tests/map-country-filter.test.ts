@@ -53,6 +53,13 @@ describe("map discovery: country filter", () => {
     expect(MAP).toContain('className="h-11 col-span-2 md:col-span-1"');
   });
 
+  test("country context is visible in both marker popups and synchronized list rows", () => {
+    expect(MAP).toContain("{countryLabel(locale, d.country)}");
+    expect(MAP).toContain("{countryLabel(l, d.country)} · {regionLabel(d.region, l)} · {typeLabel(d.type, l)}");
+    expect(MAP).toContain("function DestinationPopup(");
+    expect(MAP).toContain("aria-current={active ? \"true\" : undefined}");
+  });
+
   test("filtered destinations drive map markers, viewport bounds and the synchronized list", () => {
     expect(MAP).toContain("<FitBounds dests={results} />");
     expect(MAP.match(/results\.map\(\(d\) =>/g)?.length ?? 0).toBe(2);

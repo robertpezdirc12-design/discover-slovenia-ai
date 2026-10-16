@@ -833,7 +833,10 @@ function DestinationPopup({
           className="object-cover"
         />
       </div>
-      <p className="mt-2 text-[11px] font-medium text-muted-foreground">
+      <p className="mt-2 text-[11px] font-semibold text-primary">
+        {countryLabel(locale, d.country)}
+      </p>
+      <p className="text-[11px] font-medium text-muted-foreground">
         {regionLabel(d.region, locale)} · {typeLabel(d.type, locale)}
       </p>
       <h3 className="text-sm leading-tight font-bold">{d.name}</h3>
@@ -2202,7 +2205,7 @@ export default function TravelMap() {
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-semibold">{d.name}</span>
                         <span className="block truncate text-xs text-muted-foreground">
-                          {regionLabel(d.region, l)} · {typeLabel(d.type, l)}
+                          {countryLabel(l, d.country)} · {regionLabel(d.region, l)} · {typeLabel(d.type, l)}
                         </span>
                       </span>
                       <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold">

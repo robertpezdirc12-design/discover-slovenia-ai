@@ -75,7 +75,7 @@ export function DestinationCard({
           )}
           <Badge
             aria-hidden="true"
-            className="ml-auto max-w-[calc(50%-0.25rem)] truncate border-white/60 bg-background/90 text-foreground shadow-sm backdrop-blur-sm"
+            className={cn("ml-auto max-w-full truncate border-white/60 bg-background/90 text-foreground shadow-sm backdrop-blur-sm", d.featured && "max-w-[calc(50%-0.25rem)]")}
           >
             {countryLabel(l, d.country)}
           </Badge>

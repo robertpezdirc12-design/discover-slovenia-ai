@@ -21,14 +21,15 @@ describe("destination card: country context", () => {
   test("shows a compact country badge beside the featured marker", () => {
     expect(CARD).toContain('aria-hidden="true"');
     expect(CARD).toContain("absolute inset-x-2.5 top-2.5 flex items-start justify-between gap-2");
-    expect(CARD).toContain("max-w-[calc(50%-0.25rem)] truncate border-white/60 bg-background/90 text-foreground");
+    expect(CARD).toContain('className={cn("ml-auto max-w-full truncate border-white/60 bg-background/90 text-foreground shadow-sm backdrop-blur-sm", d.featured && "max-w-[calc(50%-0.25rem)]")}');
     expect(CARD).toContain("max-w-[calc(50%-0.25rem)] truncate bg-primary text-primary-foreground");
     expect(CARD).toContain("{countryLabel(l, d.country)}");
   });
 
   test("reserves separate badge widths so long country names cannot overlap featured badges", () => {
     expect(CARD).toContain("justify-between gap-2");
-    expect(CARD).toContain("ml-auto max-w-[calc(50%-0.25rem)] truncate");
+    expect(CARD).toContain('d.featured && "max-w-[calc(50%-0.25rem)]"');
+    expect(CARD).toContain("ml-auto max-w-full truncate");
     expect(CARD).not.toContain("absolute top-2.5 right-2.5");
     expect(CARD).not.toContain("absolute top-2.5 left-2.5");
   });

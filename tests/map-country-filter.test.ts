@@ -60,6 +60,14 @@ describe("map discovery: country filter", () => {
     expect(MAP).toContain("countryLabel(l, d.country)");
   });
 
+  test("empty map/list state offers a direct, conditional reset action", () => {
+    expect(MAP).toContain("{results.length === 0 ? (");
+    expect(MAP).toContain("{hasFilters && (");
+    expect(MAP).toContain('onClick={reset}');
+    expect(MAP).toContain('{t("reset")}');
+    expect(MAP).toContain('className="mt-4 h-10"');
+  });
+
   test("clear-filters action resets country together with existing filters", () => {
     expect(MAP).toContain("setCountry(\"all\")");
     expect(MAP).toContain("setType(\"all\")");

@@ -2156,6 +2156,17 @@ export default function TravelMap() {
               <MapPin className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
               <p className="mt-2 text-sm font-semibold">{t("emptyTitle")}</p>
               <p className="mt-1 text-sm text-muted-foreground">{t("emptyLead")}</p>
+              {hasFilters && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={reset}
+                  className="mt-4 h-10"
+                >
+                  <X className="size-4" aria-hidden="true" />
+                  {t("reset")}
+                </Button>
+              )}
             </div>
           ) : (
             <ul className="scrollbar-slim max-h-[62svh] list-none space-y-1.5 overflow-y-auto pr-1 sm:max-h-[70svh] lg:max-h-[calc(100svh-16rem)]">

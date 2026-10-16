@@ -29,6 +29,14 @@
  * ČIŠČENJE: map.remove() v unmount čistilni funkciji (tudi StrictMode
  * dvojni priklop v razvoju je s tem varen); popups/markerji se uničijo s
  * stranjo zemljevida.
+ *
+ * GRUČENJE (PR #62, pripomba lastnika): pri gostih destinacijah (Bled ↔
+ * Vintgarska soteska, Piran ↔ Portorož …) bi se 44-px dotikalna cilja
+ * fizično prekrivala in dotik bi lahko izbral napačno destinacijo. Ciljev
+ * NE zmanjšujemo — namesto tega se prekrivajoči markerji zlijejo v gručo
+ * (44 × 44 px gumb s števcem in imeni članov), katere klik poveča kamero
+ * toliko, da so vsi člani ≥ 44 px narazen in posamezno izberljivi. Čista
+ * logika: @/lib/map-clustering (enote: tests/map-clustering.test.ts).
  */
 
 import {
@@ -48,12 +56,18 @@ import { notifyMyTripAdded } from "@/components/my-trip-toast-action";
 import { Link } from "@/i18n/navigation";
 import { localePrefixPath } from "@/i18n/routing";
 import { countryLabel } from "@/lib/countries-data";
+import {
+  groupOverlapping,
+  MIN_TOUCH_TARGET_PX,
+  requiredSeparationZoom,
+} from "@/lib/map-clustering";
 import { activeCountryKeys, activeRegionKeys, filterDestinations } from "@/lib/destinations-filter";
 import { pick } from "@/lib/i18n-pick";
 import { myTrip, useMyTripList } from "@/lib/my-trip";
 import {
   DESTINATIONS,
   DEST_TYPES,
+  type Destination,
   type DestinationType,
   regionLabel,
   typeLabel,
@@ -125,12 +139,35 @@ const POPUP_ACTION_LABELS = {
   },
 } as const;
 
+/** Dostopno ime gruče (vseh 6 jezikov) — sledi imena članov, da sta
+ * bralnik zaslona in E2E test ⑩ videla, katere destinacije gruča združuje. */
+const CLUSTER_ARIA_LABELS = {
+  sl: "Gruča destinacij",
+  en: "Destination cluster",
+  it: "Gruppo di destinazioni",
+  de: "Reisezielgruppe",
+  fr: "Groupe de destinations",
+  es: "Grupo de destinos",
+} as const;
+
+/** Odmik povečave nad teoretičnim minimumom ločitve — rezerva proti
+ * zaokroževanju px in offsetu popupa; invarianta "cilja se NE prekrivata"
+ * mora držati tudi ob neceloštevilskem zoomu. */
+const CLUSTER_ZOOM_MARGIN = 0.5;
+
 export default function TravelMapVectorPoc() {
   const l = useLocale();
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const mapRef = React.useRef<MlMap | null>(null);
   const markersRef = React.useRef<Map<string, MlMarker>>(new Map());
+  const clusterMarkersRef = React.useRef<Map<string, MlMarker>>(new Map());
+  const syncMarkersRef = React.useRef<(() => void) | null>(null);
   const loadedRef = React.useRef(false);
+  // Vidna (filtrirana) množica slugov — skupna izhodiščna točka prikaza in
+  // gručenja (gruče nastajajo IZKLJUČNO med vidnimi destinacijami):
+  const visibleSlugsRef = React.useRef<Set<string>>(
+    new Set(DESTINATIONS.map((d) => d.slug)),
+  );
   const tripItems = useMyTripList();
   const [ready, setReady] = React.useState(false);
   const [failed, setFailed] = React.useState(false);
@@ -200,11 +237,24 @@ export default function TravelMapVectorPoc() {
     setMobileView("map");
     map.flyTo({
       center: [destination.coords.lng, destination.coords.lat],
+      // Zoom 11 loči vsak par kanona DESTINATIONS (najgostejši par se
+      // potrebuje ≈ 10,2 — invarianta tests/map-clustering.test.ts ⑪).
       zoom: Math.max(map.getZoom(), 11),
       essential: true,
     });
     const popup = marker.getPopup();
-    if (popup && !popup.isOpen()) marker.togglePopup();
+    if (!popup || popup.isOpen()) return;
+    if (marker.getElement().style.display === "none") {
+      // Marker je trenutno v gruči — popup odpremo šele, ko kamera po
+      // poletu cilje loči (sicer bi popup stal nad gručo, ne nad svojo
+      // destinacijo).
+      map.once("moveend", () => {
+        const currentPopup = marker.getPopup();
+        if (currentPopup && !currentPopup.isOpen()) marker.togglePopup();
+      });
+    } else {
+      marker.togglePopup();
+    }
   }, []);
 
   React.useEffect(() => {
@@ -237,6 +287,119 @@ export default function TravelMapVectorPoc() {
       new NavigationControl({ showCompass: false }),
       "top-right",
     );
+
+    /** Prikaže/skrije posamezen marker (brez odvečnih DOM zapisov). */
+    const setMarkerDisplay = (slug: string, show: boolean) => {
+      const marker = markersRef.current.get(slug);
+      if (!marker) return;
+      const value = show ? "" : "none";
+      const el = marker.getElement();
+      if (el.style.display !== value) el.style.display = value;
+    };
+
+    /** Ustvari gručo: 44 × 44 px gumb (pravilo dotika ostane) s števcem
+     * članov; klik poveča do najmanjše povečave ločitve ciljev. */
+    const createClusterMarker = (
+      members: Destination[],
+      lngLat: [number, number],
+    ): MlMarker => {
+      const clusterEl = document.createElement("button");
+      clusterEl.type = "button";
+      clusterEl.className =
+        "flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-primary p-0 text-xs font-semibold text-primary-foreground shadow-md";
+      clusterEl.style.touchAction = "manipulation";
+      clusterEl.setAttribute("data-cluster", "");
+      clusterEl.setAttribute("data-cluster-count", String(members.length));
+      const names = members.map((member) => member.name);
+      clusterEl.setAttribute(
+        "aria-label",
+        `${pick(l, CLUSTER_ARIA_LABELS)}: ${names.join(", ")}`,
+      );
+      clusterEl.title = names.join(", ");
+      clusterEl.textContent = String(members.length);
+      clusterEl.addEventListener("click", () => {
+        const current = mapRef.current;
+        if (!current) return;
+        // fitBounds VSEH članov (drill-down, kot pri znanih zemljevidih):
+        // po tapu je cela skupina videna in razpeta; omejitev maxZoom na
+        // requiredSeparationZoom + odmik zagotavlja, da se 2-članska gruča
+        // razreši V ENEM tapu (člana ≥ 44 px narazen), večje pa se naravno
+        // razslopijo v manjše gruče (invarianta prekrivanja velja vedno,
+        // saj syncMarkers gruči ob vsakem premiku kamere znova izračuna).
+        const target = requiredSeparationZoom(
+          members.map((member) => ({
+            lng: member.coords.lng,
+            lat: member.coords.lat,
+          })),
+          MIN_TOUCH_TARGET_PX,
+          current.getMaxZoom(),
+        ) + CLUSTER_ZOOM_MARGIN;
+        const bounds = new LngLatBounds();
+        for (const member of members) {
+          bounds.extend([member.coords.lng, member.coords.lat]);
+        }
+        current.fitBounds(bounds, {
+          padding: 52,
+          maxZoom: target,
+          essential: true,
+        });
+      });
+      return new MlMarker({ element: clusterEl }).setLngLat(lngLat);
+    };
+
+    /** Gručenje (PR #62): markerje, katerih 44-px cilja bi se prekrivala,
+     * skrij in namesto njih postavi gručo. Steče ob load, vsakem premiku
+     * kamere ('move') in vsaki spremembi filtrov; dela nad VIDI množico. */
+    const syncMarkers = () => {
+      const current = mapRef.current;
+      if (!current || !loadedRef.current) return;
+      const groups = groupOverlapping(
+        DESTINATIONS.filter((d) => visibleSlugsRef.current.has(d.slug)).map(
+          (d) => {
+            const p = current.project([d.coords.lng, d.coords.lat]);
+            return { d, x: p.x, y: p.y };
+          },
+        ),
+        MIN_TOUCH_TARGET_PX,
+      );
+      const liveClusterKeys = new Set<string>();
+      for (const group of groups) {
+        if (group.length === 1) {
+          setMarkerDisplay(group[0].d.slug, true);
+          continue;
+        }
+        const members = group.map((item) => item.d);
+        const key = members.map((member) => member.slug).sort().join("|");
+        liveClusterKeys.add(key);
+        for (const member of members) setMarkerDisplay(member.slug, false);
+        // Sidro = član najbliže središču gruče (px) — gruča stoji na pravi
+        // destinaciji, ne na izmišljeni točki:
+        const cx = group.reduce((sum, item) => sum + item.x, 0) / group.length;
+        const cy = group.reduce((sum, item) => sum + item.y, 0) / group.length;
+        const anchor = group.reduce((best, item) =>
+          Math.hypot(item.x - cx, item.y - cy) <
+            Math.hypot(best.x - cx, best.y - cy)
+            ? item
+            : best,
+        );
+        let marker = clusterMarkersRef.current.get(key);
+        if (!marker) {
+          marker = createClusterMarker(members, [
+            anchor.d.coords.lng,
+            anchor.d.coords.lat,
+          ]);
+          marker.addTo(current);
+          clusterMarkersRef.current.set(key, marker);
+        }
+      }
+      for (const [key, marker] of clusterMarkersRef.current) {
+        if (!liveClusterKeys.has(key)) {
+          marker.remove();
+          clusterMarkersRef.current.delete(key);
+        }
+      }
+    };
+    syncMarkersRef.current = syncMarkers;
 
     const onLoad = () => {
       loadedRef.current = true;
@@ -315,6 +478,10 @@ export default function TravelMapVectorPoc() {
         marker.addTo(map);
         markersRef.current.set(d.slug, marker);
       }
+      // Gruče se izračunajo takoj ob prvem izrisu (privzeti pogled vseh 74
+      // destinacij je na povečavi, kjer se dotikalni cilji gostih parov —
+      // Bled/Vintgar, Piran/Portorož … — sicer fizikalno prekrivajo).
+      syncMarkers();
       setReady(true);
     };
 
@@ -329,29 +496,33 @@ export default function TravelMapVectorPoc() {
       setFailed(true);
     };
 
+    const onMove = () => syncMarkers();
     map.on("load", onLoad);
+    map.on("move", onMove);
     map.on("error", onError);
 
     return () => {
       map.off("load", onLoad);
+      map.off("move", onMove);
       map.off("error", onError);
       map.remove();
       if (mapRef.current === map) mapRef.current = null;
       markersRef.current.clear();
+      clusterMarkersRef.current.clear();
+      syncMarkersRef.current = null;
       loadedRef.current = false;
     };
   }, [l]);
 
   // Filtriramo že ustvarjene markerje in prilagodimo pogled; zemljevid se
-  // ne ustvarja znova ob vsakem vnosu v iskalno polje.
+  // ne ustvarja znova ob vsakem vnosu v iskalno polje. Prikaži/skrij presodi
+  // syncMarkers — filtri in gručenje v ENEM mestu, zato gruče nastajajo
+  // samo med vidnimi (filtriranimi) destinacijami.
   React.useEffect(() => {
     const map = mapRef.current;
     if (!ready || !map) return;
-    const visible = new Set(filteredDestinations.map((item) => item.slug));
-    for (const destination of DESTINATIONS) {
-      const marker = markersRef.current.get(destination.slug);
-      if (marker) marker.getElement().style.display = visible.has(destination.slug) ? "" : "none";
-    }
+    visibleSlugsRef.current = new Set(filteredDestinations.map((item) => item.slug));
+    syncMarkersRef.current?.();
     if (filteredDestinations.length === 1) {
       const item = filteredDestinations[0];
       map.flyTo({

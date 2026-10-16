@@ -127,7 +127,9 @@ describe("poc-vector [source-contract]: filtriranje, seznam in odpornost", () =>
     const s = await src("src/components/map/travel-map-vector-poc.tsx");
     expect(s).toContain("filterDestinations(DESTINATIONS, { q, country, region, type })");
     expect(s).toContain("markersRef.current.set(d.slug, marker)");
-    expect(s).toContain('marker.getElement().style.display = visible.has(destination.slug) ? "" : "none"');
+    // Filtri in gručenje presojata prikaz v ENEM mestu (syncMarkers):
+    expect(s).toContain("visibleSlugsRef.current = new Set(filteredDestinations.map((item) => item.slug))");
+    expect(s).toContain("syncMarkersRef.current?.()");
     expect(s).toContain('section');
     expect(s).toContain('setMobileView("list")');
     expect(s).toContain('setMobileView("map")');
@@ -197,5 +199,48 @@ describe("poc-vector [source-contract]: obveznosti kanona", () => {
     const w = await src("public/maplibre/maplibre-gl-worker.mjs");
     expect(w).toContain("3-Clause BSD"); // licenčna glava — korektna redistribucija
     expect(w.length).toBeGreaterThan(100_000); // pravi worker, ne placeholder
+  });
+});
+
+describe("poc-vector [source-contract]: gručenje dotikalnih ciljev (PR #62)", () => {
+  test("gruča je 44 × 44 px gumb s števcem, data atributoma in imeni članov", async () => {
+    const s = await src("src/components/map/travel-map-vector-poc.tsx");
+    // čista logika iz ločenega modula (enote: tests/map-clustering.test.ts):
+    expect(s).toContain('from "@/lib/map-clustering"');
+    // pravilo dotika ostaja TUDI za gručo — ciljev ne zmanjšujemo pod 44 px:
+    expect(s).toContain(
+      '"flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-primary p-0 text-xs font-semibold text-primary-foreground shadow-md"',
+    );
+    expect(s).toContain('clusterEl.setAttribute("data-cluster", "")');
+    expect(s).toContain('clusterEl.setAttribute("data-cluster-count", String(members.length))');
+    // dostopno ime nosi imena članov (E2E ⑩ locira gručo po imenu destinacije):
+    expect(s).toContain("${pick(l, CLUSTER_ARIA_LABELS)}: ${names.join(\", \")}");
+    expect(s).toContain('sl: "Gruča destinacij"');
+    expect(s).toContain('en: "Destination cluster"');
+  });
+
+  test("klik gruče razpre skupino: fitBounds članov z omejitvijo ločitve (drill-down)", async () => {
+    const s = await src("src/components/map/travel-map-vector-poc.tsx");
+    expect(s).toContain("const target = requiredSeparationZoom(");
+    expect(s).toContain("MIN_TOUCH_TARGET_PX,");
+    expect(s).toContain("current.getMaxZoom(),");
+    expect(s).toContain(") + CLUSTER_ZOOM_MARGIN;");
+    // fitBounds VSEH članov — po tapu je celotna skupina videna in razpeta
+    // (easeTo na središče bi pustil robne člane izven platna):
+    expect(s).toContain("current.fitBounds(bounds, {");
+    expect(s).toContain("padding: 52,");
+    expect(s).toContain("maxZoom: target,");
+    expect(s).toContain("bounds.extend([member.coords.lng, member.coords.lat]);");
+  });
+
+  test("gručenje steče ob load, ob premiku kamere in ob filtrih; čiščenje odstrani gruče", async () => {
+    const s = await src("src/components/map/travel-map-vector-poc.tsx");
+    expect(s).toContain("const onMove = () => syncMarkers();");
+    expect(s).toContain('map.on("move", onMove)');
+    expect(s).toContain('map.off("move", onMove)');
+    expect(s).toContain("clusterMarkersRef.current.clear()");
+    // ob load (prvi izris) in ob vsaki spremembi filtrov:
+    expect(s).toContain("syncMarkers();");
+    expect(s).toContain("syncMarkersRef.current?.()");
   });
 });

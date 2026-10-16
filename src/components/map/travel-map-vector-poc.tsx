@@ -211,7 +211,9 @@ export default function TravelMapVectorPoc() {
     if (!el) return;
 
     // Ponovna inicializacija (npr. React StrictMode ali menjava jezika) ne
-    // sme podedovati starih markerjev ali njihovega stanja nalaganja.
+    // sme podedovati starega stanja nalaganja ali napake.
+    setReady(false);
+    setFailed(false);
     loadedRef.current = false;
     markersRef.current.clear();
 

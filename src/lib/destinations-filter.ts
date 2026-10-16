@@ -29,6 +29,14 @@ export interface DestinationFilterState {
   country?: string;
 }
 
+/**
+ * Normalizira besedilo za iskanje: "plitvicka" najde tudi "Plitvička".
+ * Isto pravilo uporablja seznam destinacij in interaktivni zemljevid.
+ */
+export function normalizeSearchText(value: string): string {
+  return value.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase();
+}
+
 /** Minimalna oblika zapisa, ki jo logika filtra bere. */
 export type FilterableDestination = Pick<
   Destination,
@@ -44,7 +52,7 @@ export function filterDestinations<T extends FilterableDestination>(
   destinations: readonly T[],
   filters: DestinationFilterState,
 ): T[] {
-  const needle = filters.q.trim().toLowerCase();
+  const needle = normalizeSearchText(filters.q.trim());
   const wantCountry = filters.country ?? "all";
   return destinations.filter((d) => {
     if (wantCountry !== "all" && d.country !== wantCountry) return false;
@@ -52,10 +60,10 @@ export function filterDestinations<T extends FilterableDestination>(
     if (filters.type !== "all" && d.type !== filters.type) return false;
     if (
       needle &&
-      !d.name.toLowerCase().includes(needle) &&
-      !d.tagline.toLowerCase().includes(needle) &&
-      !d.description.toLowerCase().includes(needle) &&
-      !d.highlights.some((h) => h.toLowerCase().includes(needle))
+      !normalizeSearchText(d.name).includes(needle) &&
+      !normalizeSearchText(d.tagline).includes(needle) &&
+      !normalizeSearchText(d.description).includes(needle) &&
+      !d.highlights.some((h) => normalizeSearchText(h).includes(needle))
     ) {
       return false;
     }

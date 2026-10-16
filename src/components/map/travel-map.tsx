@@ -81,7 +81,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "@/i18n/navigation";
 import { countryLabel } from "@/lib/countries-data";
-import { activeCountryKeys } from "@/lib/destinations-filter";
+import { activeCountryKeys, filterDestinations } from "@/lib/destinations-filter";
 import { pick } from "@/lib/i18n-pick";
 import { LOKAL_CATEGORIES, type LokalCategory } from "@/lib/lokali-data";
 import { myTrip, useMyTripList } from "@/lib/my-trip";
@@ -1411,22 +1411,12 @@ export default function TravelMap() {
   }, []);
   const activeCountries = React.useMemo(() => activeCountryKeys(DESTINATIONS), []);
 
-  const results = React.useMemo(() => {
-    const needle = q.trim().toLowerCase();
-    return DESTINATIONS.filter((d) => {
-      if (country !== "all" && d.country !== country) return false;
-      if (type !== "all" && d.type !== type) return false;
-      if (region !== "all" && d.region !== region) return false;
-      if (
-        needle &&
-        !d.name.toLowerCase().includes(needle) &&
-        !d.tagline.toLowerCase().includes(needle)
-      ) {
-        return false;
-      }
-      return true;
-    });
-  }, [q, type, region, country]);
+  // Isti filter kot na /destinacije: opis/poudarki in iskanje brez razlikovanja
+  // diakritike delujejo enako v mreži kartic in na zemljevidu.
+  const results = React.useMemo(
+    () => filterDestinations(DESTINATIONS, { q, type, region, country }),
+    [q, type, region, country],
+  );
 
   const hasFilters = q.trim() !== "" || type !== "all" || region !== "all" || country !== "all";
 

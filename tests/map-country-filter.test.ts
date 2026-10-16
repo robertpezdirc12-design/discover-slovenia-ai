@@ -36,9 +36,18 @@ describe("map discovery: country filter", () => {
 
   test("country selection participates in map/list filtering and live result updates", () => {
     expect(MAP).toContain('const [country, setCountry] = React.useState<string>(searchParams.get("country") ?? "all")');
-    expect(MAP).toContain('if (country !== "all" && d.country !== country) return false');
+    expect(MAP).toContain("filterDestinations(DESTINATIONS, { q, type, region, country })");
+    expect(MAP).toContain('import { activeCountryKeys, filterDestinations } from "@/lib/destinations-filter"');
     expect(MAP).toContain("}, [q, type, region, country]);");
     expect(MAP).toContain('const hasFilters = q.trim() !== "" || type !== "all" || region !== "all" || country !== "all"');
+  });
+
+  test("map and destination discovery share accent-insensitive full-text search", () => {
+    expect(MAP).toContain('import { activeCountryKeys, filterDestinations } from "@/lib/destinations-filter"');
+    expect(MAP).toContain("filterDestinations(DESTINATIONS, { q, type, region, country })");
+    expect(MAP).not.toContain("const needle = q.trim().toLowerCase()");
+    expect(MAP).toContain("countryLabel(locale, d.country)");
+    expect(MAP).toContain("countryLabel(l, d.country)");
   });
 
   test("clear-filters action resets country together with existing filters", () => {

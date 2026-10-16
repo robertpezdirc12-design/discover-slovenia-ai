@@ -174,6 +174,30 @@ export function DestinationsExplorer() {
 
   const hasFilters = hasActiveFilters({ q, region, type, country });
 
+  // URL je del stanja iskalnika: povezavo lahko deliš in jo osvežiš brez izgube filtrov.
+  // replaceState posodobi trenutni vnos (brez enega vnosa zgodovine za vsak znak) in ohrani
+  // nepovezane parametre ter hash. Filtriranje ostane lokalno in brez omrežnih zahtev.
+  React.useEffect(() => {
+    const url = new URL(window.location.href);
+    const filterParams: Record<string, string> = {
+      q: q.trim(),
+      country,
+      region,
+      type,
+    };
+
+    for (const [key, value] of Object.entries(filterParams)) {
+      if (!value || value === "all") url.searchParams.delete(key);
+      else url.searchParams.set(key, value);
+    }
+
+    const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (nextUrl !== currentUrl) {
+      window.history.replaceState(window.history.state, "", nextUrl);
+    }
+  }, [q, country, region, type]);
+
   const reset = () => {
     setQ("");
     setRegion("all");

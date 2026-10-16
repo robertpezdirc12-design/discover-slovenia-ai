@@ -74,7 +74,7 @@ describe("map control accessibility", () => {
 describe("search and provider form focus visibility", () => {
   test("homepage hero search never suppresses keyboard focus", () => {
     expect(HOME).toContain(
-      'className="h-11 border-none bg-transparent shadow-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 dark:bg-transparent"'
+      'className="h-11 w-full border-none bg-transparent pr-10 shadow-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 dark:bg-transparent"'
     );
     expect(HOME).not.toContain("focus-visible:ring-0");
   });

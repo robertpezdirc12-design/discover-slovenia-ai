@@ -1628,11 +1628,11 @@ export default function TravelMap() {
               size="sm"
               variant="outline"
               onClick={() => setCountry("all")}
-              aria-label={t("removeFilter")(t("countryPrefix"), countryLabel(l, country))}
+              aria-label={t("removeFilter")(t("countryPrefix"), (activeCountries.includes(country as (typeof activeCountries)[number]) ? countryLabel(l, country as (typeof activeCountries)[number]) : country))}
               className="h-8 max-w-full gap-1.5 rounded-full border-primary/25 bg-primary/[0.04]"
             >
               <span className="max-w-[12rem] truncate">
-                {t("countryPrefix")}: {countryLabel(l, country)}
+                {t("countryPrefix")}: {(activeCountries.includes(country as (typeof activeCountries)[number]) ? countryLabel(l, country as (typeof activeCountries)[number]) : country)}
               </span>
               <X className="size-3.5 shrink-0" aria-hidden="true" />
             </Button>

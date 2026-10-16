@@ -27,7 +27,7 @@ describe("map discovery: country filter", () => {
   });
 
   test("selector only offers countries represented in the destination register", () => {
-    expect(MAP).toContain('import { activeCountryKeys } from "@/lib/destinations-filter"');
+    expect(MAP).toContain('import { activeCountryKeys, filterDestinations } from "@/lib/destinations-filter"');
     expect(MAP).toContain("const activeCountries = React.useMemo(() => activeCountryKeys(DESTINATIONS), [])");
     expect(MAP).toContain("{activeCountries.map((c) => (");
     expect(MAP).toContain("{countryLabel(l, c)}");

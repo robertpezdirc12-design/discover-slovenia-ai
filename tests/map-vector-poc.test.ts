@@ -119,6 +119,28 @@ describe("poc-vector [source-contract]: mobilna uporabnost in funkcije", () => {
   });
 });
 
+describe("poc-vector [source-contract]: filtriranje, seznam in odpornost", () => {
+  test("iskanih in filtriranih 74 destinacij ne povzroči ponovne inicializacije zemljevida", async () => {
+    const s = await src("src/components/map/travel-map-vector-poc.tsx");
+    expect(s).toContain("filterDestinations(DESTINATIONS, { q, country, region, type })");
+    expect(s).toContain("markersRef.current.set(d.slug, marker)");
+    expect(s).toContain('marker.getElement().style.display = visible.has(destination.slug) ? "" : "none"');
+    expect(s).toContain('section');
+    expect(s).toContain('setMobileView("list")');
+    expect(s).toContain('setMobileView("map")');
+    expect(s).toContain("window.history.replaceState");
+    expect(s).toContain("new LngLatBounds()");
+    expect(s).toContain("mapRef.current?.resize()");
+  });
+
+  test("napake posamičnih ploščic po naložitvi ne skrijejo delujočega zemljevida", async () => {
+    const s = await src("src/components/map/travel-map-vector-poc.tsx");
+    expect(s).toContain("if (loadedRef.current || event.sourceId) return;");
+    expect(s).toContain("setFailed(false)");
+    expect(s).toContain("map.remove()");
+  });
+});
+
 describe("poc-vector [source-contract]: priklop na /zemljevid", () => {
   test("⑩ privzeti izris = Leaflet; PoC ŠELE ob ?zemljevid=vektorji", async () => {
     const s = await src("src/app/[locale]/zemljevid/view.tsx");

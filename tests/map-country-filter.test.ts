@@ -37,6 +37,16 @@ describe("map discovery: country filter", () => {
   test("country selection participates in map/list filtering and live result updates", () => {
     expect(MAP).toContain('const [country, setCountry] = React.useState<string>(searchParams.get("country") ?? "all")');
     expect(MAP).toContain("filterDestinations(DESTINATIONS, { q, type, region, country })");
+    for (const label of [
+      'sl: "Išči po imenu, opisu ali poudarkih"',
+      'en: "Search by name, description or highlights"',
+      'it: "Cerca per nome, descrizione o punti di forza"',
+      'de: "Nach Name, Beschreibung oder Highlights suchen"',
+      'fr: "Rechercher par nom, description ou points forts"',
+      'es: "Busca por nombre, descripción o destacados"',
+    ]) {
+      expect(MAP).toContain(label);
+    }
     expect(MAP).toContain('import { activeCountryKeys, filterDestinations } from "@/lib/destinations-filter"');
     expect(MAP).toContain("}, [q, type, region, country]);");
     expect(MAP).toContain('const hasFilters = q.trim() !== "" || type !== "all" || region !== "all" || country !== "all"');

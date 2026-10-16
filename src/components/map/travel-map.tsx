@@ -8,7 +8,7 @@
  * (divIcon po tipu — BREZ slikovnih ikon, kar obide znano težavo
  * bundler+leaflet z manjkajočimi ikonami), popup z dejanskimi podatki
  * destinacije + gumboma "Dodaj v mojo pot" in "Več". Nad zemljevidom
- * filtri (tip/regija/iskanje), ob njem sinhroniziran seznam (hover/klik),
+ * filtri (država/regija/tip + iskanje po imenu, opisu in poudarkih),
  * pod njim legenda tipov.
  *
  * PLASTI (FAZA 3 / 51-b):
@@ -1021,12 +1021,12 @@ export default function TravelMap() {
 
   const L10n = {
     searchLabel: {
-      sl: "Išči destinacijo po imenu",
-      en: "Search destinations by name",
-      it: "Cerca destinazioni per nome",
-      de: "Reiseziele nach Name suchen",
-      fr: "Rechercher des destinations par nom",
-      es: "Buscar destinos por nombre",
+      sl: "Išči po imenu, opisu ali poudarkih",
+      en: "Search by name, description or highlights",
+      it: "Cerca per nome, descrizione o punti di forza",
+      de: "Nach Name, Beschreibung oder Highlights suchen",
+      fr: "Rechercher par nom, description ou points forts",
+      es: "Busca por nombre, descripción o destacados",
     },
     searchPlaceholder: {
       sl: "Iskanje: Bled, jama, Piran …",

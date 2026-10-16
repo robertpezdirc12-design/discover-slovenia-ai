@@ -27,7 +27,7 @@ describe("map active filter chips", () => {
     expect(MAP).toContain('onClick={() => setRegion("all")}');
     expect(MAP).toContain('onClick={() => setType("all")}');
     expect(MAP).toContain('aria-label={t("removeFilter")(t("searchPrefix"), q.trim())}');
-    expect(MAP).toContain('aria-label={t("removeFilter")(t("countryPrefix"), countryLabel(l, country))}');
+    expect(MAP).toContain('aria-label={t("removeFilter")(t("countryPrefix"), (activeCountries.includes(country');
     expect(MAP).toContain('aria-label={t("removeFilter")(t("regionPrefix"), regionLabel(region, l))}');
     expect(MAP).toContain('aria-label={t("removeFilter")(t("typePrefix"), typeLabel(type, l))}');
   });

@@ -33,6 +33,7 @@
 
 import {
   config as mlConfig,
+  type ErrorEvent as MlErrorEvent,
   LngLatBounds,
   Map as MlMap,
   Marker as MlMarker,
@@ -317,7 +318,10 @@ export default function TravelMapVectorPoc() {
       setReady(true);
     };
 
-    const onError = (event: { sourceId?: string }) => {
+    // MapLibrejev ErrorEvent ne deklarira sourceId (samo error: ErrorLike),
+    // napake ploščic pa ga pri runtimeu vseeno nosijo — intersekcija ohrani
+    // točen tip in hkrati zadosti listener podpisu map.on("error", ...).
+    const onError = (event: MlErrorEvent & { sourceId?: string }) => {
       // Napaka posamezne ploščice po nalaganju ne razglasi celega zemljevida
       // za pokvarjenega. Pred nalaganjem je napaka brez sourceId znak, da
       // se slog/worker morda ne naloži; ob uspešnem load ostane karta uporabna.

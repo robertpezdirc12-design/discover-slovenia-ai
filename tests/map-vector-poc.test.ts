@@ -113,7 +113,10 @@ describe("poc-vector [source-contract]: mobilna uporabnost in funkcije", () => {
 
   test("kontrole MapLibre imajo 44 px površino za dotik", async () => {
     const s = await src("src/app/globals.css");
-    expect(s).toContain(".maplibregl-ctrl-group button");
+    // Selektor je namenoma ZOŽAN na zoom kontrole (ne vse gumbe MapLibre),
+    // da pravilo ne posega v druge kontrole knjižnice:
+    expect(s).toContain(".maplibregl-ctrl-group .maplibregl-ctrl-zoom-in");
+    expect(s).toContain(".maplibregl-ctrl-group .maplibregl-ctrl-zoom-out");
     expect(s).toContain("width: 44px;");
     expect(s).toContain("height: 44px;");
   });

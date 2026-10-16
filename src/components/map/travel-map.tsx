@@ -69,7 +69,7 @@ import {
 } from "react-leaflet";
 
 import { AffiliateChip } from "@/components/affiliate-chip";
-import { MyTripToastAction } from "@/components/my-trip-toast-action";
+import { notifyMyTripAdded } from "@/components/my-trip-toast-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -79,7 +79,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
 import { Link } from "@/i18n/navigation";
 import { countryLabel } from "@/lib/countries-data";
 import { activeCountryKeys, filterDestinations } from "@/lib/destinations-filter";
@@ -952,7 +951,6 @@ function DestinationPopup({
 /** ZEMLJEVID RAZISKOVALEC — filtri + zemljevid + sinhroniziran seznam. */
 export default function TravelMap() {
   const l = useLocale();
-  const { toast } = useToast();
   const tripItems = useMyTripList();
 
   const searchParams = useSearchParams();
@@ -1233,7 +1231,7 @@ export default function TravelMap() {
     if (inTrip(d.slug)) return;
     const res = myTrip.add(d.slug, d.name, "destination", "zemljevid");
     if (res.ok) {
-      toast({ title: pick(l, L10n.toastAdded), action: <MyTripToastAction /> });
+      notifyMyTripAdded(l);
     }
   };
 

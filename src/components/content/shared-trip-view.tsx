@@ -25,6 +25,7 @@ import QRCode from "qrcode";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { notifyMyTripAdded } from "@/components/my-trip-toast-action";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,7 +48,7 @@ import { Link } from "@/i18n/navigation";
 import { pick } from "@/lib/i18n-pick";
 import { intlDateLocale } from "@/lib/intl-locale";
 import { formatDuration } from "@/lib/itinerary-engine";
-import { myTrip } from "@/lib/my-trip";
+import { MY_TRIP_CHANGED_EVENT, myTrip } from "@/lib/my-trip";
 // POLIR6 A (2.33.0): čisti pomoži IZMERJENIH dni (EN izvor resnice — isti
 // kot na /nacrtuj; ocena dneva = ISTA hevristika kot LegRow, km pa nosijo
 // 1 decimalko po jeziku, EN pika / ostali vejica — determinizem brez Intl).
@@ -364,16 +365,19 @@ export function SharedTripView({ shareId }: { shareId: string }) {
     (plan: SharedPlan | null) => {
       if (!plan) return;
       let added = 0;
+      let newAdds = 0;
       for (const day of plan.days) {
         for (const loc of day.locations) {
           const refId = loc.destSlug ?? `pot/${shareId}/${day.day}/${loc.name}`;
           const res = myTrip.add(refId, loc.name, "destination", `pot/${shareId}`);
+          if (res.ok) newAdds += 1;
           if (res.ok || res.already) added += 1;
         }
       }
       setAddedCount(added);
+      if (newAdds > 0) notifyMyTripAdded(l);
     },
-    [shareId]
+    [l, shareId]
   );
 
   const onCopy = React.useCallback(() => {
@@ -1388,11 +1392,16 @@ function AddOne({
   labels: { add: string; added: string };
 }) {
   const [added, setAdded] = React.useState(false);
+  const locale = useLocale();
   React.useEffect(() => {
     const refresh = () => setAdded(myTrip.has(refId));
     refresh();
+    window.addEventListener(MY_TRIP_CHANGED_EVENT, refresh);
     window.addEventListener("storage", refresh);
-    return () => window.removeEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener(MY_TRIP_CHANGED_EVENT, refresh);
+      window.removeEventListener("storage", refresh);
+    };
   }, [refId]);
 
   return (
@@ -1402,6 +1411,7 @@ function AddOne({
       onClick={() => {
         const res = myTrip.add(refId, name, "destination");
         if (res.ok || res.already) setAdded(true);
+        if (res.ok) notifyMyTripAdded(locale);
       }}
       className={`inline-flex min-h-9 items-center gap-1 rounded-md border px-2.5 text-xs font-semibold transition-colors focus-green ${
         added ? "border-primary/30 bg-primary/10 text-primary" : "hover:bg-accent"

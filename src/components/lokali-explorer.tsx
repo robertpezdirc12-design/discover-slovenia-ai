@@ -15,7 +15,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
-import { MyTripToastAction } from "@/components/my-trip-toast-action";
+import { notifyMyTripAdded } from "@/components/my-trip-toast-action";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,7 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
 import { Link } from "@/i18n/navigation";
 import { pick } from "@/lib/i18n-pick";
 import {
@@ -48,7 +47,6 @@ type SortKey = "featured" | "name";
 
 export function LokaliExplorer() {
   const l = useLocale();
-  const { toast } = useToast();
   const tripItems = useMyTripList();
   const reduceMotion = useReducedMotion();
 
@@ -132,7 +130,7 @@ export function LokaliExplorer() {
     if (inTrip(x.id)) return;
     const res = myTrip.add(x.id, x.name, "custom", "lokali");
     if (res.ok) {
-      toast({ title: t("toastAdded"), action: <MyTripToastAction /> });
+      notifyMyTripAdded(l);
     }
   };
 

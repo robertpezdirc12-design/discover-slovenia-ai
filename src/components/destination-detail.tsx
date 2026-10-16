@@ -24,7 +24,7 @@ import Image from "next/image";
 import * as React from "react";
 
 import { AffiliateChip } from "@/components/affiliate-chip";
-import { MyTripToastAction } from "@/components/my-trip-toast-action";
+import { notifyMyTripAdded } from "@/components/my-trip-toast-action";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,7 +35,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
 import { Link } from "@/i18n/navigation";
 // Rezervacijski sloj (v2.5.0) — ČISTI moduli brez env (varni za klienta):
 // letališče po regiji (iskrena hevristika, vidna v UI) + črpalke (odprti
@@ -69,7 +68,6 @@ const SEASONS: Record<Season, { sl: string; en: string; it: string; de: string; 
  */
 export function DestinationDetail({ d }: { d: Destination }) {
   const l = useLocale();
-  const { toast } = useToast();
   const [inTrip, setInTrip] = React.useState(false);
 
   React.useEffect(() => {
@@ -255,7 +253,7 @@ export function DestinationDetail({ d }: { d: Destination }) {
     const res = myTrip.add(d.slug, d.name, "destination", "destinacija");
     if (res.ok) {
       setInTrip(true);
-      toast({ title: pick(l, L.toastAdded), action: <MyTripToastAction /> });
+      notifyMyTripAdded(l);
     } else if (res.already) {
       setInTrip(true);
     }

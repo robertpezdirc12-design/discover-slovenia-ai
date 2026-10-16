@@ -51,6 +51,7 @@ import { useSearchParams } from "next/navigation";
 import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { notifyMyTripAdded } from "@/components/my-trip-toast-action";
 import { PlanEditPanel } from "@/components/plan/plan-edit-panel";
 import { DaySegmentHeader } from "@/components/day-segment-header";
 import { NextStepCard, useNextStepContext } from "@/components/next-step-card";
@@ -348,6 +349,7 @@ const L = {
   free: { sl: "brezplačno", en: "free", it: "gratis", de: "kostenlos", fr: "gratuit", es: "gratis" },
   save: { sl: "Shrani v Moja pot", en: "Save to My trip", it: "Salva in I miei viaggi", de: "In Meine Reisen speichern", fr: "Enregistrer dans Mes voyages", es: "Guardar en Mis viajes" },
   saved: { sl: "Shranjeno v Moja pot", en: "Saved to My trip", it: "Salvato in I miei viaggi", de: "In Meine Reisen gespeichert", fr: "Enregistré dans Mes voyages", es: "Guardado en Mis viajes" },
+  openMyTrip: { sl: "Odpri mojo pot", en: "Open my trip", it: "Apri il mio viaggio", de: "Meine Reise öffnen", fr: "Ouvrir mon voyage", es: "Abrir mi viaje" },
   go: { sl: "Zaženi na poti", en: "Start on the road", it: "Inizia il viaggio", de: "Unterwegs starten", fr: "Démarrer sur la route", es: "Empezar en camino" },
   // QA U10 (2026-10-11): POENOTEN nabor izvozov na vseh treh pogledih
   // (/nacrtuj, /potovanje, /pot/[shareId]) — ista imena gumbov za ista
@@ -1161,11 +1163,16 @@ function PlannerApp() {
 
   const saveToMyTrip = () => {
     if (!plan) return;
+    let newAdds = 0;
     for (const stop of plan.days.flat()) {
-      if (stop.slug) myTrip.add(stop.slug, stop.name, "destination", "nacrtuj");
+      if (stop.slug) {
+        const res = myTrip.add(stop.slug, stop.name, "destination", "nacrtuj");
+        if (res.ok) newAdds += 1;
+      }
     }
     saveLastPlan(plan);
     setSavedMsg(true);
+    if (newAdds > 0) notifyMyTripAdded(l);
   };
 
   const startGo = () => {
@@ -2426,6 +2433,11 @@ function PlanResult({
             </>
           )}
         </Button>
+        {saved && (
+          <Button asChild size="lg" variant="outline" className="min-h-12">
+            <Link href="/moja-potovanja">{pick(l, L.openMyTrip)}</Link>
+          </Button>
+        )}
         <Button type="button" size="lg" variant="secondary" className="min-h-12" onClick={onGo}>
           <Footprints className="size-5" aria-hidden="true" />
           {pick(l, L.go)}

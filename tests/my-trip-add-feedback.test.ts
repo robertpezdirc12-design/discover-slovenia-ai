@@ -12,6 +12,9 @@ const DETAIL = read("../src/components/destination-detail.tsx");
 const MAP = read("../src/components/map/travel-map.tsx");
 const VENUES = read("../src/components/lokali-explorer.tsx");
 const MARKET = read("../src/components/trznica-explorer.tsx");
+const PLANNER = read("../src/app/[locale]/nacrtuj/view.tsx");
+const GENERIC_BUTTON = read("../src/components/content/add-to-trip-button.tsx");
+const SHARED_TRIP = read("../src/components/content/shared-trip-view.tsx");
 
 describe("add-to-my-trip feedback", () => {
   test("shared toast action opens the localized My Trip hub", () => {
@@ -19,27 +22,43 @@ describe("add-to-my-trip feedback", () => {
     expect(ACTION).toContain('import { Link } from "@/i18n/navigation"');
     expect(ACTION).toContain('href="/moja-potovanja"');
     expect(ACTION).toContain("altText={label} asChild");
+    expect(ACTION).toContain("export function notifyMyTripAdded(locale: string): void");
+    expect(ACTION).toContain("title: pick(locale, ADDED)");
     for (const locale of ["sl:", "en:", "it:", "de:", "fr:", "es:"]) {
       expect(ACTION).toContain(locale);
     }
   });
 
-  test("destination detail confirms only a successful new addition and keeps live state in sync", () => {
+  test("destination detail has success-only feedback and same-tab state synchronization", () => {
     expect(DETAIL).toContain('import { MY_TRIP_CHANGED_EVENT, myTrip } from "@/lib/my-trip"');
-    expect(DETAIL).toContain('import { useToast } from "@/hooks/use-toast"');
     expect(DETAIL).toContain("window.addEventListener(MY_TRIP_CHANGED_EVENT, refresh)");
-    expect(DETAIL).toContain('if (res.ok) {\n      setInTrip(true);\n      toast({ title: pick(l, L.toastAdded), action: <MyTripToastAction /> });');
+    expect(DETAIL).toContain("if (res.ok) {");
+    expect(DETAIL).toContain("notifyMyTripAdded(l)");
     expect(DETAIL).toContain("disabled={inTrip}");
   });
 
-  test("map, venues and experiences share the same next-step action", () => {
+  test("map, venues and marketplace use the common confirmation and prevent duplicate clicks", () => {
     for (const source of [MAP, VENUES, MARKET]) {
-      expect(source).toContain('import { MyTripToastAction } from "@/components/my-trip-toast-action"');
-      expect(source).toContain("action: <MyTripToastAction />");
+      expect(source).toContain('import { notifyMyTripAdded } from "@/components/my-trip-toast-action"');
+      expect(source).toContain("notifyMyTripAdded(l)");
       expect(source).toContain("if (res.ok) {");
     }
     expect(MAP).toContain("disabled={inTrip}");
     expect(VENUES).toContain("disabled={added}");
     expect(MARKET).toContain("disabled={added}");
+  });
+
+  test("generic content cards and shared-trip adds use the same feedback and same-tab sync", () => {
+    expect(GENERIC_BUTTON).toContain("notifyMyTripAdded(locale)");
+    expect(GENERIC_BUTTON).toContain("window.addEventListener(MY_TRIP_CHANGED_EVENT, refresh)");
+    expect(SHARED_TRIP).toContain("if (newAdds > 0) notifyMyTripAdded(l)");
+    expect(SHARED_TRIP).toContain("if (res.ok) notifyMyTripAdded(locale)");
+    expect(SHARED_TRIP).toContain("window.addEventListener(MY_TRIP_CHANGED_EVENT, refresh)");
+  });
+
+  test("planner confirms new additions and offers a persistent route back to My Trip", () => {
+    expect(PLANNER).toContain("if (newAdds > 0) notifyMyTripAdded(l)");
+    expect(PLANNER).toContain('openMyTrip: { sl: "Odpri mojo pot"');
+    expect(PLANNER).toContain('<Link href="/moja-potovanja">{pick(l, L.openMyTrip)}</Link>');
   });
 });

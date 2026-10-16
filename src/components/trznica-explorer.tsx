@@ -28,14 +28,13 @@ import Image from "next/image";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
-import { MyTripToastAction } from "@/components/my-trip-toast-action";
+import { notifyMyTripAdded } from "@/components/my-trip-toast-action";
 import { OwnMarketplaceSection } from "@/components/marketplace/own-marketplace-section";
 import { NextStepCard, useNextStepContext } from "@/components/next-step-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
 import { Link } from "@/i18n/navigation";
 import { pick } from "@/lib/i18n-pick";
 import { SUPPLY_STATUS_LABELS } from "@/lib/go-data";
@@ -104,7 +103,6 @@ export function TrznicaExplorer({
   nextStepDismissed?: boolean;
 }) {
   const l = useLocale();
-  const { toast } = useToast();
   const tripItems = useMyTripList();
   const { ctx: nextStepCtx, ready: nextStepReady } = useNextStepContext();
 
@@ -178,7 +176,7 @@ export function TrznicaExplorer({
     const name = pick(l, p.name);
     const res = myTrip.add(p.id, name, "experience", "trznica");
     if (res.ok) {
-      toast({ title: t("toastAdded"), action: <MyTripToastAction /> });
+      notifyMyTripAdded(l);
     }
   };
 

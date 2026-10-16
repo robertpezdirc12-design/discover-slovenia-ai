@@ -28,6 +28,7 @@ import Image from "next/image";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { MyTripToastAction } from "@/components/my-trip-toast-action";
 import { OwnMarketplaceSection } from "@/components/marketplace/own-marketplace-section";
 import { NextStepCard, useNextStepContext } from "@/components/next-step-card";
 import { Badge } from "@/components/ui/badge";
@@ -175,8 +176,10 @@ export function TrznicaExplorer({
   const onAdd = (p: OwnProduct) => {
     if (inTrip(p.id)) return;
     const name = pick(l, p.name);
-    myTrip.add(p.id, name, "experience", "trznica");
-    toast({ title: t("toastAdded") });
+    const res = myTrip.add(p.id, name, "experience", "trznica");
+    if (res.ok) {
+      toast({ title: t("toastAdded"), action: <MyTripToastAction /> });
+    }
   };
 
   return (
@@ -292,6 +295,7 @@ export function TrznicaExplorer({
                           variant={added ? "secondary" : "default"}
                           className="min-h-11 w-full"
                           onClick={() => onAdd(p)}
+                          disabled={added}
                           aria-disabled={added}
                         >
                           {added ? (

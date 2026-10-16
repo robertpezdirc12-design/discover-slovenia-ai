@@ -69,6 +69,7 @@ import {
 } from "react-leaflet";
 
 import { AffiliateChip } from "@/components/affiliate-chip";
+import { MyTripToastAction } from "@/components/my-trip-toast-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -853,6 +854,7 @@ function DestinationPopup({
           variant={inTrip ? "secondary" : "default"}
           className="h-8 flex-1 text-xs"
           onClick={() => onAdd(d)}
+          disabled={inTrip}
           aria-disabled={inTrip}
         >
           {inTrip ? (
@@ -1229,8 +1231,10 @@ export default function TravelMap() {
 
   const onAdd = (d: Destination) => {
     if (inTrip(d.slug)) return;
-    myTrip.add(d.slug, d.name, "destination", "zemljevid");
-    toast({ title: pick(l, L10n.toastAdded) });
+    const res = myTrip.add(d.slug, d.name, "destination", "zemljevid");
+    if (res.ok) {
+      toast({ title: pick(l, L10n.toastAdded), action: <MyTripToastAction /> });
+    }
   };
 
   // ── Plast Lokali: rezultati pins API-ja (stabilna callbacka za efekt) ─

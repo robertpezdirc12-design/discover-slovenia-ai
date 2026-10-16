@@ -15,6 +15,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { MyTripToastAction } from "@/components/my-trip-toast-action";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -129,8 +130,10 @@ export function LokaliExplorer() {
 
   const onAdd = (x: Lokal) => {
     if (inTrip(x.id)) return;
-    myTrip.add(x.id, x.name, "custom", "lokali");
-    toast({ title: t("toastAdded") });
+    const res = myTrip.add(x.id, x.name, "custom", "lokali");
+    if (res.ok) {
+      toast({ title: t("toastAdded"), action: <MyTripToastAction /> });
+    }
   };
 
   const categories = React.useMemo(() => activeLokalCategories(), []);
@@ -341,6 +344,7 @@ export function LokaliExplorer() {
                         variant={added ? "secondary" : "default"}
                         className="flex-1"
                         onClick={() => onAdd(x)}
+                        disabled={added}
                         aria-disabled={added}
                       >
                         {added ? (

@@ -24,6 +24,7 @@ import Image from "next/image";
 import * as React from "react";
 
 import { AffiliateChip } from "@/components/affiliate-chip";
+import { MyTripToastAction } from "@/components/my-trip-toast-action";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +35,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 import { Link } from "@/i18n/navigation";
 // Rezervacijski sloj (v2.5.0) — ČISTI moduli brez env (varni za klienta):
 // letališče po regiji (iskrena hevristika, vidna v UI) + črpalke (odprti
@@ -45,7 +47,7 @@ import {
 import { nearestFuelStation } from "@/lib/fuel-stations";
 import { countryName } from "@/lib/countries-data";
 import { pick } from "@/lib/i18n-pick";
-import { myTrip } from "@/lib/my-trip";
+import { MY_TRIP_CHANGED_EVENT, myTrip } from "@/lib/my-trip";
 import {
   type Destination,
   type Season,
@@ -67,14 +69,19 @@ const SEASONS: Record<Season, { sl: string; en: string; it: string; de: string; 
  */
 export function DestinationDetail({ d }: { d: Destination }) {
   const l = useLocale();
+  const { toast } = useToast();
   const [inTrip, setInTrip] = React.useState(false);
 
   React.useEffect(() => {
     setInTrip(myTrip.has(d.slug));
     // Osveži, če drug zavihek spremeni zbirko.
     const refresh = () => setInTrip(myTrip.has(d.slug));
+    window.addEventListener(MY_TRIP_CHANGED_EVENT, refresh);
     window.addEventListener("storage", refresh);
-    return () => window.removeEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener(MY_TRIP_CHANGED_EVENT, refresh);
+      window.removeEventListener("storage", refresh);
+    };
   }, [d.slug]);
 
   const L = {
@@ -129,6 +136,7 @@ export function DestinationDetail({ d }: { d: Destination }) {
     provSourceLink: { sl: "Odpri vir", en: "Open source", it: "Apri la fonte", de: "Quelle öffnen", fr: "Ouvrir la source", es: "Abrir la fuente" },
     addTrip: { sl: "Dodaj v mojo pot", en: "Add to my trip", it: "Aggiungi al mio viaggio", de: "Zu meiner Reise hinzufügen", fr: "Ajouter à mon voyage", es: "Añadir a mi viaje" },
     added: { sl: "V mojo pot ✓", en: "In my trip ✓", it: "Nel mio viaggio ✓", de: "In meiner Reise ✓", fr: "Dans mon voyage ✓", es: "En mi viaje ✓" },
+    toastAdded: { sl: "Dodano v mojo pot", en: "Added to my trip", it: "Aggiunto al mio viaggio", de: "Zu meiner Reise hinzugefügt", fr: "Ajouté à mon voyage", es: "Añadido a mi viaje" },
     planWith: { sl: "Načrtuj s to destinacijo", en: "Plan with this destination", it: "Pianifica con questa destinazione", de: "Mit diesem Reiseziel planen", fr: "Planifier avec cette destination", es: "Planificar con este destino" },
     goWith: { sl: "Pojdi — partnerji", en: "Go — partners", it: "Vai — partner", de: "Los — Partner", fr: "Partir — partenaires", es: "Ir — socios" },
     showOnMap: { sl: "Pokaži na zemljevidu", en: "Show on map", it: "Mostra sulla mappa", de: "Auf der Karte zeigen", fr: "Afficher sur la carte", es: "Mostrar en el mapa" },
@@ -245,7 +253,10 @@ export function DestinationDetail({ d }: { d: Destination }) {
 
   const onAdd = () => {
     const res = myTrip.add(d.slug, d.name, "destination", "destinacija");
-    if (res.ok || res.already) {
+    if (res.ok) {
+      setInTrip(true);
+      toast({ title: pick(l, L.toastAdded), action: <MyTripToastAction /> });
+    } else if (res.already) {
       setInTrip(true);
     }
   };
@@ -306,6 +317,7 @@ export function DestinationDetail({ d }: { d: Destination }) {
         <div className="flex flex-wrap items-center gap-3">
           <Button
             onClick={onAdd}
+            disabled={inTrip}
             size="lg"
             variant={inTrip ? "outline" : "default"}
             className="tap-target font-semibold"

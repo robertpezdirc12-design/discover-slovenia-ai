@@ -358,7 +358,7 @@ export function DestinationsExplorer() {
             >
               <span className="shrink-0 text-muted-foreground">{pick(l, L.regionChip)}:</span>
               <span className="min-w-0 max-w-[min(55vw,280px)] truncate">
-                {region in REGIONS ? pick(l, REGIONS[region as keyof typeof REGIONS]) : region}
+                {Object.prototype.hasOwnProperty.call(REGIONS, region) ? pick(l, REGIONS[region as keyof typeof REGIONS]) : region}
               </span>
               <X className="size-3.5 shrink-0" aria-hidden="true" />
             </Button>
@@ -374,7 +374,7 @@ export function DestinationsExplorer() {
             >
               <span className="shrink-0 text-muted-foreground">{pick(l, L.typeChip)}:</span>
               <span className="min-w-0 max-w-[min(55vw,280px)] truncate">
-                {type in DEST_TYPES ? pick(l, DEST_TYPES[type as DestinationType]) : type}
+                {Object.prototype.hasOwnProperty.call(DEST_TYPES, type) ? pick(l, DEST_TYPES[type as DestinationType]) : type}
               </span>
               <X className="size-3.5 shrink-0" aria-hidden="true" />
             </Button>

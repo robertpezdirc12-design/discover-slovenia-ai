@@ -24,8 +24,8 @@ describe("destination discovery: active filter chips", () => {
     expect(EXPLORER).toContain('onClick={() => setRegion("all")}');
     expect(EXPLORER).toContain('onClick={() => setType("all")}');
     expect(EXPLORER).toContain("activeCountries.includes(country as (typeof activeCountries)[number])");
-    expect(EXPLORER).toContain("region in REGIONS ?");
-    expect(EXPLORER).toContain("type in DEST_TYPES ?");
+    expect(EXPLORER).toContain("Object.prototype.hasOwnProperty.call(REGIONS, region) ?");
+    expect(EXPLORER).toContain("Object.prototype.hasOwnProperty.call(DEST_TYPES, type) ?");
   });
 
   test("labels are localized for all six supported languages", () => {

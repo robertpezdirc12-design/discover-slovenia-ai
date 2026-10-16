@@ -276,9 +276,8 @@ test("⑦ MapLibre: iskanje, filtri in seznam delujejo na telefonu", async ({
   await expect(list).toBeVisible();
   await expect(list).toContainText("Bled");
 
-  const bledItem = list.locator("li").filter({
-    has: list.getByRole("button", { name: "Bled", exact: true }),
-  }).first();
+  const bledItem = list.locator("li").first();
+  await expect(bledItem).toContainText("Bled");
   const add = bledItem.getByRole("button", {
     name: "Dodaj v mojo pot",
     exact: true,
@@ -305,7 +304,7 @@ test("⑦ MapLibre: iskanje, filtri in seznam delujejo na telefonu", async ({
 // (destinacije + dogodki + lokali) — en test na širino (svež tab).
 
 for (const sirina of SIRINE) {
-  test(`⑤ državna stran /drzava/BA brez vodoravnega preliva @ ${sirina}px`, async ({
+  test(`⑧ državna stran /drzava/BA brez vodoravnega preliva @ ${sirina}px`, async ({
     page,
   }) => {
     test.setTimeout(90_000);
@@ -327,7 +326,7 @@ for (const sirina of SIRINE) {
   });
 }
 
-// ── ⑥ — vseh 10 državnih strani uporabnih na mobilnem (@375) ─────────────
+// ── ⑨ — vseh 10 državnih strani uporabnih na mobilnem (@375) ─────────────
 
 test("⑨ /drzava/[code]: vseh 10 držav brez preliva + hero @ 375 px", async ({
   page,

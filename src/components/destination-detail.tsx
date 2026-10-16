@@ -131,6 +131,7 @@ export function DestinationDetail({ d }: { d: Destination }) {
     added: { sl: "V mojo pot ✓", en: "In my trip ✓", it: "Nel mio viaggio ✓", de: "In meiner Reise ✓", fr: "Dans mon voyage ✓", es: "En mi viaje ✓" },
     planWith: { sl: "Načrtuj s to destinacijo", en: "Plan with this destination", it: "Pianifica con questa destinazione", de: "Mit diesem Reiseziel planen", fr: "Planifier avec cette destination", es: "Planificar con este destino" },
     goWith: { sl: "Pojdi — partnerji", en: "Go — partners", it: "Vai — partner", de: "Los — Partner", fr: "Partir — partenaires", es: "Ir — socios" },
+    showOnMap: { sl: "Pokaži na zemljevidu", en: "Show on map", it: "Mostra sulla mappa", de: "Auf der Karte zeigen", fr: "Afficher sur la carte", es: "Mostrar en el mapa" },
     myTrip: { sl: "Moja pot", en: "My trip", it: "Il mio viaggio", de: "Meine Reise", fr: "Mon voyage", es: "Mi viaje" },
     enNote: {
       sl: "",
@@ -323,6 +324,12 @@ export function DestinationDetail({ d }: { d: Destination }) {
           </Button>
           <Button asChild size="lg" variant="outline" className="tap-target font-semibold">
             <Link href={`/nacrtuj?dest=${d.slug}`}>{pick(l, L.planWith)}</Link>
+          </Button>
+          <Button asChild size="lg" variant="outline" className="tap-target font-semibold">
+            <Link href={`/zemljevid?q=${encodeURIComponent(d.name)}&country=${d.country}&region=${encodeURIComponent(d.region)}`}>
+              <MapPin className="size-4" aria-hidden="true" />
+              {pick(l, L.showOnMap)}
+            </Link>
           </Button>
           <Button asChild size="lg" variant="ghost" className="tap-target font-semibold">
             <Link href={`/go?dest=${d.slug}`}>{pick(l, L.goWith)}</Link>

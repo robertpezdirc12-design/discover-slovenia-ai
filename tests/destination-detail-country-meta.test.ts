@@ -39,6 +39,14 @@ describe("destination detail: country and practical metadata", () => {
     expect(DETAIL).toContain('className="break-words text-sm font-bold"');
   });
 
+  test("provides a localized route from destination detail to its map-filtered result", () => {
+    expect(DETAIL).toContain('showOnMap: { sl: "Pokaži na zemljevidu", en: "Show on map", it: "Mostra sulla mappa", de: "Auf der Karte zeigen", fr: "Afficher sur la carte", es: "Mostrar en el mapa" }');
+    expect(DETAIL).toContain('href={`/zemljevid?q=${encodeURIComponent(d.name)}&country=${d.country}&region=${encodeURIComponent(d.region)}`}');
+    expect(DETAIL).toContain('<MapPin className="size-4" aria-hidden="true" />');
+    expect(DETAIL).toContain('href={`/nacrtuj?dest=${d.slug}`}');
+    expect(DETAIL).toContain('href={`/go?dest=${d.slug}`}');
+  });
+
   test("preserves the existing editorial rating and destination data values", () => {
     expect(DETAIL).toContain("d.rating.toFixed(1)");
     expect(DETAIL).toContain("d.costPerPerson");

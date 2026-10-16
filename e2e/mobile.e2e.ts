@@ -250,7 +250,52 @@ test("⑥ MapLibre: destinacijo je mogoče izbrati in dodati v mojo pot", async 
   expect(saved).toBe(true);
 });
 
-// ── ⑦ — državna landing stran brez vodoravnega preliva (#41 F3) ──────────
+test("⑦ MapLibre: iskanje, filtri in seznam delujejo na telefonu", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await gotoTrdo(page, "/zemljevid?zemljevid=vektorji");
+
+  await expect(page.locator('[data-destination-slug="bled"]')).toBeVisible({
+    timeout: 30_000,
+  });
+  const search = page.getByRole("searchbox", {
+    name: "Išči destinacijo, opis ali zanimivost",
+  });
+  await search.fill("Bled");
+  await expect(page.getByText(/^1 destinacij$/)).toBeVisible();
+  await expect(page.locator('[data-destination-slug="bled"]')).toBeVisible();
+
+  await page.getByRole("button", { name: "Seznam", exact: true }).click();
+  const list = page.locator('section[aria-label="Seznam"]');
+  await expect(list).toBeVisible();
+  await expect(list).toContainText("Bled");
+
+  const bledItem = list.locator("li").filter({
+    has: list.getByRole("button", { name: "Bled", exact: true }),
+  }).first();
+  const add = bledItem.getByRole("button", {
+    name: "Dodaj v mojo pot",
+    exact: true,
+  });
+  await expect(add).toBeVisible();
+  await add.click();
+  await expect(add).toHaveText("V moji poti");
+  await expect(add).toBeDisabled();
+
+  const saved = await page.evaluate(() => {
+    const raw = window.localStorage.getItem("dai:my-trip");
+    const items = raw ? JSON.parse(raw) as Array<{ refId?: string }> : [];
+    return items.some((item) => item.refId === "bled");
+  });
+  expect(saved).toBe(true);
+
+  await page.getByRole("button", { name: "Zemljevid", exact: true }).click();
+  await expect(page.locator('[data-destination-slug="bled"]')).toBeVisible();
+});
+
+// ── ⑧ — državna landing stran brez vodoravnega preliva (#41 F3) ──────────
 // Pravilo #41: „E2E mobilni prelomi: vsaka nova državna stran mora
 // opraviti 5-prelomni suite." BA = prva F3 landing stran z vso vsebino
 // (destinacije + dogodki + lokali) — en test na širino (svež tab).

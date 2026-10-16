@@ -25,7 +25,11 @@ describe("map share link", () => {
     expect(MAP).toContain('type,\n      region,\n      country,');
     expect(MAP).toContain('if (!value || value === "all") url.searchParams.delete(key)');
     expect(MAP).toContain('else url.searchParams.set(key, value)');
-    expect(MAP).not.toContain('new URL(window.location.href)');
+    // The page keeps its normal URL-sync effect; the share handler intentionally starts from pathname + origin.
+    const shareStart = MAP.indexOf("const shareMapView = async () => {");
+    const shareBody = MAP.slice(shareStart, MAP.indexOf("\n  };", shareStart) + 5);
+    expect(shareBody).toContain("new URL(window.location.pathname, window.location.origin)");
+    expect(shareBody).not.toContain("window.location.href");
   });
 
   test("native share is preferred, clipboard is fallback, and cancellation is silent", () => {

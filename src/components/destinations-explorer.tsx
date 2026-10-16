@@ -129,6 +129,12 @@ export function DestinationsExplorer() {
       es: "Ningún destino coincide con tu búsqueda o combinación de filtros. Prueba otra búsqueda o borra los filtros.",
     },
     resultsLabel: { sl: "Rezultati", en: "Results", it: "Risultati", de: "Ergebnisse", fr: "Résultats", es: "Resultados" },
+    activeFilters: { sl: "Aktivni filtri", en: "Active filters", it: "Filtri attivi", de: "Aktive Filter", fr: "Filtres actifs", es: "Filtros activos" },
+    queryChip: { sl: "Iskanje", en: "Search", it: "Ricerca", de: "Suche", fr: "Recherche", es: "Búsqueda" },
+    countryChip: { sl: "Država", en: "Country", it: "Paese", de: "Land", fr: "Pays", es: "País" },
+    regionChip: { sl: "Regija", en: "Region", it: "Regione", de: "Region", fr: "Région", es: "Región" },
+    typeChip: { sl: "Tip", en: "Type", it: "Tipo", de: "Typ", fr: "Type", es: "Tipo" },
+    removeFilter: { sl: "Odstrani filter", en: "Remove filter", it: "Rimuovi filtro", de: "Filter entfernen", fr: "Supprimer le filtre", es: "Quitar filtro" },
   } as const;
 
   const [q, setQ] = React.useState(searchParams.get("q") ?? "");
@@ -242,6 +248,80 @@ export function DestinationsExplorer() {
           </Select>
         </div>
       </div>
+
+      {/* Aktivni filtri: posamezen čip lahko odstraniš brez ponastavitve ostalih. */}
+      {hasFilters && (
+        <div
+          role="group"
+          aria-label={pick(l, L.activeFilters)}
+          className="mt-3 flex flex-wrap items-center gap-2"
+        >
+          {q.trim() && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              aria-label={`${pick(l, L.removeFilter)}: ${pick(l, L.queryChip)}`}
+              onClick={() => setQ("")}
+              className="h-9 min-w-0 max-w-full justify-start gap-1.5 rounded-full px-3 text-xs"
+            >
+              <span className="shrink-0 text-muted-foreground">{pick(l, L.queryChip)}:</span>
+              <span className="min-w-0 max-w-[min(55vw,280px)] truncate">{q.trim()}</span>
+              <X className="size-3.5 shrink-0" aria-hidden="true" />
+            </Button>
+          )}
+          {country !== "all" && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              aria-label={`${pick(l, L.removeFilter)}: ${pick(l, L.countryChip)}`}
+              onClick={() => setCountry("all")}
+              className="h-9 min-w-0 max-w-full justify-start gap-1.5 rounded-full px-3 text-xs"
+            >
+              <span className="shrink-0 text-muted-foreground">{pick(l, L.countryChip)}:</span>
+              <span className="min-w-0 max-w-[min(55vw,280px)] truncate">
+                {activeCountries.includes(country as (typeof activeCountries)[number])
+                  ? countryLabel(l, country as (typeof activeCountries)[number])
+                  : country}
+              </span>
+              <X className="size-3.5 shrink-0" aria-hidden="true" />
+            </Button>
+          )}
+          {region !== "all" && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              aria-label={`${pick(l, L.removeFilter)}: ${pick(l, L.regionChip)}`}
+              onClick={() => setRegion("all")}
+              className="h-9 min-w-0 max-w-full justify-start gap-1.5 rounded-full px-3 text-xs"
+            >
+              <span className="shrink-0 text-muted-foreground">{pick(l, L.regionChip)}:</span>
+              <span className="min-w-0 max-w-[min(55vw,280px)] truncate">
+                {region in REGIONS ? pick(l, REGIONS[region as keyof typeof REGIONS]) : region}
+              </span>
+              <X className="size-3.5 shrink-0" aria-hidden="true" />
+            </Button>
+          )}
+          {type !== "all" && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              aria-label={`${pick(l, L.removeFilter)}: ${pick(l, L.typeChip)}`}
+              onClick={() => setType("all")}
+              className="h-9 min-w-0 max-w-full justify-start gap-1.5 rounded-full px-3 text-xs"
+            >
+              <span className="shrink-0 text-muted-foreground">{pick(l, L.typeChip)}:</span>
+              <span className="min-w-0 max-w-[min(55vw,280px)] truncate">
+                {type in DEST_TYPES ? pick(l, DEST_TYPES[type as DestinationType]) : type}
+              </span>
+              <X className="size-3.5 shrink-0" aria-hidden="true" />
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Števec zadetkov (+ ponastavitev) */}
       <div className="mt-5 flex items-center justify-between gap-3">

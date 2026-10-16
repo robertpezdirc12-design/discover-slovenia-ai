@@ -58,3 +58,31 @@
 ## Posnetki zaslona
 
 01–02: 390 px zemljevid + povečava · 03: popup markerja · 04–07: 320/375/768/1440.
+
+---
+
+# Runda 2 — gručenje markerjev (d8b018e, 2026-10-16)
+
+**Glava:** `d8b018e` — „GRUČENJE markerjev: prekrivanje dotikalnih ciljev (Bled ↔ Vintgar) odpravljeno"
+**Novo v kodi:** `src/lib/map-clustering.ts` (union-find prekrivanja 44-px ciljev + `requiredSeparationZoom`)
+in `travel-map-vector-poc.tsx` (gruče 44×44 px, klik gruče = fitBounds drill-down na ločitev).
+**Ciljna težava:** Bled ↔ Vintgarska soteska sta pri zoom ≤ 8 oddaljeni < 44 px — klik prestreže
+sosednji marker. Cilji ostanejo ≥ 44×44 px; zmanjša se število hkratnih ciljev, ne velikost.
+
+## Vrata (lokalna produkcijska gradnja d8b018e, standalone :3100)
+
+- `tsc --noEmit` → 0 napak · `eslint .` → 0 · `bun test` → 2447/2447 (26 687 expect)
+- `next build` → ZELEN s TS preverbo · E2E mobilni → **19/19 PASSED (en čist tek, 2,9 min)**
+  + namizni 2/2 PASSED
+- Novi testi: enote `tests/map-clustering.test.ts` (12: projekcija, meja 44 px, verige,
+  Bled/Vintgar z8→gruča→z11 ločeno, kanonska invarianta, točno 4 pari < 44 px @ z8);
+  E2E ⑩ sprejemni (Bled in Vintgar posamezno izberljiva iz gruče pri privzetem pogledu,
+  brez iskanja in brez ročnega povečanja; cilja se ne prekrivata; popup + dodajanje v pot
+  za OBE; 0 pageerror) + ⑪ (seznam → destinacija v gruči → popup po letu).
+
+## Status predogleda (Vercel)
+
+- Push d8b018e na GitHub ob ~18:10 UTC je Vercel zavrnil z **build-rate-limit**
+  (commit status failure, brez deployment zapisa — blokada okolja, NI napaka kode).
+- Ta dokumentacijska sprememba hkrati sproži nov poskus deploymenta; E2E proti
+  predogledu se izvede takoj, ko je predogled na voljo.

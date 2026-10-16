@@ -178,13 +178,31 @@ export function DestinationsExplorer() {
 
   const hasFilters = hasActiveFilters({ q, region, type, country });
 
+  // Next.js lahko spremeni searchParams brez odmontiranja te komponente (npr. navigacija do /destinacije?type=...).
+  // Ob taki navigaciji obnovimo kontrolnike iz URL-ja; enake vrednosti vrnemo nespremenjene, da ne sprožimo zank.
+  React.useEffect(() => {
+    const nextQ = searchParams.get("q") ?? "";
+    const nextCountry = searchParams.get("country") ?? "all";
+    const nextRegion = searchParams.get("region") ?? "all";
+    const nextType = searchParams.get("type") ?? "all";
+    const rawSort = searchParams.get("sort");
+    const nextSort: DestinationSort =
+      rawSort === "name-asc" || rawSort === "name-desc" ? rawSort : "recommended";
+
+    setQ((current) => (current === nextQ ? current : nextQ));
+    setCountry((current) => (current === nextCountry ? current : nextCountry));
+    setRegion((current) => (current === nextRegion ? current : nextRegion));
+    setType((current) => (current === nextType ? current : nextType));
+    setSortBy((current) => (current === nextSort ? current : nextSort));
+  }, [searchParams]);
+
   // URL je del stanja iskalnika: povezavo lahko deliš in jo osvežiš brez izgube filtrov.
   // replaceState posodobi trenutni vnos (brez enega vnosa zgodovine za vsak znak) in ohrani
   // nepovezane parametre ter hash. Filtriranje ostane lokalno in brez omrežnih zahtev.
   React.useEffect(() => {
     const url = new URL(window.location.href);
     const filterParams: Record<string, string> = {
-      q: q.trim(),
+      q: q.trim() ? q : "",
       country,
       region,
       type,

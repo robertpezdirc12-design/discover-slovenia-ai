@@ -37,6 +37,21 @@ describe("destination discovery: filter URL synchronization", () => {
     expect(EXPLORER).toContain('url.searchParams.delete(key)');
   });
 
+  test("re-hydrates every control when client-side navigation changes searchParams", () => {
+    expect(EXPLORER).toContain('const nextQ = searchParams.get("q") ?? ""');
+    expect(EXPLORER).toContain('const nextCountry = searchParams.get("country") ?? "all"');
+    expect(EXPLORER).toContain('const nextRegion = searchParams.get("region") ?? "all"');
+    expect(EXPLORER).toContain('const nextType = searchParams.get("type") ?? "all"');
+    expect(EXPLORER).toContain('const rawSort = searchParams.get("sort")');
+    expect(EXPLORER).toContain("}, [searchParams]);");
+    expect(EXPLORER).toContain("setSortBy((current) => (current === nextSort ? current : nextSort))");
+  });
+
+  test("keeps meaningful trailing spaces while omitting whitespace-only queries", () => {
+    expect(EXPLORER).toContain('q: q.trim() ? q : "",');
+    expect(EXPLORER).toContain('const nextQ = searchParams.get("q") ?? ""');
+  });
+
   test("documents that filter interaction stays local and non-networked", () => {
     expect(EXPLORER).toContain("Filtriranje ostane lokalno in brez omrežnih zahtev");
     expect(EXPLORER).toContain("filterDestinations(DESTINATIONS, { q, region, type, country })");

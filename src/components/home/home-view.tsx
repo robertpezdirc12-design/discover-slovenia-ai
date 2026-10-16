@@ -124,6 +124,14 @@ const L = {
     fr: "Rechercher",
     es: "Buscar",
   },
+  clearSearch: {
+    sl: "Počisti iskanje",
+    en: "Clear search",
+    it: "Cancella la ricerca",
+    de: "Suche löschen",
+    fr: "Effacer la recherche",
+    es: "Borrar búsqueda",
+  },
   ctaPlan: {
     sl: "Načrtuj pot",
     en: "Plan a trip",
@@ -662,14 +670,28 @@ export function HomeView({
             <label htmlFor="hero-search" className="sr-only">
               {t("searchLabel")}
             </label>
-            <Input
-              id="hero-search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t("searchPlaceholder")}
-              className="h-11 border-none bg-transparent shadow-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 dark:bg-transparent"
-              autoComplete="off"
-            />
+            <div className="relative min-w-0 flex-1">
+              <Input
+                id="hero-search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t("searchPlaceholder")}
+                className="h-11 w-full border-none bg-transparent pr-10 shadow-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 dark:bg-transparent"
+                autoComplete="off"
+              />
+              {query.length > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label={t("clearSearch")}
+                  onClick={() => setQuery("")}
+                  className="absolute top-1/2 right-1 size-8 -translate-y-1/2 rounded-full text-muted-foreground hover:text-foreground"
+                >
+                  <X className="size-4" aria-hidden="true" />
+                </Button>
+              )}
+            </div>
             <Button type="submit" className="h-11 shrink-0 px-4 sm:px-6">
               {t("searchSubmit")}
             </Button>

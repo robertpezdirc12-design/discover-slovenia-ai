@@ -261,7 +261,7 @@ export function NextStepCard({
             transition={{ duration: 0.2, ease: "easeOut" }}
             whileHover={reduceMotion ? undefined : { y: -2 }}
           >
-            <Card className="border-primary/25 bg-gradient-to-br from-primary/10 via-card to-primary/5 transition-shadow hover:shadow-md">
+            <Card className="rounded-2xl border-primary/30 bg-gradient-to-br from-primary/[0.08] via-card to-primary/[0.03] shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
               <CardContent className="p-4 sm:p-5">
                 <div className="flex items-start gap-3 sm:gap-4">
                   <span

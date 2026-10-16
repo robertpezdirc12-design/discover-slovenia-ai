@@ -88,7 +88,7 @@ export default function GoHubPage() {
     <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <PageHeader kicker={t("kicker")} title={t("title")} lead={t("lead")} />
 
-      <p className="mt-6 max-w-3xl rounded-xl border border-primary/25 bg-primary/5 p-4 text-sm leading-relaxed text-muted-foreground">
+      <p className="mt-6 max-w-3xl rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/[0.07] to-card p-4 text-sm leading-relaxed text-muted-foreground shadow-sm">
         {t("disclosure")}
       </p>
 
@@ -106,7 +106,7 @@ export default function GoHubPage() {
             <li key={route.slug}>
               <Card
                 className={cn(
-                  "group h-full transition-all hover:-translate-y-0.5 hover:shadow-lg",
+                  "group h-full rounded-2xl border-border/70 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/35 hover:shadow-lg",
                   ready && "border-primary/35"
                 )}
               >

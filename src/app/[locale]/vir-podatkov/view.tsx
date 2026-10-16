@@ -124,7 +124,7 @@ function StoSearchCard({
   };
 
   return (
-    <Card className="mt-8">
+    <Card className="mt-8 rounded-2xl border-border/70 shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Landmark className="size-4.5 text-primary" aria-hidden="true" />
@@ -177,7 +177,7 @@ function StoSearchCard({
         {status === "not-ingested" && (
           <div
             role="status"
-            className="mt-4 rounded-lg border border-amber-500/50 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950/30"
+            className="mt-4 rounded-xl border border-amber-500/50 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950/30"
           >
             <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
               {labels.notIngestedTitle}
@@ -192,7 +192,7 @@ function StoSearchCard({
         {status === "error" && (
           <div
             role="alert"
-            className="mt-4 flex flex-col items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/10 p-3 sm:flex-row sm:items-center sm:justify-between"
+            className="mt-4 flex flex-col items-start gap-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 sm:flex-row sm:items-center sm:justify-between"
           >
             <p className="text-sm font-medium text-destructive">{labels.errorText}</p>
             <Button
@@ -209,7 +209,7 @@ function StoSearchCard({
 
         {/* Prazno — prijazen predlog (NI napaka). */}
         {status === "empty" && (
-          <div className="mt-4 rounded-lg border border-dashed p-4 text-center">
+          <div className="mt-4 rounded-xl border border-dashed border-border/70 bg-muted/20 p-4 text-center">
             <p className="text-sm font-semibold">{labels.emptyResult(lastQuery)}</p>
           </div>
         )}
@@ -225,7 +225,7 @@ function StoSearchCard({
               </p>
               <ul className="scrollbar-slim mt-2 max-h-96 list-none space-y-2 overflow-y-auto pr-1">
                 {data.results.map((r, i) => (
-                  <li key={`${i}-${r.url}`} className="rounded-lg border bg-card p-3.5">
+                  <li key={`${i}-${r.url}`} className="rounded-xl border border-border/70 bg-card p-3.5 transition-colors hover:bg-muted/20">
                     <span className="inline-flex max-w-full items-center truncate rounded-full border bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
                       {r.section}
                     </span>
@@ -503,7 +503,7 @@ export default function DataSourcePage() {
       <PageHeader title={t("title")} lead={t("lead")} />
 
       {/* Provenanca — izračunana iz nabora */}
-      <Card className="mt-8 border-primary/25 bg-primary/5">
+      <Card className="mt-8 rounded-2xl border-primary/25 bg-gradient-to-br from-primary/[0.07] to-card shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <ShieldCheck className="size-4.5 text-primary" aria-hidden="true" />
@@ -514,7 +514,7 @@ export default function DataSourcePage() {
           <p className="text-sm leading-relaxed text-muted-foreground">{t("provIntro")}</p>
           <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {stats.map((s) => (
-              <div key={s.label} className="rounded-lg border bg-background p-3 text-center">
+              <div key={s.label} className="rounded-xl border border-border/70 bg-background p-3 text-center shadow-sm">
                 <dt className="order-2 text-xs text-muted-foreground">{s.label}</dt>
                 <dd className="text-xl font-bold text-primary">{s.value}</dd>
               </div>
@@ -589,7 +589,7 @@ export default function DataSourcePage() {
         ))}
       </div>
 
-      <Card className="mt-8">
+      <Card className="mt-8 rounded-2xl border-border/70 shadow-sm">
         <CardContent className="p-5">
           <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
             {t("seeAlso")}

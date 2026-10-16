@@ -516,7 +516,7 @@ export default function JourneyPage() {
       )}
 
       {ready && !data && (
-        <Card className="mt-8">
+        <Card className="mt-8 rounded-2xl border-border/70 shadow-sm">
           <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
             <RouteIcon className="size-10 text-muted-foreground" aria-hidden="true" />
             <p className="font-semibold">{pick(l, L.emptyTitle)}</p>
@@ -594,7 +594,7 @@ export default function JourneyPage() {
           )}
 
           {/* Časovnica dneva */}
-          <Card className="mt-4">
+          <Card className="mt-4 rounded-2xl border-border/70 shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
                 <span>
@@ -654,7 +654,7 @@ export default function JourneyPage() {
 
           {/* Neujemajoči zapisi (osnutek) */}
           {data.source === "my-trip" && data.unmatched.length > 0 && (
-            <Card className="mt-4 border-dashed">
+            <Card className="mt-4 rounded-2xl border-dashed border-border/70 bg-muted/20 shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm">{pick(l, L.unmatchedTitle)}</CardTitle>
               </CardHeader>
@@ -686,7 +686,7 @@ export default function JourneyPage() {
               poudarka markerja/klika: ta pogled nima izbirnih vrstic. */}
           {data.plan.days.some((day) => day.length > 0) && (
             <div className="mt-4 print:hidden">
-              <Card>
+              <Card className="rounded-2xl border-border/70 shadow-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base">{pick(l, L.mapTitle)}</CardTitle>
                   <p className="text-xs text-muted-foreground">{pick(l, L.mapDesc)}</p>
@@ -990,7 +990,7 @@ function WarningsSection({
       )}
 
       {/* Metrike po dnevih */}
-      <Card className="mt-4">
+      <Card className="mt-4 rounded-2xl border-border/70 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm">
             <CalendarCheck className="size-4 text-primary" aria-hidden="true" />

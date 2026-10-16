@@ -133,7 +133,7 @@ function fmtDate(iso: string | null, locale: string): string | null {
 /** Skupni vmesnik za 403 (ne-skrbnik) — iskren, brez obljub. */
 function ForbiddenCard({ title, body }: { title: string; body: string }) {
   return (
-    <Card className="border-destructive/30">
+    <Card className="rounded-2xl border-destructive/30 shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <ShieldAlert className="size-4 text-destructive" aria-hidden="true" />
@@ -331,7 +331,7 @@ function LeadsPanel() {
   return (
     <div className="space-y-4">
       {leads.map((lead) => (
-        <Card key={lead.id}>
+        <Card key={lead.id} className="rounded-2xl border-border/70 shadow-sm transition-all duration-200 hover:border-primary/25 hover:shadow-md">
           <CardContent className="p-4 sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -390,7 +390,7 @@ function LeadsPanel() {
               </div>
             </div>
             {lead.note && (
-              <div className="mt-3 rounded-lg border bg-muted/40 p-3">
+              <div className="mt-3 rounded-xl border border-border/70 bg-muted/40 p-3">
                 <p className="text-xs font-semibold text-muted-foreground">{t("note")}</p>
                 <p className="mt-1 text-sm leading-relaxed">{lead.note}</p>
               </div>
@@ -592,7 +592,7 @@ function ListingsPanel() {
           <p className="text-sm text-muted-foreground">{t("empty")}</p>
         ) : (
           listings.map((li) => (
-            <Card key={li.id}>
+            <Card key={li.id} className="rounded-2xl border-border/70 shadow-sm transition-all duration-200 hover:border-primary/25 hover:shadow-md">
               <CardContent className="p-4 sm:p-6">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -850,7 +850,7 @@ function ConsultationsPanel() {
   return (
     <div className="space-y-4">
       {rows.map((c) => (
-        <Card key={c.id}>
+        <Card key={c.id} className="rounded-2xl border-border/70 shadow-sm transition-all duration-200 hover:border-primary/25 hover:shadow-md">
           <CardContent className="p-4 sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
@@ -893,7 +893,7 @@ function ConsultationsPanel() {
               </Button>
             </div>
 
-            <p className="mt-3 rounded-lg border bg-muted/40 p-3 text-sm leading-relaxed">
+            <p className="mt-3 rounded-xl border border-border/70 bg-muted/40 p-3 text-sm leading-relaxed">
               {c.question}
             </p>
             {c.destinationName && (
@@ -917,7 +917,7 @@ function ConsultationsPanel() {
               <DialogDescription>{t("answerDesc")}</DialogDescription>
             </DialogHeader>
             <div className="space-y-2">
-              <p className="rounded-lg border bg-muted/40 p-3 text-sm leading-relaxed">
+              <p className="rounded-xl border border-border/70 bg-muted/40 p-3 text-sm leading-relaxed">
                 {answering.question}
               </p>
               <Label htmlFor="consultation-answer">{t("answer")} *</Label>
@@ -1175,7 +1175,7 @@ function ProvidersPanel() {
       ) : (
         <div className="space-y-3">
           {providers.map((p) => (
-            <Card key={p.id}>
+            <Card key={p.id} className="rounded-2xl border-border/70 shadow-sm transition-all duration-200 hover:border-primary/25 hover:shadow-md">
               <CardContent className="p-4 sm:p-6">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -1284,7 +1284,7 @@ function ProvidersPanel() {
         ) : (
           <div className="mt-2 space-y-2">
             {reports.map((r) => (
-              <Card key={r.id}>
+              <Card key={r.id} className="rounded-2xl border-border/70 shadow-sm">
                 <CardContent className="p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -1295,7 +1295,7 @@ function ProvidersPanel() {
                         <span className="text-sm font-semibold">{providerName(r.providerId)}</span>
                         <span className="text-xs text-muted-foreground">{fmtDate(r.createdAt, l)}</span>
                       </div>
-                      <p className="mt-2 rounded-lg border bg-muted/40 p-3 text-sm leading-relaxed">{r.message}</p>
+                      <p className="mt-2 rounded-xl border border-border/70 bg-muted/40 p-3 text-sm leading-relaxed">{r.message}</p>
                       {r.email && (
                         <p className="mt-1 text-xs text-muted-foreground">
                           {t("reportBy")}: {r.email}

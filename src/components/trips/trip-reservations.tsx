@@ -1416,7 +1416,7 @@ export function TripReservations({
         : confirmTarget.row.stopName;
 
   return (
-    <Card>
+    <Card className="rounded-2xl border-border/70 shadow-sm">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <TicketCheck className="size-5 text-primary" aria-hidden="true" />
@@ -1487,7 +1487,7 @@ export function TripReservations({
               // ponujamo poti (iskrenost).
               const navDest = b.stopSlug ? getDestination(b.stopSlug) : null;
               return (
-                <li key={b.id} className="rounded-lg border p-3">
+                <li key={b.id} className="rounded-xl border border-border/70 bg-card p-3 transition-colors hover:bg-muted/20">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-xs font-medium text-muted-foreground">
                       Dan {b.dayIndex}
@@ -1820,7 +1820,7 @@ export function TripReservations({
         {/* ── Obrazec: dodaj rezervacijo ───────────────────────────── */}
         {canEdit ? (
           formOpen ? (
-            <div className="space-y-3 rounded-lg border p-3">
+            <div className="space-y-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
               <p className="text-xs text-muted-foreground">
                 Vpiši dogovor s ponudnikom za posamezen postanek pote.
                 Zapis je tvoj vnos (izrecno označen) — nikoli ponudnikova
@@ -2112,7 +2112,7 @@ export function TripReservations({
                     (pogodbena) — nikoli obljuba. */}
                 <p
                   role="note"
-                  className="flex items-start gap-2 rounded-md border border-emerald-600/50 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                  className="flex items-start gap-2 rounded-xl border border-emerald-600/50 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
                 >
                   <Handshake className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
                   {pick(l, PARTNER_L.honesty)}
@@ -2120,7 +2120,7 @@ export function TripReservations({
 
                 {partnerDone ? (
                   <div className="space-y-3" role="status">
-                    <div className="flex items-start gap-2 rounded-md border border-amber-500/50 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950/30">
+                    <div className="flex items-start gap-2 rounded-xl border border-amber-500/50 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950/30">
                       <Hourglass
                         className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-400"
                         aria-hidden="true"
@@ -2222,7 +2222,7 @@ export function TripReservations({
                             return (
                               <li
                                 key={offer.providerId}
-                                className={`rounded-lg border p-3 transition-colors ${
+                                className={`rounded-xl border border-border/70 bg-card p-3 shadow-sm transition-colors ${
                                   selected
                                     ? "border-emerald-600/60 bg-emerald-50/60 dark:border-emerald-700 dark:bg-emerald-950/30"
                                     : ""
@@ -2304,7 +2304,7 @@ export function TripReservations({
                     {/* Obrazec „Sem rezerviral — dodaj na pot" (POST partner
                         → PENDING; številko/ceno prinese uporabnik ŠELE ob
                         potrditvi — PATCH confirm, nikoli ob ustvarjanju). */}
-                    <div className="space-y-2.5 rounded-lg border p-3">
+                    <div className="space-y-2.5 rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
                       <p className="text-sm font-semibold">
                         {pick(l, PARTNER_L.bookedFormTitle)}
                       </p>
@@ -2384,7 +2384,7 @@ export function TripReservations({
                 {/* IZRECNA pasica — oranžna jakost, NIKOLI zelena */}
                 <p
                   role="note"
-                  className="flex items-start gap-2 rounded-md border border-orange-500/50 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-800 dark:border-orange-700 dark:bg-orange-950/40 dark:text-orange-300"
+                  className="flex items-start gap-2 rounded-xl border border-orange-500/50 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-800 dark:border-orange-700 dark:bg-orange-950/40 dark:text-orange-300"
                 >
                   <FlaskConical className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
                   {pick(l, DEMO_L.honesty)}
@@ -2393,7 +2393,7 @@ export function TripReservations({
 
                 {demoDone ? (
                   <div className="space-y-3" role="status">
-                    <div className="flex items-start gap-2 rounded-md border border-orange-500/40 bg-orange-50/60 p-3 dark:border-orange-700/60 dark:bg-orange-950/30">
+                    <div className="flex items-start gap-2 rounded-xl border border-orange-500/40 bg-orange-50/60 p-3 dark:border-orange-700/60 dark:bg-orange-950/30">
                       <CircleCheck
                         className="mt-0.5 size-5 shrink-0 text-orange-600 dark:text-orange-400"
                         aria-hidden="true"
@@ -2623,7 +2623,7 @@ export function TripReservations({
 
             <p
               role="note"
-              className="flex items-start gap-2 rounded-md border border-orange-500/50 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-800 dark:border-orange-700 dark:bg-orange-950/40 dark:text-orange-300"
+              className="flex items-start gap-2 rounded-xl border border-orange-500/50 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-800 dark:border-orange-700 dark:bg-orange-950/40 dark:text-orange-300"
             >
               <FlaskConical className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
               {pick(l, DEMO_L.honesty)}

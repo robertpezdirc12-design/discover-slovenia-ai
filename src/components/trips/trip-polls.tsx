@@ -368,7 +368,7 @@ export function TripPolls({ shareId, createdAt, canCreate, canVote }: TripPollsP
   // RENDER
   // ========================================================================
   return (
-    <Card className="print-hide print:hidden overflow-hidden">
+    <Card className="print-hide print:hidden overflow-hidden rounded-2xl border-border/70 shadow-sm">
       <CardContent className="p-4 sm:p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -416,7 +416,7 @@ export function TripPolls({ shareId, createdAt, canCreate, canVote }: TripPollsP
           <form
             id="poll-form"
             onSubmit={(e) => void submitPoll(e)}
-            className="mb-6 space-y-3 rounded-lg border border-border bg-muted/30 p-4"
+            className="mb-6 space-y-3 rounded-xl border border-border/70 bg-muted/30 p-4"
           >
             <Input
               value={question}
@@ -506,13 +506,13 @@ export function TripPolls({ shareId, createdAt, canCreate, canVote }: TripPollsP
           </p>
         ) : polls === null ? (
           <p
-            className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground"
+            className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-6 text-center text-sm text-muted-foreground"
             role="status"
           >
             {mounted ? "Nalagam ankete …" : L.loadingPolls[lang]}
           </p>
         ) : list.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+          <p className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-6 text-center text-sm text-muted-foreground">
             {mounted
               ? canCreate
                 ? "Še ni nobene ankete — postavi prvo vprašanje skupini!"
@@ -524,7 +524,7 @@ export function TripPolls({ shareId, createdAt, canCreate, canVote }: TripPollsP
             {list.map((poll) => (
               <li
                 key={poll.id}
-                className="rounded-lg border border-border p-4"
+                className="rounded-2xl border border-border/70 bg-card p-4 shadow-sm"
               >
                 <PollCard
                   poll={poll}

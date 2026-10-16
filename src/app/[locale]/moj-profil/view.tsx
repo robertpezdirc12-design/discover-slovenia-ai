@@ -415,7 +415,7 @@ export default function MojProfilPage() {
         {status === "loading" ? (
           <ProfileSkeleton />
         ) : status === "unauthenticated" ? (
-          <Card>
+          <Card className="rounded-2xl border-border/70 shadow-sm">
             <CardContent className="flex flex-col items-start gap-4 p-6">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Lock className="h-5 w-5" aria-hidden />
@@ -683,7 +683,7 @@ function ProfilePanel() {
 
   if (loadError) {
     return (
-      <Card>
+      <Card className="rounded-2xl border-border/70 shadow-sm">
         <CardContent className="flex flex-col items-start gap-4 p-6">
           <p className="text-sm text-muted-foreground">{t("loadError")}</p>
           <Button variant="outline" onClick={() => void load()}>
@@ -714,7 +714,7 @@ function ProfilePanel() {
         onToggle={togglePersonalization}
       />
 
-      <Card>
+      <Card className="rounded-2xl border-border/70 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Heart className="h-5 w-5 text-primary" aria-hidden />
@@ -853,7 +853,7 @@ function PersonalizationCard({
   onToggle: (next: "on" | "off") => void;
 }) {
   return (
-    <Card>
+    <Card className="rounded-2xl border-border/70 shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Brain className="h-5 w-5 text-primary" aria-hidden />
@@ -1056,7 +1056,7 @@ function MemoryCard({
   ];
 
   return (
-    <Card>
+    <Card className="rounded-2xl border-border/70 shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Brain className="h-5 w-5 text-primary" aria-hidden />
@@ -1260,7 +1260,7 @@ function MemoryCard({
 
 function PrivacyCard({ t }: { t: tFn }) {
   return (
-    <Card>
+    <Card className="rounded-2xl border-border/70 shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ShieldCheck className="h-5 w-5 text-primary" aria-hidden />

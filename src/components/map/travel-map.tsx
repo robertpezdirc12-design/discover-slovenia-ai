@@ -8,7 +8,7 @@
  * (divIcon po tipu — BREZ slikovnih ikon, kar obide znano težavo
  * bundler+leaflet z manjkajočimi ikonami), popup z dejanskimi podatki
  * destinacije + gumboma "Dodaj v mojo pot" in "Več". Nad zemljevidom
- * filtri (tip/regija/iskanje), ob njem sinhroniziran seznam (hover/klik),
+ * filtri (država/regija/tip + iskanje po imenu, opisu in poudarkih),
  * pod njim legenda tipov.
  *
  * PLASTI (FAZA 3 / 51-b):
@@ -49,11 +49,13 @@ import {
   RotateCw,
   Route,
   Search,
+  Share2,
   Star,
   Store,
   X,
 } from "lucide-react";
 import { useLocale } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import * as React from "react";
@@ -68,6 +70,7 @@ import {
 } from "react-leaflet";
 
 import { AffiliateChip } from "@/components/affiliate-chip";
+import { notifyMyTripAdded } from "@/components/my-trip-toast-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -77,10 +80,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
 import { Link } from "@/i18n/navigation";
+import { countryLabel } from "@/lib/countries-data";
+import { activeCountryKeys, filterDestinations } from "@/lib/destinations-filter";
 import { pick } from "@/lib/i18n-pick";
 import { LOKAL_CATEGORIES, type LokalCategory } from "@/lib/lokali-data";
+import { shareOrCopyLink } from "@/lib/share-link";
 import { myTrip, useMyTripList } from "@/lib/my-trip";
 import {
   DEST_TYPES,
@@ -821,7 +826,7 @@ function DestinationPopup({
 }) {
   return (
     <div className="w-[218px]">
-      <div className="relative aspect-[3/2] overflow-hidden rounded-md bg-muted">
+      <div className="relative aspect-[3/2] overflow-hidden rounded-lg bg-muted">
         <Image
           src={d.image}
           alt={`${d.name} — ${d.tagline}`}
@@ -830,7 +835,10 @@ function DestinationPopup({
           className="object-cover"
         />
       </div>
-      <p className="mt-2 text-[11px] font-medium text-muted-foreground">
+      <p className="mt-2 text-[11px] font-semibold text-primary">
+        {countryLabel(locale, d.country)}
+      </p>
+      <p className="text-[11px] font-medium text-muted-foreground">
         {regionLabel(d.region, locale)} · {typeLabel(d.type, locale)}
       </p>
       <h3 className="text-sm leading-tight font-bold">{d.name}</h3>
@@ -847,6 +855,7 @@ function DestinationPopup({
           variant={inTrip ? "secondary" : "default"}
           className="h-8 flex-1 text-xs"
           onClick={() => onAdd(d)}
+          disabled={inTrip}
           aria-disabled={inTrip}
         >
           {inTrip ? (
@@ -944,12 +953,18 @@ function DestinationPopup({
 /** ZEMLJEVID RAZISKOVALEC — filtri + zemljevid + sinhroniziran seznam. */
 export default function TravelMap() {
   const l = useLocale();
-  const { toast } = useToast();
   const tripItems = useMyTripList();
 
-  const [q, setQ] = React.useState("");
-  const [type, setType] = React.useState<"all" | DestinationType>("all");
-  const [region, setRegion] = React.useState<string>("all");
+  const searchParams = useSearchParams();
+  const [q, setQ] = React.useState(searchParams.get("q") ?? "");
+  const initialType = searchParams.get("type");
+  const [type, setType] = React.useState<"all" | DestinationType>(
+    initialType && Object.prototype.hasOwnProperty.call(DEST_TYPES, initialType)
+      ? (initialType as DestinationType)
+      : "all",
+  );
+  const [region, setRegion] = React.useState<string>(searchParams.get("region") ?? "all");
+  const [country, setCountry] = React.useState<string>(searchParams.get("country") ?? "all");
   const [activeId, setActiveId] = React.useState<string | null>(null);
   // ── POLIR14 (2.41.0): mobilni preklop pogleda „Zemljevid ⇄ Seznam“ ──
   // Privzeto „map“ — zemljevid je NAMEN strani (raziskava §3.3: prej je
@@ -1008,12 +1023,12 @@ export default function TravelMap() {
 
   const L10n = {
     searchLabel: {
-      sl: "Išči destinacijo po imenu",
-      en: "Search destinations by name",
-      it: "Cerca destinazioni per nome",
-      de: "Reiseziele nach Name suchen",
-      fr: "Rechercher des destinations par nom",
-      es: "Buscar destinos por nombre",
+      sl: "Išči po imenu, opisu ali poudarkih",
+      en: "Search by name, description or highlights",
+      it: "Cerca per nome, descrizione o punti di forza",
+      de: "Nach Name, Beschreibung oder Highlights suchen",
+      fr: "Rechercher par nom, description ou points forts",
+      es: "Busca por nombre, descripción o destacados",
     },
     searchPlaceholder: {
       sl: "Iskanje: Bled, jama, Piran …",
@@ -1033,7 +1048,34 @@ export default function TravelMap() {
       fr: "Filtrer par région",
       es: "Filtrar por región",
     },
+    allCountries: { sl: "Vse države", en: "All countries", it: "Tutti i paesi", de: "Alle Länder", fr: "Tous les pays", es: "Todos los países" },
+    countryFilter: {
+      sl: "Filtriraj po državi",
+      en: "Filter by country",
+      it: "Filtra per paese",
+      de: "Nach Land filtern",
+      fr: "Filtrer par pays",
+      es: "Filtrar por país",
+    },
     reset: { sl: "Počisti filtre", en: "Clear filters", it: "Azzera i filtri", de: "Filter zurücksetzen", fr: "Effacer les filtres", es: "Borrar filtros" },
+    shareMap: { sl: "Deli ta pogled", en: "Share this view", it: "Condividi questa vista", de: "Ansicht teilen", fr: "Partager cette vue", es: "Compartir esta vista" },
+    shareTitle: { sl: "Zemljevid destinacij Discover Slovenia", en: "Discover Slovenia destination map", it: "Mappa delle destinazioni Discover Slovenia", de: "Discover-Slovenia-Zielkarte", fr: "Carte des destinations Discover Slovenia", es: "Mapa de destinos de Discover Slovenia" },
+    shareText: { sl: "Oglej si ta izbor destinacij in filtre.", en: "Take a look at these destinations and filters.", it: "Guarda questa selezione di destinazioni e filtri.", de: "Sieh dir diese Auswahl an Reisezielen und Filtern an.", fr: "Découvre cette sélection de destinations et de filtres.", es: "Mira esta selección de destinos y filtros." },
+    shareCopied: { sl: "Povezava do tega pogleda je kopirana.", en: "Link to this view copied.", it: "Link a questa vista copiato.", de: "Link zu dieser Ansicht kopiert.", fr: "Lien vers cette vue copié.", es: "Enlace a esta vista copiado." },
+    shareError: { sl: "Povezave ni bilo mogoče deliti ali kopirati.", en: "Could not share or copy the link.", it: "Impossibile condividere o copiare il link.", de: "Der Link konnte nicht geteilt oder kopiert werden.", fr: "Impossible de partager ou copier le lien.", es: "No se pudo compartir ni copiar el enlace." },
+    activeFiltersLabel: { sl: "Aktivni filtri", en: "Active filters", it: "Filtri attivi", de: "Aktive Filter", fr: "Filtres actifs", es: "Filtros activos" },
+    searchPrefix: { sl: "Iskanje", en: "Search", it: "Ricerca", de: "Suche", fr: "Recherche", es: "Búsqueda" },
+    regionPrefix: { sl: "Regija", en: "Region", it: "Regione", de: "Region", fr: "Région", es: "Región" },
+    countryPrefix: { sl: "Država", en: "Country", it: "Paese", de: "Land", fr: "Pays", es: "País" },
+    typePrefix: { sl: "Tip", en: "Type", it: "Tipo", de: "Typ", fr: "Type", es: "Tipo" },
+    removeFilter: {
+      sl: (kind: string, value: string) => `Odstrani filter ${kind}: ${value}`,
+      en: (kind: string, value: string) => `Remove ${kind} filter: ${value}`,
+      it: (kind: string, value: string) => `Rimuovi il filtro ${kind}: ${value}`,
+      de: (kind: string, value: string) => `Filter ${kind} entfernen: ${value}`,
+      fr: (kind: string, value: string) => `Supprimer le filtre ${kind} : ${value}`,
+      es: (kind: string, value: string) => `Quitar filtro ${kind}: ${value}`,
+    },
     count: {
       sl: (n: number) => `${n} od ${DESTINATIONS.length} destinacij`,
       en: (n: number) => `${n} of ${DESTINATIONS.length} destinations`,
@@ -1207,8 +1249,10 @@ export default function TravelMap() {
 
   const onAdd = (d: Destination) => {
     if (inTrip(d.slug)) return;
-    myTrip.add(d.slug, d.name, "destination", "zemljevid");
-    toast({ title: pick(l, L10n.toastAdded) });
+    const res = myTrip.add(d.slug, d.name, "destination", "zemljevid");
+    if (res.ok) {
+      notifyMyTripAdded(l);
+    }
   };
 
   // ── Plast Lokali: rezultati pins API-ja (stabilna callbacka za efekt) ─
@@ -1387,28 +1431,83 @@ export default function TravelMap() {
     const present = new Set(DESTINATIONS.map((d) => d.region));
     return Object.keys(REGIONS).filter((r) => present.has(r));
   }, []);
+  const activeCountries = React.useMemo(() => activeCountryKeys(DESTINATIONS), []);
 
-  const results = React.useMemo(() => {
-    const needle = q.trim().toLowerCase();
-    return DESTINATIONS.filter((d) => {
-      if (type !== "all" && d.type !== type) return false;
-      if (region !== "all" && d.region !== region) return false;
-      if (
-        needle &&
-        !d.name.toLowerCase().includes(needle) &&
-        !d.tagline.toLowerCase().includes(needle)
-      ) {
-        return false;
-      }
-      return true;
-    });
-  }, [q, type, region]);
+  // Isti filter kot na /destinacije: opis/poudarki in iskanje brez razlikovanja
+  // diakritike delujejo enako v mreži kartic in na zemljevidu.
+  const results = React.useMemo(
+    () => filterDestinations(DESTINATIONS, { q, type, region, country }),
+    [q, type, region, country],
+  );
 
-  const hasFilters = q.trim() !== "" || type !== "all" || region !== "all";
+  const hasFilters = q.trim() !== "" || type !== "all" || region !== "all" || country !== "all";
+
+  // Deljena povezava in navigacija znotraj Next.js morata obnoviti isto stanje filtrov.
+  React.useEffect(() => {
+    const nextQ = searchParams.get("q") ?? "";
+    const rawType = searchParams.get("type");
+    const nextType: "all" | DestinationType =
+      rawType && Object.prototype.hasOwnProperty.call(DEST_TYPES, rawType)
+        ? (rawType as DestinationType)
+        : "all";
+    const nextRegion = searchParams.get("region") ?? "all";
+    const nextCountry = searchParams.get("country") ?? "all";
+
+    setQ((current) => (current === nextQ ? current : nextQ));
+    setType((current) => (current === nextType ? current : nextType));
+    setRegion((current) => (current === nextRegion ? current : nextRegion));
+    setCountry((current) => (current === nextCountry ? current : nextCountry));
+  }, [searchParams]);
+
+  // replaceState posodobi povezavo brez kopičenja zgodovine med tipkanjem.
+  // Nepovezani parametri in hash ostanejo nedotaknjeni.
+  React.useEffect(() => {
+    const url = new URL(window.location.href);
+    const filterParams: Record<string, string> = {
+      q: q.trim() ? q : "",
+      type,
+      region,
+      country,
+    };
+    for (const [key, value] of Object.entries(filterParams)) {
+      if (!value || value === "all") url.searchParams.delete(key);
+      else url.searchParams.set(key, value);
+    }
+
+    const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (nextUrl !== currentUrl) {
+      window.history.replaceState(window.history.state, "", nextUrl);
+    }
+  }, [q, type, region, country]);
+
   const reset = () => {
     setQ("");
     setType("all");
     setRegion("all");
+    setCountry("all");
+  };
+
+  /** Deljena povezava vsebuje samo filtre zemljevida, ne poljubnih parametrov strani. */
+  const shareMapView = () => {
+    const url = new URL(window.location.pathname, window.location.origin);
+    const filters: Record<string, string> = {
+      q: q.trim(),
+      type,
+      region,
+      country,
+    };
+    for (const [key, value] of Object.entries(filters)) {
+      if (!value || value === "all") url.searchParams.delete(key);
+      else url.searchParams.set(key, value);
+    }
+    void shareOrCopyLink({
+      url: url.toString(),
+      title: t("shareTitle"),
+      text: t("shareText"),
+      copiedMessage: t("shareCopied"),
+      errorMessage: t("shareError"),
+    });
   };
 
   /** Klik na postavko seznama: prileti do markerja in odpre popup. */
@@ -1433,7 +1532,7 @@ export default function TravelMap() {
           (grid-cols-[1fr_auto]); reset gumb čez celo vrstico (col-span-2).
           mt-4 namesto mt-8 na mobilnem — vsaka vrstica nad zemljevidom je
           draga; namizje (md/lg) IDENTIČNO (lg:mt-8). */}
-      <div className="mt-4 grid grid-cols-[1fr_auto] gap-3 rounded-2xl border border-border/70 bg-card/70 p-3 shadow-sm sm:p-4 md:grid-cols-[1fr_auto_auto] lg:mt-8 max-lg:order-1">
+      <div className="mt-4 grid grid-cols-[1fr_auto] gap-3 rounded-2xl border border-border/70 bg-card/70 p-3 shadow-sm sm:p-4 md:grid-cols-[1fr_auto_auto] lg:grid-cols-[minmax(200px,1fr)_auto_auto_auto] lg:mt-8 max-lg:order-1">
         <div className="relative">
           <Search
             className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
@@ -1445,7 +1544,7 @@ export default function TravelMap() {
             onChange={(e) => setQ(e.target.value)}
             placeholder={t("searchPlaceholder")}
             aria-label={t("searchLabel")}
-            className="h-12 rounded-xl border-border/70 bg-background pl-10 shadow-sm focus-visible:ring-primary/30"
+            className="h-12 rounded-xl border-border/70 bg-background pl-10 shadow-sm focus-visible:ring-primary"
           />
         </div>
         <Select value={region} onValueChange={setRegion}>
@@ -1461,6 +1560,24 @@ export default function TravelMap() {
             ))}
           </SelectContent>
         </Select>
+        <div className="col-span-2 min-w-0 md:col-span-1">
+          <Select value={country} onValueChange={setCountry}>
+            <SelectTrigger
+              className="h-12 w-full rounded-xl border-border/70 bg-background shadow-sm md:w-48"
+              aria-label={t("countryFilter")}
+            >
+              <SelectValue placeholder={t("allCountries")} />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              <SelectItem value="all">{t("allCountries")}</SelectItem>
+              {activeCountries.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {countryLabel(l, c)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         {hasFilters ? (
           <Button
             type="button"
@@ -1483,6 +1600,89 @@ export default function TravelMap() {
         )}
       </div>
 
+      {/* Aktivni filtri so ločeno odstranljivi; tudi na mobilnem so vidni pred izbirnikom tipov. */}
+      {hasFilters && (
+        <div
+          role="group"
+          aria-label={t("activeFiltersLabel")}
+          className="mt-3 flex flex-wrap items-center gap-2 max-lg:order-2"
+        >
+          {q.trim() !== "" && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setQ("")}
+              aria-label={t("removeFilter")(t("searchPrefix"), q.trim())}
+              className="h-8 max-w-full gap-1.5 rounded-full border-primary/25 bg-primary/[0.04]"
+            >
+              <span className="min-w-0 max-w-[14rem] truncate sm:max-w-[20rem]">
+                {t("searchPrefix")}: {q.trim()}
+              </span>
+              <X className="size-3.5 shrink-0" aria-hidden="true" />
+            </Button>
+          )}
+          {country !== "all" && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setCountry("all")}
+              aria-label={t("removeFilter")(t("countryPrefix"), (activeCountries.includes(country as (typeof activeCountries)[number]) ? countryLabel(l, country as (typeof activeCountries)[number]) : country))}
+              className="h-8 max-w-full gap-1.5 rounded-full border-primary/25 bg-primary/[0.04]"
+            >
+              <span className="max-w-[12rem] truncate">
+                {t("countryPrefix")}: {(activeCountries.includes(country as (typeof activeCountries)[number]) ? countryLabel(l, country as (typeof activeCountries)[number]) : country)}
+              </span>
+              <X className="size-3.5 shrink-0" aria-hidden="true" />
+            </Button>
+          )}
+          {region !== "all" && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setRegion("all")}
+              aria-label={t("removeFilter")(t("regionPrefix"), regionLabel(region, l))}
+              className="h-8 max-w-full gap-1.5 rounded-full border-primary/25 bg-primary/[0.04]"
+            >
+              <span className="max-w-[12rem] truncate">
+                {t("regionPrefix")}: {regionLabel(region, l)}
+              </span>
+              <X className="size-3.5 shrink-0" aria-hidden="true" />
+            </Button>
+          )}
+          {type !== "all" && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setType("all")}
+              aria-label={t("removeFilter")(t("typePrefix"), typeLabel(type, l))}
+              className="h-8 max-w-full gap-1.5 rounded-full border-primary/25 bg-primary/[0.04]"
+            >
+              <span className="max-w-[12rem] truncate">
+                {t("typePrefix")}: {typeLabel(type, l)}
+              </span>
+              <X className="size-3.5 shrink-0" aria-hidden="true" />
+            </Button>
+          )}
+        </div>
+      )}
+
+      <div className="mt-2 flex justify-end max-lg:order-2">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-9 gap-2 rounded-full"
+          onClick={() => void shareMapView()}
+        >
+          <Share2 className="size-4" aria-hidden="true" />
+          {t("shareMap")}
+        </Button>
+      </div>
+
       {/* ── Čipi tipov (vodoravno drsenje na mobilnem) ────────────────── */}
       {/* POLIR14: trak je OVIT v relativni ovoj — (a) mt-3 se preseli z
           traku na ovoj (trak ohrani čiste drsne razrede), (b) fade
@@ -1499,7 +1699,7 @@ export default function TravelMap() {
             onClick={() => setType("all")}
             aria-pressed={type === "all"}
             className={cn(
-              "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+              "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none",
               type === "all"
                 ? "border-primary bg-primary text-primary-foreground"
                 : "bg-background hover:border-primary/40 hover:text-primary"
@@ -1516,7 +1716,7 @@ export default function TravelMap() {
                 onClick={() => setType(active ? "all" : ty)}
                 aria-pressed={active}
                 className={cn(
-                  "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none",
                   active
                     ? "border-primary bg-primary text-primary-foreground"
                     : "bg-background hover:border-primary/40 hover:text-primary"
@@ -1594,7 +1794,7 @@ export default function TravelMap() {
           onClick={toggleLokali}
           aria-pressed={lokaliOn}
           className={cn(
-            "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+            "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none",
             lokaliOn
               ? "border-primary bg-primary text-primary-foreground"
               : "bg-background hover:border-primary/40 hover:text-primary"
@@ -1610,7 +1810,7 @@ export default function TravelMap() {
           onClick={toggleFuel}
           aria-pressed={fuelOn}
           className={cn(
-            "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+            "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none",
             fuelOn
               ? "border-primary bg-primary text-primary-foreground"
               : "bg-background hover:border-primary/40 hover:text-primary"
@@ -1627,7 +1827,7 @@ export default function TravelMap() {
           onClick={togglePoi}
           aria-pressed={poiOn}
           className={cn(
-            "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+            "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none",
             poiOn
               ? "border-primary bg-primary text-primary-foreground"
               : "bg-background hover:border-primary/40 hover:text-primary"
@@ -1704,7 +1904,7 @@ export default function TravelMap() {
             <button
               type="button"
               onClick={retryLokali}
-              className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-full px-3 text-xs font-semibold transition-colors hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-full px-3 text-xs font-semibold transition-colors motion-reduce:transition-none hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
             >
               <RotateCw className="size-3" aria-hidden="true" />
               {t("retry")}
@@ -1746,7 +1946,7 @@ export default function TravelMap() {
             <button
               type="button"
               onClick={retryFuel}
-              className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-full px-3 text-xs font-semibold transition-colors hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-full px-3 text-xs font-semibold transition-colors motion-reduce:transition-none hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
             >
               <RotateCw className="size-3" aria-hidden="true" />
               {t("retry")}
@@ -1792,7 +1992,7 @@ export default function TravelMap() {
             <button
               type="button"
               onClick={() => void onToggleRoute()}
-              className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-full px-3 text-xs font-semibold transition-colors hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-full px-3 text-xs font-semibold transition-colors motion-reduce:transition-none hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
             >
               <RotateCw className="size-3" aria-hidden="true" />
               {t("retry")}
@@ -1846,7 +2046,7 @@ export default function TravelMap() {
           <button
             type="button"
             onClick={retryPoi}
-            className="focus-green inline-flex h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-amber-600/50 bg-background px-4 text-xs font-semibold text-amber-900 transition-colors hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-900/50"
+            className="focus-green inline-flex h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-amber-600/50 bg-background px-4 text-xs font-semibold text-amber-900 transition-colors motion-reduce:transition-none hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-900/50"
           >
             <RotateCw className="size-3.5" aria-hidden="true" />
             {t("retry")}
@@ -2079,10 +2279,21 @@ export default function TravelMap() {
             {t("listTitle")} · {t("count")(results.length)}
           </p>
           {results.length === 0 ? (
-            <div className="rounded-xl border border-dashed p-6 text-center">
+            <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-6 text-center">
               <MapPin className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
               <p className="mt-2 text-sm font-semibold">{t("emptyTitle")}</p>
               <p className="mt-1 text-sm text-muted-foreground">{t("emptyLead")}</p>
+              {hasFilters && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={reset}
+                  className="mt-4 h-10"
+                >
+                  <X className="size-4" aria-hidden="true" />
+                  {t("reset")}
+                </Button>
+              )}
             </div>
           ) : (
             <ul className="scrollbar-slim max-h-[62svh] list-none space-y-1.5 overflow-y-auto pr-1 sm:max-h-[70svh] lg:max-h-[calc(100svh-16rem)]">
@@ -2108,10 +2319,10 @@ export default function TravelMap() {
                       onClick={() => focusDestination(d)}
                       aria-current={active ? "true" : undefined}
                       className={cn(
-                        "flex w-full items-center gap-3 rounded-lg border bg-card p-2.5 text-left transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                        "group flex w-full items-center gap-3 rounded-xl border border-border/70 bg-card p-2.5 text-left transition-all duration-200 motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none",
                         active
-                          ? "border-primary/60 shadow-md"
-                          : "hover:border-primary/30 hover:shadow-sm"
+                          ? "border-primary/60 bg-primary/[0.04] shadow-md"
+                          : "hover:border-primary/30 hover:bg-muted/30 hover:shadow-sm"
                       )}
                     >
                       <span
@@ -2122,7 +2333,7 @@ export default function TravelMap() {
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-semibold">{d.name}</span>
                         <span className="block truncate text-xs text-muted-foreground">
-                          {regionLabel(d.region, l)} · {typeLabel(d.type, l)}
+                          {countryLabel(l, d.country)} · {regionLabel(d.region, l)} · {typeLabel(d.type, l)}
                         </span>
                       </span>
                       <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold">
@@ -2142,7 +2353,7 @@ export default function TravelMap() {
       {/* POLIR14: legenda na mobilnem zadnja (max-lg:order-7) — kot na
           namizju (DOM konec = mobilni konec); brez razreda bi v fleks
           koloni roota skočila na VRH (privzeti order:0 pred order-1…6). */}
-      <div className="mt-4 flex flex-col gap-3 rounded-xl border bg-card/60 p-4 sm:flex-row sm:items-center sm:justify-between max-lg:order-7">
+      <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-border/70 bg-gradient-to-br from-card to-muted/30 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between max-lg:order-7">
         <div>
           <p className="text-xs font-bold tracking-[0.12em] text-muted-foreground uppercase">
             {t("legend")}

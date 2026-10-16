@@ -103,13 +103,13 @@ export default function OwnerPrijavaPage() {
       </div>
 
       {/* Zavihki Prijava / Registracija */}
-      <div className="mt-8 grid grid-cols-2 gap-1 rounded-lg border bg-muted/40 p-1" role="tablist">
+      <div className="mt-8 grid grid-cols-2 gap-1 rounded-xl border border-border/70 bg-muted/60 p-1" role="tablist">
         <button
           type="button"
           role="tab"
           aria-selected={mode === "login"}
           onClick={() => setMode("login")}
-          className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-md text-sm font-medium transition-colors focus-green ${
+          className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg text-sm font-medium transition-colors focus-green ${
             mode === "login" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -121,7 +121,7 @@ export default function OwnerPrijavaPage() {
           role="tab"
           aria-selected={mode === "register"}
           onClick={() => setMode("register")}
-          className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-md text-sm font-medium transition-colors focus-green ${
+          className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg text-sm font-medium transition-colors focus-green ${
             mode === "register" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -130,7 +130,7 @@ export default function OwnerPrijavaPage() {
         </button>
       </div>
 
-      <Card className="mt-4">
+      <Card className="mt-4 rounded-2xl border-border/70 shadow-sm">
         <CardHeader>
           <CardTitle className="text-base">
             {mode === "login" ? pick(l, L.loginTitle) : pick(l, L.registerTitle)}
@@ -189,7 +189,7 @@ export default function OwnerPrijavaPage() {
         {pick(l, L.privacy)}
       </p>
 
-      <Card className="mt-8 border-primary/25 bg-primary/5">
+      <Card className="mt-8 rounded-2xl border-primary/25 bg-gradient-to-br from-primary/[0.07] to-card shadow-sm">
         <CardContent className="p-5">
           <p className="text-sm font-semibold">{pick(l, L.demoTitle)}</p>
           <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">

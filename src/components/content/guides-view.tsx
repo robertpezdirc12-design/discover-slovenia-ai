@@ -107,7 +107,7 @@ export function GuidesView() {
       </PageHeader>
 
       {l !== "sl" && pick(l, L.enNote) && (
-        <p className="mt-6 rounded-md border border-dashed border-primary/30 bg-primary/5 px-4 py-2.5 text-xs text-muted-foreground">
+        <p className="mt-6 rounded-xl border border-dashed border-primary/25 bg-gradient-to-br from-primary/[0.06] to-card px-4 py-3 text-xs text-muted-foreground">
           {pick(l, L.enNote)}
         </p>
       )}
@@ -227,7 +227,7 @@ export function GuidesView() {
                       fill
                       loading="lazy"
                       sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                     />
                     <Badge className="absolute top-2 left-2">{pick(l, BLOG_CATEGORIES[a.category])}</Badge>
                   </div>
@@ -281,7 +281,7 @@ export function GuidesView() {
       {/* Vprašaj lokalca */}
       <section
         aria-labelledby="ask-local"
-        className="mt-16 rounded-2xl border bg-gradient-to-br from-primary/10 via-card to-primary/5 p-6 sm:p-10"
+        className="mt-16 rounded-2xl border border-border/70 bg-gradient-to-br from-primary/[0.08] via-card to-primary/[0.03] p-6 shadow-sm sm:p-10"
       >
         <h2 id="ask-local" className="flex items-center gap-2 text-xl font-bold tracking-tight">
           <MessageCircleQuestion className="size-5 text-primary" aria-hidden="true" />
@@ -293,7 +293,7 @@ export function GuidesView() {
         <div className="mt-6">
           <Link
             href="/kontakt"
-            className="inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-green"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md focus-green"
           >
             {pick(l, L.askCta)}
             <ArrowRight className="size-4" aria-hidden="true" />

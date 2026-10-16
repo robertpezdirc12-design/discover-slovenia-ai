@@ -317,7 +317,7 @@ export class CircuitBreaker {
 
 /** Pošten identifikacijski UA (OpenStreetMap etiquette — kanon izvirnika). */
 const VALHALLA_USER_AGENT =
-  "DiscoverSlovenia-AI/2.66.2 (routing; sledi OpenStreetMap etiquette)";
+  "DiscoverSlovenia-AI/2.67.0 (routing; sledi OpenStreetMap etiquette)";
 
 /**
  * Privzeti Valhalla fetch prek node:https z VSILJENIM IPv4 (family:4) —

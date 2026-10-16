@@ -6,6 +6,7 @@ import Image from "next/image";
 
 import { Badge } from "@/components/ui/badge";
 import { Link } from "@/i18n/navigation";
+import { countryLabel, countryName } from "@/lib/countries-data";
 import { pick } from "@/lib/i18n-pick";
 import {
   type Destination,
@@ -36,19 +37,19 @@ export function DestinationCard({
     featured: { sl: "Izpostavljeno", en: "Featured", it: "In evidenza", de: "Empfohlen", fr: "À la une", es: "Destacado" },
     rating: { sl: (n: number) => `Ocena ${n.toFixed(1)} od 5`, en: (n: number) => `Rated ${n.toFixed(1)} of 5`, it: (n: number) => `Valutato ${n.toFixed(1)} su 5`, de: (n: number) => `Bewertet ${n.toFixed(1)} von 5`, fr: (n: number) => `Noté ${n.toFixed(1)} sur 5`, es: (n: number) => `Valorado ${n.toFixed(1)} sobre 5` },
     toDetail: {
-      sl: (name: string) => `Odpri destinacijo ${name}`,
-      en: (name: string) => `Open destination ${name}`,
-      it: (name: string) => `Apri la destinazione ${name}`,
-      de: (name: string) => `Reiseziel ${name} öffnen`,
-      fr: (name: string) => `Ouvrir la destination ${name}`,
-      es: (name: string) => `Abrir el destino ${name}`,
+      sl: (name: string, country: string) => `Odpri destinacijo ${name} (${country})`,
+      en: (name: string, country: string) => `Open destination ${name} (${country})`,
+      it: (name: string, country: string) => `Apri la destinazione ${name} (${country})`,
+      de: (name: string, country: string) => `Reiseziel ${name} (${country}) öffnen`,
+      fr: (name: string, country: string) => `Ouvrir la destination ${name} (${country})`,
+      es: (name: string, country: string) => `Abrir el destino ${name} (${country})`,
     },
   } as const;
 
   return (
     <Link
       href={`/destinacija/${d.slug}`}
-      aria-label={pick(l, L.toDetail)(d.name)}
+      aria-label={pick(l, L.toDetail)(d.name, countryName(l, d.country))}
       className={cn(
         "group flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-card text-card-foreground shadow-sm transition-all duration-300",
         "hover:-translate-y-1 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
@@ -66,11 +67,19 @@ export function DestinationCard({
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className="object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
         />
-        {d.featured && (
-          <Badge className="absolute top-2.5 left-2.5 bg-primary text-primary-foreground shadow-sm">
-            {pick(l, L.featured)}
+        <div className="absolute inset-x-2.5 top-2.5 flex items-start justify-between gap-2">
+          {d.featured && (
+            <Badge className="max-w-[calc(50%-0.25rem)] truncate bg-primary text-primary-foreground shadow-sm">
+              {pick(l, L.featured)}
+            </Badge>
+          )}
+          <Badge
+            aria-hidden="true"
+            className={cn("ml-auto max-w-full truncate border-white/60 bg-background/90 text-foreground shadow-sm backdrop-blur-sm", d.featured && "max-w-[calc(50%-0.25rem)]")}
+          >
+            {countryLabel(l, d.country)}
           </Badge>
-        )}
+        </div>
       </div>
       <div className="flex flex-1 flex-col gap-2 p-5 sm:p-5">
         {/* Regija čisto zgoraj — zeleni kicker (akcent teme #2d6a3e). */}

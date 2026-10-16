@@ -138,7 +138,7 @@ export default function OwnerPage() {
           {pick(l, L.features).map((f, i) => {
             const Icon = featureIcons[i] ?? Building2;
             return (
-              <Card key={f.h}>
+              <Card key={f.h} className="h-full rounded-2xl border-border/70 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
                 <CardContent className="p-5">
                   <Icon className="size-5 text-primary" aria-hidden="true" />
                   <h3 className="mt-3 text-sm font-bold sm:text-base">{f.h}</h3>
@@ -150,7 +150,7 @@ export default function OwnerPage() {
         </div>
       </section>
 
-      <Card className="mt-12 border-primary/25 bg-primary/5">
+      <Card className="mt-12 rounded-2xl border-primary/25 bg-gradient-to-br from-primary/[0.07] to-card shadow-sm">
         <CardHeader>
           <CardTitle className="text-sm font-semibold text-primary">
             {pick(l, L.partnersTitle)}
@@ -168,7 +168,7 @@ export default function OwnerPage() {
       </Card>
 
       {/* Skrbniška nadzorna plošča: provizije in klikanja (2.5.0) */}
-      <Card className="mt-6">
+      <Card className="mt-6 rounded-2xl border-border/70 shadow-sm">
         <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <Percent className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
@@ -188,7 +188,7 @@ export default function OwnerPage() {
         </CardContent>
       </Card>
 
-      <Card className="mt-6">
+      <Card className="mt-6 rounded-2xl border-border/70 shadow-sm">
         <CardContent className="flex items-start gap-3 p-5">
           <Banknote className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
           <div>
@@ -206,7 +206,7 @@ export default function OwnerPage() {
         </CardContent>
       </Card>
 
-      <Card className="mt-6">
+      <Card className="mt-6 rounded-2xl border-border/70 shadow-sm">
         <CardContent className="flex items-start gap-3 p-5">
           <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
           <div>
@@ -224,7 +224,7 @@ export default function OwnerPage() {
         </CardContent>
       </Card>
 
-      <Card className="mt-6">
+      <Card className="mt-6 rounded-2xl border-border/70 shadow-sm">
         <CardContent className="flex items-start gap-3 p-5">
           <HardDrive className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
           <div>

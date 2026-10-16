@@ -5,11 +5,16 @@ import {
   BedDouble,
   Car,
   Check,
+  Clock,
+  Coins,
+  Compass,
   ExternalLink,
+  Flag,
   Fuel,
   MapPin,
   Plane,
   Plus,
+  Share2,
   Star,
   Ticket,
   TrainFront,
@@ -20,6 +25,7 @@ import Image from "next/image";
 import * as React from "react";
 
 import { AffiliateChip } from "@/components/affiliate-chip";
+import { notifyMyTripAdded } from "@/components/my-trip-toast-action";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,8 +45,10 @@ import {
   nearestAirportForRegion,
 } from "@/lib/affiliate-providers";
 import { nearestFuelStation } from "@/lib/fuel-stations";
+import { countryName } from "@/lib/countries-data";
 import { pick } from "@/lib/i18n-pick";
-import { myTrip } from "@/lib/my-trip";
+import { shareOrCopyLink } from "@/lib/share-link";
+import { MY_TRIP_CHANGED_EVENT, myTrip } from "@/lib/my-trip";
 import {
   type Destination,
   type Season,
@@ -68,12 +76,17 @@ export function DestinationDetail({ d }: { d: Destination }) {
     setInTrip(myTrip.has(d.slug));
     // Osveži, če drug zavihek spremeni zbirko.
     const refresh = () => setInTrip(myTrip.has(d.slug));
+    window.addEventListener(MY_TRIP_CHANGED_EVENT, refresh);
     window.addEventListener("storage", refresh);
-    return () => window.removeEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener(MY_TRIP_CHANGED_EVENT, refresh);
+      window.removeEventListener("storage", refresh);
+    };
   }, [d.slug]);
 
   const L = {
     back: { sl: "Vse destinacije", en: "All destinations", it: "Tutte le destinazioni", de: "Alle Reiseziele", fr: "Toutes les destinations", es: "Todos los destinos" },
+    metaCountry: { sl: "Država", en: "Country", it: "Paese", de: "Land", fr: "Pays", es: "País" },
     metaRegion: { sl: "Regija", en: "Region", it: "Regione", de: "Region", fr: "Région", es: "Región" },
     metaType: { sl: "Tip", en: "Type", it: "Tipo", de: "Typ", fr: "Type", es: "Tipo" },
     metaRating: { sl: "Ocena", en: "Rating", it: "Valutazione", de: "Bewertung", fr: "Note", es: "Valoración" },
@@ -123,8 +136,15 @@ export function DestinationDetail({ d }: { d: Destination }) {
     provSourceLink: { sl: "Odpri vir", en: "Open source", it: "Apri la fonte", de: "Quelle öffnen", fr: "Ouvrir la source", es: "Abrir la fuente" },
     addTrip: { sl: "Dodaj v mojo pot", en: "Add to my trip", it: "Aggiungi al mio viaggio", de: "Zu meiner Reise hinzufügen", fr: "Ajouter à mon voyage", es: "Añadir a mi viaje" },
     added: { sl: "V mojo pot ✓", en: "In my trip ✓", it: "Nel mio viaggio ✓", de: "In meiner Reise ✓", fr: "Dans mon voyage ✓", es: "En mi viaje ✓" },
+    toastAdded: { sl: "Dodano v mojo pot", en: "Added to my trip", it: "Aggiunto al mio viaggio", de: "Zu meiner Reise hinzugefügt", fr: "Ajouté à mon voyage", es: "Añadido a mi viaje" },
     planWith: { sl: "Načrtuj s to destinacijo", en: "Plan with this destination", it: "Pianifica con questa destinazione", de: "Mit diesem Reiseziel planen", fr: "Planifier avec cette destination", es: "Planificar con este destino" },
     goWith: { sl: "Pojdi — partnerji", en: "Go — partners", it: "Vai — partner", de: "Los — Partner", fr: "Partir — partenaires", es: "Ir — socios" },
+    showOnMap: { sl: "Pokaži na zemljevidu", en: "Show on map", it: "Mostra sulla mappa", de: "Auf der Karte zeigen", fr: "Afficher sur la carte", es: "Mostrar en el mapa" },
+    shareDestination: { sl: "Deli destinacijo", en: "Share destination", it: "Condividi destinazione", de: "Reiseziel teilen", fr: "Partager la destination", es: "Compartir destino" },
+    shareTitle: { sl: "Destinacija Discover Slovenia", en: "Discover Slovenia destination", it: "Destinazione Discover Slovenia", de: "Discover-Slovenia-Reiseziel", fr: "Destination Discover Slovenia", es: "Destino de Discover Slovenia" },
+    shareText: { sl: "Oglej si destinacijo:", en: "Take a look at this destination:", it: "Scopri questa destinazione:", de: "Entdecke dieses Reiseziel:", fr: "Découvre cette destination :", es: "Descubre este destino:" },
+    shareCopied: { sl: "Povezava do destinacije je kopirana.", en: "Destination link copied.", it: "Link della destinazione copiato.", de: "Link zum Reiseziel kopiert.", fr: "Lien de la destination copié.", es: "Enlace del destino copiado." },
+    shareError: { sl: "Destinacije ni bilo mogoče deliti ali kopirati.", en: "Could not share or copy this destination.", it: "Impossibile condividere o copiare questa destinazione.", de: "Dieses Reiseziel konnte nicht geteilt oder kopiert werden.", fr: "Impossible de partager ou copier cette destination.", es: "No se pudo compartir ni copiar este destino." },
     myTrip: { sl: "Moja pot", en: "My trip", it: "Il mio viaggio", de: "Meine Reise", fr: "Mon voyage", es: "Mi viaje" },
     enNote: {
       sl: "",
@@ -202,11 +222,12 @@ export function DestinationDetail({ d }: { d: Destination }) {
   } as const;
 
   const meta = [
-    { label: pick(l, L.metaRegion), value: regionLabel(d.region, l) },
-    { label: pick(l, L.metaType), value: typeLabel(d.type, l) },
-    { label: pick(l, L.metaDuration), value: d.duration },
-    { label: pick(l, L.metaBudget), value: d.budget },
-    { label: pick(l, L.metaCost), value: pick(l, L.metaCostV)(d.costPerPerson) },
+    { key: "country", Icon: Flag, label: pick(l, L.metaCountry), value: countryName(l, d.country) },
+    { key: "region", Icon: MapPin, label: pick(l, L.metaRegion), value: regionLabel(d.region, l) },
+    { key: "type", Icon: Compass, label: pick(l, L.metaType), value: typeLabel(d.type, l) },
+    { key: "duration", Icon: Clock, label: pick(l, L.metaDuration), value: d.duration },
+    { key: "budget", Icon: Wallet, label: pick(l, L.metaBudget), value: d.budget },
+    { key: "cost", Icon: Coins, label: pick(l, L.metaCost), value: pick(l, L.metaCostV)(d.costPerPerson) },
   ];
 
   const chipGroups = [
@@ -235,9 +256,23 @@ export function DestinationDetail({ d }: { d: Destination }) {
     { id: "omio", icon: TrainFront, label: pick(l, L.bookTransfers) },
   ] as const;
 
+  const shareDestination = () => {
+    const url = new URL(window.location.pathname, window.location.origin);
+    void shareOrCopyLink({
+      url: url.toString(),
+      title: `${pick(l, L.shareTitle)}: ${d.name}`,
+      text: `${pick(l, L.shareText)} ${d.name}`,
+      copiedMessage: pick(l, L.shareCopied),
+      errorMessage: pick(l, L.shareError),
+    });
+  };
+
   const onAdd = () => {
     const res = myTrip.add(d.slug, d.name, "destination", "destinacija");
-    if (res.ok || res.already) {
+    if (res.ok) {
+      setInTrip(true);
+      notifyMyTripAdded(l);
+    } else if (res.already) {
       setInTrip(true);
     }
   };
@@ -298,6 +333,7 @@ export function DestinationDetail({ d }: { d: Destination }) {
         <div className="flex flex-wrap items-center gap-3">
           <Button
             onClick={onAdd}
+            disabled={inTrip}
             size="lg"
             variant={inTrip ? "outline" : "default"}
             className="tap-target font-semibold"
@@ -317,13 +353,23 @@ export function DestinationDetail({ d }: { d: Destination }) {
           <Button asChild size="lg" variant="outline" className="tap-target font-semibold">
             <Link href={`/nacrtuj?dest=${d.slug}`}>{pick(l, L.planWith)}</Link>
           </Button>
+          <Button asChild size="lg" variant="outline" className="tap-target font-semibold">
+            <Link href={`/zemljevid?q=${encodeURIComponent(d.name)}&country=${d.country}&region=${encodeURIComponent(d.region)}`}>
+              <MapPin className="size-4" aria-hidden="true" />
+              {pick(l, L.showOnMap)}
+            </Link>
+          </Button>
+          <Button type="button" size="lg" variant="ghost" className="tap-target font-semibold" onClick={shareDestination}>
+            <Share2 className="size-4" aria-hidden="true" />
+            {pick(l, L.shareDestination)}
+          </Button>
           <Button asChild size="lg" variant="ghost" className="tap-target font-semibold">
             <Link href={`/go?dest=${d.slug}`}>{pick(l, L.goWith)}</Link>
           </Button>
         </div>
 
         {/* Praktični podatki */}
-        <Card className="mt-8 overflow-hidden rounded-2xl border-border/70 shadow-sm">
+        <Card className="mt-8 overflow-hidden rounded-2xl border-border/70 bg-gradient-to-br from-card via-card to-muted/20 shadow-sm">
           <CardContent className="grid gap-x-8 gap-y-5 p-5 sm:grid-cols-2 sm:p-6 lg:grid-cols-3">
             <div className="flex items-center gap-2.5">
               <Star className="size-5 shrink-0 fill-primary text-primary" aria-hidden="true" />
@@ -339,11 +385,11 @@ export function DestinationDetail({ d }: { d: Destination }) {
               </div>
             </div>
             {meta.map((m) => (
-              <div key={m.label} className="flex items-center gap-2.5">
-                <Wallet className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
-                <div>
+              <div key={m.key} className="flex min-w-0 items-center gap-2.5">
+                <m.Icon className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <div className="min-w-0">
                   <p className="text-xs font-medium text-muted-foreground">{m.label}</p>
-                  <p className="text-sm font-bold">{m.value}</p>
+                  <p className="break-words text-sm font-bold">{m.value}</p>
                 </div>
               </div>
             ))}
@@ -363,7 +409,7 @@ export function DestinationDetail({ d }: { d: Destination }) {
             Iskrenost: dest je ta destinacija; letalska vrstica pokaže
             letališče po regiji; gorivo (samo SI) je odprt podatek brez
             partnerja in brez provizije. */}
-        <Card className="mt-8">
+        <Card className="mt-8 rounded-2xl border-border/70 shadow-sm">
           <CardHeader>
             <CardTitle className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
               {pick(l, L.bookTitle)}
@@ -466,7 +512,7 @@ export function DestinationDetail({ d }: { d: Destination }) {
         {/* Žetoni: poudarki / aktivnosti / najboljše za / sezona */}
         <div className="mt-8 grid gap-6 sm:grid-cols-2">
           {chipGroups.map((g) => (
-            <Card key={g.heading}>
+            <Card key={g.heading} className="rounded-2xl border-border/70 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                   {g.heading}
@@ -490,7 +536,7 @@ export function DestinationDetail({ d }: { d: Destination }) {
         <Separator className="my-8" />
 
         {/* Izvor zapisa (iskrenostni kanon) */}
-        <Card className="border-primary/25 bg-primary/5">
+        <Card className="rounded-2xl border-primary/25 bg-gradient-to-br from-primary/[0.08] via-primary/[0.04] to-card shadow-sm">
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-primary">
               {pick(l, L.provenance)}

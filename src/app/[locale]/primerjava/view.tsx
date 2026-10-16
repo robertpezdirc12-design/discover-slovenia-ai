@@ -692,7 +692,7 @@ export default function PrimerjavaPage() {
         </p>
         <div className="mt-5 space-y-3">
           {pick(l, L.teren).map((item) => (
-            <Card key={item.h}>
+            <Card key={item.h} className="rounded-2xl border-border/70 shadow-sm">
               <CardContent className="flex items-start gap-3 p-5">
                 <SearchCheck className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
                 <div>
@@ -703,7 +703,7 @@ export default function PrimerjavaPage() {
             </Card>
           ))}
         </div>
-        <p className="mt-4 rounded-lg border border-primary/25 bg-primary/5 p-4 text-sm leading-relaxed text-muted-foreground">
+        <p className="mt-4 rounded-xl border border-primary/25 bg-gradient-to-br from-primary/[0.07] to-card p-4 text-sm leading-relaxed text-muted-foreground">
           {t("terenFoot")}
         </p>
       </section>
@@ -718,7 +718,7 @@ export default function PrimerjavaPage() {
         </p>
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           {pick(l, L.good).map((item) => (
-            <Card key={item.h}>
+            <Card key={item.h} className="rounded-2xl border-border/70 shadow-sm">
               <CardContent className="p-5">
                 <h3 className="flex items-center gap-2 text-sm font-bold">
                   <BadgeCheck className="size-4 shrink-0 text-primary" aria-hidden="true" />
@@ -741,7 +741,7 @@ export default function PrimerjavaPage() {
         </p>
         <div className="mt-5 space-y-3">
           {pick(l, L.bad).map((item) => (
-            <Card key={item.h}>
+            <Card key={item.h} className="rounded-2xl border-border/70 shadow-sm">
               <CardContent className="flex items-start gap-3 p-5">
                 <CircleAlert className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
                 <div>
@@ -799,7 +799,7 @@ export default function PrimerjavaPage() {
         <ol className="mt-5 space-y-3">
           {pick(l, L.practice).map((item) => (
             <li key={item.n}>
-              <Card>
+              <Card className="rounded-2xl border-border/70 shadow-sm">
                 <CardContent className="flex items-start gap-4 p-5">
                   <span
                     aria-hidden="true"
@@ -859,7 +859,7 @@ export default function PrimerjavaPage() {
         </h2>
         <div className="mt-5 space-y-3">
           {pick(l, L.faq).map((item) => (
-            <Card key={item.h}>
+            <Card key={item.h} className="rounded-2xl border-border/70 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-sm font-bold text-balance sm:text-base">
                   {item.h}

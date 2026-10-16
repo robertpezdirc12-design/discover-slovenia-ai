@@ -249,7 +249,7 @@ export default function NotifikacijePage() {
         {status === "loading" ? (
           <CenterSkeleton />
         ) : status === "unauthenticated" ? (
-          <Card>
+          <Card className="rounded-2xl border-border/70 shadow-sm">
             <CardContent className="flex flex-col items-start gap-4 p-6">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Lock className="h-5 w-5" aria-hidden="true" />
@@ -471,7 +471,7 @@ function NotificationCenter() {
 
   if (loadError) {
     return (
-      <Card>
+      <Card className="rounded-2xl border-border/70 shadow-sm">
         <CardContent className="flex flex-col items-start gap-4 p-6">
           <p className="font-medium text-destructive" role="alert">
             {t("loadError")}
@@ -492,7 +492,7 @@ function NotificationCenter() {
   return (
     <div className="space-y-6">
       {/* ── INBOX ── */}
-      <Card>
+      <Card className="rounded-2xl border-border/70 shadow-sm">
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -631,7 +631,7 @@ function NotificationCenter() {
       </Card>
 
       {/* ── SPREMLJANJA ── */}
-      <Card>
+      <Card className="rounded-2xl border-border/70 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BellOff className="size-5 text-primary" aria-hidden="true" />
@@ -651,7 +651,7 @@ function NotificationCenter() {
               {watches.map((w) => (
                 <li
                   key={w.id}
-                  className="rounded-lg border border-border bg-background p-3.5"
+                  className="rounded-xl border border-border/70 bg-background p-3.5 transition-colors hover:bg-muted/20"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -744,7 +744,7 @@ function NotificationCenter() {
       </Card>
 
       {/* ── ISKRENOST ── */}
-      <Card>
+      <Card className="rounded-2xl border-border/70 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Info className="size-5 text-primary" aria-hidden="true" />

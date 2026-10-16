@@ -51,9 +51,10 @@ function MapSkeleton() {
       className="mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6 lg:px-8 max-lg:flex max-lg:flex-col"
     >
       {/* order-1: iskanje + regija (+ prostor ponovitve/md+ števec). */}
-      <div className="mt-4 grid grid-cols-[1fr_auto] gap-3 md:grid-cols-[1fr_auto_auto] lg:mt-8 max-lg:order-1">
-        <Skeleton className="h-11 w-full rounded-md" />
-        <Skeleton className="h-11 w-36 rounded-md md:w-56" />
+      <div className="mt-4 grid grid-cols-[1fr_auto] gap-3 md:grid-cols-[1fr_auto_auto] lg:grid-cols-[minmax(200px,1fr)_auto_auto_auto] lg:mt-8 max-lg:order-1">
+        <Skeleton className="h-12 w-full rounded-md" />
+        <Skeleton className="h-12 w-36 rounded-md md:w-56" />
+        <Skeleton className="col-span-2 h-12 w-full rounded-md md:col-span-1 md:w-48" />
         <Skeleton className="hidden h-11 w-28 rounded-md md:block" />
       </div>
       {/* order-2: čipi tipov (drsenje — višina 36 + pb-1 je neodvisna od št. čipov). */}
@@ -181,7 +182,7 @@ export default function MapPage() {
         {stats.map((s) => (
           <div
             key={s.label}
-            className="rounded-xl border bg-card px-4 py-3 text-center sm:text-left"
+            className="rounded-2xl border-border/70 bg-gradient-to-br from-card to-muted/20 px-4 py-3 text-center shadow-sm sm:text-left"
           >
             <dt className="sr-only">{s.label}</dt>
             <dd>

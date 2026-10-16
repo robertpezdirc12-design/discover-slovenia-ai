@@ -170,7 +170,7 @@ export default function GoPartnerPage() {
       </PageHeader>
 
       {/* Pokritost */}
-      <Card className="mt-8">
+      <Card className="mt-8 rounded-2xl border-border/70 shadow-sm">
         <CardContent className="p-5">
           <p className="text-xs font-bold tracking-[0.14em] text-muted-foreground uppercase">
             {t("coverage")}
@@ -183,7 +183,7 @@ export default function GoPartnerPage() {
       {route.stats && route.stats.length > 0 && (
         <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
           {route.stats.map((s) => (
-            <div key={s.value + s.label.sl} className="rounded-xl border bg-card px-4 py-3 text-center">
+            <div key={s.value + s.label.sl} className="rounded-2xl border border-border/70 bg-gradient-to-br from-card to-muted/20 px-4 py-3 text-center shadow-sm">
               <dt className="text-xs text-muted-foreground">{pick(l, s.label)}</dt>
               <dd className="mt-0.5 text-2xl font-bold text-primary">{s.value}</dd>
             </div>
@@ -199,7 +199,7 @@ export default function GoPartnerPage() {
           </h2>
           <ul className="mt-3 grid list-none gap-2 sm:grid-cols-2">
             {sec.items.map((item, i) => (
-              <li key={i} className="flex items-start gap-2.5 rounded-lg border bg-card p-3.5">
+              <li key={i} className="flex items-start gap-2.5 rounded-xl border border-border/70 bg-card p-3.5 shadow-sm">
                 <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
                 <span className="text-sm leading-relaxed text-muted-foreground">
                   {pick(l, item)}
@@ -218,7 +218,7 @@ export default function GoPartnerPage() {
         <ul className="mt-3 list-none space-y-3">
           {route.providers.map((p) => (
             <li key={p.slug}>
-              <Card>
+              <Card className="rounded-2xl border-border/70 shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="font-bold">{p.label}</h3>
@@ -275,7 +275,7 @@ export default function GoPartnerPage() {
           BREZ registrskih ponudnikov (transfers — kiwitaxi partner-feed)
           obdržijo POŠTEN onemogočen namestnik (NIČ izmišljenih URL-jev). */}
       {liveProviders.length > 0 ? (
-        <Card className="mt-8 border-primary/30 bg-primary/5">
+        <Card className="mt-8 rounded-2xl border-primary/30 bg-gradient-to-br from-primary/[0.07] to-card shadow-sm">
           <CardContent className="space-y-3 p-5">
             <div>
               <p className="font-bold">{t("guidedTitle")}</p>
@@ -306,7 +306,7 @@ export default function GoPartnerPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card className="mt-8 border-dashed">
+        <Card className="mt-8 rounded-2xl border-dashed border-border/70 bg-muted/20 shadow-sm">
           <CardContent className="flex flex-col items-start gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="font-bold">{t("linkTitle")}</p>

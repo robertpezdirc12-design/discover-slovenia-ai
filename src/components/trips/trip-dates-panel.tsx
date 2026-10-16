@@ -365,7 +365,7 @@ export function TripDatesPanel({
         )}
 
         {!tripDates ? (
-          <p className="mt-4 rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
+          <p className="mt-4 rounded-xl border border-dashed border-border/70 bg-muted/30 p-3 text-xs text-muted-foreground">
             {pick(l, L.noneYet)}
           </p>
         ) : (
@@ -377,7 +377,7 @@ export function TripDatesPanel({
                   return (
                     <div
                       key={d.dayIndex}
-                      className="flex min-w-32 flex-col gap-1 rounded-lg border bg-card px-3 py-2"
+                      className="flex min-w-32 flex-col gap-1 rounded-xl border border-border/70 bg-gradient-to-br from-card to-muted/20 px-3 py-2 shadow-sm"
                     >
                       <span className="text-xs font-bold">
                         {pick(l, L.day)(d.dayIndex)} ·{" "}

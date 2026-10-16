@@ -121,8 +121,24 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-padding-top: 5rem;
+  }
   body {
     @apply bg-background text-foreground;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  ::selection {
+    color: var(--foreground);
+    background: color-mix(in oklab, var(--primary) 18%, transparent);
+  }
+  :where(a, button, input, select, textarea, [role="button"], [tabindex]):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
   }
 }
 
@@ -182,5 +198,20 @@
   /* Zeleni lovilni fokus za tipkovnico */
   .focus-green {
     @apply outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+}
+
+/* Dostopnost: spoštuj sistemsko nastavitev zmanjšanega gibanja.
+   Ne spreminjamo vsebine ali interakcij — omejimo samo animacijo/prehod
+   ter preprečimo gladko drsenje, ki lahko povzroča nelagodje. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
   }
 }

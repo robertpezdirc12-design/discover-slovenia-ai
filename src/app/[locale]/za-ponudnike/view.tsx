@@ -227,7 +227,7 @@ export default function ForProvidersPage() {
       <h2 className="mt-12 text-xl font-bold tracking-tight">{t("howTitle")}</h2>
       <ol className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {S.map((step, i) => (
-          <li key={i} className="rounded-xl border bg-card p-4">
+          <li key={i} className="group rounded-2xl border border-border/70 bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
             <span className="flex size-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
               {i + 1}
             </span>
@@ -243,7 +243,7 @@ export default function ForProvidersPage() {
         {packages.map((p) => (
           <Card
             key={pick(l, p.name)}
-            className={p.featured ? "border-primary shadow-md ring-1 ring-primary/30" : undefined}
+            className={p.featured ? "rounded-2xl border-primary shadow-md ring-1 ring-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg" : "rounded-2xl border-border/70 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg"}
           >
             <CardHeader>
               <div className="flex items-center justify-between gap-2">
@@ -278,7 +278,7 @@ export default function ForProvidersPage() {
       <h2 className="mt-12 text-xl font-bold tracking-tight">{t("benefitsTitle")}</h2>
       <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
         {B.map((b) => (
-          <li key={b} className="flex items-start gap-2 rounded-lg border bg-card p-3.5 text-sm">
+          <li key={b} className="flex items-start gap-2 rounded-xl border border-border/70 bg-card p-3.5 text-sm shadow-sm">
             <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
             <span className="text-muted-foreground">{b}</span>
           </li>
@@ -297,7 +297,7 @@ export default function ForProvidersPage() {
 
       {/* Beta + obljuba */}
       <div className="mt-12 grid gap-4 md:grid-cols-2">
-        <Card className="border-primary/25 bg-primary/5">
+        <Card className="rounded-2xl border-primary/25 bg-gradient-to-br from-primary/[0.07] to-card shadow-sm">
           <CardHeader>
             <CardTitle className="text-base">{t("betaTitle")}</CardTitle>
           </CardHeader>
@@ -305,7 +305,7 @@ export default function ForProvidersPage() {
             <p className="text-sm leading-relaxed text-muted-foreground">{t("betaLead")}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="rounded-2xl border-border/70 shadow-sm">
           <CardHeader>
             <CardTitle className="text-base">{t("ruleTitle")}</CardTitle>
           </CardHeader>
@@ -420,13 +420,13 @@ function PartnerApplyForm() {
   }
 
   return (
-    <Card className="mt-12 border-primary/25">
+    <Card className="mt-12 rounded-2xl border-primary/30 shadow-sm">
       <CardHeader>
         <CardTitle className="text-xl">{t("title")}</CardTitle>
         <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">{t("lead")}</p>
       </CardHeader>
       <CardContent className="space-y-5">
-        <div className="rounded-lg border bg-muted/40 p-4">
+        <div className="rounded-xl border border-border/70 bg-muted/40 p-4">
           <p className="flex items-center gap-1.5 text-sm font-semibold">
             <ShieldCheck className="size-4 text-primary" aria-hidden="true" />
             {t("howTitle")}
@@ -436,7 +436,7 @@ function PartnerApplyForm() {
 
         {/* Uspeh: prijava poslana */}
         {applied ? (
-          <div className="rounded-lg border border-emerald-600/50 bg-emerald-600/10 p-4">
+          <div className="rounded-xl border border-emerald-600/50 bg-emerald-600/10 p-4">
             <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
               {t("doneTitle")}
             </p>
@@ -444,7 +444,7 @@ function PartnerApplyForm() {
           </div>
         ) : sessionStatus === "unauthenticated" ? (
           /* Brez seje: iskren poziv k prijavi */
-          <div className="rounded-lg border border-amber-600/50 bg-amber-600/10 p-4">
+          <div className="rounded-xl border border-amber-600/50 bg-amber-600/10 p-4">
             <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">
               {t("unauthTitle")}
             </p>

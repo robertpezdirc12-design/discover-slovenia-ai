@@ -99,7 +99,7 @@ export function ExperiencesView() {
       </PageHeader>
 
       {l !== "sl" && pick(l, L.enNote) && (
-        <p className="mt-6 rounded-md border border-dashed border-primary/30 bg-primary/5 px-4 py-2.5 text-xs text-muted-foreground">
+        <p className="mt-6 rounded-xl border border-dashed border-primary/25 bg-gradient-to-br from-primary/[0.06] to-card px-4 py-3 text-xs text-muted-foreground">
           {pick(l, L.enNote)}
         </p>
       )}
@@ -131,7 +131,7 @@ export function ExperiencesView() {
                           loading="lazy"
                           sizes="120px"
                           aria-hidden={i > 0}
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          className="object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                         />
                       </div>
                     ))}
@@ -185,7 +185,7 @@ export function ExperiencesView() {
       {/* Tržnica — preusmeritev (produkcija: Nalagam izkušnje … iz tržnice) */}
       <section
         aria-labelledby="exp-market"
-        className="mt-14 rounded-2xl border bg-gradient-to-br from-primary/10 via-card to-primary/5 p-6 sm:p-10"
+        className="mt-14 rounded-2xl border border-border/70 bg-gradient-to-br from-primary/[0.08] via-card to-primary/[0.03] p-6 shadow-sm sm:p-10"
       >
         <h2 id="exp-market" className="flex items-center gap-2 text-xl font-bold tracking-tight">
           <Store className="size-5 text-primary" aria-hidden="true" />
@@ -200,7 +200,7 @@ export function ExperiencesView() {
         <div className="mt-6">
           <Link
             href="/trznica"
-            className="inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-green"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md focus-green"
           >
             {pick(l, L.marketCta)}
             <ArrowRight className="size-4" aria-hidden="true" />

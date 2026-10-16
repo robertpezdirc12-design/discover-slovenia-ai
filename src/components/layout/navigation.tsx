@@ -118,7 +118,7 @@ export function Navigation() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 w-full transition-all duration-300",
+        "sticky top-0 z-40 w-full transition-[background-color,border-color,box-shadow] duration-300 motion-reduce:transition-none",
         glass
           ? "border-b border-border/60 bg-background/90 shadow-[0_8px_32px_-18px_rgba(0,0,0,0.24)] backdrop-blur-2xl supports-[backdrop-filter]:bg-background/78"
           : "border-b border-transparent bg-transparent"
@@ -152,7 +152,7 @@ export function Navigation() {
               : "text-foreground hover:text-primary"
           )}
         >
-          <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary shadow-md transition-transform group-hover:scale-105 sm:size-9">
+          <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary shadow-md transition-transform group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100 sm:size-9">
             {/* logo.svg — znak gore iz produkcije (30×30) */}
             <img
               src="/logo.svg"
@@ -193,7 +193,7 @@ export function Navigation() {
                 href={link.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  "min-h-11 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors duration-200 motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                   active && !overHero && "text-primary",
                   overHero
                     ? active
@@ -211,7 +211,7 @@ export function Navigation() {
           <DropdownMenu>
             <DropdownMenuTrigger
               className={cn(
-                "inline-flex items-center gap-1 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "inline-flex min-h-11 items-center gap-1 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors duration-200 motion-reduce:transition-none outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 overHero
                   ? "text-white/85 hover:bg-white/10 hover:text-white"
                   : "text-foreground/80 hover:bg-accent hover:text-accent-foreground"
@@ -287,17 +287,28 @@ export function Navigation() {
               </div>
               <nav className="flex-1 p-4" aria-label={t("mobileNav")}>
                 <ul className="space-y-1">
-                  {primaryLinks.map((link) => (
-                    <li key={link.href}>
-                      <Link
-                        href={link.href}
-                        onClick={() => setMobileOpen(false)}
-                        className="block rounded-md px-3 py-2.5 text-sm font-medium text-foreground/90 hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                      >
-                        {link.label}
-                      </Link>
-                    </li>
-                  ))}
+                  {primaryLinks.map((link) => {
+                    const active =
+                      pathname === link.href ||
+                      (link.href === "/destinacije" && pathname.startsWith("/destinacija"));
+                    return (
+                      <li key={link.href}>
+                        <Link
+                          href={link.href}
+                          aria-current={active ? "page" : undefined}
+                          onClick={() => setMobileOpen(false)}
+                          className={cn(
+                            "block min-h-11 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+                            active
+                              ? "bg-primary/10 text-primary"
+                              : "text-foreground/90 hover:bg-accent hover:text-accent-foreground"
+                          )}
+                        >
+                          {link.label}
+                        </Link>
+                      </li>
+                    );
+                  })}
                 </ul>
                 {moreGroups.map((group) => (
                   <div key={group.id} className="mt-5">
@@ -309,8 +320,14 @@ export function Navigation() {
                         <li key={link.href}>
                           <Link
                             href={link.href}
+                            aria-current={pathname === link.href ? "page" : undefined}
                             onClick={() => setMobileOpen(false)}
-                            className="block rounded-md px-3 py-2.5 text-sm text-foreground/80 hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                            className={cn(
+                              "block min-h-11 rounded-xl px-3 py-2.5 text-sm transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+                              pathname === link.href
+                                ? "bg-primary/10 font-medium text-primary"
+                                : "text-foreground/80 hover:bg-accent hover:text-accent-foreground"
+                            )}
                           >
                             {link.label}
                           </Link>
@@ -329,7 +346,7 @@ export function Navigation() {
       <div
         aria-hidden="true"
         className={cn(
-          "absolute inset-x-0 bottom-0 h-0.5 origin-left bg-primary transition-opacity",
+          "absolute inset-x-0 bottom-0 h-0.5 origin-left bg-primary transition-opacity motion-reduce:transition-none",
           progress > 0.005 ? "opacity-100" : "opacity-0"
         )}
         style={{ transform: `scaleX(${progress})` }}

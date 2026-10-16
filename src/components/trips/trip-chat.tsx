@@ -304,7 +304,7 @@ export function TripChat({ shareId, createdAt, canPost, myName }: TripChatProps)
 
   return (
     <section aria-label="Skupinski klepet" className="print-hide print:hidden">
-      <Card className="border-border/60">
+      <Card className="rounded-2xl border-border/70 shadow-sm">
         <CardContent className="p-4 sm:p-6">
           {/* === Naslov odseka + živost + števec === */}
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -337,7 +337,7 @@ export function TripChat({ shareId, createdAt, canPost, myName }: TripChatProps)
           {/* === @AI pas — vzorec W9 (povedano je točno to, kar se zgodi) === */}
           <div className="flex items-start gap-2.5 border-b border-border py-3">
             <span
-              className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
+              className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/10"
               aria-hidden="true"
             >
               <Bot className="size-4" />
@@ -359,7 +359,7 @@ export function TripChat({ shareId, createdAt, canPost, myName }: TripChatProps)
           {/* === Klepet — kronološki seznam z drsom === */}
           <div
             ref={scrollRef}
-            className="mt-4 max-h-96 space-y-4 overflow-y-auto pr-2"
+            className="mt-4 max-h-96 space-y-4 overflow-y-auto rounded-xl border border-border/60 bg-muted/15 p-3 pr-2"
             aria-label="Zgodovina klepeta"
           >
             {loadError ? (
@@ -476,7 +476,7 @@ export function TripChat({ shareId, createdAt, canPost, myName }: TripChatProps)
               {rateLimited ? (
                 <p
                   role="alert"
-                  className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400"
+                  className="flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400"
                 >
                   <AlertTriangle
                     className="mt-0.5 size-4 shrink-0"

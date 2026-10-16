@@ -211,7 +211,7 @@ export default function SloveniaPassPage() {
         <ol className="mt-5 grid gap-3 sm:grid-cols-3">
           {pick(l, L.how).map((step, i) => (
             <li key={step.h}>
-              <Card className="h-full">
+              <Card className="h-full rounded-2xl border-border/70 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
                 <CardContent className="p-5">
                   <span
                     aria-hidden="true"

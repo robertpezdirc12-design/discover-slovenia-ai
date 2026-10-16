@@ -153,7 +153,7 @@ export function Footer() {
                           min-h-6 ohrani tap-target. */}
                       <Link
                         href={link.href}
-                        className="inline-block max-w-full min-h-6 text-sm break-words text-muted-foreground transition-colors hover:text-primary"
+                        className="inline-block max-w-full min-h-6 rounded-sm text-sm break-words text-muted-foreground transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transition-none"
                       >
                         {link.label}
                       </Link>

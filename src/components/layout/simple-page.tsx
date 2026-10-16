@@ -38,7 +38,7 @@ export function SimplePage({
         <div className="mt-6">
           <Link
             href={cta.href}
-            className="inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm transition-[background-color,box-shadow,transform] duration-200 hover:bg-primary/90 hover:shadow-md active:scale-[0.99] motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
           >
             {cta.label}
             <ArrowRight className="size-4" aria-hidden="true" />
@@ -48,7 +48,7 @@ export function SimplePage({
 
       <div className="mt-10 grid gap-6 sm:grid-cols-2">
         {sections.map((s) => (
-          <Card key={s.heading} className="gap-3">
+          <Card key={s.heading} className="gap-3 rounded-2xl border-border/70 shadow-sm">
             <CardHeader>
               <CardTitle className="text-base">{s.heading}</CardTitle>
             </CardHeader>

@@ -143,7 +143,7 @@ export default function ContactPage() {
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
         {infoCards.map((c) => (
-          <Card key={c.label}>
+          <Card key={c.label} className="h-full rounded-2xl border-border/70 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
             <CardContent className="flex items-start gap-3 p-4">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <c.icon className="size-4.5" aria-hidden="true" />
@@ -159,14 +159,14 @@ export default function ContactPage() {
         ))}
       </div>
 
-      <Card className="mt-8">
+      <Card className="mt-8 rounded-2xl border-border/70 shadow-sm">
         <CardHeader>
           <CardTitle className="text-lg">{t("formTitle")}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="mb-5 text-sm text-muted-foreground">{t("formLead")}</p>
           {sent ? (
-            <div className="rounded-lg border border-primary/30 bg-primary/5 p-5 text-center">
+            <div className="rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/[0.07] to-card p-5 text-center shadow-sm">
               <Send className="mx-auto size-6 text-primary" aria-hidden="true" />
               <p className="mt-2 text-base font-semibold">{t("sentTitle")}</p>
               <p className="mt-1 text-sm text-muted-foreground">{t("sentBody")}</p>
@@ -224,7 +224,7 @@ export default function ContactPage() {
         </CardContent>
       </Card>
 
-      <Card className="mt-6 border-primary/25 bg-primary/5">
+      <Card className="mt-6 rounded-2xl border-primary/25 bg-gradient-to-br from-primary/[0.07] to-card shadow-sm">
         <CardContent className="flex items-start gap-3 p-5">
           <Building2 className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
           <div>

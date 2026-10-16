@@ -200,7 +200,7 @@ export default function OwnerPayoutsPage() {
             <Loader2 className="size-4 animate-spin" aria-hidden="true" /> {pick(l, L.loading)}
           </p>
         ) : forbidden ? (
-          <Card>
+          <Card className="rounded-2xl border-border/70 shadow-sm">
             <CardContent className="flex flex-col items-start gap-3 p-6">
               <p className="flex items-center gap-2 font-semibold">
                 <Lock className="size-5 text-amber-600" aria-hidden="true" />
@@ -220,7 +220,7 @@ export default function OwnerPayoutsPage() {
         ) : data ? (
           <div className="space-y-6">
             {/* Seštevki */}
-            <Card>
+            <Card className="rounded-2xl border-border/70 shadow-sm">
               <CardContent className="p-5">
                 <h2 className="flex items-center gap-2 text-sm font-bold">
                   <Wallet className="size-4 text-primary" aria-hidden="true" />
@@ -228,7 +228,7 @@ export default function OwnerPayoutsPage() {
                 </h2>
                 <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {(Object.keys(data.totals) as PayoutStatus[]).map((s) => (
-                    <div key={s} className="rounded-lg border p-3">
+                    <div key={s} className="rounded-xl border border-border/70 bg-gradient-to-br from-card to-muted/20 p-3 shadow-sm">
                       <Badge variant="outline" className={`border ${PAYOUT_BADGE[s]}`}>
                         {payoutStatusLabel(s, lang)}
                       </Badge>
@@ -238,7 +238,7 @@ export default function OwnerPayoutsPage() {
                   ))}
                 </div>
                 {data.cancellationRequests > 0 && (
-                  <p className="mt-3 flex items-start gap-2 rounded-lg border border-amber-500/50 bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                  <p className="mt-3 flex items-start gap-2 rounded-xl border border-amber-500/50 bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
                     <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                     {pick(l, L.cancellation)} ({data.cancellationRequests}×)
                   </p>
@@ -247,7 +247,7 @@ export default function OwnerPayoutsPage() {
             </Card>
 
             {/* Naročila */}
-            <Card>
+            <Card className="rounded-2xl border-border/70 shadow-sm">
               <CardContent className="p-5">
                 <div className="flex items-center justify-between">
                   <h2 className="flex items-center gap-2 text-sm font-bold">
@@ -270,13 +270,13 @@ export default function OwnerPayoutsPage() {
                 </div>
 
                 {data.orders.length === 0 ? (
-                  <p className="mt-4 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                  <p className="mt-4 rounded-xl border border-dashed border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
                     {pick(l, L.empty)}
                   </p>
                 ) : (
                   <ul className="mt-4 max-h-96 space-y-3 overflow-y-auto scrollbar-slim">
                     {data.orders.map((o) => (
-                      <li key={o.id} className="rounded-lg border p-3">
+                      <li key={o.id} className="rounded-xl border border-border/70 bg-card p-3 transition-colors hover:bg-muted/20">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-mono text-xs text-muted-foreground">
                             {o.id.slice(0, 12)}…
@@ -352,7 +352,7 @@ export default function OwnerPayoutsPage() {
             </Card>
 
             {/* Revizijski dnevnik */}
-            <Card>
+            <Card className="rounded-2xl border-border/70 shadow-sm">
               <CardContent className="p-5">
                 <h2 className="flex items-center gap-2 text-sm font-bold">
                   <CheckCircle2 className="size-4 text-primary" aria-hidden="true" />

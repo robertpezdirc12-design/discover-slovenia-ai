@@ -207,7 +207,7 @@ describe("POLIR8 A: povezave noge (DE 14 px preliva na VSEH straneh @320)", () =
   test("⑪ Link vsebuje break-words + max-w-full + inline-block (empirično: break-words SAMO na inline-flex NE prelomi besede)", () => {
     expect(
       FOOTER.includes(
-        'className="inline-block max-w-full min-h-6 text-sm break-words text-muted-foreground transition-colors hover:text-primary"'
+        'className="inline-block max-w-full min-h-6 rounded-sm text-sm break-words text-muted-foreground transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transition-none"'
       )
     ).toBe(true);
   });

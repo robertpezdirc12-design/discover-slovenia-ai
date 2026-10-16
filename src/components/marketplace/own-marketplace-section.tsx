@@ -193,7 +193,7 @@ export function OwnMarketplaceSection() {
         >
           {[0, 1, 2].map((i) => (
             <li key={i}>
-              <Card>
+              <Card className="rounded-2xl border-border/70 shadow-sm">
                 <Skeleton className="aspect-[3/2] w-full rounded-none" />
                 <CardContent className="flex flex-col gap-2.5 p-4">
                   <Skeleton className="h-4 w-24" />
@@ -208,7 +208,7 @@ export function OwnMarketplaceSection() {
       )}
 
       {products !== null && products.length === 0 && (
-        <div className="mt-6 rounded-xl border border-dashed p-10 text-center">
+        <div className="mt-6 rounded-2xl border border-dashed border-border/70 bg-muted/20 p-8 text-center sm:p-10">
           <PackageOpen className="mx-auto size-8 text-muted-foreground" aria-hidden="true" />
           <p className="mt-3 text-sm text-muted-foreground">
             {t("emptyBody")}
@@ -228,7 +228,7 @@ export function OwnMarketplaceSection() {
             );
             return (
               <li key={p.slug}>
-                <Card className="group flex h-full flex-col overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-lg">
+                <Card className="group flex h-full flex-col overflow-hidden rounded-2xl border-border/70 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg">
                   <div className="relative aspect-[3/2] bg-muted">
                     {p.image ? (
                       <Image
@@ -236,7 +236,7 @@ export function OwnMarketplaceSection() {
                         alt={p.overlayName}
                         fill
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center">

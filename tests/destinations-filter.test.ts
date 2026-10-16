@@ -21,6 +21,7 @@ import {
   activeRegionKeys,
   filterDestinations,
   hasActiveFilters,
+  normalizeSearchText,
 } from "../src/lib/destinations-filter";
 import {
   DESTINATIONS,
@@ -77,6 +78,14 @@ describe("destinations-filter (#38): iskanje", () => {
     // oba prek poudarkov/imen, vrstni red = vrstni red registra
     const hits = filterDestinations(DESTINATIONS, { q: "vintgarska", region: "all", type: "all" });
     expect(ids(hits)).toEqual(["bled", "vintgar"]);
+  });
+
+  test("①g iskano besedilo ne razlikuje med črkami z diakritiko in brez nje", () => {
+    expect(normalizeSearchText("Plitvička JEZERA")).toBe("plitvicka jezera");
+    const plain = filterDestinations(DESTINATIONS, { q: "plitvicka", region: "all", type: "all" });
+    const accented = filterDestinations(DESTINATIONS, { q: "PLITVIČKA", region: "all", type: "all" });
+    expect(ids(plain)).toEqual(ids(accented));
+    expect(ids(plain)).toContain("plitvicka-jezera");
   });
 
   test("①e brez zadetkov: nesmiselni niz → prazen rezultat", () => {

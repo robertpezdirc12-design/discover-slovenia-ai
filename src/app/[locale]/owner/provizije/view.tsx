@@ -529,7 +529,7 @@ export default function OwnerProvizijePage() {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
       <PageHeader kicker={pick(l, L.kicker)} title={pick(l, L.title)} lead={pick(l, L.lead)}>
-        <div className="mt-5 flex flex-wrap items-center gap-3">
+        <div className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl border border-border/60 bg-muted/20 p-3 sm:p-4">
           <Button
             variant="outline"
             size="sm"
@@ -562,7 +562,7 @@ export default function OwnerProvizijePage() {
 
       {/* 403 — iskrena vrata skrbnika (DSA_ADMIN_EMAILS) */}
       {!loading && forbidden && (
-        <Card className="mt-8">
+        <Card className="mt-8 rounded-2xl border-border/70 shadow-sm">
           <CardContent className="flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center">
             <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10">
               <Lock className="size-5 text-primary" aria-hidden="true" />
@@ -585,7 +585,7 @@ export default function OwnerProvizijePage() {
 
       {/* Napaka (ne 403) — iskren poziv k ponovnemu poskusu */}
       {!loading && !forbidden && loadErr && (
-        <Card className="mt-8">
+        <Card className="mt-8 rounded-2xl border-border/70 shadow-sm">
           <CardContent className="flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center">
             <div className="flex-1">
               <p className="font-bold">{pick(l, L.loadErrTitle)}</p>
@@ -607,7 +607,7 @@ export default function OwnerProvizijePage() {
         <>
           {/* Povzetek: zneski po statusih + klikanja */}
           <dl className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <div className="rounded-xl border bg-card px-4 py-3.5">
+            <div className="rounded-2xl border border-border/70 bg-gradient-to-br from-card to-muted/20 px-4 py-3.5 shadow-sm">
               <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Clock className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
                 {pick(l, L.sumPending)}
@@ -619,7 +619,7 @@ export default function OwnerProvizijePage() {
                 {pick(l, L.entriesLabel)}: {stats.commissions.pendingCount}
               </dd>
             </div>
-            <div className="rounded-xl border bg-card px-4 py-3.5">
+            <div className="rounded-2xl border border-border/70 bg-gradient-to-br from-card to-muted/20 px-4 py-3.5 shadow-sm">
               <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <CheckCircle2 className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
                 {pick(l, L.sumConfirmed)}
@@ -631,7 +631,7 @@ export default function OwnerProvizijePage() {
                 {pick(l, L.entriesLabel)}: {stats.commissions.confirmedCount}
               </dd>
             </div>
-            <div className="rounded-xl border bg-card px-4 py-3.5">
+            <div className="rounded-2xl border border-border/70 bg-gradient-to-br from-card to-muted/20 px-4 py-3.5 shadow-sm">
               <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Banknote className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
                 {pick(l, L.sumPaid)}
@@ -643,7 +643,7 @@ export default function OwnerProvizijePage() {
                 {pick(l, L.entriesLabel)}: {stats.commissions.paidCount}
               </dd>
             </div>
-            <div className="rounded-xl border bg-card px-4 py-3.5">
+            <div className="rounded-2xl border border-border/70 bg-gradient-to-br from-card to-muted/20 px-4 py-3.5 shadow-sm">
               <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <MousePointerClick className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
                 {pick(l, L.sumClicks)}
@@ -663,7 +663,7 @@ export default function OwnerProvizijePage() {
             <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
               {pick(l, L.clicksNote)}
             </p>
-            <Card className="mt-4">
+            <Card className="mt-4 rounded-2xl border-border/70 shadow-sm">
               <CardContent className="p-0">
                 <div className="max-h-96 overflow-y-auto">
                   <Table>
@@ -716,7 +716,7 @@ export default function OwnerProvizijePage() {
             <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
               {pick(l, L.journalNote)}
             </p>
-            <Card className="mt-4">
+            <Card className="mt-4 rounded-2xl border-border/70 shadow-sm">
               <CardContent className="p-0">
                 <div className="max-h-96 overflow-y-auto">
                   <Table>
@@ -824,7 +824,7 @@ export default function OwnerProvizijePage() {
           </section>
 
           {/* Forma: nov vnos iz poročila partnerja */}
-          <Card className="mt-6">
+          <Card className="mt-6 rounded-2xl border-border/70 shadow-sm">
             <CardHeader>
               <CardTitle className="text-base">{pick(l, L.formTitle)}</CardTitle>
               <p className="text-sm leading-relaxed text-muted-foreground">

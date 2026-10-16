@@ -25,6 +25,7 @@ import QRCode from "qrcode";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { notifyMyTripAdded } from "@/components/my-trip-toast-action";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,7 +48,7 @@ import { Link } from "@/i18n/navigation";
 import { pick } from "@/lib/i18n-pick";
 import { intlDateLocale } from "@/lib/intl-locale";
 import { formatDuration } from "@/lib/itinerary-engine";
-import { myTrip } from "@/lib/my-trip";
+import { MY_TRIP_CHANGED_EVENT, myTrip } from "@/lib/my-trip";
 // POLIR6 A (2.33.0): čisti pomoži IZMERJENIH dni (EN izvor resnice — isti
 // kot na /nacrtuj; ocena dneva = ISTA hevristika kot LegRow, km pa nosijo
 // 1 decimalko po jeziku, EN pika / ostali vejica — determinizem brez Intl).
@@ -364,16 +365,19 @@ export function SharedTripView({ shareId }: { shareId: string }) {
     (plan: SharedPlan | null) => {
       if (!plan) return;
       let added = 0;
+      let newAdds = 0;
       for (const day of plan.days) {
         for (const loc of day.locations) {
           const refId = loc.destSlug ?? `pot/${shareId}/${day.day}/${loc.name}`;
           const res = myTrip.add(refId, loc.name, "destination", `pot/${shareId}`);
+          if (res.ok) newAdds += 1;
           if (res.ok || res.already) added += 1;
         }
       }
       setAddedCount(added);
+      if (newAdds > 0) notifyMyTripAdded(l);
     },
-    [shareId]
+    [l, shareId]
   );
 
   const onCopy = React.useCallback(() => {
@@ -601,7 +605,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
     copyNote === "private" ? (
       <div
         role="alert"
-        className="w-full rounded-lg border border-amber-400/60 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+        className="w-full rounded-xl border border-amber-400/60 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
       >
         <p className="font-semibold leading-relaxed">{pick(l, L.copyPrivate)}</p>
         {db?.role === "OWNER" ? (
@@ -632,7 +636,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
     ) : copyNote === "local" ? (
       <div
         role="alert"
-        className="w-full rounded-lg border border-amber-400/60 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+        className="w-full rounded-xl border border-amber-400/60 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
       >
         <p className="font-semibold leading-relaxed">{pick(l, L.copyLocal)}</p>
       </div>
@@ -819,7 +823,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
                 — obstoječi natis (dnevi + noga) ostaja nedotaknjen. */}
             {totalStops >= 2 && (
               <div className="print:hidden">
-                <Card>
+                <Card className="rounded-2xl border-border/70 shadow-sm">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base">{pick(l, L.mapTitle)}</CardTitle>
                     <p className="text-xs text-muted-foreground">{pick(l, L.mapDesc)}</p>
@@ -961,7 +965,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
       {localPlan === null ? (
         <>
           <PageHeader kicker={pick(l, L.kicker)} title={pick(l, L.notFoundTitle)} />
-          <p className="mt-4 rounded-lg border border-dashed p-4 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-4 rounded-xl border border-dashed border-border/70 bg-muted/20 p-4 text-sm leading-relaxed text-muted-foreground">
             {pick(l, L.notFoundBody)}
           </p>
           <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -1006,7 +1010,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
           </PageHeader>
 
           {/* Iskren pasice: shrani v oblak za sodelovanje v živo (48-a) */}
-          <Card className="mt-6 border-primary/30 bg-primary/5">
+          <Card className="mt-6 rounded-2xl border-primary/30 bg-gradient-to-br from-primary/[0.07] to-card shadow-sm">
             <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="flex items-center gap-2 text-sm font-semibold">
@@ -1107,7 +1111,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
               pogoj vsaj 2 točki skupaj, v natisu se izpusti (print:hidden). */}
           {localPlan.days.reduce((n, d) => n + d.locations.length, 0) >= 2 && (
             <div className="mt-10 print:hidden">
-              <Card>
+              <Card className="rounded-2xl border-border/70 shadow-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base">{pick(l, L.mapTitle)}</CardTitle>
                   <p className="text-xs text-muted-foreground">{pick(l, L.mapDesc)}</p>
@@ -1241,7 +1245,7 @@ function QrCanvas({ url, label }: { url: string; label: string }) {
       height={160}
       role="img"
       aria-label={label}
-      className="mt-3 rounded-lg border bg-white dark:bg-white"
+      className="mt-3 rounded-2xl border border-border/70 bg-white p-1 shadow-sm dark:bg-white"
     />
   );
 }
@@ -1292,7 +1296,7 @@ function PlanDays({
           const travelText = travelRows(dayIdx);
           return (
             <li key={day.day}>
-              <Card>
+              <Card className="rounded-2xl border-border/70 shadow-sm">
                 <CardContent className="p-5">
                   <h2 className="text-lg font-bold tracking-tight">
                     {dayLabel(day.day)}
@@ -1320,7 +1324,7 @@ function PlanDays({
                         return (
                           <li
                             key={`${day.day}-${i}-${loc.name}`}
-                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-background px-4 py-3"
+                            className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/70 bg-background px-4 py-3 shadow-sm"
                           >
                             <span className="flex min-w-0 items-center gap-3">
                               {loc.time ? (
@@ -1388,11 +1392,16 @@ function AddOne({
   labels: { add: string; added: string };
 }) {
   const [added, setAdded] = React.useState(false);
+  const locale = useLocale();
   React.useEffect(() => {
     const refresh = () => setAdded(myTrip.has(refId));
     refresh();
+    window.addEventListener(MY_TRIP_CHANGED_EVENT, refresh);
     window.addEventListener("storage", refresh);
-    return () => window.removeEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener(MY_TRIP_CHANGED_EVENT, refresh);
+      window.removeEventListener("storage", refresh);
+    };
   }, [refId]);
 
   return (
@@ -1402,6 +1411,7 @@ function AddOne({
       onClick={() => {
         const res = myTrip.add(refId, name, "destination");
         if (res.ok || res.already) setAdded(true);
+        if (res.ok) notifyMyTripAdded(locale);
       }}
       className={`inline-flex min-h-9 items-center gap-1 rounded-md border px-2.5 text-xs font-semibold transition-colors focus-green ${
         added ? "border-primary/30 bg-primary/10 text-primary" : "hover:bg-accent"

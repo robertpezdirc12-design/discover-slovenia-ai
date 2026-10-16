@@ -205,8 +205,8 @@ export function TripWatchMenu({
           {addedKinds.size > 0 ? pick(l, L.triggerOn) : pick(l, L.trigger)}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-80">
-        <DropdownMenuLabel className="text-muted-foreground">
+      <DropdownMenuContent align="start" className="w-80 max-w-[calc(100vw-2rem)] rounded-2xl border-border/70 p-1.5 shadow-xl">
+        <DropdownMenuLabel className="rounded-lg px-2.5 py-2 text-muted-foreground">
           {pick(l, L.label)}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -216,7 +216,7 @@ export function TripWatchMenu({
             <DropdownMenuItem
               disabled={busy !== null || addedKinds.has(item.kind)}
               onClick={() => void add(item.kind)}
-              className="flex flex-col items-start gap-0.5 py-2.5"
+              className="flex flex-col items-start gap-1 rounded-xl px-3 py-3 transition-colors focus:bg-muted/60"
               aria-label={`${item.label}: ${item.desc}`}
             >
               <span className="flex items-center gap-2 text-sm font-medium">

@@ -28,6 +28,7 @@ import {
   Trees,
   UtensilsCrossed,
   Waves,
+  X,
 } from "lucide-react";
 import { useLocale } from "next-intl";
 import * as React from "react";
@@ -123,6 +124,14 @@ const L = {
     de: "Suchen",
     fr: "Rechercher",
     es: "Buscar",
+  },
+  clearSearch: {
+    sl: "Počisti iskanje",
+    en: "Clear search",
+    it: "Cancella la ricerca",
+    de: "Suche löschen",
+    fr: "Effacer la recherche",
+    es: "Borrar búsqueda",
   },
   ctaPlan: {
     sl: "Načrtuj pot",
@@ -662,14 +671,28 @@ export function HomeView({
             <label htmlFor="hero-search" className="sr-only">
               {t("searchLabel")}
             </label>
-            <Input
-              id="hero-search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t("searchPlaceholder")}
-              className="h-11 border-none bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent"
-              autoComplete="off"
-            />
+            <div className="relative min-w-0 flex-1">
+              <Input
+                id="hero-search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t("searchPlaceholder")}
+                className="h-11 w-full border-none bg-transparent pr-10 shadow-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 dark:bg-transparent"
+                autoComplete="off"
+              />
+              {query.length > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label={t("clearSearch")}
+                  onClick={() => setQuery("")}
+                  className="absolute top-1/2 right-1 size-8 -translate-y-1/2 rounded-full text-muted-foreground hover:text-foreground"
+                >
+                  <X className="size-4" aria-hidden="true" />
+                </Button>
+              )}
+            </div>
             <Button type="submit" className="h-11 shrink-0 px-4 sm:px-6">
               {t("searchSubmit")}
             </Button>
@@ -702,7 +725,7 @@ export function HomeView({
             <aside data-testid="featured-destination-panel" className="block">
               <Link
                 href={`/destinacija/${featured[1].slug}`}
-                className="group relative block min-h-[280px] overflow-hidden rounded-[1.75rem] sm:min-h-[330px] lg:min-h-[390px] border border-white/20 bg-[#0b3029] shadow-2xl shadow-black/30 transition-transform duration-500 hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#0b3029]"
+                className="group relative block min-h-[280px] overflow-hidden rounded-[1.75rem] sm:min-h-[330px] lg:min-h-[390px] border border-white/20 bg-[#0b3029] shadow-2xl shadow-black/30 transition-transform duration-500 hover:-translate-y-1 motion-reduce:transition-none motion-reduce:hover:translate-y-0 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#0b3029]"
                 style={{
                   backgroundImage: `linear-gradient(0deg, rgba(4, 24, 21, 0.96) 0%, rgba(4, 24, 21, 0.58) 38%, rgba(4, 24, 21, 0.04) 100%), url(\"${featured[1].image}\")`,
                   backgroundPosition: "center",
@@ -721,7 +744,7 @@ export function HomeView({
                   <span className="mt-2 line-clamp-3 block max-w-sm text-sm leading-relaxed text-white/85">{featured[1].tagline}</span>
                   <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold">
                     {pick(l, { sl: "Odkrij kraj", en: "Explore place", it: "Scopri il luogo", de: "Ort entdecken", fr: "Découvrir le lieu", es: "Descubrir el lugar" })}
-                    <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                    <ArrowRight className="size-4 transition-transform group-hover:translate-x-1 motion-reduce:translate-x-0 motion-reduce:transition-none" aria-hidden="true" />
                   </span>
                 </span>
               </Link>
@@ -790,9 +813,9 @@ export function HomeView({
               <Link
                 key={type}
                 href={`/destinacije?type=${type}`}
-                className="group flex min-h-28 flex-col items-center justify-center gap-3 rounded-2xl border border-border/70 bg-card/80 p-4 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-card hover:shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                className="group flex min-h-28 flex-col items-center justify-center gap-3 rounded-2xl border border-border/70 bg-card/80 p-4 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-card hover:shadow-lg motion-reduce:transition-none motion-reduce:hover:translate-y-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
-                <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-all duration-300 group-hover:scale-105 group-hover:bg-primary group-hover:text-primary-foreground">
+                <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-all duration-300 group-hover:scale-105 group-hover:bg-primary group-hover:text-primary-foreground motion-reduce:transition-none motion-reduce:group-hover:scale-100">
                   <Icon className="size-5" aria-hidden="true" />
                 </span>
                 <span className="text-sm font-semibold">{pick(l, DEST_TYPES[type])}</span>
@@ -851,7 +874,7 @@ export function HomeView({
             <Link
               key={p.slug}
               href={`/nacrtuj?preset=${p.slug}`}
-              className="group flex min-h-44 flex-col justify-between rounded-2xl border border-border/70 bg-gradient-to-br from-card via-card to-primary/[0.04] p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="group flex min-h-44 flex-col justify-between rounded-2xl border border-border/70 bg-gradient-to-br from-card via-card to-primary/[0.04] p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg motion-reduce:transition-none motion-reduce:hover:translate-y-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               <div>
                 <h3 className="text-base font-bold leading-snug group-hover:text-primary">
@@ -861,7 +884,7 @@ export function HomeView({
               </div>
               <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-primary">
                 {t("ctaPlan")}
-                <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:translate-x-0 motion-reduce:transition-none" aria-hidden="true" />
               </span>
             </Link>
           ))}

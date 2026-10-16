@@ -49,21 +49,21 @@ export function DaySegmentHeader({
   const stopsWord = stopsWordOf(l, count);
   return (
     <div
-      className="mt-4 flex items-center gap-2 first:mt-0"
+      className="mt-5 flex items-center gap-3 first:mt-0"
       role="heading"
       aria-level={4}
     >
-      <span aria-hidden="true" className="text-base leading-none">
+      <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-muted/40 text-base leading-none shadow-sm">
         {GLYPH[segment]}
       </span>
-      <span className="text-sm font-semibold tracking-wide text-foreground">
+      <span className="text-sm font-bold tracking-tight text-foreground">
         {label}
       </span>
-      <span className="text-xs text-muted-foreground">
+      <span className="inline-flex shrink-0 items-center rounded-full border border-border/70 bg-muted/30 px-2 py-1 text-[11px] font-medium text-muted-foreground">
         · {count} {stopsWord}
       </span>
       <span
-        className="h-px flex-1 bg-border"
+        className="h-px min-w-3 flex-1 bg-gradient-to-r from-border to-transparent"
         aria-hidden="true"
       />
     </div>

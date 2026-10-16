@@ -28,13 +28,13 @@ import Image from "next/image";
 import * as React from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { notifyMyTripAdded } from "@/components/my-trip-toast-action";
 import { OwnMarketplaceSection } from "@/components/marketplace/own-marketplace-section";
 import { NextStepCard, useNextStepContext } from "@/components/next-step-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
 import { Link } from "@/i18n/navigation";
 import { pick } from "@/lib/i18n-pick";
 import { SUPPLY_STATUS_LABELS } from "@/lib/go-data";
@@ -103,7 +103,6 @@ export function TrznicaExplorer({
   nextStepDismissed?: boolean;
 }) {
   const l = useLocale();
-  const { toast } = useToast();
   const tripItems = useMyTripList();
   const { ctx: nextStepCtx, ready: nextStepReady } = useNextStepContext();
 
@@ -175,8 +174,10 @@ export function TrznicaExplorer({
   const onAdd = (p: OwnProduct) => {
     if (inTrip(p.id)) return;
     const name = pick(l, p.name);
-    myTrip.add(p.id, name, "experience", "trznica");
-    toast({ title: t("toastAdded") });
+    const res = myTrip.add(p.id, name, "experience", "trznica");
+    if (res.ok) {
+      notifyMyTripAdded(l);
+    }
   };
 
   return (
@@ -223,7 +224,7 @@ export function TrznicaExplorer({
 
         {/* ── ZAVIHEK: IZDELKI (iskreno prazen) ─────────────────────── */}
         <TabsContent value="products" className="mt-6">
-          <div className="rounded-xl border border-dashed p-10 text-center">
+          <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-8 text-center sm:p-10">
             <PackageOpen className="mx-auto size-8 text-muted-foreground" aria-hidden="true" />
             <h2 className="mt-3 font-bold">{t("productsTitle")}</h2>
             <p className="mx-auto mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
@@ -248,14 +249,14 @@ export function TrznicaExplorer({
               const name = pick(l, p.name);
               return (
                 <li key={p.id}>
-                  <Card className="group flex h-full flex-col overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-lg">
+                  <Card className="group flex h-full flex-col overflow-hidden rounded-2xl border-border/70 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg">
                     <div className="relative aspect-[3/2] bg-muted">
                       <Image
                         src={p.image}
                         alt={name}
                         fill
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                       />
                       <span className="absolute top-2.5 left-2.5">
                         <Badge className="gap-1 bg-background/90 text-foreground shadow-sm backdrop-blur">
@@ -292,6 +293,7 @@ export function TrznicaExplorer({
                           variant={added ? "secondary" : "default"}
                           className="min-h-11 w-full"
                           onClick={() => onAdd(p)}
+                          disabled={added}
                           aria-disabled={added}
                         >
                           {added ? (
@@ -344,7 +346,7 @@ export function TrznicaExplorer({
       </Tabs>
 
       {/* ── CTA za ponudnike ─────────────────────────────────────────── */}
-      <div className="mt-10 flex flex-col items-start justify-between gap-4 rounded-xl border bg-card p-6 sm:flex-row sm:items-center">
+      <div className="mt-10 flex flex-col items-start justify-between gap-4 rounded-2xl border border-border/70 bg-gradient-to-br from-card via-card to-primary/[0.04] p-6 shadow-sm sm:flex-row sm:items-center">
         <div>
           <h2 className="font-bold">{t("forProviders")}</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">{t("productsLead")}</p>
@@ -371,7 +373,7 @@ function ShelfCard({
   const status = SUPPLY_STATUS_LABELS[shelf.status];
 
   return (
-    <Card className="flex h-full flex-col">
+    <Card className="flex h-full flex-col rounded-2xl border-border/70 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
       <CardContent className="flex flex-1 flex-col gap-2.5 p-5">
         <div className="flex flex-wrap items-center gap-1.5">
           <Badge

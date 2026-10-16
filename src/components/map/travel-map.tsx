@@ -48,6 +48,7 @@ import {
   MapPin,
   RotateCw,
   Route,
+  Share2,
   Search,
   Star,
   Store,
@@ -80,6 +81,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Link } from "@/i18n/navigation";
+import { toast } from "@/hooks/use-toast";
 import { countryLabel } from "@/lib/countries-data";
 import { activeCountryKeys, filterDestinations } from "@/lib/destinations-filter";
 import { pick } from "@/lib/i18n-pick";
@@ -1056,6 +1058,11 @@ export default function TravelMap() {
       es: "Filtrar por país",
     },
     reset: { sl: "Počisti filtre", en: "Clear filters", it: "Azzera i filtri", de: "Filter zurücksetzen", fr: "Effacer les filtres", es: "Borrar filtros" },
+    shareMap: { sl: "Deli ta pogled", en: "Share this view", it: "Condividi questa vista", de: "Ansicht teilen", fr: "Partager cette vue", es: "Compartir esta vista" },
+    shareTitle: { sl: "Zemljevid destinacij Discover Slovenia", en: "Discover Slovenia destination map", it: "Mappa delle destinazioni Discover Slovenia", de: "Discover-Slovenia-Zielkarte", fr: "Carte des destinations Discover Slovenia", es: "Mapa de destinos de Discover Slovenia" },
+    shareText: { sl: "Oglej si ta izbor destinacij in filtre.", en: "Take a look at these destinations and filters.", it: "Guarda questa selezione di destinazioni e filtri.", de: "Sieh dir diese Auswahl an Reisezielen und Filtern an.", fr: "Découvre cette sélection de destinations et de filtres.", es: "Mira esta selección de destinos y filtros." },
+    shareCopied: { sl: "Povezava do tega pogleda je kopirana.", en: "Link to this view copied.", it: "Link a questa vista copiato.", de: "Link zu dieser Ansicht kopiert.", fr: "Lien vers cette vue copié.", es: "Enlace a esta vista copiado." },
+    shareError: { sl: "Povezave ni bilo mogoče deliti ali kopirati.", en: "Could not share or copy the link.", it: "Impossibile condividere o copiare il link.", de: "Der Link konnte nicht geteilt oder kopiert werden.", fr: "Impossible de partager ou copier le lien.", es: "No se pudo compartir ni copiar el enlace." },
     activeFiltersLabel: { sl: "Aktivni filtri", en: "Active filters", it: "Filtri attivi", de: "Aktive Filter", fr: "Filtres actifs", es: "Filtros activos" },
     searchPrefix: { sl: "Iskanje", en: "Search", it: "Ricerca", de: "Suche", fr: "Recherche", es: "Búsqueda" },
     regionPrefix: { sl: "Regija", en: "Region", it: "Regione", de: "Region", fr: "Région", es: "Región" },
@@ -1481,6 +1488,40 @@ export default function TravelMap() {
     setCountry("all");
   };
 
+  /** Deljena povezava vsebuje samo filtre zemljevida, ne poljubnih parametrov strani. */
+  const shareMapView = async () => {
+    const url = new URL(window.location.pathname, window.location.origin);
+    const filters: Record<string, string> = {
+      q: q.trim(),
+      type,
+      region,
+      country,
+    };
+    for (const [key, value] of Object.entries(filters)) {
+      if (!value || value === "all") url.searchParams.delete(key);
+      else url.searchParams.set(key, value);
+    }
+    const shareUrl = url.toString();
+
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: t("shareTitle"), text: t("shareText"), url: shareUrl });
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        // Fallback to clipboard when the native share sheet is unavailable.
+      }
+    }
+
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("clipboard-unavailable");
+      await navigator.clipboard.writeText(shareUrl);
+      toast({ title: t("shareCopied") });
+    } catch {
+      toast({ title: t("shareError"), variant: "destructive" });
+    }
+  };
+
   /** Klik na postavko seznama: prileti do markerja in odpre popup. */
   const focusDestination = (d: Destination) => {
     setActiveId(d.id);
@@ -1640,6 +1681,19 @@ export default function TravelMap() {
           )}
         </div>
       )}
+
+      <div className="mt-2 flex justify-end max-lg:order-2">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-9 gap-2 rounded-full"
+          onClick={() => void shareMapView()}
+        >
+          <Share2 className="size-4" aria-hidden="true" />
+          {t("shareMap")}
+        </Button>
+      </div>
 
       {/* ── Čipi tipov (vodoravno drsenje na mobilnem) ────────────────── */}
       {/* POLIR14: trak je OVIT v relativni ovoj — (a) mt-3 se preseli z

@@ -34,7 +34,7 @@ export interface DestinationFilterState {
  * Isto pravilo uporablja seznam destinacij in interaktivni zemljevid.
  */
 export function normalizeSearchText(value: string): string {
-  return value.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase();
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
 /** Minimalna oblika zapisa, ki jo logika filtra bere. */

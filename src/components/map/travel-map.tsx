@@ -1056,6 +1056,19 @@ export default function TravelMap() {
       es: "Filtrar por país",
     },
     reset: { sl: "Počisti filtre", en: "Clear filters", it: "Azzera i filtri", de: "Filter zurücksetzen", fr: "Effacer les filtres", es: "Borrar filtros" },
+    activeFiltersLabel: { sl: "Aktivni filtri", en: "Active filters", it: "Filtri attivi", de: "Aktive Filter", fr: "Filtres actifs", es: "Filtros activos" },
+    searchPrefix: { sl: "Iskanje", en: "Search", it: "Ricerca", de: "Suche", fr: "Recherche", es: "Búsqueda" },
+    regionPrefix: { sl: "Regija", en: "Region", it: "Regione", de: "Region", fr: "Région", es: "Región" },
+    countryPrefix: { sl: "Država", en: "Country", it: "Paese", de: "Land", fr: "Pays", es: "País" },
+    typePrefix: { sl: "Tip", en: "Type", it: "Tipo", de: "Typ", fr: "Type", es: "Tipo" },
+    removeFilter: {
+      sl: (kind: string, value: string) => `Odstrani filter ${kind}: ${value}`,
+      en: (kind: string, value: string) => `Remove ${kind} filter: ${value}`,
+      it: (kind: string, value: string) => `Rimuovi il filtro ${kind}: ${value}`,
+      de: (kind: string, value: string) => `Filter ${kind} entfernen: ${value}`,
+      fr: (kind: string, value: string) => `Supprimer le filtre ${kind} : ${value}`,
+      es: (kind: string, value: string) => `Quitar filtro ${kind}: ${value}`,
+    },
     count: {
       sl: (n: number) => `${n} od ${DESTINATIONS.length} destinacij`,
       en: (n: number) => `${n} of ${DESTINATIONS.length} destinations`,
@@ -1557,6 +1570,76 @@ export default function TravelMap() {
           </div>
         )}
       </div>
+
+      {/* Aktivni filtri so ločeno odstranljivi; tudi na mobilnem so vidni pred izbirnikom tipov. */}
+      {hasFilters && (
+        <div
+          role="group"
+          aria-label={t("activeFiltersLabel")}
+          className="mt-3 flex flex-wrap items-center gap-2 max-lg:order-2"
+        >
+          {q.trim() !== "" && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setQ("")}
+              aria-label={t("removeFilter")(t("searchPrefix"), q.trim())}
+              className="h-8 max-w-full gap-1.5 rounded-full border-primary/25 bg-primary/[0.04]"
+            >
+              <span className="min-w-0 max-w-[14rem] truncate sm:max-w-[20rem]">
+                {t("searchPrefix")}: {q.trim()}
+              </span>
+              <X className="size-3.5 shrink-0" aria-hidden="true" />
+            </Button>
+          )}
+          {country !== "all" && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setCountry("all")}
+              aria-label={t("removeFilter")(t("countryPrefix"), countryLabel(l, country))}
+              className="h-8 max-w-full gap-1.5 rounded-full border-primary/25 bg-primary/[0.04]"
+            >
+              <span className="max-w-[12rem] truncate">
+                {t("countryPrefix")}: {countryLabel(l, country)}
+              </span>
+              <X className="size-3.5 shrink-0" aria-hidden="true" />
+            </Button>
+          )}
+          {region !== "all" && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setRegion("all")}
+              aria-label={t("removeFilter")(t("regionPrefix"), regionLabel(region, l))}
+              className="h-8 max-w-full gap-1.5 rounded-full border-primary/25 bg-primary/[0.04]"
+            >
+              <span className="max-w-[12rem] truncate">
+                {t("regionPrefix")}: {regionLabel(region, l)}
+              </span>
+              <X className="size-3.5 shrink-0" aria-hidden="true" />
+            </Button>
+          )}
+          {type !== "all" && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setType("all")}
+              aria-label={t("removeFilter")(t("typePrefix"), typeLabel(type, l))}
+              className="h-8 max-w-full gap-1.5 rounded-full border-primary/25 bg-primary/[0.04]"
+            >
+              <span className="max-w-[12rem] truncate">
+                {t("typePrefix")}: {typeLabel(type, l)}
+              </span>
+              <X className="size-3.5 shrink-0" aria-hidden="true" />
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* ── Čipi tipov (vodoravno drsenje na mobilnem) ────────────────── */}
       {/* POLIR14: trak je OVIT v relativni ovoj — (a) mt-3 se preseli z

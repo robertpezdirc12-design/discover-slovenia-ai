@@ -54,6 +54,7 @@ import {
   X,
 } from "lucide-react";
 import { useLocale } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import * as React from "react";
@@ -949,10 +950,16 @@ export default function TravelMap() {
   const { toast } = useToast();
   const tripItems = useMyTripList();
 
-  const [q, setQ] = React.useState("");
-  const [type, setType] = React.useState<"all" | DestinationType>("all");
-  const [region, setRegion] = React.useState<string>("all");
-  const [country, setCountry] = React.useState<string>("all");
+  const searchParams = useSearchParams();
+  const [q, setQ] = React.useState(searchParams.get("q") ?? "");
+  const initialType = searchParams.get("type");
+  const [type, setType] = React.useState<"all" | DestinationType>(
+    initialType && Object.prototype.hasOwnProperty.call(DEST_TYPES, initialType)
+      ? (initialType as DestinationType)
+      : "all",
+  );
+  const [region, setRegion] = React.useState<string>(searchParams.get("region") ?? "all");
+  const [country, setCountry] = React.useState<string>(searchParams.get("country") ?? "all");
   const [activeId, setActiveId] = React.useState<string | null>(null);
   // ── POLIR14 (2.41.0): mobilni preklop pogleda „Zemljevid ⇄ Seznam“ ──
   // Privzeto „map“ — zemljevid je NAMEN strani (raziskava §3.3: prej je
@@ -1419,6 +1426,46 @@ export default function TravelMap() {
   }, [q, type, region, country]);
 
   const hasFilters = q.trim() !== "" || type !== "all" || region !== "all" || country !== "all";
+
+  // Deljena povezava in navigacija znotraj Next.js morata obnoviti isto stanje filtrov.
+  React.useEffect(() => {
+    const nextQ = searchParams.get("q") ?? "";
+    const rawType = searchParams.get("type");
+    const nextType: "all" | DestinationType =
+      rawType && Object.prototype.hasOwnProperty.call(DEST_TYPES, rawType)
+        ? (rawType as DestinationType)
+        : "all";
+    const nextRegion = searchParams.get("region") ?? "all";
+    const nextCountry = searchParams.get("country") ?? "all";
+
+    setQ((current) => (current === nextQ ? current : nextQ));
+    setType((current) => (current === nextType ? current : nextType));
+    setRegion((current) => (current === nextRegion ? current : nextRegion));
+    setCountry((current) => (current === nextCountry ? current : nextCountry));
+  }, [searchParams]);
+
+  // replaceState posodobi povezavo brez kopičenja zgodovine med tipkanjem.
+  // Nepovezani parametri in hash ostanejo nedotaknjeni.
+  React.useEffect(() => {
+    const url = new URL(window.location.href);
+    const filterParams: Record<string, string> = {
+      q: q.trim() ? q : "",
+      type,
+      region,
+      country,
+    };
+    for (const [key, value] of Object.entries(filterParams)) {
+      if (!value || value === "all") url.searchParams.delete(key);
+      else url.searchParams.set(key, value);
+    }
+
+    const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (nextUrl !== currentUrl) {
+      window.history.replaceState(window.history.state, "", nextUrl);
+    }
+  }, [q, type, region, country]);
+
   const reset = () => {
     setQ("");
     setType("all");

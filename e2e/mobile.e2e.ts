@@ -188,6 +188,10 @@ test("⑤ MapLibre: zemljevid, kontrola povečave in atribucija na 5 širinah", 
     await expect(page.locator(".maplibregl-canvas").first()).toBeVisible({
       timeout: 30_000,
     });
+    // Počakaj na dogodek load in dejansko zgrajene markerje, ne zgolj canvas.
+    await expect(page.locator('[data-destination-slug="bled"]')).toBeVisible({
+      timeout: 30_000,
+    });
     await expect(page.locator(".maplibregl-ctrl-zoom-in").first()).toBeVisible();
 
     const attribution = page.locator(".maplibregl-ctrl-attrib").first();
@@ -325,7 +329,7 @@ for (const sirina of SIRINE) {
 
 // ── ⑥ — vseh 10 državnih strani uporabnih na mobilnem (@375) ─────────────
 
-test("⑧ /drzava/[code]: vseh 10 držav brez preliva + hero @ 375 px", async ({
+test("⑨ /drzava/[code]: vseh 10 držav brez preliva + hero @ 375 px", async ({
   page,
 }) => {
   test.setTimeout(120_000);

@@ -18,12 +18,19 @@ describe("destination card: country context", () => {
     expect(CARD).toContain("countryName(l, d.country)");
   });
 
-  test("shows a compact, readable country badge in the image corner", () => {
+  test("shows a compact country badge beside the featured marker", () => {
     expect(CARD).toContain('aria-hidden="true"');
-    expect(CARD).toContain("absolute top-2.5 right-2.5");
-    expect(CARD).toContain("max-w-[calc(100%-1.25rem)] truncate");
-    expect(CARD).toContain("bg-background/90 text-foreground");
-    expect(CARD).toContain('absolute top-2.5 left-2.5 bg-primary');
+    expect(CARD).toContain("absolute inset-x-2.5 top-2.5 flex items-start justify-between gap-2");
+    expect(CARD).toContain("max-w-[calc(50%-0.25rem)] truncate border-white/60 bg-background/90 text-foreground");
+    expect(CARD).toContain("max-w-[calc(50%-0.25rem)] truncate bg-primary text-primary-foreground");
+    expect(CARD).toContain("{countryLabel(l, d.country)}");
+  });
+
+  test("reserves separate badge widths so long country names cannot overlap featured badges", () => {
+    expect(CARD).toContain("justify-between gap-2");
+    expect(CARD).toContain("ml-auto max-w-[calc(50%-0.25rem)] truncate");
+    expect(CARD).not.toContain("absolute top-2.5 right-2.5");
+    expect(CARD).not.toContain("absolute top-2.5 left-2.5");
   });
 
   test("accessible destination link name includes the translated country", () => {

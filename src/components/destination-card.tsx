@@ -67,17 +67,19 @@ export function DestinationCard({
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className="object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
         />
-        {d.featured && (
-          <Badge className="absolute top-2.5 left-2.5 bg-primary text-primary-foreground shadow-sm">
-            {pick(l, L.featured)}
+        <div className="absolute inset-x-2.5 top-2.5 flex items-start justify-between gap-2">
+          {d.featured && (
+            <Badge className="max-w-[calc(50%-0.25rem)] truncate bg-primary text-primary-foreground shadow-sm">
+              {pick(l, L.featured)}
+            </Badge>
+          )}
+          <Badge
+            aria-hidden="true"
+            className="ml-auto max-w-[calc(50%-0.25rem)] truncate border-white/60 bg-background/90 text-foreground shadow-sm backdrop-blur-sm"
+          >
+            {countryLabel(l, d.country)}
           </Badge>
-        )}
-        <Badge
-          aria-hidden="true"
-          className="absolute top-2.5 right-2.5 max-w-[calc(100%-1.25rem)] truncate border-white/60 bg-background/90 text-foreground shadow-sm backdrop-blur-sm"
-        >
-          {countryLabel(l, d.country)}
-        </Badge>
+        </div>
       </div>
       <div className="flex flex-1 flex-col gap-2 p-5 sm:p-5">
         {/* Regija čisto zgoraj — zeleni kicker (akcent teme #2d6a3e). */}

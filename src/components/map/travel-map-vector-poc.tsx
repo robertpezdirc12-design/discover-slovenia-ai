@@ -97,6 +97,33 @@ const MAP_ZOOM = 8;
 const ATTRIBUTION_HTML =
   '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors &middot; ploščice <a href="https://www.openfreemap.org/" target="_blank" rel="noreferrer">OpenFreeMap</a>';
 
+const POPUP_ACTION_LABELS = {
+  add: {
+    sl: "Dodaj v mojo pot",
+    en: "Add to my trip",
+    it: "Aggiungi al mio viaggio",
+    de: "Zu meiner Reise hinzufügen",
+    fr: "Ajouter à mon voyage",
+    es: "Añadir a mi viaje",
+  },
+  added: {
+    sl: "V moji poti",
+    en: "In my trip",
+    it: "Nel mio viaggio",
+    de: "In meiner Reise",
+    fr: "Dans mon voyage",
+    es: "En mi viaje",
+  },
+  more: {
+    sl: "Več",
+    en: "More",
+    it: "Dettagli",
+    de: "Mehr",
+    fr: "Plus",
+    es: "Más",
+  },
+} as const;
+
 export default function TravelMapVectorPoc() {
   const l = useLocale();
   const containerRef = React.useRef<HTMLDivElement | null>(null);
@@ -183,10 +210,8 @@ export default function TravelMapVectorPoc() {
     const el = containerRef.current;
     if (!el) return;
 
-    // Ponovna inicializacija (npr. React StrictMode ali menjava jezika) začne
-    // iz čistega stanja in ne pusti stare napake/nabora markerjev.
-    setReady(false);
-    setFailed(false);
+    // Ponovna inicializacija (npr. React StrictMode ali menjava jezika) ne
+    // sme podedovati starih markerjev ali njihovega stanja nalaganja.
     loadedRef.current = false;
     markersRef.current.clear();
 
@@ -257,7 +282,7 @@ export default function TravelMapVectorPoc() {
           "inline-flex min-h-11 flex-1 items-center justify-center rounded-md border border-border bg-background px-3 text-xs font-medium text-foreground";
         const refreshAddButton = () => {
           const alreadyAdded = myTrip.has(d.slug);
-          addButton.textContent = alreadyAdded ? pick(l, L.added) : pick(l, L.add);
+          addButton.textContent = alreadyAdded ? pick(l, POPUP_ACTION_LABELS.added) : pick(l, POPUP_ACTION_LABELS.add);
           addButton.disabled = alreadyAdded;
           addButton.setAttribute("aria-pressed", alreadyAdded ? "true" : "false");
         };
@@ -272,7 +297,7 @@ export default function TravelMapVectorPoc() {
         more.className =
           "inline-flex min-h-11 flex-1 items-center justify-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground underline-offset-4 hover:underline";
         more.href = `${localePrefixPath(l)}/destinacija/${d.slug}`;
-        more.textContent = pick(l, L.more);
+        more.textContent = pick(l, POPUP_ACTION_LABELS.more);
 
         actions.append(addButton, more);
         wrap.append(name, meta, actions);

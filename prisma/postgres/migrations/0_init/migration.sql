@@ -263,6 +263,22 @@ CREATE TABLE "TripMessage" (
 );
 
 -- CreateTable
+CREATE TABLE "TripJournalEntry" (
+    "id" TEXT NOT NULL,
+    "journeyId" TEXT NOT NULL,
+    "authorId" TEXT,
+    "authorName" TEXT NOT NULL,
+    "dayIndex" INTEGER,
+    "placeName" TEXT,
+    "rating" INTEGER,
+    "text" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "TripJournalEntry_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Product" (
     "id" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
@@ -532,6 +548,9 @@ CREATE UNIQUE INDEX "TripPollVote_optionId_userId_key" ON "TripPollVote"("option
 CREATE INDEX "TripMessage_journeyId_createdAt_idx" ON "TripMessage"("journeyId", "createdAt");
 
 -- CreateIndex
+CREATE INDEX "TripJournalEntry_journeyId_createdAt_idx" ON "TripJournalEntry"("journeyId", "createdAt");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Product_slug_key" ON "Product"("slug");
 
 -- CreateIndex
@@ -659,6 +678,12 @@ ALTER TABLE "TripMessage" ADD CONSTRAINT "TripMessage_journeyId_fkey" FOREIGN KE
 
 -- AddForeignKey
 ALTER TABLE "TripMessage" ADD CONSTRAINT "TripMessage_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TripJournalEntry" ADD CONSTRAINT "TripJournalEntry_journeyId_fkey" FOREIGN KEY ("journeyId") REFERENCES "TravelJourney"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TripJournalEntry" ADD CONSTRAINT "TripJournalEntry_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;

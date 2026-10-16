@@ -130,6 +130,7 @@ model User {
   collaborations TripCollaborator[]
   pollVotes    TripPollVote[]
   messages     TripMessage[]
+  journalEntries TripJournalEntry[]
   preferences  UserPreference[]
   memories     MemoryItem[]
   watches      WatchItem[]
@@ -261,6 +262,7 @@ model TravelJourney {
   polls         TripPoll[]
   pollVotes     TripPollVote[]
   messages      TripMessage[]
+  journalEntries TripJournalEntry[]
 
   @@index([ownerId])
 }
@@ -364,6 +366,32 @@ model TripMessage {
   isAiBot    Boolean  @default(false)
   body       String
   createdAt  DateTime @default(now())
+
+  @@index([journeyId, createdAt])
+}
+
+/// Skupnostni potni dnevnik (F12 iz izvirnika 1.163.4 — TripDiaryEntry,
+/// docs/recovery/schema-1.163.4.prisma:329-350; RECOVERY-MODEL-MATRIX.md:
+/// "kandidat za prihodnjo fazo"). TEXTOVNI spomini BREZ slik (zasebnost +
+/// 0 stroškov shrambe); natisnjena stran = "photobook". Polja izvirnika:
+/// dayIndex (1-based dan, null = splošno), placeName (kraj spomina, 1–80),
+/// rating (1–5 zvezdic, null = brez), text (2–2000 znakov). Mostovno
+/// prirejeno 48-a: avtorstvo računsko (authorId + authorName posnetek)
+/// namesto anonimnega authorClientId — ureja/izbriše avtor ALI lastnik
+/// (isti vzorec moderacije kot ankete).
+model TripJournalEntry {
+  id         String   @id @default(cuid())
+  journeyId  String
+  journey    TravelJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  authorId   String?
+  author     User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorName String
+  dayIndex   Int?
+  placeName  String?
+  rating     Int?
+  text       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([journeyId, createdAt])
 }

@@ -14,7 +14,18 @@
 
 **Verzija: 2.54.0 — BALKANSKA EKSPANZIJA F0 (#41, 2026-10-13): CountryCode pokriva cel Balkan (10 držav: +BA/RS/MK/XK/BG/GR), državna meta countries-data (6 jezikov, valute, emergency, eSIM cone), CommunityEvent.country (opcijsko, default SI), državni filtri destinacij+dogodkov. DOKUMENT #35 (2026-10-13): docs/research/balkan-platform-no-ai.md — izvedljiv načrt balkanske platforme brez AI na 12 poglavij (merila sprejemanja #35): repo-pregled (obstoječe/nepopolno/manjkajoče/podvajanje), primerjalna matrika SDK (licenca kode ≠ ODbL podatkov — Valhalla MIT in Photon Apache-2.0 curl-potrjena), pokritost 5 držav (GTFS 0/5 preverjeno), podatkovni model Provider + postopek verifikacije, partner API status vse [nepotrjeno], arhitektura na obstoječem determinističnem engine, faze 1–6 (faza 1 = OpenFreeMap swap, reverzibilna), stroški ločeni na znane 0 EUR vs [nepotrjeno] ponudbe, register 10 tveganj, viri z datumi. 0 produkcijskih sprememb vedenja.
 
-**Verzija (produkcija): 2.67.1 — ZEMLJEVID VEKTORJI (PR #62, združen 2026-10-16):**
+**Verzija: 2.68.0 — SKUPNOSTNI POTNI DNEVNIK (F12, rekonstrukcija iz 1.163.4):**
+zavihek **Dnevnik** na /pot/[shareId] — tekstovni spomini skupine BREZ slik
+(zasebnost + 0 stroškov shrambe; izvirnik: "naš pošteni tekstovni pristop"),
+natisnjena stran = "photobook". Vpis: dan (1-based), kraj spomina (1–80),
+ocena 1–5 zvezdic, spomin (2–2000 znakov); ureja/izbriše avtor ali lastnik
+poti (strežniška `mine` značica — klient je ne more ponarediti). Prisma
+`TripJournalEntry` (mostovno avtorstvo računa namesto anonimnega
+`authorClientId`), API GET/POST/PATCH/DELETE `/api/trips/[shareId]/journal`
+(VIEWER+ za zapis, 30/min, sanitize P0-I §23), čista logika + 20 enot,
+source-contract test. Model + API + UI po istih vzorcih kot klepet/ankete.
+
+**Verzija: 2.67.1 — ZEMLJEVID VEKTORJI (PR #62, združen 2026-10-16):**
 neobvezni vektorski zemljevid `?zemljevid=vektorji` (MapLibre GL + OpenFreeMap,
 privzeti zemljevid ostaja Leaflet/OSM) z gručenjem markerjev po KVADRATNI
 invarianti dotikalnih ciljev 44×44 px — prekrivanje je osno (`|dx| < 44 IN
@@ -48,6 +59,9 @@ ter testna vrata (86 testov) + GitLab CI.
   OpenFreeMap, gručenje po kvadratni invarianti 44×44 px (osno prekrivanje,
   union-find verige, drill-down klik, `src/lib/map-clustering.ts`); privzeti
   zemljevid ostaja Leaflet
+- **Skupnostni potni dnevnik (2.68.0)** — zavihek Dnevnik na /pot/[shareId]:
+  tekstovni spomini (dan/kraj/ocena 1–5; 2–2000 znakov) brez slik,
+  natisljiva stran = "photobook", ureja/izbriše avtor ali lastnik (F12)
 - **Go Mode „Na poti"** — NOW/NEXT kartice, napredek, persistenca (dai:go-trip)
 - **i18n** — 6 jezikov: SL (privzet, brez predpone) + EN/IT/DE/FR/ES (`/{jez}/*`)
   z delnimi slovarji in slovensko rezervo
@@ -247,10 +261,8 @@ docs/evidence/        # dokazni posnetki rekonstrukcije
 
 ## Kaj ŠE MANJKA (iscron kanon — nič izmišljenega)
 
-- dopolnjevanje delnih prevodnih slovarjev (poti in preklopnik pokrivajo vseh 6
-  jezikov; del komponent ima še samo sl/en), skupnostni dnevnik potovanj (klepet,
-  ankete in vabila so že rekonstruirani), Stripe checkout (demo fail-closed; pravi
-  čaka na ključe lastnika), testi (rekonstrukcija: 590+; izvirnik: 5332)
+- Stripe checkout (demo fail-closed; pravi čaka na ključe lastnika), testi
+  (rekonstrukcija: 590+; izvirnik: 5332)
 - pravi affiliate žetoni (`AFFILIATE_*_ID`) — registracija v partnerskih
   programih je lastnikovo dejanje; brez žetona povezave delujejo javno
   (brez provizije), klikanja se štejejo

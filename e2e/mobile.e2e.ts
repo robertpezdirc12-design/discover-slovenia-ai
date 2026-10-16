@@ -235,6 +235,19 @@ test("⑥ MapLibre: destinacijo je mogoče izbrati in dodati v mojo pot", async 
   expect(target!.width).toBeGreaterThanOrEqual(44);
   expect(target!.height).toBeGreaterThanOrEqual(44);
 
+  // Začetni pogled je fitBounds vseh 74 destinacij, stisnjen na minZoom 5
+  // (merjeno 2026-10-16: center ≈ [20.65, 43.29]) — na 390 px platnu to
+  // zaključi severozahod, zato je Bled takoj po nalaganju IZVEN viewporta.
+  // To je pravilno obnašanje zemljevida (celoten Balkan na telefonu), ne
+  // napaka — pred klikom pogled zožimo z iskanjem, kot bi to naredil
+  // uporabnik. Kanon filtra: iskanje pokrije name/tagline/description/
+  // highlights, zato „Bled“ najde Bled + Vintgarsko sotesko (2 zadetka).
+  const iskanje = page.getByRole("searchbox", {
+    name: "Išči destinacijo, opis ali zanimivost",
+  });
+  await iskanje.fill("Bled");
+  await expect(page.getByText(/^2 destinacij$/)).toBeVisible();
+
   await marker.click();
   const popup = page.locator(".maplibregl-popup").first();
   await expect(popup).toBeVisible();
@@ -268,7 +281,10 @@ test("⑦ MapLibre: iskanje, filtri in seznam delujejo na telefonu", async ({
     name: "Išči destinacijo, opis ali zanimivost",
   });
   await search.fill("Bled");
-  await expect(page.getByText(/^1 destinacij$/)).toBeVisible();
+  // Kanon filtra (src/lib/destinations-filter.ts, zaklenjen z enotskimi
+  // testi): iskanje pokrije name/tagline/description/highlights. „Bled“
+  // torej najde Bled in Vintgarsko sotesko (opis omenja Bled) — 2 zadetka.
+  await expect(page.getByText(/^2 destinacij$/)).toBeVisible();
   await expect(page.locator('[data-destination-slug="bled"]')).toBeVisible();
 
   await page.getByRole("button", { name: "Seznam", exact: true }).click();

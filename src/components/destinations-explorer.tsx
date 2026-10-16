@@ -149,7 +149,10 @@ export function DestinationsExplorer() {
   const [type, setType] = React.useState(searchParams.get("type") ?? "all");
   // #41 F0: ?country= iz URL (neznana vrednost → logika filtra vrne prazen rezultat).
   const [country, setCountry] = React.useState(searchParams.get("country") ?? "all");
-  const [sortBy, setSortBy] = React.useState<DestinationSort>("recommended");
+  const sortParam = searchParams.get("sort");
+  const [sortBy, setSortBy] = React.useState<DestinationSort>(
+    sortParam === "name-asc" || sortParam === "name-desc" ? sortParam : "recommended",
+  );
 
   // Regije/države, ki dejansko nastopajo v naboru (kanonska vrstni red slovarja).
   // Logika filtra je izvlečena v @/lib/destinations-filter (2.47.0, #38:
@@ -185,10 +188,11 @@ export function DestinationsExplorer() {
       country,
       region,
       type,
+      sort: sortBy,
     };
 
     for (const [key, value] of Object.entries(filterParams)) {
-      if (!value || value === "all") url.searchParams.delete(key);
+      if (!value || value === "all" || (key === "sort" && value === "recommended")) url.searchParams.delete(key);
       else url.searchParams.set(key, value);
     }
 
@@ -197,7 +201,7 @@ export function DestinationsExplorer() {
     if (nextUrl !== currentUrl) {
       window.history.replaceState(window.history.state, "", nextUrl);
     }
-  }, [q, country, region, type]);
+  }, [q, country, region, type, sortBy]);
 
   const reset = () => {
     setQ("");

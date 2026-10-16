@@ -13,7 +13,9 @@ const EXPLORER = readFileSync(
 
 describe("destination discovery: sort controls", () => {
   test("keeps the curated default order unless a sort choice is selected", () => {
-    expect(EXPLORER).toContain('useState<DestinationSort>("recommended")');
+    expect(EXPLORER).toContain('const sortParam = searchParams.get("sort")');
+    expect(EXPLORER).toContain('sortParam === "name-asc" || sortParam === "name-desc"');
+    expect(EXPLORER).toContain("useState<DestinationSort>(");
     expect(EXPLORER).toContain('const ordered = [...filteredResults]');
     expect(EXPLORER).toContain('if (sortBy === "name-asc")');
     expect(EXPLORER).toContain('else if (sortBy === "name-desc")');

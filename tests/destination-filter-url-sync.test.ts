@@ -19,11 +19,12 @@ describe("destination discovery: filter URL synchronization", () => {
     expect(EXPLORER).toContain("country,");
     expect(EXPLORER).toContain("region,");
     expect(EXPLORER).toContain("type,");
-    expect(EXPLORER).toContain("}, [q, country, region, type]);");
+    expect(EXPLORER).toContain("sort: sortBy,");
+    expect(EXPLORER).toContain("}, [q, country, region, type, sortBy]);");
   });
 
   test("removes inactive filters and avoids accumulating history entries", () => {
-    expect(EXPLORER).toContain('if (!value || value === "all") url.searchParams.delete(key)');
+    expect(EXPLORER).toContain('if (!value || value === "all" || (key === "sort" && value === "recommended")) url.searchParams.delete(key)');
     expect(EXPLORER).toContain('url.searchParams.set(key, value)');
     expect(EXPLORER).toContain('window.history.replaceState(window.history.state, "", nextUrl)');
     expect(EXPLORER).not.toContain("window.history.pushState");

@@ -42,14 +42,18 @@ import { ArrowLeft, FlaskConical, Loader2, TriangleAlert } from "lucide-react";
 import { useLocale } from "next-intl";
 import * as React from "react";
 
+import { notifyMyTripAdded } from "@/components/my-trip-toast-action";
 import { Link } from "@/i18n/navigation";
 import { localePrefixPath } from "@/i18n/routing";
-import { myTrip } from "@/lib/my-trip";
-import { notifyMyTripAdded } from "@/components/my-trip-toast-action";
+import { countryLabel } from "@/lib/countries-data";
+import { activeCountryKeys, activeRegionKeys, filterDestinations } from "@/lib/destinations-filter";
 import { pick } from "@/lib/i18n-pick";
+import { myTrip, useMyTripList } from "@/lib/my-trip";
 import {
   DESTINATIONS,
+  DEST_TYPES,
   type DestinationType,
+  regionLabel,
   typeLabel,
 } from "@/lib/slovenia-data";
 
@@ -95,8 +99,83 @@ const ATTRIBUTION_HTML =
 export default function TravelMapVectorPoc() {
   const l = useLocale();
   const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const mapRef = React.useRef<MlMap | null>(null);
+  const markersRef = React.useRef<Map<string, MlMarker>>(new Map());
+  const tripItems = useMyTripList();
   const [ready, setReady] = React.useState(false);
   const [failed, setFailed] = React.useState(false);
+  const [q, setQ] = React.useState(() =>
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("q") ?? ""
+      : "",
+  );
+  const [country, setCountry] = React.useState(() =>
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("country") ?? "all"
+      : "all",
+  );
+  const [region, setRegion] = React.useState(() =>
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("region") ?? "all"
+      : "all",
+  );
+  const [type, setType] = React.useState(() => {
+    const raw =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("type")
+        : null;
+    return raw && Object.prototype.hasOwnProperty.call(DEST_TYPES, raw)
+      ? raw
+      : "all";
+  });
+  const [mobileView, setMobileView] = React.useState<"map" | "list">("map");
+  const activeCountries = React.useMemo(() => activeCountryKeys(DESTINATIONS), []);
+  const activeRegions = React.useMemo(() => activeRegionKeys(DESTINATIONS), []);
+  const filteredDestinations = React.useMemo(
+    () => filterDestinations(DESTINATIONS, { q, country, region, type }),
+    [q, country, region, type],
+  );
+  const hasFilters =
+    q.trim() !== "" || country !== "all" || region !== "all" || type !== "all";
+
+  // Filtri o iskanje ostanejo v URL-ju, zato je pogled mogoče deliti in obnoviti.
+  React.useEffect(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("zemljevid", "vektorji");
+    for (const [key, value] of [
+      ["q", q.trim()],
+      ["country", country],
+      ["region", region],
+      ["type", type],
+    ] as const) {
+      if (value && value !== "all") url.searchParams.set(key, value);
+      else url.searchParams.delete(key);
+    }
+    const next = `${url.pathname}${url.search}${url.hash}`;
+    const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (next !== current) window.history.replaceState(window.history.state, "", next);
+  }, [q, country, region, type]);
+
+  const addToTrip = React.useCallback((slug: string, name: string) => {
+    const result = myTrip.add(slug, name, "destination", "zemljevid");
+    if (result.ok) notifyMyTripAdded(l);
+    return result;
+  }, [l]);
+
+  const showDestination = React.useCallback((slug: string) => {
+    const destination = DESTINATIONS.find((item) => item.slug === slug);
+    const map = mapRef.current;
+    const marker = markersRef.current.get(slug);
+    if (!destination || !map || !marker) return;
+    setMobileView("map");
+    map.flyTo({
+      center: [destination.coords.lng, destination.coords.lat],
+      zoom: Math.max(map.getZoom(), 11),
+      essential: true,
+    });
+    const popup = marker.getPopup();
+    if (popup && !popup.isOpen()) marker.togglePopup();
+  }, []);
 
   React.useEffect(() => {
     const el = containerRef.current;
@@ -115,6 +194,7 @@ export default function TravelMapVectorPoc() {
       cooperativeGestures: true,
       attributionControl: { customAttribution: ATTRIBUTION_HTML },
     });
+    mapRef.current = map;
 
     map.addControl(
       new NavigationControl({ showCompass: false }),
@@ -191,9 +271,10 @@ export default function TravelMapVectorPoc() {
           d.coords.lat,
         ]);
         marker.setPopup(
-          new MlPopup({ offset: 16, maxWidth: "260px" }).setDOMContent(wrap),
+          new MlPopup({ offset: 16, maxWidth: "280px" }).setDOMContent(wrap),
         );
         marker.addTo(map);
+        markersRef.current.set(d.slug, marker);
       }
       setReady(true);
     };
@@ -210,8 +291,35 @@ export default function TravelMapVectorPoc() {
       map.off("load", onLoad);
       map.off("error", onError);
       map.remove();
+      if (mapRef.current === map) mapRef.current = null;
+      markersRef.current.clear();
     };
   }, [l]);
+
+  // Filtriramo že ustvarjene markerje in prilagodimo pogled; zemljevid se
+  // ne ustvarja znova ob vsakem vnosu v iskalno polje.
+  React.useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    const visible = new Set(filteredDestinations.map((item) => item.slug));
+    for (const destination of DESTINATIONS) {
+      const marker = markersRef.current.get(destination.slug);
+      if (marker) marker.getElement().style.display = visible.has(destination.slug) ? "" : "none";
+    }
+    if (filteredDestinations.length === 1) {
+      const item = filteredDestinations[0];
+      map.flyTo({
+        center: [item.coords.lng, item.coords.lat],
+        zoom: 11,
+        essential: true,
+      });
+    } else if (filteredDestinations.length > 1) {
+      map.fitBounds(
+        filteredDestinations.map((item) => [item.coords.lng, item.coords.lat] as [number, number]),
+        { padding: 40, maxZoom: 8, duration: 250 },
+      );
+    }
+  }, [ready, filteredDestinations]);
 
   const L = {
     banner: {
@@ -253,6 +361,78 @@ export default function TravelMapVectorPoc() {
       de: "Mehr",
       fr: "Plus",
       es: "Más",
+    },
+    searchLabel: {
+      sl: "Išči destinacijo, opis ali zanimivost",
+      en: "Search destinations, descriptions or highlights",
+      it: "Cerca destinazioni, descrizioni o punti salienti",
+      de: "Reiseziele, Beschreibungen oder Highlights suchen",
+      fr: "Rechercher des destinations, descriptions ou points forts",
+      es: "Buscar destinos, descripciones o lugares destacados",
+    },
+    allCountries: {
+      sl: "Vse države",
+      en: "All countries",
+      it: "Tutti i paesi",
+      de: "Alle Länder",
+      fr: "Tous les pays",
+      es: "Todos los países",
+    },
+    allRegions: {
+      sl: "Vse regije",
+      en: "All regions",
+      it: "Tutte le regioni",
+      de: "Alle Regionen",
+      fr: "Toutes les régions",
+      es: "Todas las regiones",
+    },
+    allTypes: {
+      sl: "Vsi tipi",
+      en: "All types",
+      it: "Tutti i tipi",
+      de: "Alle Typen",
+      fr: "Tous les types",
+      es: "Todos los tipos",
+    },
+    mapView: {
+      sl: "Zemljevid",
+      en: "Map",
+      it: "Mappa",
+      de: "Karte",
+      fr: "Carte",
+      es: "Mapa",
+    },
+    listView: {
+      sl: "Seznam",
+      en: "List",
+      it: "Elenco",
+      de: "Liste",
+      fr: "Liste",
+      es: "Lista",
+    },
+    clearFilters: {
+      sl: "Ponastavi filtre",
+      en: "Clear filters",
+      it: "Azzera filtri",
+      de: "Filter zurücksetzen",
+      fr: "Effacer les filtres",
+      es: "Borrar filtros",
+    },
+    results: {
+      sl: "destinacij",
+      en: "destinations",
+      it: "destinazioni",
+      de: "Reiseziele",
+      fr: "destinations",
+      es: "destinos",
+    },
+    noResults: {
+      sl: "Nobena destinacija ne ustreza izbranim filtrom.",
+      en: "No destination matches these filters.",
+      it: "Nessuna destinazione corrisponde ai filtri.",
+      de: "Keine Destination entspricht diesen Filtern.",
+      fr: "Aucune destination ne correspond à ces filtres.",
+      es: "Ningún destino coincide con estos filtros.",
     },
     loading: {
       sl: "Nalaganje vektorskih ploščic …",
@@ -298,25 +478,164 @@ export default function TravelMapVectorPoc() {
         </Link>
       </div>
 
-      {/* isti niz višin kot Leaflet MapContainer (0 premika med preklopi) */}
-      <div
-        ref={containerRef}
-        role="application"
-        aria-label={pick(l, L.mapLabel)}
-        className="relative h-[62svh] min-h-80 w-full overflow-hidden rounded-xl sm:h-[70svh] lg:h-[calc(100svh-15rem)] lg:min-h-[540px]"
-      >
-        {!ready && !failed && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-muted/40 text-sm text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-            {pick(l, L.loading)}
+      {/* Iskanje + filtri uporabljajo isto deterministično logiko kot Leaflet. */}
+      <div className="mt-3 space-y-3">
+        <label className="block">
+          <span className="sr-only">{pick(l, L.searchLabel)}</span>
+          <input
+            type="search"
+            value={q}
+            onChange={(event) => setQ(event.target.value)}
+            placeholder={pick(l, L.searchLabel)}
+            aria-label={pick(l, L.searchLabel)}
+            className="h-11 w-full min-w-0 rounded-xl border border-border/70 bg-background px-4 text-sm shadow-sm outline-offset-2 focus-visible:outline"
+          />
+        </label>
+
+        <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
+          <label className="min-w-0">
+            <span className="sr-only">{pick(l, L.allCountries)}</span>
+            <select
+              value={country}
+              onChange={(event) => setCountry(event.target.value)}
+              aria-label={pick(l, L.allCountries)}
+              className="h-11 w-full min-w-0 rounded-xl border border-border/70 bg-background px-3 text-sm"
+            >
+              <option value="all">{pick(l, L.allCountries)}</option>
+              {activeCountries.map((code) => (
+                <option key={code} value={code}>{countryLabel(l, code)}</option>
+              ))}
+            </select>
+          </label>
+          <label className="min-w-0">
+            <span className="sr-only">{pick(l, L.allRegions)}</span>
+            <select
+              value={region}
+              onChange={(event) => setRegion(event.target.value)}
+              aria-label={pick(l, L.allRegions)}
+              className="h-11 w-full min-w-0 rounded-xl border border-border/70 bg-background px-3 text-sm"
+            >
+              <option value="all">{pick(l, L.allRegions)}</option>
+              {activeRegions.map((key) => (
+                <option key={key} value={key}>{regionLabel(key, l)}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="flex min-w-0 gap-2 overflow-x-auto pb-1" role="group" aria-label={pick(l, L.allTypes)}>
+          <button
+            type="button"
+            onClick={() => setType("all")}
+            aria-pressed={type === "all"}
+            className={`inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 text-sm font-medium ${type === "all" ? "border-primary bg-primary text-primary-foreground" : "bg-background"}`}
+          >
+            {pick(l, L.allTypes)}
+          </button>
+          {(Object.keys(DEST_TYPES) as DestinationType[]).map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setType(type === key ? "all" : key)}
+              aria-pressed={type === key}
+              className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-medium ${type === key ? "border-primary bg-primary text-primary-foreground" : "bg-background"}`}
+            >
+              <span aria-hidden="true" className="size-2.5 rounded-full" style={{ backgroundColor: TYPE_COLORS[key] }} />
+              {pick(l, DEST_TYPES[key])}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex gap-2 lg:hidden" role="group" aria-label={pick(l, L.mapView)}>
+            <button
+              type="button"
+              onClick={() => setMobileView("map")}
+              aria-pressed={mobileView === "map"}
+              className={`min-h-11 rounded-lg border px-4 text-sm font-medium ${mobileView === "map" ? "border-primary bg-primary text-primary-foreground" : "bg-background"}`}
+            >{pick(l, L.mapView)}</button>
+            <button
+              type="button"
+              onClick={() => setMobileView("list")}
+              aria-pressed={mobileView === "list"}
+              className={`min-h-11 rounded-lg border px-4 text-sm font-medium ${mobileView === "list" ? "border-primary bg-primary text-primary-foreground" : "bg-background"}`}
+            >{pick(l, L.listView)}</button>
           </div>
-        )}
-        {failed && (
-          <div className="absolute inset-x-4 top-4 z-20 flex items-center gap-2 rounded-lg border border-amber-300/60 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/40 dark:text-amber-200">
-            <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-            {pick(l, L.failed)}
+          <p className="text-sm text-muted-foreground" aria-live="polite">
+            {filteredDestinations.length} {pick(l, L.results)}
+          </p>
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={() => { setQ(""); setCountry("all"); setRegion("all"); setType("all"); }}
+              className="min-h-11 rounded-lg border border-border bg-background px-4 text-sm font-medium"
+            >{pick(l, L.clearFilters)}</button>
+          )}
+        </div>
+      </div>
+
+      {/* Mapa in seznam sta sinhronizirana; na telefonu je privzeto viden zemljevid. */}
+      <div className="mt-3 grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className={mobileView === "list" ? "max-lg:hidden" : ""}>
+          <div
+            ref={containerRef}
+            role="application"
+            aria-label={pick(l, L.mapLabel)}
+            className="relative h-[62svh] min-h-80 w-full overflow-hidden rounded-xl sm:h-[70svh] lg:h-[calc(100svh-15rem)] lg:min-h-[540px]"
+          >
+            {!ready && !failed && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-muted/40 text-sm text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                {pick(l, L.loading)}
+              </div>
+            )}
+            {failed && (
+              <div className="absolute inset-x-4 top-4 z-20 flex items-center gap-2 rounded-lg border border-amber-300/60 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/40 dark:text-amber-200">
+                <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                {pick(l, L.failed)}
+              </div>
+            )}
           </div>
-        )}
+        </div>
+        <section
+          aria-label={pick(l, L.listView)}
+          className={`min-w-0 rounded-xl border border-border/70 bg-card p-3 sm:p-4 ${mobileView === "map" ? "max-lg:hidden" : ""} lg:max-h-[calc(100svh-13rem)] lg:overflow-y-auto`}
+        >
+          {filteredDestinations.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">{pick(l, L.noResults)}</p>
+          ) : (
+            <ul className="space-y-2">
+              {filteredDestinations.map((destination) => {
+                const inTrip = tripItems.some((item) => item.refId === destination.slug);
+                return (
+                  <li key={destination.slug} className="min-w-0 rounded-lg border border-border/60 p-3">
+                    <button
+                      type="button"
+                      onClick={() => showDestination(destination.slug)}
+                      className="block min-h-11 w-full break-words text-left font-semibold underline-offset-4 hover:underline"
+                    >{destination.name}</button>
+                    <p className="mt-1 break-words text-xs text-muted-foreground">
+                      {typeLabel(destination.type, l)} · {countryLabel(l, destination.country)} · {regionLabel(destination.region, l)}
+                    </p>
+                    <p className="mt-1 break-words text-sm text-muted-foreground">{destination.tagline}</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        disabled={inTrip}
+                        onClick={() => addToTrip(destination.slug, destination.name)}
+                        className="min-h-11 flex-1 rounded-md border border-border bg-background px-3 text-xs font-medium disabled:cursor-default disabled:opacity-60"
+                      >{inTrip ? pick(l, L.added) : pick(l, L.add)}</button>
+                      <Link
+                        href={`/destinacija/${destination.slug}`}
+                        className="inline-flex min-h-11 flex-1 items-center justify-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground"
+                      >{pick(l, L.more)}</Link>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
       </div>
     </div>
   );

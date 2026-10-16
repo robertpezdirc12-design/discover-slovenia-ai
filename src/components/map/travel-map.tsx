@@ -79,6 +79,8 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "@/i18n/navigation";
+import { countryLabel } from "@/lib/countries-data";
+import { activeCountryKeys } from "@/lib/destinations-filter";
 import { pick } from "@/lib/i18n-pick";
 import { LOKAL_CATEGORIES, type LokalCategory } from "@/lib/lokali-data";
 import { myTrip, useMyTripList } from "@/lib/my-trip";
@@ -950,6 +952,7 @@ export default function TravelMap() {
   const [q, setQ] = React.useState("");
   const [type, setType] = React.useState<"all" | DestinationType>("all");
   const [region, setRegion] = React.useState<string>("all");
+  const [country, setCountry] = React.useState<string>("all");
   const [activeId, setActiveId] = React.useState<string | null>(null);
   // ── POLIR14 (2.41.0): mobilni preklop pogleda „Zemljevid ⇄ Seznam“ ──
   // Privzeto „map“ — zemljevid je NAMEN strani (raziskava §3.3: prej je
@@ -1032,6 +1035,15 @@ export default function TravelMap() {
       de: "Nach Region filtern",
       fr: "Filtrer par région",
       es: "Filtrar por región",
+    },
+    allCountries: { sl: "Vse države", en: "All countries", it: "Tutti i paesi", de: "Alle Länder", fr: "Tous les pays", es: "Todos los países" },
+    countryFilter: {
+      sl: "Filtriraj po državi",
+      en: "Filter by country",
+      it: "Filtra per paese",
+      de: "Nach Land filtern",
+      fr: "Filtrer par pays",
+      es: "Filtrar por país",
     },
     reset: { sl: "Počisti filtre", en: "Clear filters", it: "Azzera i filtri", de: "Filter zurücksetzen", fr: "Effacer les filtres", es: "Borrar filtros" },
     count: {
@@ -1387,10 +1399,12 @@ export default function TravelMap() {
     const present = new Set(DESTINATIONS.map((d) => d.region));
     return Object.keys(REGIONS).filter((r) => present.has(r));
   }, []);
+  const activeCountries = React.useMemo(() => activeCountryKeys(DESTINATIONS), []);
 
   const results = React.useMemo(() => {
     const needle = q.trim().toLowerCase();
     return DESTINATIONS.filter((d) => {
+      if (country !== "all" && d.country !== country) return false;
       if (type !== "all" && d.type !== type) return false;
       if (region !== "all" && d.region !== region) return false;
       if (
@@ -1402,13 +1416,14 @@ export default function TravelMap() {
       }
       return true;
     });
-  }, [q, type, region]);
+  }, [q, type, region, country]);
 
-  const hasFilters = q.trim() !== "" || type !== "all" || region !== "all";
+  const hasFilters = q.trim() !== "" || type !== "all" || region !== "all" || country !== "all";
   const reset = () => {
     setQ("");
     setType("all");
     setRegion("all");
+    setCountry("all");
   };
 
   /** Klik na postavko seznama: prileti do markerja in odpre popup. */
@@ -1461,6 +1476,24 @@ export default function TravelMap() {
             ))}
           </SelectContent>
         </Select>
+        <div className="col-span-2 min-w-0 md:col-span-1">
+          <Select value={country} onValueChange={setCountry}>
+            <SelectTrigger
+              className="h-12 w-full rounded-xl border-border/70 bg-background shadow-sm md:w-48"
+              aria-label={t("countryFilter")}
+            >
+              <SelectValue placeholder={t("allCountries")} />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              <SelectItem value="all">{t("allCountries")}</SelectItem>
+              {activeCountries.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {countryLabel(l, c)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         {hasFilters ? (
           <Button
             type="button"

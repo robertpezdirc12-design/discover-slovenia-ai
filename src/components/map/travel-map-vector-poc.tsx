@@ -44,6 +44,8 @@ import * as React from "react";
 
 import { Link } from "@/i18n/navigation";
 import { localePrefixPath } from "@/i18n/routing";
+import { myTrip } from "@/lib/my-trip";
+import { notifyMyTripAdded } from "@/components/my-trip-toast-action";
 import { pick } from "@/lib/i18n-pick";
 import {
   DESTINATIONS,
@@ -108,6 +110,9 @@ export default function TravelMapVectorPoc() {
       minZoom: 5,
       maxZoom: 18,
       scrollZoom: true,
+      // Na telefonu enoprstno drsenje ostane namenjeno strani; zemljevid
+      // se premika z dvema prstoma ali prek večjih kontrol povečave.
+      cooperativeGestures: true,
       attributionControl: { customAttribution: ATTRIBUTION_HTML },
     });
 
@@ -123,11 +128,23 @@ export default function TravelMapVectorPoc() {
       // ročni click listener bi se zaprl sam sabo: v6 map-click zapre
       // popupe, odkrito z brskalniško verifikacijo 2.63.1).
       for (const d of DESTINATIONS) {
-        const markerEl = document.createElement("div");
+        // Dostopna površina za dotik (44×44 px); vidna pika ostane 14×14 px.
+        // Tako je izbira na telefonu lažja, ne da bi marker postal vizualno velik.
+        const markerEl = document.createElement("button");
+        markerEl.type = "button";
         markerEl.className =
-          "h-3.5 w-3.5 cursor-pointer rounded-full border-2 border-white shadow-md";
-        markerEl.style.backgroundColor = TYPE_COLORS[d.type];
+          "flex h-11 w-11 cursor-pointer items-center justify-center border-0 bg-transparent p-0";
+        markerEl.style.touchAction = "manipulation";
+        markerEl.setAttribute("aria-label", d.name);
+        markerEl.setAttribute("data-destination-slug", d.slug);
         markerEl.title = d.name;
+
+        const markerDot = document.createElement("span");
+        markerDot.className =
+          "block h-3.5 w-3.5 rounded-full border-2 border-white shadow-md";
+        markerDot.style.backgroundColor = TYPE_COLORS[d.type];
+        markerDot.setAttribute("aria-hidden", "true");
+        markerEl.appendChild(markerDot);
 
         const wrap = document.createElement("div");
         wrap.className = "space-y-1";
@@ -140,12 +157,34 @@ export default function TravelMapVectorPoc() {
         meta.className = "text-xs text-muted-foreground";
         meta.textContent = `${typeLabel(d.type, l)} · ${d.country.toUpperCase()} · ★ ${d.rating.toFixed(1)}`;
 
-        const more = document.createElement("a");
-        more.className = "inline-block text-xs font-medium underline";
-        more.href = `${localePrefixPath(l)}/destinacija/${d.slug}`;
-        more.textContent = l === "sl" ? "Več" : l === "en" ? "More" : "Details";
+        const actions = document.createElement("div");
+        actions.className = "mt-2 flex gap-2";
 
-        wrap.append(name, meta, more);
+        const addButton = document.createElement("button");
+        addButton.type = "button";
+        addButton.className =
+          "inline-flex min-h-11 flex-1 items-center justify-center rounded-md border border-border bg-background px-3 text-xs font-medium text-foreground";
+        const refreshAddButton = () => {
+          const alreadyAdded = myTrip.has(d.slug);
+          addButton.textContent = alreadyAdded ? pick(l, L.added) : pick(l, L.add);
+          addButton.disabled = alreadyAdded;
+          addButton.setAttribute("aria-pressed", alreadyAdded ? "true" : "false");
+        };
+        addButton.addEventListener("click", () => {
+          const result = myTrip.add(d.slug, d.name, "destination", "zemljevid");
+          if (result.ok) notifyMyTripAdded(l);
+          refreshAddButton();
+        });
+        refreshAddButton();
+
+        const more = document.createElement("a");
+        more.className =
+          "inline-flex min-h-11 flex-1 items-center justify-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground underline-offset-4 hover:underline";
+        more.href = `${localePrefixPath(l)}/destinacija/${d.slug}`;
+        more.textContent = pick(l, L.more);
+
+        actions.append(addButton, more);
+        wrap.append(name, meta, actions);
 
         const marker = new MlMarker({ element: markerEl }).setLngLat([
           d.coords.lng,
@@ -190,6 +229,30 @@ export default function TravelMapVectorPoc() {
       de: "Standardkarte",
       fr: "Carte standard",
       es: "Mapa estándar",
+    },
+    add: {
+      sl: "Dodaj v mojo pot",
+      en: "Add to my trip",
+      it: "Aggiungi al mio viaggio",
+      de: "Zu meiner Reise hinzufügen",
+      fr: "Ajouter à mon voyage",
+      es: "Añadir a mi viaje",
+    },
+    added: {
+      sl: "V moji poti",
+      en: "In my trip",
+      it: "Nel mio viaggio",
+      de: "In meiner Reise",
+      fr: "Dans mon voyage",
+      es: "En mi viaje",
+    },
+    more: {
+      sl: "Več",
+      en: "More",
+      it: "Dettagli",
+      de: "Mehr",
+      fr: "Plus",
+      es: "Más",
     },
     loading: {
       sl: "Nalaganje vektorskih ploščic …",

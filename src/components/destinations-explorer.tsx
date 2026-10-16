@@ -85,6 +85,7 @@ export function DestinationsExplorer() {
       fr: "Rechercher : Bled, grotte, côte …",
       es: "Buscar: Bled, cueva, costa …",
     },
+    clearSearch: { sl: "Počisti iskanje", en: "Clear search", it: "Cancella la ricerca", de: "Suche löschen", fr: "Effacer la recherche", es: "Borrar búsqueda" },
     regionLabel: {
       sl: "Filtriraj po regiji",
       en: "Filter by region",
@@ -228,9 +229,21 @@ export function DestinationsExplorer() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={pick(l, L.searchPlaceholder)}
-            className="h-12 rounded-xl border-border/70 bg-background pl-10 shadow-sm focus-visible:ring-primary"
+            className="h-12 rounded-xl border-border/70 bg-background pl-10 pr-10 shadow-sm focus-visible:ring-primary"
             autoComplete="off"
           />
+          {q.length > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={pick(l, L.clearSearch)}
+              onClick={() => setQ("")}
+              className="absolute top-1/2 right-1.5 size-8 -translate-y-1/2 rounded-full text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-4" aria-hidden="true" />
+            </Button>
+          )}
         </div>
 
         <div className="min-w-0">

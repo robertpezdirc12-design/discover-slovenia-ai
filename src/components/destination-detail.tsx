@@ -15,6 +15,7 @@ import {
   Plane,
   Plus,
   Star,
+  Share2,
   Ticket,
   TrainFront,
   Wallet,
@@ -46,6 +47,7 @@ import {
 import { nearestFuelStation } from "@/lib/fuel-stations";
 import { countryName } from "@/lib/countries-data";
 import { pick } from "@/lib/i18n-pick";
+import { shareOrCopyLink } from "@/lib/share-link";
 import { MY_TRIP_CHANGED_EVENT, myTrip } from "@/lib/my-trip";
 import {
   type Destination,
@@ -138,6 +140,11 @@ export function DestinationDetail({ d }: { d: Destination }) {
     planWith: { sl: "Načrtuj s to destinacijo", en: "Plan with this destination", it: "Pianifica con questa destinazione", de: "Mit diesem Reiseziel planen", fr: "Planifier avec cette destination", es: "Planificar con este destino" },
     goWith: { sl: "Pojdi — partnerji", en: "Go — partners", it: "Vai — partner", de: "Los — Partner", fr: "Partir — partenaires", es: "Ir — socios" },
     showOnMap: { sl: "Pokaži na zemljevidu", en: "Show on map", it: "Mostra sulla mappa", de: "Auf der Karte zeigen", fr: "Afficher sur la carte", es: "Mostrar en el mapa" },
+    shareDestination: { sl: "Deli destinacijo", en: "Share destination", it: "Condividi destinazione", de: "Reiseziel teilen", fr: "Partager la destination", es: "Compartir destino" },
+    shareTitle: { sl: "Destinacija Discover Slovenia", en: "Discover Slovenia destination", it: "Destinazione Discover Slovenia", de: "Discover-Slovenia-Reiseziel", fr: "Destination Discover Slovenia", es: "Destino de Discover Slovenia" },
+    shareText: { sl: "Oglej si destinacijo:", en: "Take a look at this destination:", it: "Scopri questa destinazione:", de: "Entdecke dieses Reiseziel:", fr: "Découvre cette destination :", es: "Descubre este destino:" },
+    shareCopied: { sl: "Povezava do destinacije je kopirana.", en: "Destination link copied.", it: "Link della destinazione copiato.", de: "Link zum Reiseziel kopiert.", fr: "Lien de la destination copié.", es: "Enlace del destino copiado." },
+    shareError: { sl: "Destinacije ni bilo mogoče deliti ali kopirati.", en: "Could not share or copy this destination.", it: "Impossibile condividere o copiare questa destinazione.", de: "Dieses Reiseziel konnte nicht geteilt oder kopiert werden.", fr: "Impossible de partager ou copier cette destination.", es: "No se pudo compartir ni copiar este destino." },
     myTrip: { sl: "Moja pot", en: "My trip", it: "Il mio viaggio", de: "Meine Reise", fr: "Mon voyage", es: "Mi viaje" },
     enNote: {
       sl: "",
@@ -249,6 +256,17 @@ export function DestinationDetail({ d }: { d: Destination }) {
     { id: "omio", icon: TrainFront, label: pick(l, L.bookTransfers) },
   ] as const;
 
+  const shareDestination = () => {
+    const url = new URL(window.location.pathname, window.location.origin);
+    void shareOrCopyLink({
+      url: url.toString(),
+      title: `${pick(l, L.shareTitle)}: ${d.name}`,
+      text: `${pick(l, L.shareText)} ${d.name}`,
+      copiedMessage: pick(l, L.shareCopied),
+      errorMessage: pick(l, L.shareError),
+    });
+  };
+
   const onAdd = () => {
     const res = myTrip.add(d.slug, d.name, "destination", "destinacija");
     if (res.ok) {
@@ -340,6 +358,10 @@ export function DestinationDetail({ d }: { d: Destination }) {
               <MapPin className="size-4" aria-hidden="true" />
               {pick(l, L.showOnMap)}
             </Link>
+          </Button>
+          <Button type="button" size="lg" variant="ghost" className="tap-target font-semibold" onClick={shareDestination}>
+            <Share2 className="size-4" aria-hidden="true" />
+            {pick(l, L.shareDestination)}
           </Button>
           <Button asChild size="lg" variant="ghost" className="tap-target font-semibold">
             <Link href={`/go?dest=${d.slug}`}>{pick(l, L.goWith)}</Link>

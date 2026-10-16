@@ -81,11 +81,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Link } from "@/i18n/navigation";
-import { toast } from "@/hooks/use-toast";
 import { countryLabel } from "@/lib/countries-data";
 import { activeCountryKeys, filterDestinations } from "@/lib/destinations-filter";
 import { pick } from "@/lib/i18n-pick";
 import { LOKAL_CATEGORIES, type LokalCategory } from "@/lib/lokali-data";
+import { shareOrCopyLink } from "@/lib/share-link";
 import { myTrip, useMyTripList } from "@/lib/my-trip";
 import {
   DEST_TYPES,
@@ -1489,7 +1489,7 @@ export default function TravelMap() {
   };
 
   /** Deljena povezava vsebuje samo filtre zemljevida, ne poljubnih parametrov strani. */
-  const shareMapView = async () => {
+  const shareMapView = () => {
     const url = new URL(window.location.pathname, window.location.origin);
     const filters: Record<string, string> = {
       q: q.trim(),
@@ -1501,25 +1501,13 @@ export default function TravelMap() {
       if (!value || value === "all") url.searchParams.delete(key);
       else url.searchParams.set(key, value);
     }
-    const shareUrl = url.toString();
-
-    if (typeof navigator.share === "function") {
-      try {
-        await navigator.share({ title: t("shareTitle"), text: t("shareText"), url: shareUrl });
-        return;
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        // Fallback to clipboard when the native share sheet is unavailable.
-      }
-    }
-
-    try {
-      if (!navigator.clipboard?.writeText) throw new Error("clipboard-unavailable");
-      await navigator.clipboard.writeText(shareUrl);
-      toast({ title: t("shareCopied") });
-    } catch {
-      toast({ title: t("shareError"), variant: "destructive" });
-    }
+    void shareOrCopyLink({
+      url: url.toString(),
+      title: t("shareTitle"),
+      text: t("shareText"),
+      copiedMessage: t("shareCopied"),
+      errorMessage: t("shareError"),
+    });
   };
 
   /** Klik na postavko seznama: prileti do markerja in odpre popup. */

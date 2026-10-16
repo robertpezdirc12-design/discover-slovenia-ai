@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
 const MAP = readFileSync(join(import.meta.dir, "../src/components/map/travel-map.tsx"), "utf8");
+const SHARE = readFileSync(join(import.meta.dir, "../src/lib/share-link.ts"), "utf8");
 
 describe("map share link", () => {
   test("share action copy and feedback are localized in all six languages", () => {
@@ -25,19 +26,20 @@ describe("map share link", () => {
     expect(MAP).toContain('type,\n      region,\n      country,');
     expect(MAP).toContain('if (!value || value === "all") url.searchParams.delete(key)');
     expect(MAP).toContain('else url.searchParams.set(key, value)');
-    // The page keeps its normal URL-sync effect; the share handler intentionally starts from pathname + origin.
-    const shareStart = MAP.indexOf("const shareMapView = async () => {");
+    const shareStart = MAP.indexOf("const shareMapView = () => {");
     const shareBody = MAP.slice(shareStart, MAP.indexOf("\n  };", shareStart) + 5);
     expect(shareBody).toContain("new URL(window.location.pathname, window.location.origin)");
     expect(shareBody).not.toContain("window.location.href");
+    expect(shareBody).toContain("shareOrCopyLink({");
   });
 
-  test("native share is preferred, clipboard is fallback, and cancellation is silent", () => {
-    expect(MAP).toContain('if (typeof navigator.share === "function")');
-    expect(MAP).toContain('navigator.share({ title: t("shareTitle"), text: t("shareText"), url: shareUrl })');
-    expect(MAP).toContain('if (error instanceof DOMException && error.name === "AbortError") return;');
-    expect(MAP).toContain('await navigator.clipboard.writeText(shareUrl)');
-    expect(MAP).toContain('toast({ title: t("shareCopied") })');
-    expect(MAP).toContain('toast({ title: t("shareError"), variant: "destructive" })');
+  test("native share and clipboard fallback are centralized and report success/errors", () => {
+    expect(MAP).toContain('import { shareOrCopyLink } from "@/lib/share-link"');
+    expect(SHARE).toContain('if (typeof navigator.share === "function")');
+    expect(SHARE).toContain("await navigator.share({ title, text, url })");
+    expect(SHARE).toContain('error.name === "AbortError"');
+    expect(SHARE).toContain("await navigator.clipboard.writeText(url)");
+    expect(SHARE).toContain("toast({ title: copiedMessage })");
+    expect(SHARE).toContain('toast({ title: errorMessage, variant: "destructive" })');
   });
 });

@@ -7,6 +7,10 @@ import {
   Check,
   ExternalLink,
   Fuel,
+  Flag,
+  Compass,
+  Clock,
+  Coins,
   MapPin,
   Plane,
   Plus,
@@ -39,6 +43,7 @@ import {
   nearestAirportForRegion,
 } from "@/lib/affiliate-providers";
 import { nearestFuelStation } from "@/lib/fuel-stations";
+import { countryName } from "@/lib/countries-data";
 import { pick } from "@/lib/i18n-pick";
 import { myTrip } from "@/lib/my-trip";
 import {
@@ -74,6 +79,7 @@ export function DestinationDetail({ d }: { d: Destination }) {
 
   const L = {
     back: { sl: "Vse destinacije", en: "All destinations", it: "Tutte le destinazioni", de: "Alle Reiseziele", fr: "Toutes les destinations", es: "Todos los destinos" },
+    metaCountry: { sl: "Država", en: "Country", it: "Paese", de: "Land", fr: "Pays", es: "País" },
     metaRegion: { sl: "Regija", en: "Region", it: "Regione", de: "Region", fr: "Région", es: "Región" },
     metaType: { sl: "Tip", en: "Type", it: "Tipo", de: "Typ", fr: "Type", es: "Tipo" },
     metaRating: { sl: "Ocena", en: "Rating", it: "Valutazione", de: "Bewertung", fr: "Note", es: "Valoración" },
@@ -202,11 +208,12 @@ export function DestinationDetail({ d }: { d: Destination }) {
   } as const;
 
   const meta = [
-    { label: pick(l, L.metaRegion), value: regionLabel(d.region, l) },
-    { label: pick(l, L.metaType), value: typeLabel(d.type, l) },
-    { label: pick(l, L.metaDuration), value: d.duration },
-    { label: pick(l, L.metaBudget), value: d.budget },
-    { label: pick(l, L.metaCost), value: pick(l, L.metaCostV)(d.costPerPerson) },
+    { key: "country", Icon: Flag, label: pick(l, L.metaCountry), value: countryName(l, d.country) },
+    { key: "region", Icon: MapPin, label: pick(l, L.metaRegion), value: regionLabel(d.region, l) },
+    { key: "type", Icon: Compass, label: pick(l, L.metaType), value: typeLabel(d.type, l) },
+    { key: "duration", Icon: Clock, label: pick(l, L.metaDuration), value: d.duration },
+    { key: "budget", Icon: Wallet, label: pick(l, L.metaBudget), value: d.budget },
+    { key: "cost", Icon: Coins, label: pick(l, L.metaCost), value: pick(l, L.metaCostV)(d.costPerPerson) },
   ];
 
   const chipGroups = [
@@ -339,11 +346,11 @@ export function DestinationDetail({ d }: { d: Destination }) {
               </div>
             </div>
             {meta.map((m) => (
-              <div key={m.label} className="flex items-center gap-2.5">
-                <Wallet className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
-                <div>
+              <div key={m.key} className="flex min-w-0 items-center gap-2.5">
+                <m.Icon className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <div className="min-w-0">
                   <p className="text-xs font-medium text-muted-foreground">{m.label}</p>
-                  <p className="text-sm font-bold">{m.value}</p>
+                  <p className="break-words text-sm font-bold">{m.value}</p>
                 </div>
               </div>
             ))}

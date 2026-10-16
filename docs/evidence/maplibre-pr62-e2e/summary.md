@@ -84,5 +84,17 @@ sosednji marker. Cilji ostanejo ≥ 44×44 px; zmanjša se število hkratnih cil
 
 - Push d8b018e na GitHub ob ~18:10 UTC je Vercel zavrnil z **build-rate-limit**
   (commit status failure, brez deployment zapisa — blokada okolja, NI napaka kode).
-- Ta dokumentacijska sprememba hkrati sproži nov poskus deploymenta; E2E proti
-  predogledu se izvede takoj, ko je predogled na voljo.
+- Dokumentacijski commit e011094 je deployment sprožil znova: **SUCCESS v ~90 s**
+  (predogled `i-feel-slovenia-pidqp0mut-…vercel.app`, health ok, 2.67.1) — blokada
+  je bila prehodna (burst throttle), ne trajna.
+
+## Rezultat proti živemu predogledu (e011094, en neprekinjen tek)
+
+- **Mobilni E2E: 19/19 zeleni (18 passed + 1 flaky ①@320px, zelen na retryju —
+  hladna RSC soft-nav, ni povezana z zemljevidom; 3,9 min).** Ključna sprejemna
+  ⑩ gručenje: Bled in Vintgarska soteska posamezno izberljiva iz gruče pri
+  privzetem pogledu, brez iskanja in brez ročnega povečanja — cilja se ne
+  prekrivata, popup + „Dodaj v mojo pot" za OBE — PASSED proti predogledu. ⑪ PASSED.
+- **Namizni E2E: 2/2 PASSED (29,5 s).**
+- Ukaz: `E2E_BASE_URL=https://i-feel-slovenia-pidqp0mut-…vercel.app bunx playwright
+  test --project=chromium-mobile` (+ `--project=chromium`).

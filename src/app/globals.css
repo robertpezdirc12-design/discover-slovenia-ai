@@ -201,6 +201,13 @@
   }
 }
 
+/* MapLibre (#35): kontrole povečave naj bodo uporabne tudi s prstom.
+   Pravilo je omejeno na MapLibre in ne posega v Leaflet kontrole. */
+.maplibregl-ctrl-group button {
+  width: 44px;
+  height: 44px;
+}
+
 /* Dostopnost: spoštuj sistemsko nastavitev zmanjšanega gibanja.
    Ne spreminjamo vsebine ali interakcij — omejimo samo animacijo/prehod
    ter preprečimo gladko drsenje, ki lahko povzroča nelagodje. */

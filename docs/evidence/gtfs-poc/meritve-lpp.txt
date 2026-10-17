@@ -1,0 +1,31 @@
+# GTFS PoC meritve — /home/z/.gtfs-research/lpp-direct
+# zagon (Europe/Ljubljana): 20261017 08:32
+agency: 1 | Ljubljanski Potniški Promet
+stops: 725
+routes: 31 (tipi: 3)
+trips: 60446
+calendar.txt: NE | calendar_dates: 31 vrstic, okno 20261016 → 20261115
+datum meritve: 20261017 | aktivnih storitev: 1 | datum znotraj okna feeda: DA
+ciljna postaja (najbližja kanonski Ljubljani): Bavarski dvor (c87db9be-1fba-4102-a743-0ee4317dd5af)
+stop_times: 1545193 vrstic (250.0 MB) | postaj z odhodi: 725 | odhodi aktivnih storitev za 20261017: 30964 | pretakanje: 5576 ms
+
+# Pokritost kanonskih destinacij (74)
+pokritost ≤1 km: 1/74 | ≤2 km: 1/74
+  ljubljana: najbližja "Bavarski dvor" 0.05 km | ≤1 km: 44 | ≤2 km: 131
+brez postaje ≤1 km (73): bled, bohinj, postojnska-jama, piran, reka-soca, triglav, kobarid, maribor, portoroz, vintgarska-soteska, rogaska-slatina, ptuj, celje, nova-gorica, slovenj-gradec, dravograd, murska-sobota, lendava, novo-mesto, otocec, crnomelj, zagreb, plitvicka-jezera, rijeka, pula, zadar, split, hvar, dubrovnik, kotor, budva, podgorica, durmitor, tirana, berat, gjirokaster, saranda, sarajevo, mostar, kravica, jahorina, blagaj, travnik, beograd, novi-sad, kopaonik, derdap, sremski-karlovci, subotica, ohrid, skopje, matka, bitola, prespa, mavrovo, prizren, rugova, brezovica, gjakova, gadime, prishtina, sofija, plovdiv, rila-samostan, nesebar, bansko, veliko-tarnovo, solun, meteora, kastoria, vergina, ioannina, halkidiki
+
+# Prototip odhodov — "Bavarski dvor" @ 20261017 08:32 (naslednjih 8)
+  08:36  linija 14 → SAVLJE - BOKALCE (vožnja 9acf8c60…)
+  08:37  linija 27 → VEVČE - BTC - NS RUDNIK (po Vilharjevi) (vožnja 9acf8c60…)
+  08:40  linija 08 → BRNČIČEVA - GAMELJNE (vožnja 9acf8c60…)
+  08:40  linija 20Z → NOVE STOŽICE P+R - ZALOG (vožnja 9acf8c60…)
+  08:45  linija 02 → ZELENA JAMA - NOVE JARŠE (vožnja 9acf8c60…)
+  08:48  linija 09 → ŠTEPANJSKO NASELJE - BARJE P+R (vožnja 9acf8c60…)
+  08:48  linija 06 → ČRNUČE - DOLGI MOST P+R (vožnja 9acf8c60…)
+  08:49  linija 13 → CENTER STOŽICE P+R - SOSTRO (vožnja 9acf8c60…)
+
+# SQLite prototip → /home/z/.gtfs-research/lpp-meritve.db
+uvoz: 1545193 vrstic v 6469 ms | indeks: 1121 ms | baza: 314.5 MB | skupaj (baza+indeks): 7635 ms
+poizvedba (naslednjih 8 na "Bavarski dvor"): 1 ms (prvi) / 0 ms (ponovitev) | zadetkov: 8
+
+# skupni čas meritve: 13919 ms

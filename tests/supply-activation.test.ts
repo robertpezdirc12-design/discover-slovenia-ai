@@ -346,10 +346,10 @@ describe("deriveProductionState — mehanska pravila", () => {
 describe("checkAllProviders — dejansko stanje (2.x resnica)", () => {
   const prazno = checkAllProviders({});
 
-  test("števci: 3 ACTIVE · 1 CONFIGURED · 15 NOT_CONFIGURED · 0 BLOCKED (po P0-F)", () => {
-    expect(prazno.counts.ACTIVE).toBe(3);
+  test("števci: 4 ACTIVE · 1 CONFIGURED · 14 NOT_CONFIGURED · 0 BLOCKED (kiwitaxi vir živ)", () => {
+    expect(prazno.counts.ACTIVE).toBe(4);
     expect(prazno.counts.CONFIGURED).toBe(1);
-    expect(prazno.counts.NOT_CONFIGURED).toBe(15);
+    expect(prazno.counts.NOT_CONFIGURED).toBe(14);
     expect(prazno.counts.BLOCKED).toBe(0);
     expect(prazno.rows.length).toBe(19);
   });
@@ -407,11 +407,18 @@ describe("checkAllProviders — dejansko stanje (2.x resnica)", () => {
     expect(checkAllProviders({}).counts.BLOCKED).toBe(0);
   });
 
-  test("fsq/kiwitaxi: koda obnovljena (P0-C), a čakata PODATKOVNI VIR → NOT_CONFIGURED (gate data)", () => {
-    for (const id of ["fsq", "kiwitaxi"]) {
-      expect(checkProviderById(id, {})?.state).toBe("NOT_CONFIGURED");
-      expect(getMatrixEntry(id)?.gate).toBe("data");
-    }
+  test("fsq: koda obnovljena (P0-C), a čaka PODATKOVNI VIR → NOT_CONFIGURED (gate data)", () => {
+    expect(checkProviderById("fsq", {})?.state).toBe("NOT_CONFIGURED");
+    expect(getMatrixEntry("fsq")?.gate).toBe("data");
+  });
+
+  test("kiwitaxi: vir najden (webmaster CSV API) in ingesciran → ACTIVE (gate none)", () => {
+    // Odločitveni paket docs/research/kiwitaxi-vir.md: uradni webmaster
+    // CSV API (javno dokumentiran) — množica regije SI·HR·ME·AL je
+    // ingescirana v data/kiwitaxi-routes.json; vrata „data" so padla.
+    const vnos = getMatrixEntry("kiwitaxi");
+    expect(vnos?.gate).toBe("none");
+    expect(checkProviderById("kiwitaxi", {})?.state).toBe("ACTIVE");
   });
 
   test("z ves env nastavljenimi postanejo VSI affiliate partnerji ACTIVE (12)", () => {
@@ -442,7 +449,7 @@ describe("checkAllProviders — dejansko stanje (2.x resnica)", () => {
       AFFILIATE_SAFETYWING_TMPL: "https://sw/{id}",
     };
     const poročilo = checkAllProviders(env);
-    expect(poročilo.counts.ACTIVE).toBe(15); // osm-fuel + osm + sto + 12 partnerjev
+    expect(poročilo.counts.ACTIVE).toBe(16); // osm-fuel + osm + sto + kiwitaxi + 12 partnerjev
     for (const id of [
       "booking",
       "getyourguide",

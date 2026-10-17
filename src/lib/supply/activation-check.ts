@@ -93,7 +93,8 @@ export function deriveProductionState(
   // 1. Prvo obnova — nič ni mogoče, dokler sloj ni obnovljen.
   if (entry.gate === "restore") return "NOT_CONFIGURED";
 
-  // 1b. Koda obnovljena, a čaka PODATKOVNI VIR (P0-C: fsq/kiwitaxi) —
+  // 1b. Koda obnovljena, a čaka PODATKOVNI VIR (fsq — čaka lastniški HF
+  //     žeton; kiwitaxi je vir dobil: webmaster CSV API, gate „none") —
   //     pridobitev množice je v naših rokah (dump/feed), torej
   //     NOT_CONFIGURED, ne BLOCKED (ni zunanje ovire) in ne ACTIVE
   //     (brez podatkov sloj ne deluje).

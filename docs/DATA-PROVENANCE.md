@@ -88,18 +88,25 @@ gostitelj) NE vstopi v množico (zaščita pred zastrupitvijo vira).
 
 | Vidik | Dejstvo |
 |---|---|
-| **Licenca** | partnerjev objavljeni feed (affiliate program) — cene so partnerjeve |
-| **Vrsta** | partner-feed (CSV) + affiliate |
-| **Stanje cen** | FROM_PRICE (objavljena „od"-cena — NI živ citat) |
-| **Izvirnikov feed** | rute, ki se dotikajo SI + regionalne (data/kiwitaxi-routes.json) — IZGUBLJEN na mrtvem računu |
+| **Licenca** | partnerjev objavljeni feed (webmaster API za prikaz objavljenih cen z atribucijo) — cene so partnerjeve |
+| **Vrsta** | partner-feed (TSV/CSV) + zunanja rezervacija |
+| **Stanje cen** | FROM_PRICE (objavljena „od"-cena — NI živ citat; payment_type privzeto `partial`) |
+| **Izvirnikov feed** | IZGUBLJEN na mrtvem računu — **nasledil: uradni webmaster CSV API** (kiwitaxi.com/services/data/csv, javno dokumentiran security_token; preverjeno 17. 10. 2026) |
 | **Obnova (P0-C)** | ✅ koda: shema + validacija (ISO-2, cena > 0) + `routeTouchesSlovenia` + iskanje + `bun run kiwitaxi:ingest --csv` |
-| **Čakanje** | ⚪ gate „data" — partner CSV feed čaka vir (affiliate program) |
-| **Rezervacija** | ZUNANJA pri partnerju (iskrene povezave; provizija po affiliate prijavi) |
+| **Množica (2.x)** | ✅ `data/kiwitaxi-routes.json` — 6.360 rut regije SI·HR·ME·AL (1.501 se dotika SI); preverba LJU→Zagreb 216 EUR = splet €216 isti dan; paket `docs/research/kiwitaxi-vir.md` |
+| **Rezervacija** | ZUNANJA pri partnerju (iskrene povezave; provizija = neobvezna `pap=<ID>` po affiliate prijavi — lastniški korak) |
 
-**Runbook:** `bun run kiwitaxi:ingest --csv <feed.csv>` (glava CSV:
-`from_name,from_country,to_name,to_country,price_eur,vehicle_class,url`).
+**Runbook (E2E testirano 17. 10. 2026):**
+```bash
+# 1) entitetni TSV (~123 MB, izven repozitorija) + kanonski CSV regije
+python3 scripts/kiwitaxi-export.py --download --data-dir /tmp/kiwitaxi-feed \
+        --out /tmp/kiwitaxi/region.csv          # --security-token ob individualizaciji
+# 2) ingest — kanon nespremenjen (fail-closed: 0 veljavnih rut → nič ni prepisano)
+bun run kiwitaxi:ingest --csv /tmp/kiwitaxi/region.csv
+```
 Kanon iskrenosti: kjer feed nima rut → „ni transfernih rut" (praznina je
-odgovor, ne napaka).
+odgovor, ne napaka). Tedensko osveževanje = ista 2 ukaza (prej ali skupaj
+z `/api/cron/sto-reingest` oknom, sreda zjutraj UTC).
 
 **Atribucija:** `Transferji in cene: KiwiTaxi (objavljeni partner feed) — rezervacija pri partnerju`
 
@@ -110,7 +117,7 @@ odgovor, ne napaka).
 | Urnik (UTC) | Endpoint | Opis |
 |---|---|---|
 | `30 7 * * 2` | `/api/cron/sto-reingest` | osvežitev STO vira (tedensko) |
-| `30 7 * * 3` | `/api/cron/kiwitaxi-reingest` | osvežitev KT feeda (no-op, dokler feed ne obstaja) |
+| `30 7 * * 3` | `/api/cron/kiwitaxi-reingest` | osvežitev KT feeda (poroča stanje množice; osvežitev = 2 ukaza iz runbooka §4) |
 
 Preostalih 6 cron opravil izvirnika (daily-trip-push, recalculate-status,
 commission-invoices, weekly-alerts, renewal-reminders, draft-reminders) se
@@ -129,8 +136,9 @@ idempotentnost (ponovni klic = isti zapis istega vira).
 - `FSQ_PLACES_DIR` (pot mape, ne skrivnost) je edina env spremenljivka slojev;
   lib je NE bere (kanon: env samo v strežniškem sloju, pot se vbrizga).
 - `CRON_SECRET` je edina skrivnost cron poti — nikoli se ne izpiše.
-- data/sto-content.json je v repozitoriju (javnost vira = javnost množice);
-  data/fsq-places/ in data/kiwitaxi-routes.json se dodata, ko vir pride.
+- data/sto-content.json in data/kiwitaxi-routes.json sta v repozitoriju
+  (javnost vira = javnost množice); data/fsq-places/ se doda, ko pride
+  lastniški HF žeton (paket docs/research/fsq-os-places-vir.md).
 
 ## 7. Kaj je RECOVERY_CLAIM_ONLY (issue §32)
 

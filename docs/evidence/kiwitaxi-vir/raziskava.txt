@@ -1,0 +1,59 @@
+KIWITAXI VIR — dokazila raziskave (17. 10. 2026, peskovnik)
+============================================================
+
+1) ROBOTS.TXT (https://kiwitaxi.com/robots.txt — HTTP 200)
+   · Allow: /docs/, /*.css$, /*.js$, /*/_payload.json?* …
+   · Disallow: *?* (query-string URL-i), /request, /client, /bus,
+     /travelmate-api/, /widgets …
+   · Javne strani poti (/en/{drzava}/{kraj}, /en/…/routes) NISO disallow.
+   · Sitemap: https://kiwitaxi.com/sitemap_index.xml
+
+2) JAVNE STRANI (brskalnik, protidbotovni izziv 429/JS ob curl — prehoden)
+   · /en/all-airports: 864 krajev; kanonska regija:
+       SI 3 (Ljubljana, Maribor, Bovec) · HR 7 · ME 2 (Podgorica, Tivat)
+       · AL 1 (Tirana) + mejna vozlišča IT 38, AT 6, RS 2, HU 2, GR 22, BG 4
+   · /en/slovenia/ljubljana-airport: 31 rut; /…/tivat-airport/routes:
+     indeks VSEH rut vozlišča s „From $X" objavljenimi cenami (USD izpis)
+   · stran rute /en/slovenia/ljubljana-airport-zagreb:
+     "Prices … start from $254 (€216)" — objavljena „od"-cena, EUR v besedilu
+     (nekonsistentno po straneh — nekateri imajo samo USD; API rešitev spodaj)
+
+3) URADNI WEBMASTER API (dokumentiran javno:
+   https://kiwitaxi.com/en/partner/webmaster/instructions/api — HTTP 200)
+   · entitete: Country (iata = ISO-2), Region, Place, Route, TransferType,
+     Transfer (price_rub, price_eur, price_usd, url)
+   · "All requests must contain the following parameter security_token.
+     Currently, it's the same for everyone: 24e8a1…b2d6. In future,
+     individual security token will be assigned to every user."
+   · pap=<affiliate ID> je SAMO za provizijo — za podatek ni potreben.
+
+4) PRENOS (curl, 17. 10. 2026)
+   countries      10,1 KB   HTTP 200
+   places         71,7 MB   HTTP 200
+   routes         11,9 MB   HTTP 200
+   transfers      39,3 MB   HTTP 200  (811.755 vrstic; 21,6 s)
+   transfer_types  5,7 KB   HTTP 200  (razredi vozil: Micro, Economy, Comfort …)
+
+5) KRIŽNA VALIDACIJA FEED ↔ SPLET (isti dan)
+   LJU→Zagreb (mesto): feed price_eur 216 [Economy] = splet „(€216)" 1:1
+   LJU→Zagreb Airport: feed 228 EUR · LJU→Zagreb Train Station: 202 EUR
+
+6) E2E CEVOVOD (scripts/kiwitaxi-export.py → bun run kiwitaxi:ingest)
+   export:  entitetne rute 151.785 · s transferji 116.108
+            preskočenih krajev (brez name_en) 12 · zavrnjenih cen 4.169
+            regija SI·HR·ME·AL: 6.360 unikatnih relacij (1.501 se dotika SI)
+   ingest:  0 neveljavnih + 0 duplikatov → data/kiwitaxi-routes.json
+            (6.360 rut, 1,6 MB) — kanon NESPREMENJEN
+   par med regijo: HR-HR 1752 · ME-ME 1701 · IT-SI 440 · SI-SI 350
+            · HR-SI 348 · HR-IT 348 · HR-ME 303 · AT-SI 256 · AL-AL 178
+            · AL-ME 152 · BA-ME 88 · BA-HR 75
+
+7) ISKRENE OMEJITVE
+   · security_token je danes javno dokumentiran; API stran napoveduje
+     individualizacijo žetonov v prihodnje (--security-token ob tem).
+   · payment_type privzeto "partial" (dokumentirana privzeta vrednost).
+   · svežina feeda ni izpisana znotraj virа — osvežitev teče prek ponovnega
+     prenosa (runbook); „weight" polje opisuje trenutno sezono.
+   · licenca: objavljene cene partnerja za promocijsko prikazovanje (namen
+     webmaster API-ja); NI raziskana formalna licenčna klavzula — pred
+     produkcijo vnos v ATTRIBUTIONS.md (izpolnjen v tem paketu).

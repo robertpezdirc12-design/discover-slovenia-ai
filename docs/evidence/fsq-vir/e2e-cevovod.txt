@@ -1,0 +1,28 @@
+# FSQ izvozni cevovod — E2E dokazilo (17. 10. 2026, brez HF žetona)
+
+Cevovod: sintetični parquet (resnična shema) → scripts/fsq-export.py (--local-glob)
+        → surov .jsonl → bun run fsq:ingest → canonical places.jsonl + manifest.json
+
+## Korak 1 — generacija sintetike (scripts/fsq-export-sinteticni-test.py)
+  9 vrstic v 2 parquet datotekah; robovi: zaprt POI (date_closed), izven bbox
+  države (HR lat 46.75 > 46.6, znotraj unije 46.9), nepotovalna kategorija
+  (office), duplikat fsq_id, NULL name.
+
+## Korak 2 — export (--local-glob)
+  vrstic: 8  (zaprti IZKLJUČEN pri exportu: date_closed IS NULL ✓)
+  AL: 1  HR: 2  ME: 1  SI: 4
+
+## Korak 3 — bun run fsq:ingest --raw-dir …
+  Zavrnjene: 2 neveljavnih (HR bbox presežek + NULL ime) + 1 nepotovalnih
+             (office) + 1 duplikatov   — VSE NAPREDI 1:1 po napovedi ✓
+  AL: 1 POI | HR: 1 POI | ME: 1 POI | SI: 1 POI | SKUPAJ: 4 POI ✓
+  category preslikave: restaurant / hotel / beach / museum ✓
+  manifest: total 4 · source "Foursquare Open Places (HuggingFace
+            foursquare/fsq-os-places)" (ažurirano) ✓
+
+## Zaključek
+Cevovod je E2E dokazan (minus omrežni del). Ob HF žetonu je edini novi vhod
+--hf-token + --dt; pričakovano prenose DuckDB pushdown še izmeriti (iskreno
+označeno kot neznano do prvega teka). Ukaz:
+  python3 scripts/fsq-export.py --hf-token hf_... --dt 2026-10-15 --out data/fsq-raw
+  bun run fsq:ingest --raw-dir data/fsq-raw --snapshot-date 2026-10-15

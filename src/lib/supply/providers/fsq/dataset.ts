@@ -21,8 +21,10 @@
  *     snapshot 2025-02-06 = izdaja dt=2025-02-06, torej 1:1 reproducibilen;
  *     sveža izdaja = zadnji dt). IZVIKNI viri so mrtvi: javni S3 žeg
  *     (NoSuchBucket) in source.coop/fused.io (razdeljuje samo Overture).
- *  2. duckdb (httpfs/hf://, žeton) pushdown bbox SI·HR·ME·AL → surovi
- *     .jsonl (fsq_id/name/lat/lng/country/categories).
+ *  2. `python3 scripts/fsq-export.py --hf-token hf_... --dt <izdaja> --out data/fsq-raw`
+ *     (duckdb pushdown bbox SI·HR·ME·AL + country + date_closed IS NULL →
+ *     surov .jsonl; E2E testirano na sintetičnem parquetu — glej
+ *     docs/evidence/fsq-vir/e2e-cevovod.txt).
  *  3. `bun run fsq:ingest --raw-dir <dir>` — določen, validiran pretvorba
  *     v canonical .jsonl + manifest.json (provenance + števci).
  *  4. Loader samodejno pobere data/fsq-places/*.jsonl (brez omrežja).

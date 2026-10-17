@@ -177,7 +177,9 @@ await writeFile(join(outDir, "places.jsonl"), jsonl, "utf8");
 
 const manifest = {
   snapshotDate,
-  source: "Foursquare Open Places (source.coop / fused.io)",
+  // Vir surovega dumpa (provenance) — posodobljeno 17.10.2026 (PR #65/#66):
+  // uradni vir je HF foursquare/fsq-os-places; source.coop/fused.io je mrtav.
+  source: "Foursquare Open Places (HuggingFace foursquare/fsq-os-places)",
   license: "Apache-2.0 (z atribucijo)",
   attribution: FSQ_ATTRIBUTION,
   ingestedAt: new Date().toISOString(),

@@ -37,20 +37,19 @@ ME 10.285 · AL 8.820). To pomeni:
   27 M popravkov skupnosti; vsBaseline bo pokazal pozitiven odmik — po zasnovi
   iskrenega prikaza).
 
-## 4. Pot do podatkov (ko žeton obstaja)
+## 4. Pot do podatkov (ko žeton obstaja) — CEVOVOD ŽE E2E TESTIRAN
 
 1. **Lastniški korak (5–10 min):** brezplačen HF račun → stran dataseta →
    soglasje gated („auto" = samodejna potrditev brez ročnega pregleda) →
    fine-grained žeton (read). Naloga sicer ni izvedljiva (401).
-2. `pip install duckdb` (ali bun duckdb vez) + `httpfs`/`hf://` branje z žetonom:
-   `SELECT … FROM read_parquet('hf://datasets/foursquare/fsq-os-places/…')`
-   WHERE bbox SI·HR·ME·AL (lat 39,6–46,9; lng 13,3–21,1) — parquet row-group
-   pushdown; pričakovani strošek prenosov se izmeri ob prvem teku (najslabši
-   primer polni scan 11,58 GB — pretirano; izdaja 2025-02-06 je manjša).
-3. Surovi izvoz → `.jsonl` (fsq_id/name/lat/lng/country/categories) →
-   **`bun run fsq:ingest --raw-dir <dir>`** (obstoječa, stroga validacija +
-   dedupe + manifest) → `data/fsq-places/places.jsonl` — loader ga pobere
-   **samodejno, brez spremembe kode**.
+2. `python3 scripts/fsq-export.py --hf-token hf_... --dt 2026-10-15 --out data/fsq-raw`
+   — duckdb pushdown (bbox SI·HR·ME·AL + `country IN` + `date_closed IS NULL`)
+   → surov `.jsonl` v obliki za ingest. (**E2E testirano na sintetičnem parquetu
+   z resnično shemo — dokazilo `docs/evidence/fsq-vir/e2e-cevovod.txt`; omrežni
+   del + učinkovitost pushdown se izmeri ob prvem živem teku.**)
+3. `bun run fsq:ingest --raw-dir data/fsq-raw --snapshot-date 2026-10-15`
+   (obstoječa, stroga validacija + dedupe + manifest) → `data/fsq-places/places.jsonl`
+   — loader ga pobere **samodejno, brez spremembe kode**.
 4. Deltas (`deltas/parquet`) omogočajo prihodnje inkrementalne osvežitve brez
    polnega prenosa.
 
@@ -84,3 +83,18 @@ ME 10.285 · AL 8.820). To pomeni:
 - `src/lib/supply/production-matrix.ts` — iskren niz vrata „data": dejanski vir +
   preostali korak (HF žeton) namesto zastarele omembe source.coop/fused.io.
 - `docs/research/balkan-platform-no-ai.md` — aditivna posodobitev §5/§7.
+
+## 8. Dodatek (isti dan, naslednji korak) — izvozna skripta E2E testirana
+
+- `scripts/fsq-export.py` — prenosna plast (duckdb 1.5.6 python; **brez dotikanja
+  package.json** — brez vpliva na Vercel build): `--hf-token` (hf:// vir) ali
+  `--local-glob` (test brez omrežja), pushdown bbox+country+date_closed, izhod
+  surov `.jsonl` za ingest. Preslikava kategorij NAMERNO ostane v fsq-ingest.ts
+  (ENA definicija kanona).
+- `scripts/fsq-export-sinteticni-test.py` — deterministična generacija
+  sintetičnega parquet z resnično shemo + robovi.
+- `scripts/fsq-ingest.ts` — manifest `source` ažuriran na uradni vir (HF;
+  source.coop/fused.io mrtav).
+- `docs/evidence/fsq-vir/e2e-cevovod.txt` + `docs/evidence/fsq-vir/test-parquet/`
+  — E2E dokazilo: 9 surovih → export 8 (zaprti izključen) → ingest 4 veljavne
+  (SI/HR/ME/AL po 1), 2 zavrnjeni, 1 nepotovalna, 1 duplikat — vse napredi 1:1.

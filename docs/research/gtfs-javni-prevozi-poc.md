@@ -13,7 +13,7 @@ To NI uvedba OTP (ta ostaja zavrnjena do lastniške sodbe, glej §5 `balkan-plat
 | vir | status |
 |---|---|
 | MobilityData katalog (`mobility-database-catalogs`) | **6 SI feedov** (LPP + 5 lokalnih) — potrjeno enako kot §5 raziskave |
-| **LPP** (`data.lpp.si/api/gtfs/feed.zip`) | **JAVNO dostopen, SVEŽ** (okno 2026-10-16 → 11-15, ~30-dnevna rotacija) |
+| **LPP** (`avl.lpp.si/transit/api/gtfs`; stari `data.lpp.si/api/gtfs/feed.zip` zdaj 302 sem — *posodobljeno isti dan, pozno dop.*) | **JAVNO dostopen, SVEŽ** (okno 2026-10-16 → 11-15, ~30-dnevna rotacija). **POZOR:** preusmerjena pot (`curl -L`) vrača ODREZAN zip (19 MB, manjka centralni imenik) — prenašati NEPOSREDNO z nove domene (42,5 MB cel, `unzip -t` brez napak; GET edino, HEAD=405). Produkcija naj črpa direktno z `avl.lpp.si` |
 | **DUJPP nacionalni** (`b2b.nap.si/data/b2b.gtfs`) | **HTTP 401 — B2B registracija** (nacionalni prevoznik JPP; največji potencial pokritosti) |
 | NOMAGO Brežice / Nova Gorica, Ariva Jesenice, Turizem Kranjska Gora | HTTP 401 — B2B registracija |
 | zrcalo `mdb-latest` (GCS) | za LPP **zastarelo** (jun–jul 2026) — katalogova svežina je nezanesljiva za SI |
@@ -32,6 +32,7 @@ To NI uvedba OTP (ta ostaja zavrnjena do lastniške sodbe, glej §5 `balkan-plat
 | prototip odhodov (Bavarski dvor @ 08:32) | 8 realnih naslednjih odhodov (linije 14, 27, 08, 20Z, 02, 09, 06, 13) — glave voženj + kratka imena linij pravilni |
 | pretakanje stop_times (250 MB) | 5 576 ms |
 | SQLite prototip | uvoz 1,55 M vrstic **6 469 ms** + indeks 1 121 ms → baza **314,5 MB**; odhodna poizvedba **1 ms** |
+| **re-validacija 2026-10-17 (pozno dop.)** | meritve **reproducirane 1:1** na svežem prenosu z nove domene (725 postaj · 31 linij · 60 446 voženj · 1 545 193 odhodov · isto okno; živih 8 odhodov Bavarski dvor @ 08:50; pretakanje 6 163 ms) — paket še veljaven, vir zdaj `avl.lpp.si` (§2) |
 
 ## 4. Iskrene ugotovitve
 

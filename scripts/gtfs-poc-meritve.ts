@@ -27,7 +27,9 @@
  *      bun scripts/gtfs-poc-meritve.ts <mapa-feeda> [--db <pot.db>]
  *          [--datum YYYYMMDD] [--cas HH:MM] [--postaja <stop_id>]
  *
- * Meritveni vir (17. 10. 2026): LPP https://data.lpp.si/api/gtfs/feed.zip
+ * Meritveni vir (17. 10. 2026): LPP https://avl.lpp.si/transit/api/gtfs
+ *   (stari https://data.lpp.si/api/gtfs/feed.zip zdaj 302 sem in po preusmeritvi vrača
+ *    ODREZAN zip — prenašaj NEPOSREDNO z nove domene; GET edino, HEAD=405)
  * — neposredni vir je SVEŽ (okno ~30 dni), zrcalo mdb-latest kataloga
  * MobilityData je za isti feed ZASTARELO; ostalih 5 SI feedov v katalogu je
  * zaščitenih z B2B registracijo (HTTP 401) — glej

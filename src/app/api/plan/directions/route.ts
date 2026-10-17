@@ -83,7 +83,7 @@ function resolveDirectionsBaseUrl(): string {
 
 const VALHALLA_ROUTE_URL = `${resolveDirectionsBaseUrl()}/route`;
 const ROUTING_USER_AGENT =
-  "DiscoverSlovenia-AI/2.67.1 (routing; sledi OpenStreetMap etiquette)";
+  "DiscoverSlovenia-AI/2.68.0 (routing; sledi OpenStreetMap etiquette)";
 const UPSTREAM_TIMEOUT_MS = 8_000;
 
 const RATE_LIMIT = 60;

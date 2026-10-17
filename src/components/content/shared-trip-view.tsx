@@ -2,6 +2,7 @@
 
 import {
   ArrowRight,
+  BookOpen,
   CalendarDays,
   Clock,
   CloudUpload,
@@ -38,6 +39,7 @@ import {
   type TripRoleName,
 } from "@/components/trips/trip-collab";
 import { TripChat } from "@/components/trips/trip-chat";
+import { TripJournal } from "@/components/trips/trip-journal";
 import { TripWatchMenu } from "@/components/watch/trip-watch-menu";
 import { TripPolls } from "@/components/trips/trip-polls";
 import { TripReservations } from "@/components/trips/trip-reservations";
@@ -282,6 +284,7 @@ export function SharedTripView({ shareId }: { shareId: string }) {
     tabCollab: { sl: "Sodelovanje", en: "Collaboration", it: "Collaborazione", de: "Kollaboration", fr: "Collaboration", es: "Colaboración" },
     tabReservations: { sl: "Rezervacije", en: "Reservations", it: "Prenotazioni", de: "Reservierungen", fr: "Réservations", es: "Reservas" },
     tabPolls: { sl: "Ankete", en: "Polls", it: "Sondaggi", de: "Umfragen", fr: "Sondages", es: "Encuestas" },
+    tabDiary: { sl: "Dnevnik", en: "Journal", it: "Diario", de: "Tagebuch", fr: "Journal", es: "Diario" },
     tabChat: { sl: "Klepet", en: "Chat", it: "Chat", de: "Chat", fr: "Chat", es: "Chat" },
     // 48-a: pasica uvoza v oblak
     cloudTitle: { sl: "Sodelovanje v živo — shrani pot v oblak", en: "Live collaboration — save this trip to the cloud", it: "Collaborazione in tempo reale — salva il viaggio nel cloud", de: "Live-Kollaboration — speichere diese Reise in der Cloud", fr: "Collaboration en direct — enregistre ce voyage dans le cloud", es: "Colaboración en vivo — guarda este viaje en la nube" },
@@ -730,6 +733,10 @@ export function SharedTripView({ shareId }: { shareId: string }) {
               <MapPin className="size-3.5" aria-hidden="true" />
               {pick(l, L.tabPolls)}
             </TabsTrigger>
+            <TabsTrigger value="dnevnik" className="gap-1.5">
+              <BookOpen className="size-3.5" aria-hidden="true" />
+              {pick(l, L.tabDiary)}
+            </TabsTrigger>
             <TabsTrigger value="chat" className="gap-1.5">
               <QrCode className="size-3.5" aria-hidden="true" />
               {pick(l, L.tabChat)}
@@ -934,6 +941,17 @@ export function SharedTripView({ shareId }: { shareId: string }) {
               shareId={shareId}
               createdAt={db.createdAt}
               canPost={canParticipate}
+              myName={session?.user?.name ?? session?.user?.email ?? null}
+            />
+          </TabsContent>
+
+          {/* ── Zavihek DNEVNIK (F12 — tekstovni spomini, tiskljivi) ── */}
+          <TabsContent value="dnevnik" className="mt-4">
+            <TripJournal
+              shareId={shareId}
+              createdAt={db.createdAt}
+              canPost={canParticipate}
+              planDays={plan.days.length}
               myName={session?.user?.name ?? session?.user?.email ?? null}
             />
           </TabsContent>

@@ -111,6 +111,8 @@
 
 **Obveznost od pričetka faze 1:** voditi `ATTRIBUTIONS.md` — sloj → vir → licenca → datum. Share-alike ocena na nivoju vsake izpeljane baze (glej R2).
 
+**Posodobitev 17.10.2026 (FSQ OS Places — vir za zaprtje vrata „data"):** izgubljena množica POI (125.446, snapshot 2025-02-06) je **natanko reproducibilna** — uradni HuggingFace dataset `foursquare/fsq-os-places` vsebuje vse mesečne izdaje (baseline = izdaja `dt=2025-02-06`), zadnja `dt=2026-10-15` (2 dni sveža, 100 parquet shardov ≈ 11,58 GB). Licenca Apache-2.0 z atribucijo POTRJENA (README + NOTICE.txt). Dostop: brezplačen HF račun + samodejno soglasje (gated auto) + read žeton — lahek lastniški korak (~5–10 min); stari javni S3 žeg in source.coop/fused.io so MRTVI (NoSuchBucket/404; preusmerjeni na Overture). Cevovod po žetonu: duckdb pushdown bbox SI·HR·ME·AL → surov .jsonl → obstoječ `bun run fsq:ingest` — **brez spremembe kode** (loader pobere `data/fsq-places/` samodejno). Odločitveni paket + surova sled: `docs/research/fsq-os-places-vir.md` · `docs/evidence/fsq-vir/raziskava.txt`.
+
 ---
 
 ## 5. Pokritost držav in vrzeli (osveženo 15. 10. 2026 — GTFS verifikacija + Valhalla meritve)

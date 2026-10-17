@@ -89,10 +89,10 @@ export const PRODUCTION_MATRIX: readonly ProviderMatrixEntry[] = Object.freeze([
     gate: "data",
     envKeys: [],
     reasonSl:
-      "Koda obnovljena v P0-C (loader .jsonl + stroga validacija: geo bbox države, kanonske kategorije, dedupe + ingest bun run fsq:ingest). Množica 125.446 POI (SI·HR·ME·AL, snapshot 2025-02-06) je ostala na mrtvem GitHub računu — čaka svež dump Foursquare Open Places (Apache-2.0, source.coop/fused.io).",
+      "Koda obnovljena v P0-C (loader .jsonl + stroga validacija: geo bbox države, kanonske kategorije, dedupe + ingest bun run fsq:ingest). Množica 125.446 POI (SI·HR·ME·AL, snapshot 2025-02-06) je ostala na mrtvem GitHub računu — vir najden in svež (17.10.2026): uradni HuggingFace foursquare/fsq-os-places, izdaja dt=2026-10-15 (Apache-2.0; stari javni S3 in source.coop/fused.io mrtvi). Preostali korak: brezplačen HF žeton (gated auto — lastniški). Paket: docs/research/fsq-os-places-vir.md.",
     stepsSl: [
-      "Pridobi dump Foursquare Open Places za bbox SI·HR·ME·AL (source.coop / fused.io)",
-      "bun run fsq:ingest --raw-dir <dir> --snapshot-date 2025-02-06",
+      "Ustvari brezplačen HF račun + soglasje na foursquare/fsq-os-places + fine-grained read žeton (5–10 min, samodejna potrditev)",
+      "duckdb pushdown bbox SI·HR·ME·AL → surov .jsonl → bun run fsq:ingest --raw-dir <dir>",
       "Preveri odmik od baseline (SI 18.010 · HR 88.331 · ME 10.285 · AL 8.820) — izpiše se sam",
     ],
   },

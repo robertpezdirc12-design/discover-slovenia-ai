@@ -1,0 +1,71 @@
+# FSQ OS Places — raziskovalna sled (17. 10. 2026, Europe/Ljubljana)
+
+Vsi koraki surovo zabeleženi; HTTP statusi iz curl; casovni zaporedje zgoraj navzdol.
+
+## 1. Spletno iskanje (z-ai web_search)
+- poizvedba: "Foursquare Open Places download parquet source.coop 2026"
+- zadetki: Medium "Evolving FSQ OS Places" (Foursquare, 8.10.2025);
+  source.coop/fused = Overture razdelki (FSQ ne); Databricks marketplace OS Places
+
+## 2. Medium oznanilo (page_reader)
+- URL: https://medium.com/@foursquare/evolving-fsq-os-places-fa7a3f5197cd
+- datum: 8. oktobra 2025
+- citat: "Our October release transitions FSQ OS Places from public S3 bucket access
+  to our new Places portal. Users can register, generate an access token, and retrieve
+  the data through an Iceberg catalog. The data remains completely free with proper
+  attribution under our Apache 2.0 license."
+- citat (prehode): "You can access the OS Places data from the past releases through
+  our public S3 bucket but all future releases (starting from October 2025) will only
+  be accessible through the three supported channels."
+- trije kanali: Places portal / Snowflake / HuggingFace
+
+## 3. Javni S3 — poskus (curl)
+- GET https://fsq-os-places-us-east-1.s3.amazonaws.com/?list-type=2&prefix=release/
+  -> XML NoSuchBucket ("The specified bucket does not exist", BucketName
+  fsq-os-places-us-east-1)  [listing tudi z delimiter=/ vrne isti error ovoj]
+- HEAD https://fsq-os-places-us-east-1.s3.amazonaws.com/release/vector-tiles/latest/fsq-os-places.pmtiles
+  -> HTTP 404 (kljuc iz docs.foursquare.com; dokumentacija zastarela)
+
+## 4. Uradna dokumentacija (page_reader)
+- URL: https://docs.foursquare.com/data-products/docs/access-fsq-os-places
+- citat: "OS Places is now delivered through the Foursquare Places Portal, using an
+  Iceberg-based data catalog instead of the legacy public S3 bucket."
+- pot: Create an account on the Places Portal -> Browse available datasets ->
+  Generate an access token -> Iceberg catalog (DuckDB/Spark/PyIceberg)
+- dodaten kanal izrecno naveden: HuggingFace
+
+## 5. HuggingFace dataset (curl, anonimno)
+- GET https://huggingface.co/api/datasets/foursquare/fsq-os-places
+  -> id foursquare/fsq-os-places, private False, gated auto, disabled False,
+  lastModified 2026-10-15T20:47:24Z, 2475 datotek
+- struktura: release/dt=<datum>/{places,categories,deltas}/parquet/*.parquet
+- izdaje (dt): 2024-12-03, 2025-01-10, 2025-02-06, 2025-03-06, ..., 2026-09-15, 2026-10-15
+- zadnja izdaja dt=2026-10-15: 111 datotek (100 places shardov)
+- velikosti (tree API): 100 shardov, SKUPAJ 11.58 GB, povprecje 115.8 MB
+- README (anonimni GET resolve/main/README.md -> 200):
+  license: apache-2.0; config places: release/dt=2026-10-15/places/parquet/*.parquet;
+  extra_gated_prompt (soglasje pred dostopom); NOTICE.txt prisoten
+- anonimni range-GET podatkovnega sharda (places_000000.parquet) -> HTTP 401
+  (gated velja za podatkovne datoteke; zeton potreben)
+- datasets-server /rows -> error: "not accessible without authentication (private or gated)"
+
+## 6. ClickHouse vzorec (markdown)
+- URL: https://clickhouse.com/docs/get-started/sample-datasets/foursquare-os-places.md
+- citat: "The dataset is available through the [Foursquare Places Portal]" +
+  zahteva "A Foursquare Places Portal account" -> brez anonimnega zega
+
+## 7. Repo artikulacija (lokalno)
+- src/lib/supply/production-matrix.ts: gate "data" — "mnozica je ostala na mrtvem
+  GitHub racunu — caka swez dump Foursquare Open Places (Apache-2.0, source.coop/fused.io)"
+- src/lib/supply/providers/fsq/dataset.ts: runbook korak 1 "Pridobi dump
+  (source.coop / fused.io)" — ZASTARELO (fused ne razdeljuje FSQ vec)
+- scripts/fsq-ingest.ts: pričakuje surove .jsonl (fsq_id/name/lat/lng/country/categories)
+  -> preslikava kategorij + validateFsqLine + dedupe + manifest
+- baseline konstante: FSQ_EXPECTED_COUNTS = SI 18010, HR 88331, ME 10285, AL 8820
+  (skupaj 125446) — snapshot 2025-02-06 = izdaja HF dt=2025-02-06 (nataknjen par)
+
+## Zakljucek raziskave
+Vir najden, uraden, AKTUALEN (2 dni) in brezplacen; dostop 401 brez zetona
+(gated auto = samodejno soglasje) -> zeton = lahek lastniski korak.
+Cevovod po zetonu definiran (duckdb pushdown -> .jsonl -> fsq:ingest, brez
+spremembe kode). Podrobnosti v docs/research/fsq-os-places-vir.md.

@@ -210,6 +210,8 @@ Pravila: `verified` SAMO po prijavi/identiteti ponudnika (glej 6c); OSM-izpeljan
 
 **Zakonita alternativa brez API-ja (ŽIVA v kodi):** označena neposredna povezava na ponudnika (`officialUrl`) + affiliate globoka povezava (`/api/affiliate/go` 302, 12 partnerjev, kanon „partner brez ID-ja preusmeri na javno iskanje in klik se zabeleži `affiliateActive:false`“), klic/e-pošta, povpraševanje (`bookingMode: "request"`). **Nikoli lažni rezervacijski gumb.** Scrape vsebin: ne, razen če pogoji izrecno dovoljujejo.
 
+**Dopolnitev 17. 10. 2026 (aditivno, odločitveni paket `docs/research/kiwitaxi-vir.md`):** transferni partner **KiwiTaxi je POTRJEN javno** — uradni webmaster CSV API (`kiwitaxi.com/services/data/csv`, javno dokumentiran security_token) s 811.755 transferji in partnerjevo `price_eur` per razred vozila; regija SI·HR·ME·AL = 6.360 rut, ingescirano v `data/kiwitaxi-routes.json` (križna validacija LJU→Zagreb 216 EUR = splet isti dan). Pogoj iz tabele zgoraj se za KiwiTaxi ne spremeni (ni to API-odobritev, temveč objavljen webmaster feed za prikaz z atribucijo); `pap=` provizija ostaja lastniški korak. Ostali partnerji v tej tabeli ostajajo **[nepotrjeno]**.
+
 ---
 
 ## 8. Predlagana arhitektura in tok podatkov (osveženo: OSRM vmesni sloj)

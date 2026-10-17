@@ -4,8 +4,11 @@
  * RECOVER: naslednik data/kiwitaxi-routes.json plasti izvirnika
  * (Task 43 — prvi realni partnerjev feed). Izvirnikova datoteka z realnimi
  * objavljenimi cenami je ostala na mrtvem GitHub računu — ta modul
- * obnavlja SHEMO, VALIDACIJO relacij in iskanje; feed čaka vir
- * (matrika: gate „data" — partner CSV iz affiliate programa).
+ * obnavlja SHEMO, VALIDACIJO relacij in iskanje. Vir je zdaj NAJDEN in ŽIV
+ * (17.10.2026): uradni webmaster CSV API (kiwitaxi.com/services/data/csv,
+ * javno dokumentiran security_token) — množica regije SI·HR·ME·AL je
+ * ingescirana (6.360 rut; export: scripts/kiwitaxi-export.py → ingest).
+ * Paket: docs/research/kiwitaxi-vir.md.
  *
  * KANON (izvirnikov README):
  *  · rute, ki se DOTIKAJO Slovenije (iz SI / v SI) + regionalne, kjer
@@ -51,7 +54,7 @@ export const KIWITAXI_ATTRIBUTION =
   "Transferji in cene: KiwiTaxi (objavljeni partner feed) — rezervacija pri partnerju";
 
 export const KIWITAXI_FEED_SOURCE =
-  "KiwiTaxi partner feed (kiwitaxi.com — affiliate program)";
+  "KiwiTaxi webmaster feed (kiwitaxi.com/services/data/csv — javno dokumentiran API)";
 
 // ── Validacija (čista, fail-closed) ────────────────────────────────────────
 

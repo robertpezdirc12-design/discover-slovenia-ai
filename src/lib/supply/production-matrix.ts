@@ -117,13 +117,13 @@ export const PRODUCTION_MATRIX: readonly ProviderMatrixEntry[] = Object.freeze([
   {
     id: "kiwitaxi",
     codeStatus: "LIVE",
-    gate: "data",
+    gate: "none",
     envKeys: [],
     reasonSl:
-      "Koda obnovljena v P0-C (shema FROM_PRICE + validacija relacij ISO-2 + iskanje po krajih + kanon „rute, ki se dotikajo SI“ + ingest bun run kiwitaxi:ingest --csv). Feed z objavljenimi realnimi cenami je ostal na mrtvem GitHub računu — čaka partner CSV iz affiliate programa.",
+      "Koda obnovljena v P0-C (shema FROM_PRICE + validacija relacij ISO-2 + iskanje po krajih + kanon „rute, ki se dotikajo SI“ + ingest bun run kiwitaxi:ingest --csv). VIR NAJDEN in ŽIV (17.10.2026): uradni webmaster CSV API (kiwitaxi.com/services/data/csv — javno dokumentiran security_token), 811.755 transferjev s partnerjevo price_eur po razredih vozil; regija SI·HR·ME·AL = 6.360 unikatnih rut (1.501 se dotika SI), preverba LJU→Zagreb 216 EUR (Economy) = splet €216 isti dan. Množica: data/kiwitaxi-routes.json (export scripts/kiwitaxi-export.py → ingest — ena definicija kanona). Paket: docs/research/kiwitaxi-vir.md.",
     stepsSl: [
-      "Pridobi partner CSV feed (kiwitaxi.com affiliate program)",
-      "bun run kiwitaxi:ingest --csv <feed.csv>",
+      "Osvežitev množice: python3 scripts/kiwitaxi-export.py --download → bun run kiwitaxi:ingest --csv <izvoz> (runbook DATA-PROVENANCE.md §4)",
+      "Provizija (neobvezno, lastniško): affiliate prijava + param pap=<ID> na povezave — brez nje povezave delujejo javno, iskreno brez provizije",
     ],
     goSlug: "transfers",
   },

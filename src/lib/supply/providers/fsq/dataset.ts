@@ -13,13 +13,19 @@
  * Places — foursquare.com"). To so ODPRTI PODATKI, ne affiliate —
  * plast cen je NOT_SUPPORTED (nikoli ne postane provizijska).
  *
- * RUNBOOK (osvežitev):
- *  1. Pridobi dump Foursquare Open Places (source.coop / fused.io) za
- *     bbox SI·HR·ME·AL; potovalno-relevantne kategorije (nastanitve,
- *     restavracije, atrakcije, plaže, črpalke).
- *  2. `bun run fsq:ingest --raw-dir <dir>` — določen, validiran pretvorba
+ * RUNBOOK (osvežitev — vir posodobljen 17.10.2026, glej
+ * docs/research/fsq-os-places-vir.md):
+ *  1. Lastniški korak: brezplačen HuggingFace račun → dataset
+ *     foursquare/fsq-os-places → soglasje (gated „auto") → fine-grained
+ *     read žeton. Vir je uraden in AKTUALEN (mesečne izdaje; baseline
+ *     snapshot 2025-02-06 = izdaja dt=2025-02-06, torej 1:1 reproducibilen;
+ *     sveža izdaja = zadnji dt). IZVIKNI viri so mrtvi: javni S3 žeg
+ *     (NoSuchBucket) in source.coop/fused.io (razdeljuje samo Overture).
+ *  2. duckdb (httpfs/hf://, žeton) pushdown bbox SI·HR·ME·AL → surovi
+ *     .jsonl (fsq_id/name/lat/lng/country/categories).
+ *  3. `bun run fsq:ingest --raw-dir <dir>` — določen, validiran pretvorba
  *     v canonical .jsonl + manifest.json (provenance + števci).
- *  3. Loader samodejno pobere data/fsq-places/*.jsonl (brez omrežja).
+ *  4. Loader samodejno pobere data/fsq-places/*.jsonl (brez omrežja).
  *
  * KANON ISKRENOSTI:
  *  · množica manjka / je prazna → status „missing"/„empty" z dejanskimi

@@ -1070,3 +1070,32 @@ Stage Summary:
 - "Apartmaji na zemljevidu za cel Balkan" = EN KLIK: išči kraj (Skopje/Zagreb/…) → čip "Apartma" → samo apartmaji, slike/cena → Rezerviraj → »Moja pot«. Podatkovno je pokritost ves svet že bila (tourism=apartment), zdaj je še uporabniku vidna.
 - Ponudniki pošteno navedeni v UI nogi + v odgovoru uporabniku; Booking.com izrecno NI integriran (poverilnice) — brez pretvarjanja.
 - Commit lokalno; push/PR čaka žeton.
+---
+Task ID: OPEN-DATA-BREZ-POVERILNIC
+Agent: Z.ai Code (main session)
+Task: "vstavi vse kaj je brez poverilnic" — integriraj VSE vire, ki delujejo brez API ključev/prijave
+
+Work Log:
+- ŽIVO IZMERJENO (bun fetch, 18. 10. 2026) — kandidati pošteno testirani, NI ugibanja:
+  • wttr.in `?format=j1&lang=sl` → 200, NATIVNO slovenski opis ("Pretežno oblačno"), 3 dnevi min/max
+  • Open-Meteo forecast → 429 "Daily API request limit exceeded" (peskovniška IP je dnevno izčrpana; v produkciji deluje) → wttr.in je REZERVA
+  • Open-Meteo AQI (ločen gostitelj) → 200: european_aqi=46, pm2_5=26.3
+  • Wikipedia REST summary → 403 brez opisnega User-Agenta, 200 Z njim; 29/30 naslovov vodiča resolva (Šmartno (Brda) 404 → wikiTitle izpuščen)
+  • open.er-api.com → 200 z RSD/MKD/ALL/BAM (ECB frankfurter jih NIMA — izmerjeno!) → rezerva @fawazahmed0/currency-api (jsDelivr) 200
+  • Nager.Date NextPublicHolidays → 200 za SI/HR/BA/RS/ME/MK/AL; XK (Kosovo) 500 → pošteno izpuščeno
+  • Nominatim reverse → 403 z odvečnim UA, 200 z UA iskanja ("Mlino, hamlet")
+- NOVA ČISTA PLAST src/lib/open-data.ts: URL-ji + razčlenjevalniki (fail-clean), WMO→sl in wttr→sl slovarji, aqiLabel (evropski pasovi), weatherOneLiner, wikiShort (prelom na besedi), balkanCurrencyLines (RSD/MKD/ALL zaokroži na 10, BAM peg na 1, pika za tisočice — določljivo za teste), parseHolidays/formatHolidayDate/holidaysLine, COUNTRY_ISO (sl+en imena → ISO; Kosovo namerno brez), parseReverse + REVERSE_TYPE_SL
+- VERIGE deljene bun↔Node (src/lib/open-data-upstream.ts): fetchWeatherChain (open-meteo→wttr.in; AQI neuspeh NE usodi vremena), fetchWikiChain (404 → null prek UpstreamHttpError.status), fetchRatesChain (er-api→currency-api), fetchHolidaysChain, fetchReverseChain
+- MINI STORITEV mini-services/open-data-service (bun, 3033, --hot): /weather /wiki /rates /holidays /reverse; predpomnilniki vreme 30 min/120, wiki 24 h/200 (negativno 5 min), tečaji 6 h, prazniki 12 h/40, reverse 24 h/200
+- NEXT RUTE /api/open-data/{weather,wiki,rates,holidays,reverse}: cache + in-flight združevanje + rezerva na 127.0.0.1:3033 (peskovnik blokira del Node fetcha); vreme: če direktni odgovor nima AQI (Node ne doseže AQI gostitelja), poskusi še storitev — E2E dokazano (Bled 8 °C + aqi 39)
+- STAYS: parseNominatimPlace + country (zadnji segment display_name) → UI iskanja pokaže "Naslednji prazniki (MK): …" po državi iskanega kraja (odločitev kdaj potovati, pri ceni/rezervaciji)
+- UI (map-section): ① vodičev trak dobi ŽIVO vrstico — "9 °C · Pretežno oblačno · jutri 6–18 °C · zrak 46 (zmerno) — Wikipedia: Kránj je glavno mesto …" (osveži se ob vsakem kraju, tudi pri samodejnem napredku); ② podrobnost prenočišča dobi "≈ 11.160 RSD · 5.840 MKD · 8.670 ALL · 186 BAM — referenčni tečaji" + vreme+AQI objekta; ③ klik na karto združi reverse ime (s prevodom vrste: "Дебар Маало (predmestje)") + višino v ENEM popupu (dva vira, en popup, ne prepišeta drug drugega); ④ noga "Viri" razširjena (vreme/zrak, Wikipedia, tečaji, prazniki)
+- TESTI +38 (bun 103 → 141): WMO/wttr slovarja, razčlenjevalniki vremena (fixture open-meteo + živi wttr), AQI+merge+pasovi, one-liner, wiki (fixture + 404→null + wikiShort), tečaji (er-api/currency-api/zaokroževanje/tisočice), prazniki (parse/format/line), države (Kosovo→null), reverse (+vrste), vhodni parametri rut, oblikovni validatorji, katalog↔wiki naslovi (≥29, enolični), + 6 ŽIVIH verig (vreme, AQI, wiki+404, tečaji, prazniki SI, reverse Bled) + 2 nova testa country v stays
+- VRATA: tsc 0 (src) · eslint 0 · bun test **141/141**
+- E2E (agent-browser, sveža seja fresh-open-data): vodič Vklopi → živa vrstica "9 °C · Pretežno oblačno · jutri 6–18 °C · zrak 46 (zmerno) — Wikipedia: Kránj …" → samodejni napredek "5 od 31 · Triglav" → "6 od 31 · Dolina Soče" (wiki Soča + vreme 10 °C) · iskanje Skopje → 24 prenočišč + "Naslednji prazniki (MK): … 23. 10. · … 8. 12. · Нова Година 1. 1." · Hotel Skopje City Center → slika + "od 95 €/noč" + "≈ 11.160 RSD · 5.840 MKD · 8.670 ALL · 186 BAM" + "12 °C · zrak 46" · klik na karto → "Дебар Маало (predmestje) · Višina: 249,1 m — DEM ~30 m" · mobilno 390px: trak 358 px, scrollWidth 390, brez preliva · 0 page errors (sliki /tmp/open-data-mobile.png, /tmp/open-data-desktop.png)
+
+Stage Summary:
+- "Vstavi vse kaj je brez poverilnic" ZAPRTO: 6 novih virov integriranih in brskalniško dokazanih (vreme+zrak, Wikipedia, tečaji, prazniki, obratno geokodiranje) — vsi živo izmerjeni, vse napake odprto prikazane, nič ni izmišljeno
+- Odpornost v treh plasteh: failover virov (open-meteo→wttr.in; er-api→currency-api) · failover runtime-a (Node→bun storitev 3033) · fail-clean razčlenjevanje (testirano)
+- Platforma zdaj odgovori: kdaj potovati (prazniki), kako je vreme/zrak (vodič + objekt), koliko stane v lokalni valuti (tečaji), kje točno sem (reverse+višina), kaj je to (Wikipedia)
+- Push/PR še vedno čaka žeton

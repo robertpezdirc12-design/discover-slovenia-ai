@@ -57,11 +57,11 @@ function setLidarPref(value: boolean): void {
   window.dispatchEvent(new Event(LIDAR_PREF_EVENT));
 }
 
-/** Višina na točko (ARSO DMR/LiDAR): mirovanje → nalaganje → rezultat. */
+/** Višina na točko (ARSO LiDAR 1 m ali Copernicus 90 m): mirovanje → nalaganje → rezultat. */
 type ElevationState =
   | { status: 'idle' }
   | { status: 'loading'; lat: number; lng: number }
-  | { status: 'ok'; meters: number }
+  | { status: 'ok'; meters: number; label: string; license: string }
   | { status: 'error' };
 
 const DESTINATIONS = [
@@ -157,13 +157,18 @@ export function MapSection() {
           fetch(`/api/arso/elevation?lat=${lat.toFixed(5)}&lon=${lng.toFixed(5)}`, {
             signal: controller.signal,
           })
-            .then((r) => r.json() as Promise<{ ok: boolean; elevationM?: number }>)
+            .then((r) => r.json() as Promise<{ ok: boolean; elevationM?: number; label?: string; license?: string }>)
             .then((j) => {
               if (controller.signal.aborted) return;
               if (j.ok && typeof j.elevationM === 'number') {
-                setElevation({ status: 'ok', meters: j.elevationM });
+                setElevation({
+                  status: 'ok',
+                  meters: j.elevationM,
+                  label: j.label ?? 'DEM',
+                  license: j.license ?? '',
+                });
                 marker.setPopupContent(
-                  `Višina: ${formatElevation(j.elevationM)} — ARSO DMR (LiDAR, CC BY 4.0)`,
+                  `Višina: ${formatElevation(j.elevationM)} — ${j.label ?? 'DEM'} · ${j.license ?? ''}`,
                 );
               } else {
                 setElevation({ status: 'error' });
@@ -256,7 +261,7 @@ export function MapSection() {
               <>
                 <Mountain className="size-3.5 text-stone-600" aria-hidden />
                 {formatElevation(elevation.meters)}
-                <span className="hidden md:inline">· ARSO LiDAR</span>
+                <span className="hidden md:inline">· {elevation.label}</span>
               </>
             )}
             {elevation.status === 'error' && (

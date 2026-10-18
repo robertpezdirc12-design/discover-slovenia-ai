@@ -111,20 +111,112 @@ export function formatElevation(m: number): string {
   return `${v.toFixed(1).replace('.', ',')} m`;
 }
 
-/** Paranje vhodnih parametrov (iz query stringa) → {lat,lon} ali besedilna napaka. */
+/** Paranje vhodnih parametrov (iz query stringa) → {lat,lon} ali besedilna napaka.
+ *  Pokritost: celega sveta (vir se izbere samodejno — glej nižje). */
 export function parseElevationQuery(
   latRaw: string | null,
   lonRaw: string | null,
 ): { lat: number; lon: number } | { error: string } {
+  // Pozor: Number(null) === 0 → manjkajoči parameter moraš zavrniti IZRECNO.
+  if (latRaw === null || lonRaw === null || latRaw.trim() === '' || lonRaw.trim() === '') {
+    return { error: 'Parametra lat in lon sta obvezna (npr. ?lat=46.36&lon=14.09).' };
+  }
   const lat = Number(latRaw);
   const lon = Number(lonRaw);
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-    return { error: 'Parametra lat in lon morata biti števili (npr. ?lat=46.36&lon=14.09).' };
-  }
-  if (!isInSloveniaBbox(lat, lon)) {
-    return { error: 'Točka je izven meja Slovenije (DMR pokriva samo Slovenijo).' };
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 85 || Math.abs(lon) > 180) {
+    return { error: 'Parametra lat in lon morata biti veljavni koordinati (npr. ?lat=46.36&lon=14.09).' };
   }
   return { lat, lon };
+}
+
+/* ————————————————————————————————————————————————————————————————————————
+ * DVA VIRA VIŠINE (izmerjeno 18. 10. 2026):
+ *   1) ARSO DMR (LiDAR, 1 m) — samo Slovenija; izven extent → "NoData"
+ *      (izmerjeno za Zagreb: value="NoData").
+ *   2) Copernicus DEM GLO-90 prek Open-Meteo — celega sveta (Balkan!), brez
+ *      ključa, 90 m ločljivost (izmerjeno: Ljubljana 299 · Zagreb 142 ·
+ *      Sarajevo 543 · Beograd 138 · Podgorica 48 · Tirana 110 · Skopje 249 ·
+ *      Sofija 548 m). Fair-use: brez predpomnilnika NE klicati (10k/dan limit).
+ *   Logika: znotraj SI bbox → ARSO; če ARSO vrne NoData → samodejno Copernicus.
+ * ———————————————————————————————————————————————————————————————————————— */
+
+export type ElevationSourceId = 'arso' | 'terrarium' | 'copernicus';
+
+export const ELEVATION_SOURCE_INFO = {
+  arso: {
+    label: 'ARSO LiDAR 1 m',
+    source: 'ARSO Slovenija_DMR_D96TM (LiDAR, 1 m)',
+    license: 'CC BY 4.0 — GURS/ARSO',
+  },
+  terrarium: {
+    label: 'DEM ~30 m',
+    source: 'Mapzen Terrain Tiles (AWS Open Data, SRTM/GMTED)',
+    license: 'prosto dostopno (AWS Open Data)',
+  },
+  copernicus: {
+    label: 'Copernicus 90 m',
+    source: 'Copernicus DEM GLO-90 (prek Open-Meteo)',
+    license: 'prosto dostopno (Copernicus/ESA)',
+  },
+} as const;
+
+/** URL višine prek Open-Meteo (Copernicus GLO-90) — čista funkcija. */
+export function openMeteoElevationUrl(lat: number, lon: number): string {
+  return `https://api.open-meteo.com/v1/elevation?latitude=${lat.toFixed(5)}&longitude=${lon.toFixed(5)}`;
+}
+
+/** Iz Open-Meteo odgovora izlušči višino ({"elevation":[x]}) ali null. */
+export function parseOpenMeteoElevation(raw: unknown): number | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const arr = (raw as { elevation?: unknown }).elevation;
+  if (Array.isArray(arr) && typeof arr[0] === 'number' && Number.isFinite(arr[0])) return arr[0];
+  return null;
+}
+
+/* ————————————————————————————————————————————————————————————————————————
+ * 3) AWS TERRARIUM (Mapzen Terrain Tiles, AWS Open Data) — globalne DEM
+ *    ploščice brez ključa in brez dnevne kvote (izmerjeno: Zagreb 123 m,
+ *    Triglav ploščica 110–2707 m; SRTM/GMTED sestavek, ~30–90 m).
+ *    Format: RGB PNG, višina = R*256 + G + B/256 − 32768.
+ * ———————————————————————————————————————————————————————————————————————— */
+
+/** XYZ ploščica za točko (isti tiling kot zemljevid) — čista funkcija. */
+export function latLonToTile(lat: number, lon: number, z: number): { x: number; y: number } {
+  const n = Math.pow(2, z);
+  const x = Math.floor(((lon + 180) / 360) * n);
+  const latRad = (lat * Math.PI) / 180;
+  const y = Math.floor(((1 - Math.asinh(Math.tan(latRad)) / Math.PI) / 2) * n);
+  return { x: Math.min(Math.max(x, 0), n - 1), y: Math.min(Math.max(y, 0), n - 1) };
+}
+
+export function terrariumTileUrl(lat: number, lon: number, z = 11): string {
+  const { x, y } = latLonToTile(lat, lon, z);
+  return `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${z}/${x}/${y}.png`;
+}
+
+/** Slika (dekodirana s pngjs: {width,height,data RGBA}) → višina na točki ali null.
+ *  Pozor: piksel je IZRAČUNAN LOKALNO znotraj ploščice (globalni − izvor ploščice). */
+export function decodeTerrariumElevation(
+  img: { width: number; height: number; data: Uint8Array | Uint8ClampedArray },
+  lat: number,
+  lon: number,
+  z: number,
+): number | null {
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  const n = Math.pow(2, z);
+  const lonX = ((lon + 180) / 360) * n * 256;
+  const latRad = (lat * Math.PI) / 180;
+  const latY = ((1 - Math.asinh(Math.tan(latRad)) / Math.PI) / 2) * n * 256;
+  const { x, y } = latLonToTile(lat, lon, z);
+  const px = Math.floor(lonX) - x * 256;
+  const py = Math.floor(latY) - y * 256;
+  if (px < 0 || py < 0 || px >= img.width || py >= img.height) return null;
+  const i = (py * img.width + px) * 4;
+  const r = img.data[i];
+  const g = img.data[i + 1];
+  const b = img.data[i + 2];
+  if (r === undefined || g === undefined || b === undefined) return null;
+  return r * 256 + g + b / 256 - 32768;
 }
 
 /* ————————————————————————————————————————————————————————————————————————

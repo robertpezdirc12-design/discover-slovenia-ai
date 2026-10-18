@@ -1002,3 +1002,30 @@ Stage Summary:
 - Celo-platformno vodenje ZAPRTA ZANKA: vstop (hero CTA) → vodič (4 koraki, spomin) → "Pokaži tvojo pot" → AVTOMATIČNA navigacija po PRAVI cesti (OSRM) postanek-po-postanek → "Destinacija dosežena" → zaključek → plošča ostane; nikjer mrtvi konec
 - Infrastruktura: route-service (bun, 3031) živ v ozadju (log: route-service.log); Node→OSRM blokada peskovnika dokumentirana in obposena
 - Push/PR še vedno žetonsko odvisen
+
+---
+Task ID: PRENOCISCA-POT
+Agent: Z.ai Code (main session)
+Task: "ali je mozno da uporabnik zemljevid odpre naprimer isce prenoscisce skopje mu prokaze prenocisce klikne na prenocisce pregleda slike ceno rezervira klikne in mu samodejno s tem da ga upozori dodal bom v mojo pot shrani"
+
+Work Log:
+- ODGOVOR: DA — implementirano in E2E dokazano (commit 329e3b1). Celoten uporabnikov scenario zdaj deluje: iskanje → oznake na karti → klik → slike + cena → Rezerviraj → OPOZORILO (toast + glas) → SAMODEJNO shranjeno v »Mojo pot« (trajno).
+- VIRI (vsi živo izmerjeni, brez ključev):
+  • Nominatim geokodiranje (User-Agent obvezen) → Skopje 41,9962/21,4319, bbox
+  • Overpass failover: overpass-api.de v peskovniku BLOKIRAN (ConnectionRefused) → zrcalo overpass.osm.ch 200, a regionalno (Bled 0!) → kumi/private.coffee 200 (57 hotelov Skopje), a 500 pri intenzivnem testiranju (fair-use)
+  • ZATO REZERVA: Photon (Komoot) — 200 z pravimi imeni/koordinatami/osm id (Hotel Skopje City Center, Limak …); točnost vrst zagarantira razčlenjevalnik
+  • Fotografije: z-ai image-search CLI — CLI izpisuje 🚀🔎✅ vrstice na stdout PRED JSON → odžvičanje do prvega `{`; slika 1200×1200 v 4,5 s; cache 12 h
+  • Cena: INDIKATIVNA (vrsta × zvezdice, zaokroženo 5 EUR) — UI izrecno: "indikativna ocena, ne uradni cenik"; rezervacija = shrani v pot, pravo plačilo pri objektu/uradni strani (pošteno označeno)
+- INFRASTRUKTURA: mini-services/stays-service (bun, 3032) — peskovnik blokira Node fetch→Nominatim/Overpass (isti vzorec kot route-service 3031); Next rute padejo na 127.0.0.1:3031/3032; v produkciji direktno
+- BAZA: prisma StayReservation (stayId unique → idempotentno, already:true brez podvajanja); POST zod validacija 400; GET najnovejših 50
+- SHRAMBA: guide-store + GuideStayStop (addStayStop idempotenten, sanitizacija tolerira stare zapise brez stays)
+- UX VRZEL ULOVLJENA S TESTOM: uporabnik brez vodnega toka po rezervaciji NI videl plošče (plan=null) → plošča »Tvoja pot« zdaj živi TUDI samo z rezervacijami; ob rezervaciji se sama odpre
+- VODENJE: vodič done-korak dobi gumb »Dodaj prenočišče« → scroll na zemljevid + FOKUS na iskanje (E2E: FOKUS true, scrollY 879); iskalna vrstica z čipi Skopje/Bled/Zagreb (en klik do zadetkov)
+- E2E (agent-browser): čip Skopje → 24 zadetkov → Limak → slika 1200×1200 + "od 95 €/noč (indikativna ocena)" → Rezerviraj → toast "Rezervirano — dodano v tvojo pot" + "Tvoja rezervirana prenočišča" plošča se odpre → klik na postanek → popup "Rezervirano v tvoji poti · Skopje · od 95 €/noč" → RELOAD: plošča + oznaka trajno vidna → 390 px brez preliva → 0 page errors (slike /tmp/toast-rezervacija.png, /tmp/rezervacija-plosca.png, /tmp/rezervacija-mobile.png)
+- VRATA: tsc 0 (src) · eslint 0 · bun test **76/76** (+16: Overpass razčlenjevanje, zvezdice, točnost vrst, Photon, geokodiranje, stays v shrambi)
+
+Stage Summary:
+- Uporabnikov scenarij iz vprašanja je ZAPRTA ZANKA in je brskalniško dokazan: zemljevid → iskanje (kjerkoli, ne samo Slovenija) → klik → slike+cena → rezervacija → opozorilo → samodejno v »Mojo pot« → trajno
+- Pokritost Balkana dokazana s podatki (Skopje 57 hotelov na Overpass, Photon rezerva globalna); poštenost: zastopne slike + indikativna cena izrecno označena
+- Odporno: failover veriga virov (3 Overpass zrcala → Photon), cache + in-flight združevanje, mini-storitev ob peskovniški blokadi
+- Commit 329e3b1 lokalno; push/PR še vedno čaka žeton

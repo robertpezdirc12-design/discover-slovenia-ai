@@ -1,15 +1,15 @@
 'use client';
 
 import 'leaflet/dist/leaflet.css';
-import type { Map as LeafletMap } from 'leaflet';
+import type { CircleMarker as LeafletCircleMarker, Map as LeafletMap } from 'leaflet';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { CalendarDays, List, Map as MapIcon, Mountain, Palmtree, Waves, Wine } from 'lucide-react';
+import { CalendarDays, List, Loader2, Map as MapIcon, Mountain, Palmtree, Waves, Wine } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
-import { ARSO_LIDAR_ATTRIBUTION, arsoLidarTileUrl } from '@/lib/arso-lidar';
+import { ARSO_LIDAR_ATTRIBUTION, arsoLidarTileUrl, formatElevation } from '@/lib/arso-lidar';
 import { GUIDE_EVENT, GUIDE_REGIONS, loadGuideState } from '@/lib/guide-store';
 
 /**
@@ -57,6 +57,13 @@ function setLidarPref(value: boolean): void {
   window.dispatchEvent(new Event(LIDAR_PREF_EVENT));
 }
 
+/** Višina na točko (ARSO DMR/LiDAR): mirovanje → nalaganje → rezultat. */
+type ElevationState =
+  | { status: 'idle' }
+  | { status: 'loading'; lat: number; lng: number }
+  | { status: 'ok'; meters: number }
+  | { status: 'error' };
+
 const DESTINATIONS = [
   { name: 'Bled', region: 'Gorenjska', note: 'Jezerski otok in grad nad strmino', icon: Mountain, pos: [46.3625, 14.0936] as const },
   { name: 'Ljubljana', region: 'Osrednja Slovenija', note: 'Ljubljanica, grad in mestne tržnice', icon: CalendarDays, pos: [46.0569, 14.5058] as const },
@@ -78,6 +85,9 @@ export function MapSection() {
   const mapRef = useRef<LeafletMap | null>(null);
   const reliefLayerRef = useRef<unknown>(null);
   const LeafletRef = useRef<typeof import('leaflet') | null>(null);
+  const [elevation, setElevation] = useState<ElevationState>({ status: 'idle' });
+  const elevAbortRef = useRef<AbortController | null>(null);
+  const elevMarkerRef = useRef<LeafletCircleMarker | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -123,6 +133,51 @@ export function MapSection() {
       flyToGuideRegion();
       window.addEventListener(GUIDE_EVENT, flyToGuideRegion);
 
+      // VIŠINA NA TOČKO (ARSO DMR/LiDAR, 1 m): klik → posrednik /api/arso/elevation
+      // (fair-use: predpomnilnik na strežniku; brskalnik ne kliče ARSO direktno —
+      // odgovor nima CORS glav, izmerjeno). Preklic prejšnje zahteve ob novem kliku.
+      map.on({
+        click: (e: { latlng: { lat: number; lng: number } }) => {
+          const { lat, lng } = e.latlng;
+          elevAbortRef.current?.abort();
+          const controller = new AbortController();
+          elevAbortRef.current = controller;
+          setElevation({ status: 'loading', lat, lng });
+
+          if (elevMarkerRef.current) elevMarkerRef.current.remove();
+          const marker = L.circleMarker([lat, lng], {
+            radius: 6,
+            color: '#059669',
+            fillColor: '#059669',
+            fillOpacity: 0.85,
+          }).addTo(map);
+          marker.bindPopup('Višina …').openPopup();
+          elevMarkerRef.current = marker;
+
+          fetch(`/api/arso/elevation?lat=${lat.toFixed(5)}&lon=${lng.toFixed(5)}`, {
+            signal: controller.signal,
+          })
+            .then((r) => r.json() as Promise<{ ok: boolean; elevationM?: number }>)
+            .then((j) => {
+              if (controller.signal.aborted) return;
+              if (j.ok && typeof j.elevationM === 'number') {
+                setElevation({ status: 'ok', meters: j.elevationM });
+                marker.setPopupContent(
+                  `Višina: ${formatElevation(j.elevationM)} — ARSO DMR (LiDAR, CC BY 4.0)`,
+                );
+              } else {
+                setElevation({ status: 'error' });
+                marker.setPopupContent('Višina trenutno ni na voljo');
+              }
+            })
+            .catch(() => {
+              if (controller.signal.aborted) return;
+              setElevation({ status: 'error' });
+              marker.setPopupContent('Višina trenutno ni na voljo');
+            });
+        },
+      });
+
       map.on('unload', () => {
         window.clearTimeout(fallback);
         window.removeEventListener(GUIDE_EVENT, flyToGuideRegion);
@@ -131,9 +186,11 @@ export function MapSection() {
 
     return () => {
       cancelled = true;
+      elevAbortRef.current?.abort();
       mapRef.current?.remove();
       mapRef.current = null;
       reliefLayerRef.current = null;
+      elevMarkerRef.current = null;
     };
   }, []);
 
@@ -187,6 +244,28 @@ export function MapSection() {
               Zemljevid / seznam
             </Label>
           </div>
+          {/* višina na točko — izrečena tudi bralcem zaslona (aria-live) */}
+          <span aria-live="polite" className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+            {elevation.status === 'loading' && (
+              <>
+                <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                Višina …
+              </>
+            )}
+            {elevation.status === 'ok' && (
+              <>
+                <Mountain className="size-3.5 text-stone-600" aria-hidden />
+                {formatElevation(elevation.meters)}
+                <span className="hidden md:inline">· ARSO LiDAR</span>
+              </>
+            )}
+            {elevation.status === 'error' && (
+              <>
+                <Mountain className="size-3.5 text-stone-400" aria-hidden />
+                višina ni na voljo
+              </>
+            )}
+          </span>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="hidden sm:inline-flex">
               {mode === 'map' ? 'Zemljevid' : 'Seznam'} · CLS 0

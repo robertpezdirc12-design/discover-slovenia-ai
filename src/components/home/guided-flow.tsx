@@ -407,11 +407,13 @@ export function GuidedFlow() {
                   </Badge>
                 ))}
               </div>
-              {/* obvezen zaključni nasvet (izrazita želja uporabnika) */}
+              {/* obvezen zaključni nasvet (izrazita želja uporabnika):
+                  "še ena destinacija" = nova REGIJA — interesi/dni/tempo ostanejo
+                  shranjeni (Komootov vzorec: ne sprašujemo znova) */}
               <div className="flex flex-wrap gap-2">
                 <Button
                   onClick={() => {
-                    enterStep('interests');
+                    enterStep('region');
                     focusCard();
                   }}
                 >

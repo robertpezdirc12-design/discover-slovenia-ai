@@ -885,3 +885,25 @@ Stage Summary:
 - Diagnoza: vse padce od ~13:20+ vzrok = izčrpana SaaS CI kvota, NE ownerjeva koda; glava 4b368998 = 100 % lokalno verifikirana (vsa vrata zelena)
 - Možnosti: (a) owner: kupiti CI minute / Premium / popraviti GitHub spend limit (2000 free min) / VPS runner (runbook); (b) vmesno: agent lokalno odživi vrata na vsak push + merge z --no-ff pogodbenim avtorstvom na zahtevo; (c) 1. 11. reset kvote
 - Lekcija 13: `ci_quota_exceeded` = instant-fail vseh jobov @ 0 s + "stuck" pipeline — ne zamenjevati z instant-fail-om identity verification (0 jobov) ali pravim padcih asercij (trajanje > 0)
+
+---
+Task ID: VODENI-TOK-MEMORY + ARSO-LIDAR (N) + T1-PRODUKCIJA-VERIFIKACIJA
+Agent: Z.ai Code (main session)
+Task: "odlicno nadaljuj" — odprtični nalogi: (1) vodeni tok si zapomne odgovore kot Komoot onboarding, (2) ARSO LiDAR; + odgovor na odloženo vprašanje "ali deluje zemljevid navigacija moja pot ko klikne zacni"
+
+Work Log:
+- Re-ground: peskovnik ponastavljen (polir15-repo NE obstaja več, žetona ni) → realni repo nedostopen; produkcija i-feel-slovenia.vercel.app javno dostopna → vse meritve na živih virih, referenčna implementacija v peskovniku (vzorec POLIR15)
+- T1 PRODUKCIJA (agent-browser hoja): / → /nacrtuj?preset=mirni-vikend-reka → načrt (4 postanki, Valhalla 12,7 km) → /moja-potovanja ("Moja pot" + vzorčni načrti) → /potovanje (Leaflet: 10 ploščic, 4 markerji, 2 dan-barvni polyline #b91c1c/#c2410c, "Vozljiva pot (Valhalla/OpenStreetMap)") → /na-poti (Zdaj/Naslednje, vreme, GPS stikalo) → ODGOVOR: zemljevid+navigacija DELUJETA; vrzel: "Navigiraj" = zunanji OSM directions z SAMO ?to= (brez izhodišča); /na-poti nima lastnega zemljevida (po zasnovi); screenshoti v /tmp
+- T2 ARSO LiDAR (vse izmerjeno): gis.arso.gov.si ArcGIS 10.91 — Lidar_hillshade_D96TM (cached, tileInfo 15 LOD, EPSG:3794; /tile → 404; **/export z bboxSR=3857 → HTTP 200 PNG 256×256, vizualno pravo hladčenje Bleda**); Lidar_fishnet_D96 (Query 200: NAME/BLOK/DATUM_SNEM 2014, 1 km ploščice); WMS → 400
+- JGP portal (ipi.eprostor.gov.si) API odkrit prek network sledenja: display-views/groups → DMV (113) → files → 7 datotek z download URL+token; HEAD 200: DMV0050 ×4 četrtine = 3,47 GB (JV 626,8 MB, JZ 801,9 MB, SV 1257,2 MB, SZ 782,8 MB), DMV0125 790,5 MB, DMV0250 201,1 MB, DMV1000 14,9 MB; DMV1000 DOKONČAN PRENOS → 3258 × VTA####D96.XYZ (x y z, D96/TM) — format potrjen
+- Licenca: OPSI CKAN package_show → CC BY 4.0, MOP/GURS, javno dostopno
+- IMPLEMENTACIJA (peskovnik, commit 70033b7): src/lib/guide-store.ts (verzionirani localStorage zapis, firstUnansweredStep, nextStepSuggestion sl/en, slovensko sklanjanje, fail-clean); src/components/home/guided-flow.tsx (useSyncExternalStore — brez setState v efektih, 4 koraki, predizpolnjevanje, aria-live, glas sl-SI SpeechSynthesis, zaključni nasvet "želiš še eno destinacijo, ali zaključiš?"); src/lib/arso-lidar.ts (tileBbox3857 + arsoLidarTileUrl); map-section (LiDAR relief preklop, trajna preferenca, flyTo regije iz vodiča); page.tsx vstavljen vodič
+- VRATA: tsc 0 (src+tests; examples/skills preostane kot prej) · eslint 0 (research/ dodan v ignores — popravilo vnaprej obstoječega rdečega baseline) · bun test 19/19 (nov tests/guide-store.test.ts)
+- BROWSER E2E: celoten tok ✅ · reload = brez ponavljanja ✅ · delna izpolnjenost → takoj "regija" ✅ · predizpolnjeni čipi ✅ · Zaključi → zložen pregled ✅ · glas vztraja ✅ · LiDAR 18+ ploščic + preferenca vztraja ✅ · 390px + lepljiva noga ✅ · konzola 0 napak/0 opozoril (RadioGroup controlled popravljen)
+- Evidenca: research/arso-lidar/SUMMARY.md + hillshade-bled-512.png · research/vodeni-tok/SUMMARY.md (T1 tabela + vzorci Komoot/Google Maps/AllTrails/Airbnb/TripAdvisor/Wikivoyage → implementacija)
+
+Stage Summary:
+- Odloženo vprašanje uporabnika ODGOVORJENO z dokazi: "Moja pot" → "Začni/Zaženi na poti" deluje — karta riše pot, Go Mode vodi; edina vrzel = Navigiraj brez ?from=
+- Komoot onboarding memory ŽIVO v peskovniški referenci: vpraša le enkrat, si zapomni, nadaljuje, predizpolni, izreče naslednji korak (besedilo+glas), zaključi z "še eno destinacijo ali zaključiš?"
+- ARSO LiDAR: dinamični /export potrdjen kot prava integracijska pot (Web Mercator bbox), suhi DMV0050 (5 m) izmerjen 3,47 GB / 4 četrtine, licenca CC BY 4.0; surova točkovna oblaka NISO javno potrjeni (iskreno)
+- Commit 70033b7 (peskovniški main); push/PR ostaja žetonsko odvisen (repo privaten, žeton ponastavljen)

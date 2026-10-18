@@ -1,13 +1,14 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { Check, ChevronRight, Ear, EarOff, MapPin, RotateCcw, Sparkles } from 'lucide-react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Check, ChevronRight, Ear, EarOff, Map as MapIcon, MapPin, RotateCcw, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useGuideState } from '@/components/home/use-guide-state';
 import {
   GUIDE_EVENT,
   GUIDE_INTEREST_OPTIONS,
@@ -19,10 +20,8 @@ import {
   guideSummaryChips,
   isGuideComplete,
   isStepAnswered,
-  loadGuideState,
   nextStepSuggestion,
   saveGuideState,
-  sanitizeGuideState,
   type GuideInterest,
   type GuidePace,
   type GuideRegionId,
@@ -39,7 +38,7 @@ import {
  *   4) na koncu vedno vpraša: »Želiš še eno destinacijo, ali zaključiš?«
  *
  * localStorage je ZUNANJA shramba → beremo prek useSyncExternalStore
- * (brez setState v efektih; mutacije = zapis + dogodek GUIDE_EVENT).
+ * (v use-guide-state.ts; mutacije = zapis + dogodek GUIDE_EVENT).
  */
 
 const STEP_LABELS: Record<GuideStepId, string> = {
@@ -58,36 +57,6 @@ function browserStorage(): GuideStorage {
   };
 }
 
-/** useSyncExternalStore: naročnina na dogodek toka + storage dogodek. */
-function subscribeGuide(onChange: () => void): () => void {
-  window.addEventListener(GUIDE_EVENT, onChange);
-  window.addEventListener('storage', onChange);
-  return () => {
-    window.removeEventListener(GUIDE_EVENT, onChange);
-    window.removeEventListener('storage', onChange);
-  };
-}
-
-/** Stabilen snapshot (useSyncExternalStore zahteva referenčno enakost). */
-let snapshotCache: { raw: string | null; parsed: GuideState | null } | null = null;
-function getGuideSnapshot(): GuideState | null {
-  if (typeof window === 'undefined') return null;
-  const raw = window.localStorage.getItem('dsa.guide.v1');
-  if (snapshotCache && snapshotCache.raw === raw) return snapshotCache.parsed;
-  let parsed: GuideState | null = null;
-  try {
-    parsed = raw ? sanitizeGuideState(JSON.parse(raw)) : null;
-  } catch {
-    parsed = null;
-  }
-  snapshotCache = { raw, parsed };
-  return parsed;
-}
-
-function getServerSnapshot(): GuideState | null {
-  return null;
-}
-
 function speak(text: string, enabled: boolean): void {
   if (!enabled || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
   try {
@@ -104,7 +73,7 @@ function speak(text: string, enabled: boolean): void {
 type ViewStep = GuideStepId | 'welcome' | 'done';
 
 export function GuidedFlow() {
-  const state = useSyncExternalStore(subscribeGuide, getGuideSnapshot, getServerSnapshot);
+  const state = useGuideState();
   // uporabnikova navigacija povozi samodejni korak (null = sledi toku)
   const [userStep, setUserStep] = useState<ViewStep | null>(null);
   const [dismissed, setDismissed] = useState(false);
@@ -408,19 +377,23 @@ export function GuidedFlow() {
                 ))}
               </div>
               {/* obvezen zaključni nasvet (izrazita želja uporabnika):
+                  rezultat vodiča je VIDEN — "Moja pot" na zemljevidu;
                   "še ena destinacija" = nova REGIJA — interesi/dni/tempo ostanejo
                   shranjeni (Komootov vzorec: ne sprašujemo znova) */}
               <div className="flex flex-wrap gap-2">
                 <Button
-                  onClick={() => {
-                    enterStep('region');
-                    focusCard();
-                  }}
+                  onClick={() =>
+                    document.getElementById('zemljevid')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  }
                 >
+                  <MapIcon className="size-4" aria-hidden />
+                  Pokaži tvojo pot na zemljevidu
+                </Button>
+                <Button variant="outline" onClick={() => { enterStep('region'); focusCard(); }}>
                   Želiš še eno destinacijo
                   <ChevronRight className="size-4" aria-hidden />
                 </Button>
-                <Button variant="outline" onClick={() => setDismissed(true)}>
+                <Button variant="ghost" onClick={() => setDismissed(true)}>
                   Zaključi
                 </Button>
               </div>

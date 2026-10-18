@@ -179,7 +179,7 @@ export function nextStepSuggestion(
   const next = firstUnansweredStep(state);
   if (locale === 'en') {
     if (next === null) {
-      return { text: 'Plan is ready — want to add another destination, or finish here?', nextStep: 'done' };
+      return { text: 'Plan is ready — see it on the map. Want another destination, or finish here?', nextStep: 'done' };
     }
     if (next === 'interests') return { text: 'Pick a few interests to get started — I\'ll remember them.', nextStep: next };
     if (next === 'region') return { text: `Saved ${state.interests.length} interest(s). Now: which region?`, nextStep: next };
@@ -187,7 +187,7 @@ export function nextStepSuggestion(
     return { text: 'Last question: how fast should the trip feel?', nextStep: next };
   }
   if (next === null) {
-    return { text: 'Načrt je pripravljen — želiš še eno destinacijo, ali zaključiš?', nextStep: 'done' };
+    return { text: 'Načrt je pripravljen — poglej svojo pot na zemljevidu. Želiš še eno destinacijo, ali zaključiš?', nextStep: 'done' };
   }
   if (next === 'interests') return { text: 'Izberi interese, ki te zanimajo — si jih bom zapomnil.', nextStep: next };
   if (next === 'region') return { text: `Shranjeno: ${state.interests.length} ${interestsNoun(state.interests.length)}. Naslednje: katera regija te vabi?`, nextStep: next };

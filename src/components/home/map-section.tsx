@@ -1,16 +1,19 @@
 'use client';
 
 import 'leaflet/dist/leaflet.css';
-import type { CircleMarker as LeafletCircleMarker, Map as LeafletMap } from 'leaflet';
+import type { CircleMarker as LeafletCircleMarker, Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { CalendarDays, List, Loader2, Map as MapIcon, Mountain, Palmtree, Waves, Wine } from 'lucide-react';
+import { CalendarDays, List, Loader2, Map as MapIcon, MapPin, Mountain, Palmtree, Route, Waves, Wine, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { ARSO_LIDAR_ATTRIBUTION, arsoLidarTileUrl, formatElevation } from '@/lib/arso-lidar';
 import { GUIDE_EVENT, GUIDE_REGIONS, loadGuideState } from '@/lib/guide-store';
+import { useGuideState } from '@/components/home/use-guide-state';
+import { tripPlanFor, type TripStop } from '@/lib/trip-plan';
 
 /**
  * POLIR15-a — sticky preklop brez z-index nasprotja z Leafletom:
@@ -88,6 +91,56 @@ export function MapSection() {
   const [elevation, setElevation] = useState<ElevationState>({ status: 'idle' });
   const elevAbortRef = useRef<AbortController | null>(null);
   const elevMarkerRef = useRef<LeafletCircleMarker | null>(null);
+
+  // MOJA POT: vodeni tok → zemljevid (rezultat vodiča je VIDEN na karti)
+  const guide = useGuideState();
+  const guideRegion =
+    guide && guide.region && guide.answered.includes('region')
+      ? (GUIDE_REGIONS.find((g) => g.id === guide.region) ?? null)
+      : null;
+  const plan = guideRegion ? tripPlanFor(guideRegion.id) : null;
+  const [planDismissed, setPlanDismissed] = useState(false);
+  const planLayerRef = useRef<unknown>(null);
+  const planMarkersRef = useRef<Map<string, LeafletMarker>>(new Map());
+  const planKey = guideRegion?.id ?? null;
+
+  /** Klik na postanko v "Tvoji poti" → mapa pripotuje + odpre pojavnno okno. */
+  const focusStop = (stop: TripStop) => {
+    mapRef.current?.flyTo([stop.lat, stop.lng], 11, { duration: 1.2 });
+    planMarkersRef.current.get(stop.name)?.openPopup();
+  };
+
+  // nova regija v vodiču → plošča se znova pokaže (uporabnik vidi rezultat)
+  useEffect(() => {
+    setPlanDismissed(false);
+  }, [planKey]);
+
+  // označevalci plana — vsaka sprememba regije osveži plast
+  useEffect(() => {
+    const L = LeafletRef.current;
+    const map = mapRef.current;
+    if (!L || !map) return;
+    if (planLayerRef.current) {
+      (planLayerRef.current as L.LayerGroup).remove();
+      planLayerRef.current = null;
+      planMarkersRef.current = new Map();
+    }
+    if (!plan) return;
+    const group = L.layerGroup();
+    const icon = L.divIcon({
+      className: 'dsa-pin-plan',
+      html: PinSvg(),
+      iconSize: [24, 32],
+      iconAnchor: [12, 32],
+    });
+    plan.forEach((stop) => {
+      const m = L.marker([stop.lat, stop.lng], { icon, title: stop.name, zIndexOffset: 500 })
+        .addTo(group)
+        .bindPopup(`<strong>${stop.name}</strong><br/>${stop.note}`);
+      planMarkersRef.current.set(stop.name, m);
+    });
+    planLayerRef.current = group.addTo(map);
+  }, [plan, mapReady]);
 
   useEffect(() => {
     let cancelled = false;
@@ -203,7 +256,7 @@ export function MapSection() {
   useEffect(() => {
     const L = LeafletRef.current;
     const map = mapRef.current;
-    if (!L || !map) return;
+    if (!L || !map || !mapReady) return;
     if (relief && !reliefLayerRef.current) {
       const ReliefLayer = (L.GridLayer as unknown as {
         extend(def: {
@@ -234,8 +287,16 @@ export function MapSection() {
     }
   }, [relief, mapReady]);
 
+  // čiščenje plana ob odstranitvi mape
+  useEffect(() => {
+    return () => {
+      planLayerRef.current = null;
+      planMarkersRef.current = new Map();
+    };
+  }, []);
+
   return (
-    <section id="zemljevid" aria-labelledby="map-heading" className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+    <section id="zemljevid" aria-labelledby="map-heading" className="mx-auto w-full scroll-mt-20 max-w-6xl px-4 sm:px-6">
       <h2 id="map-heading" className="sr-only">
         Zemljevid destinacij s preklopilem pogledom
       </h2>
@@ -303,6 +364,53 @@ export function MapSection() {
         <div className={`absolute inset-0 z-0 isolate ${mode === 'map' ? '' : 'pointer-events-none opacity-0'}`}>
           <div ref={containerRef} className="h-full w-full" aria-label="Interaktivni zemljevid Slovenije" role="application" />
         </div>
+
+        {/* MOJA POT: rezultat vodenega toka — vidna plošča nad kartou.
+            Klik na postanko → mapa pripotuje + odpre opis (aplikacija vodi). */}
+        {mode === 'map' && plan && guideRegion && !planDismissed && (
+          <aside
+            aria-label={`Tvoja pot — ${guideRegion.label}`}
+            className="absolute left-3 top-3 z-20 w-[min(280px,calc(100%-1.5rem))] overflow-hidden rounded-xl border bg-background/95 shadow-lg backdrop-blur"
+          >
+            <div className="flex items-center gap-2 border-b bg-emerald-600/5 px-3 py-2">
+              <Route className="size-4 shrink-0 text-emerald-600" aria-hidden />
+              <p className="min-w-0 truncate text-sm font-semibold">Tvoja pot</p>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="ml-auto size-6"
+                onClick={() => setPlanDismissed(true)}
+                aria-label="Skrij ploščo Tvoja pot"
+              >
+                <X className="size-3.5" aria-hidden />
+              </Button>
+            </div>
+            <div className="max-h-[220px] overflow-y-auto nice-scroll p-2">
+              <p className="px-1 pb-1.5 text-xs text-muted-foreground">{guideRegion.label}</p>
+              <div className="space-y-1">
+                {plan.map((stop) => (
+                  <Button
+                    key={stop.name}
+                    size="sm"
+                    variant="ghost"
+                    className="h-auto w-full justify-start gap-2 px-2 py-1.5 text-left"
+                    onClick={() => focusStop(stop)}
+                    aria-label={`Prikaži ${stop.name} na zemljevidu`}
+                  >
+                    <MapPin className="size-3.5 shrink-0 text-emerald-600" aria-hidden />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium leading-tight">{stop.name}</span>
+                      <span className="block truncate text-xs text-muted-foreground">{stop.note}</span>
+                    </span>
+                  </Button>
+                ))}
+              </div>
+              <p className="px-1 pt-1.5 text-[11px] text-muted-foreground">
+                {guide?.days ? `${guide.days} dni · ` : ''}tempo: {guide?.pace ?? '—'} · klikni destinacijo
+              </p>
+            </div>
+          </aside>
+        )}
 
         {mode === 'map' && !mapReady && (
           <Skeleton className="absolute inset-0 z-10 rounded-none" aria-hidden />

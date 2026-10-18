@@ -1136,3 +1136,18 @@ Stage Summary:
 - Navigacija vodi VEDNO in POVSEJ: mobilna glava zdaj ima vse tri skoke, vsak ančor pristane pod lepljivo glavo, odjavljen "Za tebe" pripelje do vodenega toka namesto v nič.
 - Deljene povezave dobijo OG predogled (sl_SI).
 - Commit lokalno; push/PR čaka žeton.
+---
+Task ID: POLIRAJ-2-INFRA-DODATEK
+Agent: Z.ai Code (main session)
+Task: dodatek k "poliraj" — diagnoza uhajanja dev strežnika + zanesljiv zagon
+
+Work Log:
+- DIAGNOZA (pošteno, izmerjeno): dev strežnik je med sejo večkrat "umrl". Dve ločeni vzroki: ① OOM killer — dmesg: "Out of memory: Killed process … next-server" (RSS 1,3 GB), sprožilec zagon Chromium (agent-browser) ob 4 GB peskovniku; ② ZASTAL Turbopack cache — ponovljeni uboji med kompilacijo pustili .next v stanju, kjer next-server vrti 92 % CPU in ne sprejema povezav (accept-queue zastoj; curl 000 kljub živemu procesu).
+- MEHANIZEM OZADJA: procesi iz ukazov seje niso preživeli konca ukaza (test s sleep 300 — mrtev), razen kot otroci PID 1 (tini -- /start.sh); rešitev: Bun.spawn + unref z stdio na fd → reparent na PID 1 ŠE MED ukazom (preverjeno: PPID 1 v istem ukazu).
+- ZANESLJIV POSTOPEK ZAGONA (dokazano vztrajen čez ukaze + po brskalniku): pkill next → rm -rf .next → Bun.spawn('bun run dev', unref, fd-logs) → ogrevalni GET z --max-time 90 (hladna kompilacija) → 200 v naslednjih ukazih.
+- OOM NAVODILO ZA PRIHODNJE: pred agent-browser zapri nepotrebne seje (agent-browser close --all); po uporabi brskalnik takoj zapri; pri 4 GB pomnilnika NE hkrati več Chromium + bun test + cold compile.
+- VRATA (po vsem skupaj): brskalniški smoke (nova seja) — title "Discover Slovenia AI", nav [Zemljevid→#zemljevid, Za tebe→#vodic (odjavljen), Zmožnosti→#zmoznosti], namizne povezave 36px, h1 "Slovenija v zlatu", #zmoznosti prisoten, preliv kartic 0, scrollW 1280, 0 page errors; brskalnik zaprt; strežnik ŠE VEDNO 200 (after-browser:200, 1,3 GB prosto); git čist.
+
+Stage Summary:
+- Strežnik zanesljivo teče (PPID 1, vztraja čez ukaze), postopek zagona zapisan za prihodnje seje; vzroki uhajanja pošteno diagnosticirana (OOM + zastal cache), nič ugibanja.
+- Commit 86f5bd0 ostane vrh; push/PR čaka žeton.

@@ -907,3 +907,27 @@ Stage Summary:
 - Komoot onboarding memory ŽIVO v peskovniški referenci: vpraša le enkrat, si zapomni, nadaljuje, predizpolni, izreče naslednji korak (besedilo+glas), zaključi z "še eno destinacijo ali zaključiš?"
 - ARSO LiDAR: dinamični /export potrdjen kot prava integracijska pot (Web Mercator bbox), suhi DMV0050 (5 m) izmerjen 3,47 GB / 4 četrtine, licenca CC BY 4.0; surova točkovna oblaka NISO javno potrjeni (iskreno)
 - Commit 70033b7 (peskovniški main); push/PR ostaja žetonsko odvisen (repo privaten, žeton ponastavljen)
+
+---
+Task ID: ARSO-VISINA-NATOCKO + DONE-LOOP-REGIJA
+Agent: Z.ai Code (main session)
+Task: "nadaljuj" — (1) poglobitev ARSO LiDAR: prava višina na točko (ne le vizuelni relief); (2) popravek zaključne zanke vodenega toka ("še ena destinacija" mora voditi na novo destinacijo)
+
+Work Log:
+- Re-ground: peskovnik ohranjen (commit 70033b7), dev server GET / 200
+- NOVA MERITEV: koren storitev gis.arso.gov.si/arcgis/rest/services?f=json → **Slovenija_DMR_D96TM (ImageServer)**: 1 m F32, EPSG:3794, extent celega Slovenije
+- Identify na pravih točkah (sr=4326, geometryType=esriGeometryPoint): **Bled 475,858 m · Ljubljana 297,742 m · Piran −0,0154 m (morska raven!) · Triglav pobočje 2273,68 m** — vrednosti konsistentne z realnim terenom; ~0,63 s na klic
+- **Brez CORS glav** (izmerjeno z -D) → brskalnik NE sme klicati direktno → strežniški posrednik obvezen (sočasno tudi priporočilo za produkcijo: fair-use + cache)
+- Implementacija (commit f09ed73):
+  - `src/lib/arso-lidar.ts` +čiste funkcije: `arsoElevationIdentifyUrl`, `parseArsoElevation`, `formatElevation` (sl: "475,9 m", −0 → "0,0 m"), `parseElevationQuery`, `isInSloveniaBbox`, `createElevationCache` (TTL + maxEntries + in-flight zlivanje + vbrizgan `now`)
+  - `/api/arso/elevation` (route handler, force-dynamic): 200 {elevationM, source, license} · 400 neveljaven vhod (slovensko sporočilo) · 502 vir nedosegljiv; cache 10 min / 500 točk
+  - `map-section.tsx`: klik na mapo → circleMarker + popup ("Višina: 475,9 m — ARSO DMR (LiDAR, CC BY 4.0)") + čip v sticky vrstici z `aria-live=polite`; abort prejšnje zahteve ob novem kliku; Loader2 spinner
+  - `guided-flow.tsx`: **"Želiš še eno destinacijo" → REGIJA (prej interese)** — interesi/dni/tempo ostanejo shranjeni; radio je predizpolnjen (Komootov vzorec)
+- VRATA: tsc 0 (src+tests; examples/skills ostaja izven baseline) · eslint 0 · **bun test 33/33** (17 novih: URL/parse/format/bbox + cache: TTL, in-flight zlivanje, iztrebljanje)
+- BROWSER E2E (agent-browser): klik na mapo → čip **"1210,3 m · ARSO LiDAR"** + popup z atribucijo ✓ · API log 200 v 1,1 s ✓ · celoten vodeni tok → done → "še ena destinacija" → **regija, Gorenjska checked=true** (spomin!) ✓ · izbira Primorske → chips "narava, hrana | Primorska (Soča, Piran) | 3 dni | tempo: športen" ✓ · reload → "Tvoj vodič", brez ponavljanja vprašanj ✓ · 390 px brez horizontalnega prelivanja ✓ · **0 konzolnih napak/0 page errors** ✓
+- Curl verifikacija posrednika: Bled 200 1,13 s (identična vrednost kot direktni ARSO klic), Pariz 400, cache hit **0,006 s**
+
+Stage Summary:
+- ARSO LiDAR je zdaj dvojen: (a) vizuelni relief sloj (prejšnja seja) + (b) **kvantitativna višina na točko** (ta seja) — oba izmerjena na pravih podatkih, obe poti fair-use zavarovani (cache + proxy)
+- Zaključna zanka vodenega toka je zdaj semantično pravilna: nova destinacija = nova regija, shranjeni odgovori se ne ponovijo
+- Commit f09ed73 (sandbox main); push/PR še vedno žetonsko odvisen (repo privaten, žeton ponastavljen)

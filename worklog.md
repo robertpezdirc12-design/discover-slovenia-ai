@@ -978,3 +978,27 @@ Stage Summary:
 - "MOJA POT" zdaj DEJANSKO deluje: vodič → "Pokaži tvojo pot na zemljevidu" → plošča na karti + polet + popis postankov; Komootova obljuba (načrt viden na karti) izpolnjena in E2E dokazana
 - Primerjava vrhunskih aplikacij dokumentirana z viri in statusi; 4 odprta deli pošteno navedeni (urejevalnik poti, iskanje, težavnosti, višinski profil poti)
 - Commit lokalno (sandbox main); push/PR še vedno čaka žeton
+
+---
+Task ID: NAVIGACIJA-PO-POTI + CELOPLATFORMNO VODENJE
+Agent: Z.ai Code (main session)
+Task: "preveri ce platforma vodi uporabnika cez celo platformo da ni zgubljen in ko konca z vnasanjem ali se odpre navigacija daga vodi po poti do destinacije"
+
+Work Log:
+- REVIZIJA "zgubljenih točk" (celotna platforma):
+  • HERO CTA gumba bila MRTVA (brez onClick/href) — uporabnik zgubljen na vstopu → POPRAVLJENO: primarni → #vodic (voden tok), sekundarni → #zemljevid (buttonVariants, anchor — dela tudi brez JS); izmerjeno: klik primarnega → scrollY 565
+  • header nav (#zemljevid/#osebno/#polir15) — vsi targeti obstajajo ✓; vodič/karta/popisi — vsak zaslon izreče naslednji korak ✓
+- NAVIGACIJA PO POTI (nova funkcija, commit 1a5770c):
+  • src/lib/route-guidance.ts: čista logika (navFirst/Next/Prev/IsLast, navProgressLabel "Postanek 1 od 2: Bled …" / "Destinacija dosežena — Bohinj je zadnja od 2 postankov.", navChipText)
+  • src/lib/osrm-route.ts: OSRM URL (lng,lat vrstni red DOKLJENO) + fail-clean razčlenjevanje (živ vzorec Bled→Bohinj 18,7 km / 18 min / 514 točk, CORS *)
+  • /api/osrm/route (Next posrednik): predpomnilnik 10 min/50 poti + in-flight združevanje + MAX 8 postankov
+  • **mini-services/route-service (bun, vrata 3031)**: UGOTOVLJENO da peskovnik filtrira odhodni Node→OSRM (ETIMEDOUT), bun isti gostitelj 200 → Next pade na http://127.0.0.1:3031/osrm/route (produkcija: direktno, rezerva ne sprožena)
+  • map-section: navigacijski trak (aria-live role=status): čip "1/2 · Bled" → "obisk · Bohinj", napredek izrečen, "→ naslednja postanka: 18,7 km · 18 min", [← Nazaj][Naprej →][Končaj], obisk = [Zaključi obisk]; zelena cestna linija (L.polyline, premočrtna črtkana rezerva); "Začni navigacijo po poti" gumb v plošči; SHOW_TRIP_EVENT: "Pokaži tvojo pot" iz vodiča SAMODEJNO odpre navigacijo na 1. postanek (izrazita želja uporabnika)
+  • src/lib/speech.ts: deljeni speak (vodič + navigacija isti glas)
+- E2E (sveža seja): vodič 4 koraki → "Pokaži tvojo pot" → navigacija AVTOMATIČNO "1/2 · Bled" + leg "18.7 km · 18 min" → Naprej → "Destinacija dosežena — Bohinj je zadnja od 2 postankov." + popup + ZELENA CESTNA LINIJA vidna na karti (slika /tmp/nav-bohinj.png) → hero CTA scrollY 565 → mobilno 390px: plošča 280px znotraj, preliv NE → 0 page errors
+- VRATA: tsc čist · eslint 0 · bun test **60/60** (+11: route-guidance 7, osrm-route 4 z živim vzorcem)
+
+Stage Summary:
+- Celo-platformno vodenje ZAPRTA ZANKA: vstop (hero CTA) → vodič (4 koraki, spomin) → "Pokaži tvojo pot" → AVTOMATIČNA navigacija po PRAVI cesti (OSRM) postanek-po-postanek → "Destinacija dosežena" → zaključek → plošča ostane; nikjer mrtvi konec
+- Infrastruktura: route-service (bun, 3031) živ v ozadju (log: route-service.log); Node→OSRM blokada peskovnika dokumentirana in obposena
+- Push/PR še vedno žetonsko odvisen

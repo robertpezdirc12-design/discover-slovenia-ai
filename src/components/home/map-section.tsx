@@ -3,7 +3,7 @@
 import 'leaflet/dist/leaflet.css';
 import type { CircleMarker as LeafletCircleMarker, Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { BedDouble, CalendarDays, Check, ChevronLeft, ChevronRight, Compass, Flag, List, Loader2, Map as MapIcon, MapPin, Mountain, Navigation, Palmtree, Pause, Play, Route, Search, Waves, Wine, X } from 'lucide-react';
+import { BedDouble, CalendarDays, Check, ChevronLeft, ChevronRight, CloudSun, Compass, Flag, Landmark, List, Loader2, Map as MapIcon, MapPin, Mountain, Navigation, Palmtree, Pause, Play, Route, Search, Waves, Wine, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -36,6 +36,18 @@ import {
   type MapGuideCategory,
 } from '@/lib/map-guide';
 import { STAY_KINDS, STAY_KIND_LABELS, type StayKind, type StayResult } from '@/lib/stays';
+import {
+  balkanCurrencyLines,
+  countryFromDisplayName,
+  holidaysLine,
+  reverseTypeLabel,
+  weatherOneLiner,
+  wikiShort,
+  type Holiday,
+  type ReversePlace,
+  type WeatherPayload,
+  type WikiSummary,
+} from '@/lib/open-data';
 import { navChipText, navIsLast, navNext, navPrev, navProgressLabel } from '@/lib/route-guidance';
 import type { OsrmLegInfo } from '@/lib/osrm-route';
 import { SHOW_TRIP_EVENT, speak } from '@/lib/speech';
@@ -125,6 +137,9 @@ type StaySearchState =
 /** Fotografija prenočišča (zastopna, iskalnica): mirovanje → nalaganje → ok/napaka. */
 type StayPhotoState = { status: 'idle' | 'loading' | 'ok' | 'error'; photos: string[] };
 
+/** Živi odprti podatki vodiča: vreme+zrak ('loading' → podatek | null = ni na voljo). */
+type LiveData<T> = 'loading' | T | null;
+
 const EMPTY_STAYS: GuideStayStop[] = [];
 
 /** Barve točk vodiča po kategorijah (označevalci + čipi filtra). */
@@ -182,6 +197,17 @@ export function MapSection() {
   const reservedMarkersRef = useRef<Map<string, LeafletMarker>>(new Map());
   const reservedStays = guide?.stays ?? EMPTY_STAYS;
 
+  // ————— ODPRTI PODATKI BREZ POVERILNIC (vse živo izmerjeno): vreme+zrak,
+  // Wikipedia, tečaji, prazniki — vstavljeno v vodič in prenočišča —————
+  const [tourWeather, setTourWeather] = useState<LiveData<WeatherPayload>>('loading');
+  const [tourWiki, setTourWiki] = useState<LiveData<WikiSummary>>('loading');
+  const tourInfoAbortRef = useRef<AbortController | null>(null);
+  const [stayWeather, setStayWeather] = useState<LiveData<WeatherPayload>>('loading');
+  const stayWeatherAbortRef = useRef<AbortController | null>(null);
+  const ratesRef = useRef<Record<string, number> | null>(null);
+  const [stayRatesLine, setStayRatesLine] = useState<string | null>(null);
+  const [stayHolidays, setStayHolidays] = useState<{ country: string; line: string } | null>(null);
+
   /** Iskanje prenočišč kjerkoli (Overpass je globalen — Skopje = Bled);
       kinds = podmnožica vrst (apartment → samo apartmaji, ves Balkan). */
   const runStaySearch = (raw: string, kinds: readonly StayKind[] = stayKinds) => {
@@ -191,6 +217,7 @@ export function MapSection() {
     setStayKinds(kinds);
     setSelectedStay(null);
     setStayPhoto({ status: 'idle', photos: [] });
+    setStayHolidays(null);
     setStayPanelClosed(false);
     setStaySearch({ status: 'loading', q });
     searchAbortRef.current?.abort();
@@ -198,12 +225,27 @@ export function MapSection() {
     searchAbortRef.current = controller;
     const kindsParam = kinds.length !== STAY_KINDS.length ? `&kinds=${encodeURIComponent(kinds.join(','))}` : '';
     fetch(`/api/stays/search?q=${encodeURIComponent(q)}${kindsParam}`, { signal: controller.signal })
-      .then((r) => r.json() as Promise<{ ok: boolean; place?: { name: string; lat: number; lng: number }; stays?: StayResult[]; error?: string }>)
+      .then((r) => r.json() as Promise<{ ok: boolean; place?: { name: string; lat: number; lng: number; country?: string | null }; stays?: StayResult[]; error?: string }>)
       .then((j) => {
         if (controller.signal.aborted) return;
         if (j.ok && j.place && Array.isArray(j.stays)) {
           setStaySearch({ status: 'ok', q, place: j.place, stays: j.stays });
           mapRef.current?.flyTo([j.place.lat, j.place.lng], 12, { duration: 1.2 });
+          // PRAZNIKI (Nager.Date, brez ključev) — po državi iskanega kraja;
+          // pomagajo odločitvi kdaj potovati. Neznana država → brez vrstice.
+          const iso = countryFromDisplayName(j.place.country ?? null);
+          if (iso) {
+            fetch(`/api/open-data/holidays?country=${iso}`, { signal: controller.signal })
+              .then((r) => r.json() as Promise<{ ok: boolean; holidays?: Holiday[] }>)
+              .then((hj) => {
+                if (!controller.signal.aborted && hj.ok && Array.isArray(hj.holidays) && hj.holidays.length > 0) {
+                  setStayHolidays({ country: iso, line: holidaysLine(hj.holidays) });
+                }
+              })
+              .catch(() => {
+                /* prazniki so prijetnost — iskanje je že uspešno */
+              });
+          }
         } else {
           setStaySearch({ status: 'error', q, message: j.error ?? 'Iskanje ni uspelo — poskusi znova.' });
         }
@@ -224,16 +266,22 @@ export function MapSection() {
     else setStayKinds(next);
   };
 
-  /** Klik na prenočišče → podrobnosti (slika se išče v ozadju) + polet na karti. */
+  /** Klik na prenočišče → podrobnosti (slika, vreme, tečaji v ozadju) + polet na karti. */
   const openStayDetail = (stay: StayResult) => {
     setSelectedStay(stay);
     setStayPanelClosed(false);
     setStayPhoto({ status: 'loading', photos: [] });
+    setStayWeather('loading');
+    // tečaji (er-api, brez ključev): enkrat na sejo — nato sinhr. pretvorba
+    setStayRatesLine(ratesRef.current ? balkanCurrencyLines(stay.priceFrom, ratesRef.current) : null);
     mapRef.current?.flyTo([stay.lat, stay.lng], 14, { duration: 1.2 });
     stayMarkersRef.current.get(stay.id)?.openPopup();
     photoAbortRef.current?.abort();
+    stayWeatherAbortRef.current?.abort();
     const controller = new AbortController();
+    const weatherController = new AbortController();
     photoAbortRef.current = controller;
+    stayWeatherAbortRef.current = weatherController;
     const city = staySearch.status === 'ok' ? staySearch.place.name : '';
     fetch(`/api/stays/photo?name=${encodeURIComponent(stay.name)}&city=${encodeURIComponent(city)}`, { signal: controller.signal })
       .then((r) => r.json() as Promise<{ ok: boolean; photos?: string[] }>)
@@ -248,6 +296,28 @@ export function MapSection() {
       .catch(() => {
         if (!controller.signal.aborted) setStayPhoto({ status: 'error', photos: [] });
       });
+    // VREME+ZRAK pri prenočišču (Open-Meteo/wttr.in — odločitev o nočitvi)
+    fetch(`/api/open-data/weather?lat=${stay.lat.toFixed(4)}&lng=${stay.lng.toFixed(4)}`, { signal: weatherController.signal })
+      .then((r) => r.json() as Promise<{ ok: boolean; weather?: WeatherPayload }>)
+      .then((j) => {
+        if (!weatherController.signal.aborted) setStayWeather(j.ok && j.weather ? j.weather : null);
+      })
+      .catch(() => {
+        if (!weatherController.signal.aborted) setStayWeather(null);
+      });
+    // TEČAJI (enkrat na sejo; nato pretvorba sinhr.)
+    if (!ratesRef.current) {
+      fetch('/api/open-data/rates', { signal: weatherController.signal })
+        .then((r) => r.json() as Promise<{ ok: boolean; rates?: Record<string, number> }>)
+        .then((j) => {
+          if (weatherController.signal.aborted || !j.ok || !j.rates) return;
+          ratesRef.current = j.rates;
+          setStayRatesLine(balkanCurrencyLines(stay.priceFrom, j.rates));
+        })
+        .catch(() => {
+          /* tečaji so prijetnost — cena v EUR je že vidna */
+        });
+    }
   };
 
   /**
@@ -521,6 +591,38 @@ export function MapSection() {
     return () => window.clearInterval(t);
   }, [tourOn, tourPaused, tourPlaces.length]);
 
+  // ŽIVI ODPRTI PODATKI kraja turneje: vreme+zrak (Open-Meteo/wttr.in) +
+  // Wikipedia povzetek (če naslov obstaja) — ena vrstica v kontrolnem traku.
+  useEffect(() => {
+    if (!tourOn || tourPlaces.length === 0) return;
+    const i = Math.max(0, Math.min(tourIndex, tourPlaces.length - 1));
+    const p = tourPlaces[i];
+    tourInfoAbortRef.current?.abort();
+    const controller = new AbortController();
+    tourInfoAbortRef.current = controller;
+    setTourWeather('loading');
+    setTourWiki(p.wikiTitle ? 'loading' : null);
+    fetch(`/api/open-data/weather?lat=${p.lat.toFixed(4)}&lng=${p.lng.toFixed(4)}`, { signal: controller.signal })
+      .then((r) => r.json() as Promise<{ ok: boolean; weather?: WeatherPayload }>)
+      .then((j) => {
+        if (!controller.signal.aborted) setTourWeather(j.ok && j.weather ? j.weather : null);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setTourWeather(null);
+      });
+    if (p.wikiTitle) {
+      fetch(`/api/open-data/wiki?title=${encodeURIComponent(p.wikiTitle)}`, { signal: controller.signal })
+        .then((r) => r.json() as Promise<{ ok: boolean; wiki?: WikiSummary | null }>)
+        .then((j) => {
+          if (!controller.signal.aborted) setTourWiki(j.ok ? (j.wiki ?? null) : null);
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) setTourWiki(null);
+        });
+    }
+    return () => controller.abort();
+  }, [tourOn, tourIndex, tourPlaces]);
+
   // nova rezervacija → plošča »Tvoja pot« se sama odpre (uporabnik VIDI zapis)
   useEffect(() => {
     if (reservedStays.length > 0) setPlanDismissed(false);
@@ -628,9 +730,10 @@ export function MapSection() {
       };
       window.addEventListener(SHOW_TRIP_EVENT, onShowTrip);
 
-      // VIŠINA NA TOČKO (ARSO DMR/LiDAR, 1 m): klik → posrednik /api/arso/elevation
-      // (fair-use: predpomnilnik na strežniku; brskalnik ne kliče ARSO direktno —
-      // odgovor nima CORS glav, izmerjeno). Preklic prejšnje zahteve ob novem kliku.
+      // VIŠINA NA TOČKO (ARSO DMR/LiDAR, 1 m) + OBRATNO GEOCODIRANJE
+      // (Nominatim — "kaj je tukaj?"): klik → posrednika /api/arso/elevation in
+      // /api/open-data/reverse (oba fair-use: predpomnilnik na strežniku;
+      // brskalnik ne kliče virov direktno — CORS/User-Agent pravila).
       map.on({
         click: (e: { latlng: { lat: number; lng: number } }) => {
           const { lat, lng } = e.latlng;
@@ -649,6 +752,31 @@ export function MapSection() {
           marker.bindPopup('Višina …').openPopup();
           elevMarkerRef.current = marker;
 
+          // pojavno okno združi ime (reverse) + višino (ARSO/Copernicus) —
+          // vsak prispe: kdo pride prej, dopiše; nikoli ne prepiše drugega
+          let revText: string | null = null;
+          let elevText: string | null = null;
+          const updatePopup = () => {
+            const parts = [revText, elevText].filter(Boolean);
+            marker.setPopupContent(parts.length > 0 ? parts.join(' · ') : 'Višina …');
+          };
+
+          fetch(`/api/open-data/reverse?lat=${lat.toFixed(5)}&lng=${lng.toFixed(5)}`, {
+            signal: controller.signal,
+          })
+            .then((r) => r.json() as Promise<{ ok: boolean; place?: ReversePlace | null }>)
+            .then((j) => {
+              if (controller.signal.aborted) return;
+              if (j.ok && j.place) {
+                const type = reverseTypeLabel(j.place.type);
+                revText = `${j.place.name}${type ? ` (${type})` : ''}`;
+                updatePopup();
+              }
+            })
+            .catch(() => {
+              /* obratno geokodiranje je prijetnost — višina je glavni odgovor */
+            });
+
           fetch(`/api/arso/elevation?lat=${lat.toFixed(5)}&lon=${lng.toFixed(5)}`, {
             signal: controller.signal,
           })
@@ -662,18 +790,19 @@ export function MapSection() {
                   label: j.label ?? 'DEM',
                   license: j.license ?? '',
                 });
-                marker.setPopupContent(
-                  `Višina: ${formatElevation(j.elevationM)} — ${j.label ?? 'DEM'} · ${j.license ?? ''}`,
-                );
+                elevText = `Višina: ${formatElevation(j.elevationM)} — ${j.label ?? 'DEM'}${j.license ? ` · ${j.license}` : ''}`;
+                updatePopup();
               } else {
                 setElevation({ status: 'error' });
-                marker.setPopupContent('Višina trenutno ni na voljo');
+                elevText = 'Višina trenutno ni na voljo';
+                updatePopup();
               }
             })
             .catch(() => {
               if (controller.signal.aborted) return;
               setElevation({ status: 'error' });
-              marker.setPopupContent('Višina trenutno ni na voljo');
+              elevText = 'Višina trenutno ni na voljo';
+              updatePopup();
             });
         },
       });
@@ -730,7 +859,7 @@ export function MapSection() {
     }
   }, [relief, mapReady]);
 
-  // čiščenje plana + prenočišč ob odstranitvi mape
+  // čiščenje plana + prenočišč + odprtih podatkov ob odstranitvi mape
   useEffect(() => {
     return () => {
       planLayerRef.current = null;
@@ -741,6 +870,8 @@ export function MapSection() {
       tourMarkersRef.current = new Map();
       photoAbortRef.current?.abort();
       searchAbortRef.current?.abort();
+      tourInfoAbortRef.current?.abort();
+      stayWeatherAbortRef.current?.abort();
     };
   }, []);
 
@@ -1130,6 +1261,15 @@ export function MapSection() {
                     od {selectedStay.priceFrom} € / noč{' '}
                     <span className="text-xs font-normal text-muted-foreground">(indikativna ocena, ne uradni cenik)</span>
                   </p>
+                  {stayRatesLine && (
+                    <p className="mt-0.5 text-xs text-muted-foreground">{stayRatesLine} — referenčni tečaji</p>
+                  )}
+                  <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                    <CloudSun className="size-3.5 shrink-0 text-teal-700" aria-hidden />
+                    {stayWeather === 'loading'
+                      ? 'Vreme se išče …'
+                      : weatherOneLiner(stayWeather) || 'Vreme trenutno ni na voljo'}
+                  </p>
                   {selectedStay.website && (
                     <a
                       href={stayWebsiteUrl(selectedStay.website)}
@@ -1194,6 +1334,14 @@ export function MapSection() {
                       );
                     })}
                   </div>
+                  {stayHolidays && (
+                    <p className="flex items-start gap-1 px-1 pt-1.5 text-[11px] leading-tight text-muted-foreground">
+                      <Landmark className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+                      <span>
+                        Naslednji prazniki ({stayHolidays.country}): {stayHolidays.line}
+                      </span>
+                    </p>
+                  )}
                   <p className="px-1 pt-1.5 text-[11px] text-muted-foreground">
                     cena = indikativna ocena · podatki © OpenStreetMap
                   </p>
@@ -1260,6 +1408,17 @@ export function MapSection() {
                 );
               })}
             </div>
+            {/* ŽIVI ODPRTI PODATKI (brez poverilnic): vreme+zrak trenutnega kraja
+                (Open-Meteo/wttr.in + AQI) in Wikipedia povzetek (CC BY-SA). */}
+            <div className="mt-1.5 flex items-start gap-1.5 border-t pt-1.5">
+              <CloudSun className="mt-0.5 size-3.5 shrink-0 text-teal-700" aria-hidden />
+              <p className="min-w-0 flex-1 text-[11px] leading-snug text-muted-foreground">
+                {tourWeather === 'loading'
+                  ? 'Vreme se išče …'
+                  : weatherOneLiner(tourWeather) || 'Vreme trenutno ni na voljo'}
+                {tourWiki && tourWiki !== 'loading' ? ` — Wikipedia: ${wikiShort(tourWiki.extract, 100)}` : ''}
+              </p>
+            </div>
           </div>
         )}
 
@@ -1296,7 +1455,7 @@ export function MapSection() {
       {/* VIRI PODATKOV (ponudniki) — pošteno vidno: kaj poganja zemljevid,
           kaj je odprti podatki in kaj NE (Booking.com ni integriran). */}
       <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-        Viri: © OpenStreetMap — zemljevid + prenočišča (Nominatim, Overpass, Photon; ves svet, torej cel Balkan) · OSRM — cestne poti · ARSO DMR 1 m — višine (CC BY 4.0) · z-ai iskalnica — zastopne fotografije · cene indikativne; Booking.com ni integriran — prava rezervacija pri objektu ali uradni strani.
+        Viri: © OpenStreetMap — zemljevid + prenočišča (Nominatim, Overpass, Photon; ves svet, torej cel Balkan) · OSRM — cestne poti · ARSO DMR 1 m — višine (CC BY 4.0) · vreme + zrak — Open-Meteo / wttr.in · opisi — Wikipedia (CC BY-SA) · tečaji — open.er-api.com · prazniki — Nager.Date · z-ai iskalnica — zastopne fotografije · cene indikativne; Booking.com ni integriran — prava rezervacija pri objektu ali uradni strani.
       </p>
     </section>
   );

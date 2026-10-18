@@ -286,6 +286,8 @@ export interface StayPlace {
   lng: number;
   /** [south, west, north, east] — za Overpass bbox. */
   bbox: [number, number, number, number];
+  /** Država iz display_name (zadnji segment, npr. "Slovenija") ali null. */
+  country: string | null;
 }
 
 /**
@@ -306,5 +308,8 @@ export function parseNominatimPlace(raw: unknown): StayPlace | null {
   const bbox: [number, number, number, number] = [bb[0], bb[2], bb[1], bb[3]];
   const display = typeof p.display_name === 'string' ? p.display_name : '';
   const name = typeof p.name === 'string' && p.name.trim().length > 0 ? p.name.trim() : display.split(',')[0].trim();
-  return { name: name || 'Kraj', lat, lng, bbox };
+  // država = zadnji segment display_name ("Mlino, Bled, 4260, Slovenija" → "Slovenija")
+  const countrySeg = display.split(',').pop()?.trim() ?? '';
+  const country = countrySeg.length > 0 && countrySeg.toLowerCase() !== name.toLowerCase() ? countrySeg : null;
+  return { name: name || 'Kraj', lat, lng, bbox, country };
 }

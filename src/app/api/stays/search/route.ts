@@ -37,7 +37,7 @@ const USER_AGENT =
   'discover-slovenia-ai-demo/0.2 (slovenian travel guide; fair-use demo)';
 
 interface SearchPayload {
-  place: { name: string; lat: number; lng: number };
+  place: { name: string; lat: number; lng: number; country: string | null };
   stays: StayResult[];
 }
 
@@ -119,7 +119,7 @@ async function searchUpstream(q: string, kinds: readonly StayKind[]): Promise<Se
   }
   if (lastErr && stays.length === 0) throw lastErr;
 
-  return { place: { name: place.name, lat: place.lat, lng: place.lng }, stays };
+  return { place: { name: place.name, lat: place.lat, lng: place.lng, country: place.country }, stays };
 }
 
 async function searchWithCache(key: string, q: string, kinds: readonly StayKind[]): Promise<SearchPayload> {

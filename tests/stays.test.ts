@@ -157,6 +157,15 @@ describe('stays — geokodiranje (Nominatim)', () => {
     ]);
     expect(place?.name).toBe('Skopje');
     expect(place?.bbox).toEqual([41.9, 21.3, 42.1, 21.6]);
+    // država = zadnji segment display_name (za praznike po državi)
+    expect(place?.country).toBe('Severna Makedonija');
+  });
+
+  test('država je null, kadar display_name manjka ali se ujema z imenom', () => {
+    const brez = parseNominatimPlace([{ name: 'Skopje', lat: '41.99', lon: '21.42', boundingbox: ['41.9', '42.1', '21.3', '21.6'] }]);
+    expect(brez?.country).toBeNull();
+    const samoIme = parseNominatimPlace([{ name: 'Kosovo', display_name: 'Kosovo', lat: '42.6', lon: '20.9', boundingbox: ['42', '43', '20', '21.5'] }]);
+    expect(samoIme?.country).toBeNull();
   });
 
   test('prazen/neveljaven odgovor → null', () => {

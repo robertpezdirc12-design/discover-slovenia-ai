@@ -35,7 +35,7 @@ import {
   placesForCategories,
   type MapGuideCategory,
 } from '@/lib/map-guide';
-import { STAY_KIND_LABELS, type StayResult } from '@/lib/stays';
+import { STAY_KINDS, STAY_KIND_LABELS, type StayKind, type StayResult } from '@/lib/stays';
 import { navChipText, navIsLast, navNext, navPrev, navProgressLabel } from '@/lib/route-guidance';
 import type { OsrmLegInfo } from '@/lib/osrm-route';
 import { SHOW_TRIP_EVENT, speak } from '@/lib/speech';
@@ -168,6 +168,7 @@ export function MapSection() {
   // ————— PRENOČIŠČA: iskanje → slike/cena → »Rezerviraj« (samodejno shrani) —————
   const { toast } = useToast();
   const [stayQuery, setStayQuery] = useState('');
+  const [stayKinds, setStayKinds] = useState<readonly StayKind[]>(STAY_KINDS);
   const [staySearch, setStaySearch] = useState<StaySearchState>({ status: 'idle' });
   const [stayPanelClosed, setStayPanelClosed] = useState(false);
   const [selectedStay, setSelectedStay] = useState<StayResult | null>(null);
@@ -181,11 +182,13 @@ export function MapSection() {
   const reservedMarkersRef = useRef<Map<string, LeafletMarker>>(new Map());
   const reservedStays = guide?.stays ?? EMPTY_STAYS;
 
-  /** Iskanje prenočišč kjerkoli (Overpass je globalen — Skopje = Bled). */
-  const runStaySearch = (raw: string) => {
+  /** Iskanje prenočišč kjerkoli (Overpass je globalen — Skopje = Bled);
+      kinds = podmnožica vrst (apartment → samo apartmaji, ves Balkan). */
+  const runStaySearch = (raw: string, kinds: readonly StayKind[] = stayKinds) => {
     const q = raw.trim();
     if (q.length === 0) return;
     setStayQuery(q);
+    setStayKinds(kinds);
     setSelectedStay(null);
     setStayPhoto({ status: 'idle', photos: [] });
     setStayPanelClosed(false);
@@ -193,7 +196,8 @@ export function MapSection() {
     searchAbortRef.current?.abort();
     const controller = new AbortController();
     searchAbortRef.current = controller;
-    fetch(`/api/stays/search?q=${encodeURIComponent(q)}`, { signal: controller.signal })
+    const kindsParam = kinds.length !== STAY_KINDS.length ? `&kinds=${encodeURIComponent(kinds.join(','))}` : '';
+    fetch(`/api/stays/search?q=${encodeURIComponent(q)}${kindsParam}`, { signal: controller.signal })
       .then((r) => r.json() as Promise<{ ok: boolean; place?: { name: string; lat: number; lng: number }; stays?: StayResult[]; error?: string }>)
       .then((j) => {
         if (controller.signal.aborted) return;
@@ -209,6 +213,15 @@ export function MapSection() {
           setStaySearch({ status: 'error', q, message: 'Iskanje trenutno ni na voljo — poskusi znova.' });
         }
       });
+  };
+
+  /** Klik na čip vrste: ena vrsta ↔ nazaj na vse; obstoječe iskanje se takoj ponovi. */
+  const clickStayKind = (k: StayKind | 'all') => {
+    const next: readonly StayKind[] = k === 'all' || (stayKinds.length === 1 && stayKinds[0] === k)
+      ? STAY_KINDS
+      : [k];
+    if (staySearch.status !== 'idle' && stayQuery.trim().length > 0) runStaySearch(stayQuery, next);
+    else setStayKinds(next);
   };
 
   /** Klik na prenočišče → podrobnosti (slika se išče v ozadju) + polet na karti. */
@@ -848,6 +861,41 @@ export function MapSection() {
                 : ''}
           </span>
         </div>
+        {/* VRSTA PRENOČIŠČA — apartmaji za cel Balkan, hoteli, gostišča …
+            Strežniški filter (Overpass + Photon dobita samo izbrane vrste,
+            zato meja 24 zadetkov ne pogrešne izbranih). Klik na aktivni
+            čip vrne nazaj na vse vrste. */}
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t pt-2">
+          <span className="text-xs text-muted-foreground">Vrsta:</span>
+          <button
+            type="button"
+            aria-pressed={stayKinds.length === STAY_KINDS.length}
+            onClick={() => clickStayKind('all')}
+            className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
+              stayKinds.length === STAY_KINDS.length
+                ? 'border-emerald-600/40 bg-emerald-600/10 text-emerald-800'
+                : 'text-muted-foreground hover:bg-muted'
+            }`}
+          >
+            Vse
+          </button>
+          {STAY_KINDS.map((k) => {
+            const active = stayKinds.length === 1 && stayKinds[0] === k;
+            return (
+              <button
+                key={k}
+                type="button"
+                aria-pressed={active}
+                onClick={() => clickStayKind(k)}
+                className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
+                  active ? 'border-emerald-600/40 bg-emerald-600/10 text-emerald-800' : 'text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                {STAY_KIND_LABELS[k]}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Enoten vir višine: skeleton, mapa in seznam so absolutni znotraj te škatle */}
@@ -1244,6 +1292,12 @@ export function MapSection() {
           </div>
         )}
       </div>
+
+      {/* VIRI PODATKOV (ponudniki) — pošteno vidno: kaj poganja zemljevid,
+          kaj je odprti podatki in kaj NE (Booking.com ni integriran). */}
+      <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+        Viri: © OpenStreetMap — zemljevid + prenočišča (Nominatim, Overpass, Photon; ves svet, torej cel Balkan) · OSRM — cestne poti · ARSO DMR 1 m — višine (CC BY 4.0) · z-ai iskalnica — zastopne fotografije · cene indikativne; Booking.com ni integriran — prava rezervacija pri objektu ali uradni strani.
+      </p>
     </section>
   );
 }

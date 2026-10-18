@@ -1049,3 +1049,24 @@ Stage Summary:
 - Katalog je eden vir resnice: lahko se razširi (polna baza vasi/kmetij) brez dotikanja komponente — doda se vnose v MAP_GUIDE_PLACES.
 - Sinergija s prejšnjimi tokovi: vodič ne ruši "Tvoje poti" ali iskanja prenočišč; glas je skupen (speech.ts); Skopje turneja ↔ iskanje prenočišč Skopje.
 - Commit lokalno; push/PR še vedno čaka žeton.
+---
+Task ID: PONUDNIKI-KINDS-FILTER
+Agent: Z.ai Code (main session)
+Task: "katere ponudnike imamo na voljo v platformi in ali so vse kaj se nudi v zemljevidu ce booking nudi cel balkan slovenijo moralo bi bit naprimer apartmaji na zemljevidu za cel balkan nevem razmisljam"
+
+Work Log:
+- ODGOVOR (ponudniki, pošteno): platforma dela na ODPRTIH podatkih — © OpenStreetMap (tiles + prenočišča prek Nominatim geokodiranja + Overpass zrcala overpass.osm.ch/overpass-api.de + Photon/Komoot rezerva), OSRM (prave cestne poti), ARSO DMR/LiDAR 1 m (višine + relief, CC BY 4.0), AWS Terrarium + Open-Meteo (globalna višina — Balkan), z-ai image-search (zastopne fotografije), Web Speech API (glas). BOOKING.COM NI integriran — zahteva partnerske poverilnice/API; namesto tega: cene INDIKATIVNE, »Rezerviraj« shrani v »Mojo pot« + zapis v bazo, pravo plačilo pri objektu/uradni strani. Sedaj tudi VIDNO v UI: noga "Viri" pod zemljevidom.
+- ULOVLJENA VRZEL: tourism=apartment je bil ŽE v Overpass/Photon poizvedbi (cel svet — torej cel Balkan), ampak uporabnik NI mogel filtrirati po vrsti → "apartmaji na zemljevidu za cel balkan" ni bilo en klik.
+- REŠITEV (strežniški filter, pošteno do virov — meja 24 ne pogrešne izbranih):
+  • src/lib/stays.ts: parseStayKindsParam (URI param, neveljavne izpusti, dedup, null = vse), overpassStayQuery/overpassStayUrls/photonStayUrl dobi kinds podmnožico (Overpass regex samo izbrane vrste; Photon osm_tag filtri + ena vrsta = natančna beseda "apartment Skopje" namesto "hotel Skopje"), STAY_KIND_EN.
+  • /api/stays/search + mini-services/stays-service (3032): ?kinds=apartment,hotel → validacija, predpomnilnik ključ vključuje vrste ("skopje|apartment").
+  • UI map-section: vrsta čipi "Vse | Hotel | Gostišče | Mladinski hotel | Motel | Apartma | Rezort" (aria-pressed, klik na aktivni = nazaj na vse); obstoječe iskanje se takoj ponovi z novim filtrom.
+- ŽIVI DOKAZ (peskovnik): GET /stays/search?q=Skopje&kinds=apartment → pravi OSM apartmaji: "3M Apartment Skopje Center", "Flatiron apartment", "Serenity apartments", "Apartments \"A\" - Апартмани \"А\"" — vse kind=apartment, indikativno od 70 €/noč.
+- TESTI +11 (bun 103/103): parseStayKindsParam (null/podvojeni/neveljavne/mešano), overpassStayQuery kinds (privzeto vseh 6, samo apartment brez hotel, bbox ohranjen, obe zrcali), photonStayUrl (ena vrsta = natančna beseda, več vrst = vse tagi + "hotel", privzeto 6, STAY_KIND_EN popoln).
+- E2E (agent-browser, fresh-kinds): Skopje vzorec → 24 zadetkov (hoteli...) → čip APARTMA → 4 rezultati vsi "Apartma · od 70 €/noč" + 4 oznake na karti + aria-pressed (Vse=false, Apartma=true) → čip VSE → nazaj 24/24; noga "Viri" vidna (mobilno 390px preliv NE); 0 page errors.
+- VRATA: tsc 0 (src) · eslint 0 · bun test **103/103**.
+
+Stage Summary:
+- "Apartmaji na zemljevidu za cel Balkan" = EN KLIK: išči kraj (Skopje/Zagreb/…) → čip "Apartma" → samo apartmaji, slike/cena → Rezerviraj → »Moja pot«. Podatkovno je pokritost ves svet že bila (tourism=apartment), zdaj je še uporabniku vidna.
+- Ponudniki pošteno navedeni v UI nogi + v odgovoru uporabniku; Booking.com izrecno NI integriran (poverilnice) — brez pretvarjanja.
+- Commit lokalno; push/PR čaka žeton.

@@ -47,6 +47,30 @@ export const STAY_KIND_LABELS: Record<StayKind, string> = {
   resort: 'Rezort',
 };
 
+/** Angleška beseda vrste — Photon polno besedilo (ena vrsta = natančnejše iskanje). */
+export const STAY_KIND_EN: Record<StayKind, string> = {
+  hotel: 'hotel',
+  guest_house: 'guest house',
+  hostel: 'hostel',
+  motel: 'motel',
+  apartment: 'apartment',
+  resort: 'resort',
+};
+
+/**
+ * Vrste iz URI parametra `kinds` ("apartment,hotel") — neveljavne izpusti,
+ * podvojeni odstranjeni. null = parametra ni / nič veljavnega → vse vrste.
+ */
+export function parseStayKindsParam(raw: string | null): StayKind[] | null {
+  if (raw === null) return null;
+  const parts = raw
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter((s): s is StayKind => (STAY_KINDS as readonly string[]).includes(s));
+  const unique = Array.from(new Set(parts));
+  return unique.length > 0 ? unique : null;
+}
+
 export interface StayResult {
   /** OSM id ("n123" node, "w456" way) — enoličen ključ rezervacije. */
   id: string;
@@ -68,18 +92,31 @@ export function nominatimSearchUrl(query: string): string {
   return `${NOMINATIM_BASE}/search?q=${q}&format=jsonv2&limit=1&accept-language=sl`;
 }
 
-/** URL Overpass poizvedbe za bbox (zapis south,west,north,east). */
-export function overpassStayQuery(south: number, west: number, north: number, east: number): string {
+/** URL Overpass poizvedbe za bbox (zapis south,west,north,east); kinds podmnožica vrst. */
+export function overpassStayQuery(
+  south: number,
+  west: number,
+  north: number,
+  east: number,
+  kinds: readonly StayKind[] = STAY_KINDS,
+): string {
   const bbox = `${south},${west},${north},${east}`;
+  const list = kinds.length > 0 ? kinds : STAY_KINDS;
   // brez kotvic `$` in brez limita v poizvedbi (izmerjeno: nekatera zrcale
   // 500-irajo pri obeh) — točnost zagarantira razčlenjevalnik (točen seznam vrst)
-  const filter = `["tourism"~"hotel|guest_house|hostel|apartment|motel|resort"]`;
+  const filter = `["tourism"~"${list.join('|')}"]`;
   return `[out:json][timeout:25];(node${filter}(${bbox});way${filter}(${bbox}););out center;`;
 }
 
 /** URL-ji Overpass poizvedbe za bbox (zapis south,west,north,east) — failover po vrsti. */
-export function overpassStayUrls(south: number, west: number, north: number, east: number): string[] {
-  return OVERPASS_ENDPOINTS.map((base) => `${base}?data=${encodeURIComponent(overpassStayQuery(south, west, north, east))}`);
+export function overpassStayUrls(
+  south: number,
+  west: number,
+  north: number,
+  east: number,
+  kinds: readonly StayKind[] = STAY_KINDS,
+): string[] {
+  return OVERPASS_ENDPOINTS.map((base) => `${base}?data=${encodeURIComponent(overpassStayQuery(south, west, north, east, kinds))}`);
 }
 
 export const PHOTON_BASE = 'https://photon.komoot.io/api';
@@ -88,10 +125,14 @@ export const PHOTON_BASE = 'https://photon.komoot.io/api';
  * URL Photon iskanja (Komoot) — REZERVA, ko vse Overpass zrcale zavrnejo
  * (izmerjeno: zrcala tekom intenzivnega testiranja 500/limitiranja, Photon
  * odgovarja 200 z pravimi imeni + koordinatami + osm id).
+ * kinds podmnožica → samo ti osm_tag filtri; ena vrsta → natančna beseda
+ * v polnem besedilu (npr. "apartment Skopje" namesto "hotel Skopje").
  */
-export function photonStayUrl(placeName: string): string {
-  const tags = STAY_KINDS.map((k) => `osm_tag=tourism:${k}`).join('&');
-  return `${PHOTON_BASE}?q=${encodeURIComponent(`hotel ${placeName}`)}&${tags}&limit=24`;
+export function photonStayUrl(placeName: string, kinds: readonly StayKind[] = STAY_KINDS): string {
+  const list = kinds.length > 0 ? kinds : STAY_KINDS;
+  const tags = list.map((k) => `osm_tag=tourism:${k}`).join('&');
+  const word = list.length === 1 ? STAY_KIND_EN[list[0]] : 'hotel';
+  return `${PHOTON_BASE}?q=${encodeURIComponent(`${word} ${placeName}`)}&${tags}&limit=24`;
 }
 
 /** Zvezdice iz OSM tag-a ("3", "3;AAA" → 3; izven 1–5 → null). */

@@ -20,12 +20,15 @@
  */
 
 import {
+  STAY_KINDS,
   nominatimSearchUrl,
   overpassStayUrls,
   parseNominatimPlace,
   parsePhotonStays,
+  parseStayKindsParam,
   parseStayResults,
   photonStayUrl,
+  type StayKind,
   type StayResult,
 } from '../../src/lib/stays';
 
@@ -73,7 +76,7 @@ function parseQuery(raw: string | null, max: number): string | null {
   return q;
 }
 
-async function searchUpstream(q: string): Promise<SearchPayload> {
+async function searchUpstream(q: string, kinds: readonly StayKind[]): Promise<SearchPayload> {
   const geoRes = await fetch(nominatimSearchUrl(q), {
     headers: { 'user-agent': USER_AGENT, accept: 'application/json' },
     signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
@@ -86,7 +89,7 @@ async function searchUpstream(q: string): Promise<SearchPayload> {
   //    če vse odpove → Photon (Komoot) rezerva (izmerjeno v peskovniku)
   let stays: StayResult[] = [];
   let lastErr: unknown = null;
-  for (const url of overpassStayUrls(...place.bbox)) {
+  for (const url of overpassStayUrls(...place.bbox, kinds)) {
     try {
       const ovRes = await fetch(url, {
         headers: { 'user-agent': USER_AGENT, accept: 'application/json' },
@@ -106,7 +109,7 @@ async function searchUpstream(q: string): Promise<SearchPayload> {
   }
   if (stays.length === 0) {
     try {
-      const phRes = await fetch(photonStayUrl(place.name), {
+      const phRes = await fetch(photonStayUrl(place.name, kinds), {
         headers: { 'user-agent': USER_AGENT, accept: 'application/json' },
         signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       });
@@ -119,12 +122,12 @@ async function searchUpstream(q: string): Promise<SearchPayload> {
   return { place: { name: place.name, lat: place.lat, lng: place.lng }, stays };
 }
 
-async function searchWithCache(key: string, q: string): Promise<SearchPayload> {
+async function searchWithCache(key: string, q: string, kinds: readonly StayKind[]): Promise<SearchPayload> {
   const cached = cacheGet(searchCache, key);
   if (cached) return cached;
   const pending = searchInFlight.get(key);
   if (pending) return pending;
-  const task = searchUpstream(q);
+  const task = searchUpstream(q, kinds);
   searchInFlight.set(key, task);
   try {
     const value = await task;
@@ -196,7 +199,8 @@ const server = Bun.serve({
         if (!q) {
           return new Response(JSON.stringify({ ok: false, error: 'Manjka/neveljavno iskalno besedilo.' }), { status: 400, headers: cors });
         }
-        const payload = await searchWithCache(q.toLowerCase(), q);
+        const kinds = parseStayKindsParam(url.searchParams.get('kinds')) ?? STAY_KINDS;
+        const payload = await searchWithCache(`${q.toLowerCase()}|${kinds.join(',')}`, q, kinds);
         return new Response(JSON.stringify({ ok: true, ...payload }), { headers: cors });
       }
       if (url.pathname === '/stays/photo') {

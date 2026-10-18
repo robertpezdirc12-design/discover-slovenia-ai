@@ -8,6 +8,10 @@ import {
   parseNominatimPlace,
   parsePhotonStays,
   parseStayResults,
+  STAY_KINDS,
+  STAY_KIND_EN,
+  photonStayUrl,
+  parseStayKindsParam,
 } from '../src/lib/stays';
 import {
   addStayStop,
@@ -220,5 +224,74 @@ describe('guide-store — rezervirana prenočišča v »Moji poti«', () => {
     const loaded = loadGuideState(s);
     expect(isStayReserved(loaded, 'w9')).toBe(true);
     expect(isStayReserved(loaded, 'ne-obstaja')).toBe(false);
+  });
+});
+
+// ————— Vrste prenočišč (kinds filter) — apartmaji za cel Balkan —————
+
+describe('parseStayKindsParam — vrste iz URI parametra', () => {
+  test('null = parametra ni → vse vrste', () => {
+    expect(parseStayKindsParam(null)).toBeNull();
+  });
+
+  test('veljavne vrste, presledki in velike črke so tolerirani, podvojeni izločeni', () => {
+    expect(parseStayKindsParam('apartment')).toEqual(['apartment']);
+    expect(parseStayKindsParam(' Hotel, hotel ,APARTMENT')).toEqual(['hotel', 'apartment']);
+  });
+
+  test('neveljavne vrednosti → null (vse vrste, ne prazna poizvedba)', () => {
+    expect(parseStayKindsParam('castle,spa')).toBeNull();
+    expect(parseStayKindsParam('')).toBeNull();
+  });
+
+  test('mešano: samo veljavne preživijo', () => {
+    expect(parseStayKindsParam('hotel,xyz,hostel')).toEqual(['hotel', 'hostel']);
+  });
+});
+
+describe('overpassStayQuery — kinds podmnožica', () => {
+  test('privzeto vseh 6 vrst (nepremenjeno vedenje)', () => {
+    const q = overpassStayQuery(41.9, 21.3, 42.1, 21.6);
+    for (const k of STAY_KINDS) expect(q).toContain(k);
+    expect(q).toContain('41.9,21.3,42.1,21.6');
+  });
+
+  test('samo apartmaji → regex vsebuje apartment, ne pa hotel', () => {
+    const q = overpassStayQuery(41.9, 21.3, 42.1, 21.6, ['apartment']);
+    expect(q).toContain('"tourism"~"apartment"');
+    expect(q).not.toContain('hotel');
+    expect(q).toContain('41.9,21.3,42.1,21.6');
+  });
+
+  test('overpassStayUrls preneseta kinds v obe zrcali', () => {
+    const urls = overpassStayUrls(41.9, 21.3, 42.1, 21.6, ['apartment']);
+    expect(urls.length).toBe(2);
+    for (const u of urls) expect(decodeURIComponent(u)).toContain('"tourism"~"apartment"');
+  });
+});
+
+describe('photonStayUrl — kinds podmnožica + natančna beseda', () => {
+  test('ena vrsta (apartment) → osm_tag apartment + beseda "apartment" v iskanju', () => {
+    const u = photonStayUrl('Skopje', ['apartment']);
+    expect(u).toContain('osm_tag=tourism:apartment');
+    expect(u).not.toContain('osm_tag=tourism:hotel');
+    expect(u).toContain(`q=${encodeURIComponent('apartment Skopje')}`);
+  });
+
+  test('več vrst → vse osm_tag filtri + osnovna beseda "hotel" (izmerjeno deluje)', () => {
+    const u = photonStayUrl('Skopje', ['hotel', 'apartment']);
+    expect(u).toContain('osm_tag=tourism:hotel');
+    expect(u).toContain('osm_tag=tourism:apartment');
+    expect(u).toContain(`q=${encodeURIComponent('hotel Skopje')}`);
+  });
+
+  test('privzeto vseh 6 vrst (nepremenjeno vedenje)', () => {
+    const u = photonStayUrl('Bled');
+    for (const k of STAY_KINDS) expect(u).toContain(`osm_tag=tourism:${k}`);
+    expect(u).toContain(`q=${encodeURIComponent('hotel Bled')}`);
+  });
+
+  test('besede vrst so popolne (vsaka vrsta ima angleški izpis)', () => {
+    for (const k of STAY_KINDS) expect(STAY_KIND_EN[k].trim().length).toBeGreaterThan(0);
   });
 });

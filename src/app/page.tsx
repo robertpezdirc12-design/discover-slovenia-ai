@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
+import { GuidedFlow } from '@/components/home/guided-flow';
 import { HeroSection } from '@/components/home/hero-section';
 import { MapSection } from '@/components/home/map-section';
 import { PersonalHomeSection, PersonalHomeSkeleton } from '@/components/home/personal-home-section';
@@ -39,6 +40,10 @@ export default async function Home({
         <HeroSection variant={variant} microEvent={microEvent} />
 
         <div className="mt-10 space-y-10 pb-12">
+          {/* VODENI TOK (Komoot onboarding): vpraša le enkrat, odgovore si zapomni,
+              vsak korak izreče naslednji predlog (besedilo + glas). */}
+          <GuidedFlow />
+
           <MapSection />
 
           {/* POLIR15-c: streamiranje — skeleton rezervira točno toliko prostora,

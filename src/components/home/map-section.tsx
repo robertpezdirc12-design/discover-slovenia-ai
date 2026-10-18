@@ -2,13 +2,15 @@
 
 import 'leaflet/dist/leaflet.css';
 import type { Map as LeafletMap } from 'leaflet';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { CalendarDays, List, Map as MapIcon, Mountain, Palmtree, Waves, Wine } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
+import { ARSO_LIDAR_ATTRIBUTION, arsoLidarTileUrl } from '@/lib/arso-lidar';
+import { GUIDE_EVENT, GUIDE_REGIONS, loadGuideState } from '@/lib/guide-store';
 
 /**
  * POLIR15-a — sticky preklop brez z-index nasprotja z Leafletom:
@@ -23,6 +25,37 @@ import { Switch } from '@/components/ui/switch';
  */
 
 const MAP_H = 'h-[420px] md:h-[520px]'; // ← enoten vir višine
+
+/** Preferenca LiDAR relief sloja — trajna ("aplikacija si zapomni"). */
+const LIDAR_PREF_KEY = 'dsa.lidar.relief';
+const LIDAR_PREF_EVENT = 'dsa:lidar-pref';
+
+/** useSyncExternalStore: localStorage je zunanja shramba (brez setState v efektih). */
+function subscribeLidarPref(onChange: () => void): () => void {
+  window.addEventListener('storage', onChange);
+  window.addEventListener(LIDAR_PREF_EVENT, onChange);
+  return () => {
+    window.removeEventListener('storage', onChange);
+    window.removeEventListener(LIDAR_PREF_EVENT, onChange);
+  };
+}
+
+function getLidarSnapshot(): boolean {
+  try {
+    return window.localStorage.getItem(LIDAR_PREF_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function setLidarPref(value: boolean): void {
+  try {
+    window.localStorage.setItem(LIDAR_PREF_KEY, value ? '1' : '0');
+  } catch {
+    /* preferenca je prijetnost */
+  }
+  window.dispatchEvent(new Event(LIDAR_PREF_EVENT));
+}
 
 const DESTINATIONS = [
   { name: 'Bled', region: 'Gorenjska', note: 'Jezerski otok in grad nad strmino', icon: Mountain, pos: [46.3625, 14.0936] as const },
@@ -40,8 +73,11 @@ function PinSvg() {
 export function MapSection() {
   const [mode, setMode] = useState<'map' | 'list'>('map');
   const [mapReady, setMapReady] = useState(false);
+  const relief = useSyncExternalStore(subscribeLidarPref, getLidarSnapshot, () => false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
+  const reliefLayerRef = useRef<unknown>(null);
+  const LeafletRef = useRef<typeof import('leaflet') | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,6 +85,7 @@ export function MapSection() {
     (async () => {
       const L = await import('leaflet');
       if (cancelled || !containerRef.current || mapRef.current) return;
+      LeafletRef.current = L;
 
       const map = L.map(containerRef.current, {
         center: [46.12, 14.82],
@@ -73,15 +110,67 @@ export function MapSection() {
           .bindTooltip(`${d.name} — ${d.region}`),
       );
 
-      map.on('unload', () => window.clearTimeout(fallback));
+      // VODENI TOK: regija iz shranjenih odgovorov → mapa lepo pripotuje.
+      const flyToGuideRegion = () => {
+        try {
+          const st = loadGuideState(window.localStorage as unknown as Parameters<typeof loadGuideState>[0]);
+          const region = st ? GUIDE_REGIONS.find((g) => g.id === st.region) : null;
+          if (region) map.flyTo([region.lat, region.lng], 10, { duration: 1.2 });
+        } catch {
+          /* vodenje je prijetnost — mapa deluje brez njega */
+        }
+      };
+      flyToGuideRegion();
+      window.addEventListener(GUIDE_EVENT, flyToGuideRegion);
+
+      map.on('unload', () => {
+        window.clearTimeout(fallback);
+        window.removeEventListener(GUIDE_EVENT, flyToGuideRegion);
+      });
     })();
 
     return () => {
       cancelled = true;
       mapRef.current?.remove();
       mapRef.current = null;
+      reliefLayerRef.current = null;
     };
   }, []);
+
+  // LiDAR relief sloj — dinamični izvoz ARSO (ena zahteva na ploščico, fair-use)
+  useEffect(() => {
+    const L = LeafletRef.current;
+    const map = mapRef.current;
+    if (!L || !map) return;
+    if (relief && !reliefLayerRef.current) {
+      const ReliefLayer = (L.GridLayer as unknown as {
+        extend(def: {
+          options?: object;
+          createTile: (coords: { x: number; y: number; z: number }) => HTMLElement;
+        }): new (options?: object) => L.GridLayer;
+      }).extend({
+        options: {
+          attribution: ARSO_LIDAR_ATTRIBUTION,
+          tileSize: 256,
+          updateWhenIdle: true,
+          keepBuffer: 1,
+        },
+        createTile(coords: { x: number; y: number; z: number }) {
+          const tile = document.createElement('img');
+          tile.src = arsoLidarTileUrl(coords.x, coords.y, coords.z);
+          tile.alt = '';
+          tile.style.opacity = '0.85';
+          return tile;
+        },
+      });
+      const layer = new ReliefLayer();
+      layer.setZIndex(50);
+      reliefLayerRef.current = layer.addTo(map);
+    } else if (!relief && reliefLayerRef.current) {
+      (reliefLayerRef.current as L.GridLayer).remove();
+      reliefLayerRef.current = null;
+    }
+  }, [relief, mapReady]);
 
   return (
     <section id="zemljevid" aria-labelledby="map-heading" className="mx-auto w-full max-w-6xl px-4 sm:px-6">
@@ -102,6 +191,18 @@ export function MapSection() {
             <Badge variant="outline" className="hidden sm:inline-flex">
               {mode === 'map' ? 'Zemljevid' : 'Seznam'} · CLS 0
             </Badge>
+            <div className="flex items-center gap-1.5">
+              <Mountain className="size-3.5 text-stone-600" aria-hidden />
+              <Label htmlFor="lidar-toggle" className="text-xs text-muted-foreground">
+                LiDAR relief
+              </Label>
+              <Switch
+                id="lidar-toggle"
+                checked={relief}
+                onCheckedChange={setLidarPref}
+                aria-label={relief ? 'Izklopi LiDAR relief (ARSO)' : 'Vklopi LiDAR relief (ARSO, CC BY 4.0)'}
+              />
+            </div>
             <Switch
               id="view-toggle"
               checked={mode === 'map'}

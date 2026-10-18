@@ -955,3 +955,26 @@ Work Log:
 Stage Summary:
 - ODGOVOR UPORABNIKU: pokritost je bila Slovenija-only (ARSO višina + relief + vodeni tok vsebine); osnovni OSM zemljevid je ves svet. ZDAJ je višina na klik razširjena na CELOTEN BALKAN/svet (SRTM ~30 m) z avtomatsko izbiro vira in poštenim izpisom vira+licence
 - Odprto (iskreno): Open-Meteo rezerva danes 429 (kvota peskovnika, reset jutri) — ni bloker, ker Terrarium pokriva; LiDAR relief preklop ostaja SI-only (globalni hillshade fallback izmerjen, ni integriran); produktivni push še vedno čaka žeton
+
+---
+Task ID: MOJA-POT-POVEZAVA + PRIMERJAVA-VRHUNSKIH
+Agent: Z.ai Code (main session)
+Task: "odlicno vse naredi" — (1) povezati vodeni tok z zemljevidom (odprto vprašanje "ali deluje zemljevid navigacija moja pot ko klikne zacni"), (2) primerjava vrhunskih aplikacij, (3) vrata + commit
+
+Work Log:
+- DIAGNOZA (iskreno): "Moja pot" kot funkcija NE OBSTAJA — vodič in zemljevid sta bila nepovezana UX roki. Tehnično je mapa sicer že poletela na regijo ob GUIDE_EVENT (flyToGuideRegion), ampak uporabnik tega ni VIDL: po zaključku vodiča ni bilo nobenega vidnega rezultata na karti. Odgovor na vprašanje uporabnika: PREJ NE, ZDAJ DA.
+- IMPLEMENTACIJA (commit MOJA-POT):
+  - src/lib/trip-plan.ts: čista plast TRIP_PLAN — vsaka regija vodiča ima destinacije (gorenjska: Bled+Bohinj; osrednja: Ljubljana; primorska: Soča+Piran; stajerska: Maribor; koroska: Dravograd — brez nje bi vodič obljubil prazno pot)
+  - src/components/home/use-guide-state.ts: skupni hook (useSyncExternalStore) — vodič IN zemljevid zdaj delaista z istim stanjem
+  - map-section.tsx: plošča "Tvoja pot" (z-20 nad kartou, aria-label, Skrij gumb, max-h scroll) + oznake postankov regije (layerGroup, zIndexOffset 500, popup z opisom) + klik na postanek → flyTo zoom 11 + openPopup; nova regija → plošča se znova pokaže; sekcija zemljevida scroll-mt-20
+  - guided-flow.tsx: zaključni korak ima zdaj PRIMARNI gumb "Pokaži tvojo pot na zemljevidu" (scrollIntoView na #zemljevid) → aplikacija VODI uporabnika na rezultat; "še eno destinacijo" ostaja (regija), "Zaključi" terciaren
+  - guide-store.ts: zaključni nasvet omenja karto: "Načrt je pripravljen — poglej svojo pot na zemljevidu. Želiš še eno destinacijo, ali zaključiš?" (glas izgovori isto); testni podnizi ohranjeni
+- E2E (agent-browser, sveža seja): Začni → narava+hrana → Gorenjska → 2 dni → zmeren → Zaključi → "Pokaži tvojo pot" → strani se pomakne na karto → plošča "Tvoja pot · Gorenjska (Bled, Bohinj) · 2 dni · tempo: zmeren" → klik Bled → karta poleti (Jesenice/Bled/Radovljica v kadru) + popup "Bled — Jezerski otok in grad nad strmino" (screenshot /tmp/moja-pot-bled.png). Reload → "Tvoj vodič" + plošča takoj vidna (Komoot spomin). Mobilno 390px: preliv NE, plošča vidna (screenshot /tmp/moja-pot-mobile.png). Sveža seja: errors=[].
+- OPOMBA: HMR vmesna stanja med urejanjem so pustila 4 zastarele "useSyncExternalStore is not defined" zapise v error zgodovini stare seje — sveža seja 0 napak, končna koda čista.
+- PRIMERJAVA: research/vrhunski-vmesniki/COMPARISON.md — Komoot/AllTrails/Google Maps/Airbnb/TripAdvisor/Wikivoyage vzorci z viri (web-search živi rezultati: uxcam apr 2026 "ask 1–3 questions", support.alltrails.com apr 2026 custom routes, design.google Airbnb case study); preslikano na status repozitorija; pošteno: aplikacij nismo živo testirali (računi/naprave niso na voljo v peskovniku)
+- VRATA: tsc src čist (samo znane examples/skills baze) · eslint 0 · bun test **49/49** (+7 trip-plan: pokritost vseh regij, SLO bbox, enolična imena, neprazni opisi)
+
+Stage Summary:
+- "MOJA POT" zdaj DEJANSKO deluje: vodič → "Pokaži tvojo pot na zemljevidu" → plošča na karti + polet + popis postankov; Komootova obljuba (načrt viden na karti) izpolnjena in E2E dokazana
+- Primerjava vrhunskih aplikacij dokumentirana z viri in statusi; 4 odprta deli pošteno navedeni (urejevalnik poti, iskanje, težavnosti, višinski profil poti)
+- Commit lokalno (sandbox main); push/PR še vedno čaka žeton

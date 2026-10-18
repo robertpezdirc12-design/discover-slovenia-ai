@@ -4,7 +4,7 @@ import { GuidedFlow } from '@/components/home/guided-flow';
 import { HeroSection } from '@/components/home/hero-section';
 import { MapSection } from '@/components/home/map-section';
 import { PersonalHomeSection, PersonalHomeSkeleton } from '@/components/home/personal-home-section';
-import { ProofSection } from '@/components/home/proof-section';
+import { ZmoznostiSection } from '@/components/home/zmoznosti-section';
 import { SiteHeader } from '@/components/home/site-header';
 import { getHeroVariant } from '@/lib/seasonal-hero';
 
@@ -54,14 +54,14 @@ export default async function Home({
             </Suspense>
           )}
 
-          <ProofSection />
+          <ZmoznostiSection />
         </div>
       </main>
 
       {/* Lepljiva noga: pritisnjena na dno na kratkih straneh, odmaknjena na dolgih */}
       <footer className="mt-auto border-t bg-muted/40 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 text-sm text-muted-foreground sm:flex-row sm:px-6">
-          <p>Discover Slovenia AI — referenčna implementacija cikla POLIR15</p>
+          <p>Discover Slovenia AI — potovanje po Sloveniji in Balkanu</p>
           <p>
             Zemljevid &copy; <a className="underline underline-offset-2" href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> sodelavci
           </p>

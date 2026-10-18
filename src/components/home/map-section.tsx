@@ -956,11 +956,11 @@ export function MapSection() {
               onChange={(e) => setStayQuery(e.target.value)}
               placeholder="Išči prenočišča — npr. Skopje, Bled, Zagreb"
               aria-label="Iskanje prenočišč po imenu kraja"
-              className="h-9"
+              className="h-11 sm:h-9"
               autoComplete="off"
             />
           </div>
-          <Button type="submit" size="sm" className="h-9" disabled={staySearch.status === 'loading'}>
+          <Button type="submit" size="sm" className="h-11 sm:h-9" disabled={staySearch.status === 'loading'}>
             {staySearch.status === 'loading' ? (
               <Loader2 className="size-4 animate-spin" aria-hidden />
             ) : (
@@ -1002,7 +1002,7 @@ export function MapSection() {
             type="button"
             aria-pressed={stayKinds.length === STAY_KINDS.length}
             onClick={() => clickStayKind('all')}
-            className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
+            className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1 text-xs transition-colors sm:min-h-8 sm:px-2.5 sm:py-0.5 ${
               stayKinds.length === STAY_KINDS.length
                 ? 'border-emerald-600/40 bg-emerald-600/10 text-emerald-800'
                 : 'text-muted-foreground hover:bg-muted'
@@ -1018,7 +1018,7 @@ export function MapSection() {
                 type="button"
                 aria-pressed={active}
                 onClick={() => clickStayKind(k)}
-                className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
+                className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1 text-xs transition-colors sm:min-h-8 sm:px-2.5 sm:py-0.5 ${
                   active ? 'border-emerald-600/40 bg-emerald-600/10 text-emerald-800' : 'text-muted-foreground hover:bg-muted'
                 }`}
               >
@@ -1359,7 +1359,7 @@ export function MapSection() {
           <div className="absolute bottom-3 left-3 z-20">
             <Button
               size="sm"
-              className="shadow-lg"
+              className="h-11 shadow-lg sm:h-8"
               onClick={startTour}
               aria-label="Vklopi vodiča po zemljevidu — potovanje po mestih, vaseh, kmečkem turizmu in naravi celotnega Balkana"
             >
@@ -1371,17 +1371,17 @@ export function MapSection() {
         {mode === 'map' && mapReady && tourOn && tourPlaces.length > 0 && (
           <div className="absolute inset-x-3 bottom-3 z-20 rounded-xl border bg-background/95 p-2 shadow-lg backdrop-blur sm:inset-x-auto sm:right-3 sm:w-[min(520px,calc(100%-1.5rem))]">
             <div className="flex flex-wrap items-center gap-1.5">
-              <Button size="sm" variant="outline" className="h-8 shrink-0" onClick={stopTour} aria-label="Izklopi vodiča po zemljevidu">
+              <Button size="sm" variant="outline" className="h-11 shrink-0 sm:h-8" onClick={stopTour} aria-label="Izklopi vodiča po zemljevidu">
                 <Compass className="size-4 text-emerald-600" aria-hidden />
                 Izklopi vodiča
               </Button>
-              <Button size="icon" variant="outline" className="size-8 shrink-0" disabled={tourIndex === 0} onClick={tourPrev} aria-label="Nazaj — prejšnji kraj">
+              <Button size="icon" variant="outline" className="size-11 shrink-0 sm:size-8" disabled={tourIndex === 0} onClick={tourPrev} aria-label="Nazaj — prejšnji kraj">
                 <ChevronLeft className="size-4" aria-hidden />
               </Button>
-              <Button size="icon" variant="outline" className="size-8 shrink-0" onClick={() => setTourPaused((v) => !v)} aria-label={tourPaused ? 'Nadaljuj vodiča' : 'Premor vodiča'}>
+              <Button size="icon" variant="outline" className="size-11 shrink-0 sm:size-8" onClick={() => setTourPaused((v) => !v)} aria-label={tourPaused ? 'Nadaljuj vodiča' : 'Premor vodiča'}>
                 {tourPaused ? <Play className="size-4" aria-hidden /> : <Pause className="size-4" aria-hidden />}
               </Button>
-              <Button size="icon" variant="outline" className="size-8 shrink-0" onClick={tourNext} aria-label="Naprej — naslednji kraj">
+              <Button size="icon" variant="outline" className="size-11 shrink-0 sm:size-8" onClick={tourNext} aria-label="Naprej — naslednji kraj">
                 <ChevronRight className="size-4" aria-hidden />
               </Button>
               <p role="status" aria-live="polite" className="ml-1 min-w-0 flex-1 truncate text-xs font-medium">
@@ -1398,7 +1398,7 @@ export function MapSection() {
                     type="button"
                     aria-pressed={active}
                     onClick={() => toggleTourCat(c.id)}
-                    className={`flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
+                    className={`flex min-h-11 items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors sm:min-h-8 sm:px-2.5 sm:py-0.5 ${
                       active ? 'border-emerald-600/40 bg-emerald-600/10 text-emerald-800' : 'text-muted-foreground hover:bg-muted'
                     }`}
                   >

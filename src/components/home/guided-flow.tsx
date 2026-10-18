@@ -189,6 +189,7 @@ export function GuidedFlow() {
             <Button
               size="icon"
               variant="ghost"
+              className="size-11 sm:size-9"
               onClick={toggleVoice}
               aria-pressed={state?.voiceEnabled ?? false}
               aria-label={state?.voiceEnabled ? 'Izklopi govorne nasvete' : 'Vklopi govorne nasvete (glasovno vodenje)'}
@@ -219,6 +220,7 @@ export function GuidedFlow() {
               )}
               <div className="flex flex-wrap gap-2">
                 <Button
+                  className="h-11 sm:h-9"
                   onClick={() => {
                     enterStep(state ? (firstUnansweredStep(state) ?? 'done') : 'interests');
                     focusCard();
@@ -228,7 +230,7 @@ export function GuidedFlow() {
                   <ChevronRight className="size-4" aria-hidden />
                 </Button>
                 {state && (
-                  <Button variant="ghost" onClick={restart}>
+                  <Button variant="ghost" className="h-11 sm:h-9" onClick={restart}>
                     <RotateCcw className="size-4" aria-hidden />
                     Začni znova
                   </Button>
@@ -248,6 +250,7 @@ export function GuidedFlow() {
                       key={opt}
                       type="button"
                       size="sm"
+                      className="min-h-11 sm:min-h-8"
                       variant={active ? 'default' : 'outline'}
                       aria-pressed={active}
                       onClick={() =>
@@ -262,10 +265,16 @@ export function GuidedFlow() {
                   );
                 })}
               </div>
+              {draftInterests.length === 0 && (
+                <p role="status" className="text-xs text-muted-foreground">
+                  Izberi vsaj eno zanimivost, da se vklopi gumb Naprej.
+                </p>
+              )}
               {state && isStepAnswered(state, 'interests') && (
                 <p className="text-xs text-emerald-700">· odgovor shranjen prejšnjič (lahko ga spremeniš)</p>
               )}
               <Button
+                className="h-11 sm:h-9"
                 disabled={draftInterests.length === 0}
                 onClick={() => commit({ interests: draftInterests, answered: ['interests'] }, 'region')}
               >
@@ -293,15 +302,20 @@ export function GuidedFlow() {
                   </div>
                 ))}
               </RadioGroup>
+              {!draftRegion && (
+                <p role="status" className="text-xs text-muted-foreground">
+                  Izberi regijo, da se vklopi gumb Naprej.
+                </p>
+              )}
               {state && isStepAnswered(state, 'region') && (
                 <p className="text-xs text-emerald-700">· odgovor shranjen prejšnjič</p>
               )}
               <div className="flex gap-2">
-                <Button disabled={!draftRegion} onClick={() => commit({ region: draftRegion as GuideRegionId, answered: ['region'] }, 'days')}>
+                <Button disabled={!draftRegion} className="h-11 sm:h-9" onClick={() => commit({ region: draftRegion as GuideRegionId, answered: ['region'] }, 'days')}>
                   Naprej — dni
                   <ChevronRight className="size-4" aria-hidden />
                 </Button>
-                <Button variant="ghost" onClick={() => enterStep('interests')}>Nazaj</Button>
+                <Button variant="ghost" className="h-11 sm:h-9" onClick={() => enterStep('interests')}>Nazaj</Button>
               </div>
             </fieldset>
           )}
@@ -310,20 +324,20 @@ export function GuidedFlow() {
             <fieldset className="space-y-3">
               <legend className="text-sm font-medium">Koliko dni imaš?</legend>
               <div className="flex items-center gap-3">
-                <Button variant="outline" size="icon" onClick={() => setDraftDays((d) => Math.max(1, d - 1))} aria-label="Manj dni">−</Button>
+                <Button variant="outline" size="icon" className="size-11 sm:size-9" onClick={() => setDraftDays((d) => Math.max(1, d - 1))} aria-label="Manj dni">−</Button>
                 <span className="min-w-12 text-center text-lg font-semibold" aria-live="polite">{draftDays}</span>
-                <Button variant="outline" size="icon" onClick={() => setDraftDays((d) => Math.min(30, d + 1))} aria-label="Več dni">+</Button>
+                <Button variant="outline" size="icon" className="size-11 sm:size-9" onClick={() => setDraftDays((d) => Math.min(30, d + 1))} aria-label="Več dni">+</Button>
                 <span className="text-sm text-muted-foreground">dni</span>
               </div>
               {state && isStepAnswered(state, 'days') && (
                 <p className="text-xs text-emerald-700">· odgovor shranjen prejšnjič</p>
               )}
               <div className="flex gap-2">
-                <Button onClick={() => commit({ days: draftDays, answered: ['days'] }, 'pace')}>
+                <Button className="h-11 sm:h-9" onClick={() => commit({ days: draftDays, answered: ['days'] }, 'pace')}>
                   Naprej — tempo
                   <ChevronRight className="size-4" aria-hidden />
                 </Button>
-                <Button variant="ghost" onClick={() => enterStep('region')}>Nazaj</Button>
+                <Button variant="ghost" className="h-11 sm:h-9" onClick={() => enterStep('region')}>Nazaj</Button>
               </div>
             </fieldset>
           )}
@@ -345,11 +359,11 @@ export function GuidedFlow() {
                 <p className="text-xs text-emerald-700">· odgovor shranjen prejšnjič</p>
               )}
               <div className="flex gap-2">
-                <Button onClick={() => commit({ pace: draftPace, answered: ['pace'] }, 'done')}>
+                <Button className="h-11 sm:h-9" onClick={() => commit({ pace: draftPace, answered: ['pace'] }, 'done')}>
                   Zaključi nastavitve
                   <Check className="size-4" aria-hidden />
                 </Button>
-                <Button variant="ghost" onClick={() => enterStep('days')}>Nazaj</Button>
+                <Button variant="ghost" className="h-11 sm:h-9" onClick={() => enterStep('days')}>Nazaj</Button>
               </div>
             </fieldset>
           )}
@@ -370,6 +384,7 @@ export function GuidedFlow() {
                   shranjeni (Komootov vzorec: ne sprašujemo znova) */}
               <div className="flex flex-wrap gap-2">
                 <Button
+                  className="h-11 sm:h-9"
                   onClick={() => {
                     // aplikacija VODI: ob kliku se na karti SAMODEJNO odpre
                     // navigacija po poti (postanek 1) — uporabnik ni puščen
@@ -385,13 +400,14 @@ export function GuidedFlow() {
                   <MapIcon className="size-4" aria-hidden />
                   Pokaži tvojo pot na zemljevidu
                 </Button>
-                <Button variant="outline" onClick={() => { enterStep('region'); focusCard(); }}>
+                <Button variant="outline" className="h-11 sm:h-9" onClick={() => { enterStep('region'); focusCard(); }}>
                   Želiš še eno destinacijo
                   <ChevronRight className="size-4" aria-hidden />
                 </Button>
                 {/* vodenje naprej: po poti sledi NOČITEV — en klik do iskanja prenočišč */}
                 <Button
                   variant="outline"
+                  className="h-11 sm:h-9"
                   onClick={() => {
                     document.getElementById('zemljevid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     window.setTimeout(() => document.getElementById('stay-search-input')?.focus(), 650);
@@ -400,7 +416,7 @@ export function GuidedFlow() {
                   <BedDouble className="size-4" aria-hidden />
                   Dodaj prenočišče
                 </Button>
-                <Button variant="ghost" onClick={() => setDismissed(true)}>
+                <Button variant="ghost" className="h-11 sm:h-9" onClick={() => setDismissed(true)}>
                   Zaključi
                 </Button>
               </div>

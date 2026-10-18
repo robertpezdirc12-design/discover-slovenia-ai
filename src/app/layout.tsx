@@ -14,10 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Discover Slovenia AI — POLIR15",
+  title: "Discover Slovenia AI",
   description:
-    "Odkrij Slovenijo: sezonski hero, zemljevid destinacij in osebna priporočila. Referenčna implementacija cikla POLIR15 (sticky preklop, CLS 0).",
-  keywords: ["Slovenija", "potovanja", "zemljevid", "Discover Slovenia", "POLIR15"],
+    "Odkrij Slovenijo in Balkan: vodič po zemljevidu, prenočišča z indikativnimi cenami, vreme in zrak, pot v enem mestu — na odprtih podatkih (OpenStreetMap, ARSO).",
+  keywords: ["Slovenija", "Balkan", "potovanja", "zemljevid", "prenočišča", "Discover Slovenia"],
   icons: {
     icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
   },

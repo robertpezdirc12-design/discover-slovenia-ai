@@ -35,8 +35,8 @@ export function SiteHeader({ loggedIn }: { loggedIn: boolean }) {
               </a>
             </li>
             <li>
-              <a className="transition-colors hover:text-foreground" href="#polir15">
-                POLIR15
+              <a className="transition-colors hover:text-foreground" href="#zmoznosti">
+                Zmožnosti
               </a>
             </li>
           </ul>

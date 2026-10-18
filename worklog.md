@@ -1029,3 +1029,23 @@ Stage Summary:
 - Pokritost Balkana dokazana s podatki (Skopje 57 hotelov na Overpass, Photon rezerva globalna); poštenost: zastopne slike + indikativna cena izrecno označena
 - Odporno: failover veriga virov (3 Overpass zrcala → Photon), cache + in-flight združevanje, mini-storitev ob peskovniški blokadi
 - Commit 329e3b1 lokalno; push/PR še vedno čaka žeton
+---
+Task ID: VODIC-PO-ZEMLJEVIDU
+Agent: Z.ai Code (main session)
+Task: "aja vodic po celem zemljevidu bi bil super gum vklopi vodica ali isklopi za vse kraje balkana vsa mesta vse vasi vse kmecke turizme vse kaj ponuja discover slovenia"
+
+Work Log:
+- ODGOVOR: DA — implementirano in E2E dokazano. EN gumb "Vklopi vodiča po zemljevidu / Izklopi vodiča" spusti SAMODEJNO turnejo po celem Balkanu: poleti od kraja do kraja + pojavno okno z opisom + napredek "3 od 31 · Kropa" (izrečen bralcem zaslona) + govor (isti glas kot navigacija, če je glas vklopljen).
+- NOVA PLAST src/lib/map-guide.ts: katalog 31 krajev v GEOGRAFSKEM vrstnem redu (pot od severozahoda Slovenije do Balkana) — 15 mest (Ljubljana, Maribor, Celje, Kranj, Koper, Ptuj, Novo mesto, Slovenj Gradec + Zagreb, Mostar, Sarajevo, Beograd, Podgorica, Skopje, Tirana), 5 vasi (Kropa, Velika Planina, Šmartno-Brda, Goče, Olimje), 4 kmečki turizmi (Turizem Lenar-Zreče, Kmetija Šolinc-Goričko, Kras-Pliskovica, Bela krajina-Dragatuš), 7 naravnih znamenitosti (Bled, Triglav, Soča, Pohorje, Kozjanski park, Postojnska + Škocjanske jame).
+- Čista logika: placesForCategories (filtri ohranijo geografski vrstni red), mapGuideProgressLabel ("1 od 31 · Bled"), mapGuideSpeakText, isInBalkanBbox + MAP_GUIDE_BALKAN_BBOX; kategorije z labelo + samostalnikom (mesto/vas/kmečki turizem/naravna znamenitost) za popup + govor.
+- map-section: gumb VKLOPI (spodaj levo, samo zemljevid) → kontrolni trak (Izklopi + Nazaj/Premor/Naprej + napredek role=status aria-live + filtri kategorij z barvnimi točkami in številom krajev); 31 divIcon točk (barva = kategorija: mesto zelena, vas jantar, kmecki oranžna, narava teal); klik na točko sinhronizira napredek; samodejni napredek 7 s/kraj (premor ustavi, ▶ nadaljuje, vrtenje v krogu); zoom po kategoriji (mesta 10, ostalo 11).
+- POŠTENOST v UI: "izbor krajev · polna baza sledi" — katalog je urejen izbor realnih krajev (OSM koordinate), NI popolna baza vseh vasi/kmetij; zadnjo kategorijo ni mogoče izklopiti (vsaj ena ostane).
+- TESTI +16 (bun 92/92): katalog ≥ 24, enolični id-ji, vsi kraji v balkanskem okviru, vsaka kategorija ≥ 2, kmečke kmetije poimnovane (Lenar, Šolinc), balkanska mesta prisotna (Skopje, Zagreb, Sarajevo, Beograd, Mostar, Podgorica, Tirana), filtri (vsi/en/nič/podmnožica ohrani vrstni red), napredek z omejitvijo indeksa + prazen izbor, govor, oznake.
+- E2E (agent-browser, sveža seja fresh-vodic): VKLOPI → popup "Bled — naravna znamenitost · Jezerski otok …" + "1 od 31"; SAMODEJNI napredek → "3 od 31 · Kropa" (31 oznak); NAPREJ → "6 od 31 · Dolina Soče" + popup sinhron; FILTER Narava OFF → aria-pressed=false, "1 od 24 · Kranj", 24 oznak; FILTER ON → "1 od 31 · Bled"; PREMOR → NADALJUJ; IZKLOPI → 0 oznak + gumb Vklopi nazaj; MOBILNO 390px: trak 356px znotraj pogleda, brez preliva (slika /tmp/vodic-mobile.png + /tmp/vodic-desktop.png); 0 page errors.
+- VRATA: tsc 0 (src) · eslint 0 · bun test **92/92**.
+
+Stage Summary:
+- Uporabnikova želja zaprta: EN gumb Vklopi/Izklopi vodiča po celem zemljevidu — vsa mesta, vse vasi, kmečki turizem, narava — po celem Balkanu (Skopje/Tirana/Beograd/Sarajevo vključeno), samodejno vodenje + ročni nadzor + filtri.
+- Katalog je eden vir resnice: lahko se razširi (polna baza vasi/kmetij) brez dotikanja komponente — doda se vnose v MAP_GUIDE_PLACES.
+- Sinergija s prejšnjimi tokovi: vodič ne ruši "Tvoje poti" ali iskanja prenočišč; glas je skupen (speech.ts); Skopje turneja ↔ iskanje prenočišč Skopje.
+- Commit lokalno; push/PR še vedno čaka žeton.

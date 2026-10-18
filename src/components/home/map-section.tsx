@@ -2,8 +2,8 @@
 
 import 'leaflet/dist/leaflet.css';
 import type { CircleMarker as LeafletCircleMarker, Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { BedDouble, CalendarDays, Check, Flag, List, Loader2, Map as MapIcon, MapPin, Mountain, Navigation, Palmtree, Route, Search, Waves, Wine, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { BedDouble, CalendarDays, Check, ChevronLeft, ChevronRight, Compass, Flag, List, Loader2, Map as MapIcon, MapPin, Mountain, Navigation, Palmtree, Pause, Play, Route, Search, Waves, Wine, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,6 +26,15 @@ import {
 } from '@/lib/guide-store';
 import { useGuideState } from '@/components/home/use-guide-state';
 import { tripPlanFor, type TripStop } from '@/lib/trip-plan';
+import {
+  MAP_GUIDE_CATEGORIES,
+  MAP_GUIDE_PLACES,
+  mapGuideCategoryNoun,
+  mapGuideProgressLabel,
+  mapGuideSpeakText,
+  placesForCategories,
+  type MapGuideCategory,
+} from '@/lib/map-guide';
 import { STAY_KIND_LABELS, type StayResult } from '@/lib/stays';
 import { navChipText, navIsLast, navNext, navPrev, navProgressLabel } from '@/lib/route-guidance';
 import type { OsrmLegInfo } from '@/lib/osrm-route';
@@ -117,6 +126,14 @@ type StaySearchState =
 type StayPhotoState = { status: 'idle' | 'loading' | 'ok' | 'error'; photos: string[] };
 
 const EMPTY_STAYS: GuideStayStop[] = [];
+
+/** Barve točk vodiča po kategorijah (označevalci + čipi filtra). */
+const TOUR_COLORS: Record<MapGuideCategory, string> = {
+  mesto: '#059669',
+  vas: '#d97706',
+  kmecki: '#ea580c',
+  narava: '#0d9488',
+};
 
 export function MapSection() {
   const [mode, setMode] = useState<'map' | 'list'>('map');
@@ -280,6 +297,43 @@ export function MapSection() {
   planRef.current = plan;
   const navActive = navIndex !== null;
 
+  // ————— VODIČ PO ZEMLJEVIDU (cel Balkan: mesta · vasi · kmečki · narava) —————
+  // EN gumb vklopi/izklopi; ko je vklopljen, zemljevid SAMA pelje uporabnika
+  // od kraja do kraja (poleti + pojavno okno + govor), s filtri kategorij.
+  const [tourOn, setTourOn] = useState(false);
+  const [tourPaused, setTourPaused] = useState(false);
+  const [tourIndex, setTourIndex] = useState(0);
+  const [tourCats, setTourCats] = useState<readonly MapGuideCategory[]>(['mesto', 'vas', 'kmecki', 'narava']);
+  const tourLayerRef = useRef<unknown>(null);
+  const tourMarkersRef = useRef<Map<string, LeafletMarker>>(new Map());
+  const tourPlaces = useMemo(() => placesForCategories(tourCats), [tourCats]);
+  const catCounts = useMemo(() => {
+    const m: Record<MapGuideCategory, number> = { mesto: 0, vas: 0, kmecki: 0, narava: 0 };
+    for (const p of MAP_GUIDE_PLACES) m[p.category] += 1;
+    return m;
+  }, []);
+  const voiceOn = guide?.voiceEnabled ?? false;
+
+  const startTour = () => {
+    setTourOn(true);
+    setTourPaused(false);
+    setTourIndex(0);
+  };
+  const stopTour = () => {
+    setTourOn(false);
+    setTourPaused(false);
+    setTourIndex(0);
+  };
+  const tourNext = () => setTourIndex((i) => (tourPlaces.length ? (i + 1) % tourPlaces.length : 0));
+  const tourPrev = () => setTourIndex((i) => (tourPlaces.length ? (i - 1 + tourPlaces.length) % tourPlaces.length : 0));
+  const toggleTourCat = (c: MapGuideCategory) => {
+    setTourCats((prev) => {
+      if (prev.includes(c)) return prev.length === 1 ? prev : prev.filter((x) => x !== c);
+      return [...prev, c];
+    });
+    setTourIndex(0);
+  };
+
   /** Poleti na postanko + odpre opis + izgovor napredek (glasovno vodenje). */
   const gotoStop = (i: number) => {
     if (!plan || i < 0 || i >= plan.length) return;
@@ -396,6 +450,63 @@ export function MapSection() {
     });
     planLayerRef.current = group.addTo(map);
   }, [plan, mapReady]);
+
+  // VODIČ PO ZEMLJEVIDU: oznake turneje — barvne točke po kategorijah
+  // (samo ko je vodič vklopljen; izklop jih pospravi).
+  useEffect(() => {
+    const L = LeafletRef.current;
+    const map = mapRef.current;
+    if (!L || !map) return;
+    if (tourLayerRef.current) {
+      (tourLayerRef.current as L.LayerGroup).remove();
+      tourLayerRef.current = null;
+      tourMarkersRef.current = new Map();
+    }
+    if (!tourOn || tourPlaces.length === 0) return;
+    const group = L.layerGroup();
+    tourPlaces.forEach((p, i) => {
+      const icon = L.divIcon({
+        className: 'dsa-pin-tour',
+        html: `<span style="display:block;width:14px;height:14px;border-radius:9999px;background:${TOUR_COLORS[p.category]};border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45)"></span>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+      });
+      const m = L.marker([p.lat, p.lng], {
+        icon,
+        title: `${p.name} — ${mapGuideCategoryNoun(p.category)}`,
+        zIndexOffset: 300,
+      })
+        .addTo(group)
+        .bindPopup(`<strong>${p.name}</strong><br/>${mapGuideCategoryNoun(p.category)} · ${p.note}`);
+      m.on('click', () => setTourIndex(i));
+      tourMarkersRef.current.set(p.id, m);
+    });
+    tourLayerRef.current = group.addTo(map);
+  }, [tourOn, tourPlaces, mapReady]);
+
+  // izbor kategorij se skrči → indeks varno nazaj na začetek
+  useEffect(() => {
+    if (tourIndex >= tourPlaces.length) setTourIndex(0);
+  }, [tourIndex, tourPlaces.length]);
+
+  // polet na trenutni kraj + pojavno okno + govor (isti glas kot navigacija)
+  useEffect(() => {
+    if (!tourOn || tourPlaces.length === 0 || !mapReady) return;
+    const i = Math.max(0, Math.min(tourIndex, tourPlaces.length - 1));
+    const p = tourPlaces[i];
+    mapRef.current?.flyTo([p.lat, p.lng], p.category === 'mesto' ? 10 : 11, { duration: 1.2 });
+    tourMarkersRef.current.get(p.id)?.openPopup();
+    speak(mapGuideSpeakText(p), voiceOn);
+  }, [tourOn, tourIndex, tourPlaces, voiceOn, mapReady]);
+
+  // samodejni napredek — 7 s na kraj; premor ustavi, ▶ nadaljuje
+  useEffect(() => {
+    if (!tourOn || tourPaused || tourPlaces.length === 0) return;
+    const t = window.setInterval(() => {
+      setTourIndex((i) => (i + 1) % tourPlaces.length);
+    }, 7000);
+    return () => window.clearInterval(t);
+  }, [tourOn, tourPaused, tourPlaces.length]);
 
   // nova rezervacija → plošča »Tvoja pot« se sama odpre (uporabnik VIDI zapis)
   useEffect(() => {
@@ -613,6 +724,8 @@ export function MapSection() {
       planMarkersRef.current = new Map();
       stayLayerRef.current = null;
       reservedLayerRef.current = null;
+      tourLayerRef.current = null;
+      tourMarkersRef.current = new Map();
       photoAbortRef.current?.abort();
       searchAbortRef.current?.abort();
     };
@@ -1040,6 +1153,66 @@ export function MapSection() {
               )}
             </div>
           </aside>
+        )}
+
+        {/* VODIČ PO ZEMLJEVIDU — EN gumb vklopi/izklopi turnejo po celem
+            Balkanu (mesta · vasi · kmečki turizem · narava). Ko je vklopljen,
+            zemljevid SAMA pelje od kraja do kraja; uporabnik lahko prevzame
+            nadzor (Nazaj/Premor/Naprej) ali preklopi kategorije. */}
+        {mode === 'map' && mapReady && !tourOn && (
+          <div className="absolute bottom-3 left-3 z-20">
+            <Button
+              size="sm"
+              className="shadow-lg"
+              onClick={startTour}
+              aria-label="Vklopi vodiča po zemljevidu — potovanje po mestih, vaseh, kmečkem turizmu in naravi celotnega Balkana"
+            >
+              <Compass className="size-4" aria-hidden />
+              Vklopi vodiča po zemljevidu
+            </Button>
+          </div>
+        )}
+        {mode === 'map' && mapReady && tourOn && tourPlaces.length > 0 && (
+          <div className="absolute inset-x-3 bottom-3 z-20 rounded-xl border bg-background/95 p-2 shadow-lg backdrop-blur sm:inset-x-auto sm:right-3 sm:w-[min(520px,calc(100%-1.5rem))]">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Button size="sm" variant="outline" className="h-8 shrink-0" onClick={stopTour} aria-label="Izklopi vodiča po zemljevidu">
+                <Compass className="size-4 text-emerald-600" aria-hidden />
+                Izklopi vodiča
+              </Button>
+              <Button size="icon" variant="outline" className="size-8 shrink-0" disabled={tourIndex === 0} onClick={tourPrev} aria-label="Nazaj — prejšnji kraj">
+                <ChevronLeft className="size-4" aria-hidden />
+              </Button>
+              <Button size="icon" variant="outline" className="size-8 shrink-0" onClick={() => setTourPaused((v) => !v)} aria-label={tourPaused ? 'Nadaljuj vodiča' : 'Premor vodiča'}>
+                {tourPaused ? <Play className="size-4" aria-hidden /> : <Pause className="size-4" aria-hidden />}
+              </Button>
+              <Button size="icon" variant="outline" className="size-8 shrink-0" onClick={tourNext} aria-label="Naprej — naslednji kraj">
+                <ChevronRight className="size-4" aria-hidden />
+              </Button>
+              <p role="status" aria-live="polite" className="ml-1 min-w-0 flex-1 truncate text-xs font-medium">
+                {mapGuideProgressLabel(tourPlaces, tourIndex)}
+              </p>
+              <span className="hidden truncate text-[11px] text-muted-foreground md:inline">izbor krajev · polna baza sledi</span>
+            </div>
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5 border-t pt-1.5">
+              {MAP_GUIDE_CATEGORIES.map((c) => {
+                const active = tourCats.includes(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => toggleTourCat(c.id)}
+                    className={`flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
+                      active ? 'border-emerald-600/40 bg-emerald-600/10 text-emerald-800' : 'text-muted-foreground hover:bg-muted'
+                    }`}
+                  >
+                    <span aria-hidden className="size-2 rounded-full" style={{ backgroundColor: TOUR_COLORS[c.id] }} />
+                    {c.label} · {catCounts[c.id]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         )}
 
         {mode === 'map' && !mapReady && (

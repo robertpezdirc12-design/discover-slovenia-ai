@@ -38,6 +38,25 @@ export type GuideInterest = (typeof GUIDE_INTEREST_OPTIONS)[number];
 
 export type GuidePace = 'počasen' | 'zmeren' | 'športen';
 
+/**
+ * Rezervirano prenočišče (»Rezerviraj« na zemljevidu) — del »Moje poti«.
+ * Shranjeno trajno: ob vrnitvi se oznaka + vnos v plošči PONOVIJO
+ * (Komootov vzorec — aplikacija si zapomni vse, kar je uporabnik potrdil).
+ */
+export interface GuideStayStop {
+  /** OSM id iz rezultata iskanja ("n123"/"w456") — enoličen ključ. */
+  id: string;
+  name: string;
+  /** Kraj iskanja (npr. "Skopje") — prikaz v plošči. */
+  city: string;
+  lat: number;
+  lng: number;
+  /** Indikativna cena od (EUR/noč) ali null — v UI označena kot ocena. */
+  priceFrom: number | null;
+  /** ISO čas rezervacije. */
+  reservedAt: string;
+}
+
 /** Koraki toka — vrstni red je hkrati definicija "naslednjega koraka". */
 export const GUIDE_STEPS = ['interests', 'region', 'days', 'pace'] as const;
 export type GuideStepId = (typeof GUIDE_STEPS)[number];
@@ -51,6 +70,8 @@ export interface GuideState {
   pace: GuidePace | null;
   /** Koraki, ki jih je uporabnik potrdil (tipkal "Naprej" / "Zaključi"). */
   answered: GuideStepId[];
+  /** Rezervirana prenočišča — »Rezerviraj« jih doda samodejno. */
+  stays: GuideStayStop[];
   /** Govorni nasveti (Web Speech) — privzeto izklopljeno. */
   voiceEnabled: boolean;
   completedAt: string | null;
@@ -71,6 +92,7 @@ export function emptyGuideState(): GuideState {
     days: null,
     pace: null,
     answered: [],
+    stays: [],
     voiceEnabled: false,
     completedAt: null,
     updatedAt: new Date(0).toISOString(),
@@ -99,6 +121,31 @@ export function sanitizeGuideState(raw: unknown): GuideState | null {
   const days = typeof r.days === 'number' && Number.isFinite(r.days) && r.days >= 1 && r.days <= 30
     ? Math.round(r.days)
     : null;
+  // stays: tolerira stare zapise brez polja; neveljavne vnosi odstrani; podvojeni id-ji izloči.
+  const stays: GuideStayStop[] = [];
+  if (Array.isArray(r.stays)) {
+    for (const s of r.stays) {
+      if (!s || typeof s !== 'object') continue;
+      const o = s as Record<string, unknown>;
+      if (typeof o.id !== 'string' || o.id.length === 0 || o.id.length > 64) continue;
+      if (typeof o.name !== 'string' || o.name.trim().length === 0) continue;
+      if (typeof o.city !== 'string' || o.city.trim().length === 0) continue;
+      const lat = typeof o.lat === 'number' ? o.lat : Number.NaN;
+      const lng = typeof o.lng === 'number' ? o.lng : Number.NaN;
+      if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 85 || Math.abs(lng) > 180) continue;
+      const price = typeof o.priceFrom === 'number' && Number.isFinite(o.priceFrom) && o.priceFrom >= 0 ? o.priceFrom : null;
+      if (stays.some((x) => x.id === o.id)) continue;
+      stays.push({
+        id: o.id,
+        name: o.name.trim().slice(0, 120),
+        city: o.city.trim().slice(0, 120),
+        lat,
+        lng,
+        priceFrom: price === null ? null : Math.round(price),
+        reservedAt: typeof o.reservedAt === 'string' ? o.reservedAt : new Date(0).toISOString(),
+      });
+    }
+  }
   return {
     version: 1,
     interests,
@@ -106,6 +153,7 @@ export function sanitizeGuideState(raw: unknown): GuideState | null {
     days,
     pace,
     answered,
+    stays: stays.slice(0, 30),
     voiceEnabled: r.voiceEnabled === true,
     completedAt: typeof r.completedAt === 'string' ? r.completedAt : null,
     updatedAt: typeof r.updatedAt === 'string' ? r.updatedAt : new Date(0).toISOString(),
@@ -193,6 +241,35 @@ export function nextStepSuggestion(
   if (next === 'region') return { text: `Shranjeno: ${state.interests.length} ${interestsNoun(state.interests.length)}. Naslednje: katera regija te vabi?`, nextStep: next };
   if (next === 'days') return { text: 'Regija shranjena. Koliko dni imaš na voljo?', nextStep: next };
   return { text: 'Zadnje vprašanje: kakšen tempo potovanja ti ustreza?', nextStep: next };
+}
+
+/**
+ * Čista mutacija: doda rezervirano prenočišče (idempotentno — isti id ne
+ * podvoji). Nov zapis gre na KONEC vrste (vrstni red rezervacij).
+ */
+export function addStayStop(state: GuideState, stay: Omit<GuideStayStop, 'reservedAt'> & { reservedAt?: string }): GuideState {
+  if (state.stays.some((s) => s.id === stay.id)) return state;
+  const next: GuideState = {
+    ...state,
+    stays: [
+      ...state.stays,
+      {
+        id: stay.id,
+        name: stay.name,
+        city: stay.city,
+        lat: stay.lat,
+        lng: stay.lng,
+        priceFrom: stay.priceFrom,
+        reservedAt: stay.reservedAt ?? new Date().toISOString(),
+      },
+    ],
+  };
+  return sanitizeGuideState(next) ?? next;
+}
+
+/** Ali je prenočišče (id) že v »Moji poti«? */
+export function isStayReserved(state: GuideState | null, id: string): boolean {
+  return state?.stays.some((s) => s.id === id) ?? false;
 }
 
 /** Kratki povzetek stanja (čipi v "Nadaljuj, kjer sem ostal"). */

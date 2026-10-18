@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Check, ChevronRight, Ear, EarOff, Map as MapIcon, MapPin, Navigation, RotateCcw, Sparkles } from 'lucide-react';
+import { BedDouble, Check, ChevronRight, Ear, EarOff, Map as MapIcon, MapPin, Navigation, RotateCcw, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -388,6 +388,17 @@ export function GuidedFlow() {
                 <Button variant="outline" onClick={() => { enterStep('region'); focusCard(); }}>
                   Želiš še eno destinacijo
                   <ChevronRight className="size-4" aria-hidden />
+                </Button>
+                {/* vodenje naprej: po poti sledi NOČITEV — en klik do iskanja prenočišč */}
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    document.getElementById('zemljevid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    window.setTimeout(() => document.getElementById('stay-search-input')?.focus(), 650);
+                  }}
+                >
+                  <BedDouble className="size-4" aria-hidden />
+                  Dodaj prenočišče
                 </Button>
                 <Button variant="ghost" onClick={() => setDismissed(true)}>
                   Zaključi

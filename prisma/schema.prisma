@@ -30,3 +30,17 @@ model Post {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+/// Rezervacija prenočišča ("Rezerviraj" na zemljevidu).
+/// Vsak OSM objekt je enkraten (stayId unique, idempotentno); zapis je
+/// evidenca poštenega rezerviranja — pravo plačilo pri objektu/uradni strani.
+model StayReservation {
+  id        String   @id @default(cuid())
+  stayId    String   @unique
+  name      String
+  city      String
+  lat       Float
+  lng       Float
+  priceFrom Int?
+  createdAt DateTime @default(now())
+}

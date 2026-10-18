@@ -50,5 +50,16 @@ test
 prompt
 
 server.log
-# Skills directory
-/skills/tool-results/
+
+# Sandbox / orodjarski artefakti — NISOU del aplikacije (cisceno iz zgodovine 2026-10-18)
+/skills/
+/tool-results/
+/research/
+/download/
+/ci-log.*
+/issue*-comment.json
+/pr*-body.json
+/pr*-ci-comment.json
+/probe.txt
+/rid.txt
+/server.pid

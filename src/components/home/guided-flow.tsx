@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Check, ChevronRight, Ear, EarOff, Map as MapIcon, MapPin, RotateCcw, Sparkles } from 'lucide-react';
+import { Check, ChevronRight, Ear, EarOff, Map as MapIcon, MapPin, Navigation, RotateCcw, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useGuideState } from '@/components/home/use-guide-state';
+import { SHOW_TRIP_EVENT, speak } from '@/lib/speech';
 import {
   GUIDE_EVENT,
   GUIDE_INTEREST_OPTIONS,
@@ -55,19 +56,6 @@ function browserStorage(): GuideStorage {
     setItem: (k, v) => window.localStorage.setItem(k, v),
     removeItem: (k) => window.localStorage.removeItem(k),
   };
-}
-
-function speak(text: string, enabled: boolean): void {
-  if (!enabled || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-  try {
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'sl-SI';
-    u.rate = 1.05;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
-  } catch {
-    // govorna sinteza je prijetnost — nikoli ne sme ustaviti toka
-  }
 }
 
 type ViewStep = GuideStepId | 'welcome' | 'done';
@@ -190,7 +178,7 @@ export function GuidedFlow() {
   const focusCard = () => cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
   return (
-    <section aria-labelledby="guide-heading" className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+    <section id="vodic" aria-labelledby="guide-heading" className="mx-auto w-full scroll-mt-20 max-w-6xl px-4 sm:px-6">
       <Card ref={cardRef} className="border-emerald-600/20 bg-gradient-to-b from-emerald-600/5 to-transparent">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between gap-3">
@@ -382,9 +370,17 @@ export function GuidedFlow() {
                   shranjeni (Komootov vzorec: ne sprašujemo znova) */}
               <div className="flex flex-wrap gap-2">
                 <Button
-                  onClick={() =>
-                    document.getElementById('zemljevid')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                  }
+                  onClick={() => {
+                    // aplikacija VODI: ob kliku se na karti SAMODEJNO odpre
+                    // navigacija po poti (postanek 1) — uporabnik ni puščen
+                    // pred prazno karto (izrazita želja: "se odpre navigacija")
+                    try {
+                      window.dispatchEvent(new Event(SHOW_TRIP_EVENT));
+                    } catch {
+                      /* dogodek je prijetnost */
+                    }
+                    document.getElementById('zemljevid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
                 >
                   <MapIcon className="size-4" aria-hidden />
                   Pokaži tvojo pot na zemljevidu

@@ -3,7 +3,7 @@
 import 'leaflet/dist/leaflet.css';
 import type { CircleMarker as LeafletCircleMarker, Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { CalendarDays, List, Loader2, Map as MapIcon, MapPin, Mountain, Palmtree, Route, Waves, Wine, X } from 'lucide-react';
+import { CalendarDays, Flag, List, Loader2, Map as MapIcon, MapPin, Mountain, Navigation, Palmtree, Route, Waves, Wine, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,6 +14,9 @@ import { ARSO_LIDAR_ATTRIBUTION, arsoLidarTileUrl, formatElevation } from '@/lib
 import { GUIDE_EVENT, GUIDE_REGIONS, loadGuideState } from '@/lib/guide-store';
 import { useGuideState } from '@/components/home/use-guide-state';
 import { tripPlanFor, type TripStop } from '@/lib/trip-plan';
+import { navChipText, navIsLast, navNext, navPrev, navProgressLabel } from '@/lib/route-guidance';
+import type { OsrmLegInfo } from '@/lib/osrm-route';
+import { SHOW_TRIP_EVENT, speak } from '@/lib/speech';
 
 /**
  * POLIR15-a — sticky preklop brez z-index nasprotja z Leafletom:
@@ -115,6 +118,106 @@ export function MapSection() {
     setPlanDismissed(false);
   }, [planKey]);
 
+  // ————— NAVIGACIJA PO POTI (postanek-po-postanku do destinacije) —————
+  const [navIndex, setNavIndex] = useState<number | null>(null);
+  const [routeInfo, setRouteInfo] = useState<{ legs: OsrmLegInfo[]; totalKm: number } | null>(null);
+  const [routeFailed, setRouteFailed] = useState(false);
+  const routeAbortRef = useRef<AbortController | null>(null);
+  const routeLayerRef = useRef<unknown>(null);
+  const planRef = useRef<readonly TripStop[] | null>(null);
+  planRef.current = plan;
+  const navActive = navIndex !== null;
+
+  /** Poleti na postanko + odpre opis + izgovor napredek (glasovno vodenje). */
+  const gotoStop = (i: number) => {
+    if (!plan || i < 0 || i >= plan.length) return;
+    const stop = plan[i];
+    mapRef.current?.flyTo([stop.lat, stop.lng], 11, { duration: 1.2 });
+    planMarkersRef.current.get(stop.name)?.openPopup();
+    speak(navProgressLabel(plan, i), guide?.voiceEnabled ?? false);
+  };
+
+  const removeRouteLayer = () => {
+    const L = LeafletRef.current;
+    if (routeLayerRef.current && L) (routeLayerRef.current as L.Polyline).remove();
+    routeLayerRef.current = null;
+  };
+
+  /** Zaključi navigacijo — nazaj na ploščo postankov. */
+  const endNavigation = () => {
+    setNavIndex(null);
+    setRouteInfo(null);
+    setRouteFailed(false);
+    routeAbortRef.current?.abort();
+    removeRouteLayer();
+  };
+
+  // nova regija → navigacija se resetira (nova pot, nov začetek)
+  useEffect(() => {
+    setNavIndex(null);
+    setRouteInfo(null);
+    setRouteFailed(false);
+    routeAbortRef.current?.abort();
+  }, [planKey]);
+
+  // pot na karti: prava cestna (OSRM posrednik) ali premočrtna rezerva
+  const routeKey = plan ? plan.map((s) => `${s.lat.toFixed(4)},${s.lng.toFixed(4)}`).join(';') : null;
+  useEffect(() => {
+    const L = LeafletRef.current;
+    const map = mapRef.current;
+    if (!L || !map) return;
+    // vsaka sprememba poti/navigacije počisti prejšnjo linijo
+    if (routeLayerRef.current) (routeLayerRef.current as L.Polyline).remove();
+    routeLayerRef.current = null;
+    if (!navActive || !plan || !routeKey) return;
+
+    const stopsParam = plan.map((s) => `${s.lat},${s.lng}`).join(';');
+    const controller = new AbortController();
+    routeAbortRef.current = controller;
+
+    const drawStraight = () => {
+      if (routeLayerRef.current) (routeLayerRef.current as L.Polyline).remove();
+      routeLayerRef.current = L.polyline(
+        plan.map((s) => [s.lat, s.lng] as [number, number]),
+        { color: '#059669', weight: 4, opacity: 0.7, dashArray: '6 8' },
+      ).addTo(map);
+    };
+
+    fetch(`/api/osrm/route?stops=${encodeURIComponent(stopsParam)}`, { signal: controller.signal })
+      .then((r) => r.json() as Promise<{ ok: boolean; coords?: [number, number][]; legs?: OsrmLegInfo[]; totalKm?: number }>)
+      .then((j) => {
+        if (controller.signal.aborted) return;
+        const coords = j.ok && Array.isArray(j.coords) && j.coords.length > 1 ? j.coords : null;
+        if (coords && j.legs) {
+          setRouteInfo({ legs: j.legs, totalKm: j.totalKm ?? 0 });
+          setRouteFailed(false);
+        } else {
+          setRouteFailed(true);
+        }
+        routeLayerRef.current = L.polyline(coords ?? plan.map((s) => [s.lat, s.lng] as [number, number]), {
+          color: '#059669',
+          weight: 4,
+          opacity: 0.8,
+          dashArray: coords ? undefined : '6 8',
+        }).addTo(map);
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setRouteFailed(true);
+        drawStraight();
+      });
+    return () => controller.abort();
+  }, [routeKey, navActive, mapReady]);
+
+  // čiščenje plana ob odstranitvi mape
+  useEffect(() => {
+    return () => {
+      planLayerRef.current = null;
+      planMarkersRef.current = new Map();
+      routeLayerRef.current = null;
+    };
+  }, []);
+
   // označevalci plana — vsaka sprememba regije osveži plast
   useEffect(() => {
     const L = LeafletRef.current;
@@ -186,6 +289,18 @@ export function MapSection() {
       flyToGuideRegion();
       window.addEventListener(GUIDE_EVENT, flyToGuideRegion);
 
+      // "Pokaži tvojo pot" iz vodiča → SAMODEJNO odpre navigacijo na prvi postanki
+      // (izrazita želja uporabnika: "ko konča z vnašanjem, se odpre navigacija")
+      const onShowTrip = () => {
+        const stops = planRef.current;
+        if (!stops || stops.length === 0) return;
+        setNavIndex(0);
+        const first = stops[0];
+        map.flyTo([first.lat, first.lng], 11, { duration: 1.2 });
+        planMarkersRef.current.get(first.name)?.openPopup();
+      };
+      window.addEventListener(SHOW_TRIP_EVENT, onShowTrip);
+
       // VIŠINA NA TOČKO (ARSO DMR/LiDAR, 1 m): klik → posrednik /api/arso/elevation
       // (fair-use: predpomnilnik na strežniku; brskalnik ne kliče ARSO direktno —
       // odgovor nima CORS glav, izmerjeno). Preklic prejšnje zahteve ob novem kliku.
@@ -239,6 +354,7 @@ export function MapSection() {
       map.on('unload', () => {
         window.clearTimeout(fallback);
         window.removeEventListener(GUIDE_EVENT, flyToGuideRegion);
+        window.removeEventListener(SHOW_TRIP_EVENT, onShowTrip);
       });
     })();
 
@@ -385,29 +501,102 @@ export function MapSection() {
                 <X className="size-3.5" aria-hidden />
               </Button>
             </div>
-            <div className="max-h-[220px] overflow-y-auto nice-scroll p-2">
-              <p className="px-1 pb-1.5 text-xs text-muted-foreground">{guideRegion.label}</p>
-              <div className="space-y-1">
-                {plan.map((stop) => (
-                  <Button
-                    key={stop.name}
-                    size="sm"
-                    variant="ghost"
-                    className="h-auto w-full justify-start gap-2 px-2 py-1.5 text-left"
-                    onClick={() => focusStop(stop)}
-                    aria-label={`Prikaži ${stop.name} na zemljevidu`}
-                  >
-                    <MapPin className="size-3.5 shrink-0 text-emerald-600" aria-hidden />
-                    <span className="min-w-0">
-                      <span className="block text-sm font-medium leading-tight">{stop.name}</span>
-                      <span className="block truncate text-xs text-muted-foreground">{stop.note}</span>
-                    </span>
+            {/* NAVIGACIJA PO POTI: postanek-po-postanku vodstvo (aria-live).
+                Naprej/Nazaj vodita skozi postanke; zadnja = "Destinacija dosežena". */}
+            {navIndex !== null && plan && (
+              <div className="border-b bg-emerald-600/10 px-3 py-2" role="status" aria-live="polite">
+                <div className="flex items-center gap-2">
+                  <Navigation className="size-4 shrink-0 text-emerald-700" aria-hidden />
+                  <p className="min-w-0 flex-1 truncate text-sm font-semibold">{navChipText(plan, navIndex)}</p>
+                  <Button size="sm" variant="ghost" className="h-7 shrink-0 px-2 text-xs" onClick={endNavigation}>
+                    Končaj
                   </Button>
-                ))}
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">{navProgressLabel(plan, navIndex)}</p>
+                {!navIsLast(plan, navIndex) && (
+                  <p className="mt-0.5 text-xs font-medium text-emerald-800">
+                    {routeInfo?.legs[navIndex] != null
+                      ? `→ naslednja postanka: ${routeInfo.legs[navIndex].distanceKm} km · ${routeInfo.legs[navIndex].durationMin} min`
+                      : routeFailed
+                        ? '→ premočrtna linija (cesta trenutno ni na voljo)'
+                        : '→ pot se išče …'}
+                  </p>
+                )}
+                <div className="mt-2 flex gap-1.5">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 flex-1"
+                    disabled={navIndex === 0}
+                    onClick={() => {
+                      const i = navPrev(plan, navIndex) ?? 0;
+                      setNavIndex(i);
+                      gotoStop(i);
+                    }}
+                  >
+                    ← Nazaj
+                  </Button>
+                  {!navIsLast(plan, navIndex) ? (
+                    <Button
+                      size="sm"
+                      className="h-7 flex-1"
+                      onClick={() => {
+                        const i = navNext(plan, navIndex) ?? navIndex;
+                        setNavIndex(i);
+                        gotoStop(i);
+                      }}
+                    >
+                      Naprej →
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="outline" className="h-7 flex-1" onClick={endNavigation}>
+                      <Flag className="size-3.5" aria-hidden />
+                      Zaključi obisk
+                    </Button>
+                  )}
+                </div>
               </div>
-              <p className="px-1 pt-1.5 text-[11px] text-muted-foreground">
-                {guide?.days ? `${guide.days} dni · ` : ''}tempo: {guide?.pace ?? '—'} · klikni destinacijo
-              </p>
+            )}
+            <div className="max-h-[220px] overflow-y-auto nice-scroll p-2">
+              {navIndex === null ? (
+                <>
+                  <p className="px-1 pb-1.5 text-xs text-muted-foreground">{guideRegion.label}</p>
+                  <Button
+                    size="sm"
+                    className="mb-1.5 w-full"
+                    onClick={() => {
+                      setNavIndex(0);
+                      gotoStop(0);
+                    }}
+                  >
+                    <Navigation className="size-3.5" aria-hidden />
+                    Začni navigacijo po poti
+                  </Button>
+                  <div className="space-y-1">
+                    {plan.map((stop) => (
+                      <Button
+                        key={stop.name}
+                        size="sm"
+                        variant="ghost"
+                        className="h-auto w-full justify-start gap-2 px-2 py-1.5 text-left"
+                        onClick={() => focusStop(stop)}
+                        aria-label={`Prikaži ${stop.name} na zemljevidu`}
+                      >
+                        <MapPin className="size-3.5 shrink-0 text-emerald-600" aria-hidden />
+                        <span className="min-w-0">
+                          <span className="block text-sm font-medium leading-tight">{stop.name}</span>
+                          <span className="block truncate text-xs text-muted-foreground">{stop.note}</span>
+                        </span>
+                      </Button>
+                    ))}
+                  </div>
+                  <p className="px-1 pt-1.5 text-[11px] text-muted-foreground">
+                    {guide?.days ? `${guide.days} dni · ` : ''}tempo: {guide?.pace ?? '—'} · klikni destinacijo
+                  </p>
+                </>
+              ) : (
+                <p className="px-1 text-[11px] text-muted-foreground">{guideRegion.label} · sledi zeleni črti na karti</p>
+              )}
             </div>
           </aside>
         )}

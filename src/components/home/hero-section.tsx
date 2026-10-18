@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { ArrowRight, Map, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import type { SeasonalHeroVariant, MicroEvent } from '@/lib/seasonal-hero';
 
 /**
@@ -64,19 +64,28 @@ export function HeroSection({
               {variant.badge}
             </p>
 
+            {/* UPORABNIK NIKOLI NI ZGUBLJEN: primarni CTA vodi na začetek
+                vodenega toka, sekundarni direktno na zemljevid (anchor,
+                deluje tudi brez JS-a). */}
             <div className="mt-5 flex flex-wrap items-center gap-3">
-              <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700">
+              <a
+                href="#vodic"
+                className={buttonVariants({ size: 'lg', className: 'bg-emerald-600 hover:bg-emerald-700' })}
+              >
                 {variant.ctaLabel}
                 <ArrowRight className="ml-1 size-4" aria-hidden />
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white/50 bg-black/30 text-white backdrop-blur hover:bg-black/45 hover:text-white"
+              </a>
+              <a
+                href="#zemljevid"
+                className={buttonVariants({
+                  variant: 'outline',
+                  size: 'lg',
+                  className: 'border-white/50 bg-black/30 text-white backdrop-blur hover:bg-black/45 hover:text-white',
+                })}
               >
                 <Map className="mr-1 size-4" aria-hidden />
                 {variant.secondaryCtaLabel}
-              </Button>
+              </a>
             </div>
           </div>
         </div>

@@ -21,6 +21,20 @@ export const metadata: Metadata = {
   icons: {
     icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
   },
+  openGraph: {
+    title: "Discover Slovenia AI",
+    description:
+      "Vodič po zemljevidu, prenočišča, vreme in pot — Slovenija in Balkan na odprtih podatkih.",
+    locale: "sl_SI",
+    type: "website",
+    siteName: "Discover Slovenia AI",
+  },
+  twitter: {
+    card: "summary",
+    title: "Discover Slovenia AI",
+    description:
+      "Vodič po zemljevidu, prenočišča, vreme in pot — Slovenija in Balkan na odprtih podatkih.",
+  },
 };
 
 export default function RootLayout({

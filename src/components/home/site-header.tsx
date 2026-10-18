@@ -22,20 +22,23 @@ export function SiteHeader({ loggedIn }: { loggedIn: boolean }) {
           </span>
         </a>
 
-        <nav aria-label="Glavna navigacija" className="ml-auto hidden md:block">
-          <ul className="flex items-center gap-5 text-sm text-muted-foreground">
+        <nav
+          aria-label="Glavna navigacija"
+          className="ml-auto flex items-center gap-3 text-xs text-muted-foreground md:ml-0 md:gap-5 md:text-sm"
+        >
+          <ul className="flex items-center gap-3 md:gap-5">
             <li>
-              <a className="transition-colors hover:text-foreground" href="#zemljevid">
+              <a className="inline-flex min-h-11 items-center px-1 transition-colors hover:text-foreground sm:min-h-9" href="#zemljevid">
                 Zemljevid
               </a>
             </li>
             <li>
-              <a className="transition-colors hover:text-foreground" href="#osebno">
+              <a className="inline-flex min-h-11 items-center px-1 transition-colors hover:text-foreground sm:min-h-9" href={loggedIn ? '#osebno' : '#vodic'}>
                 Za tebe
               </a>
             </li>
             <li>
-              <a className="transition-colors hover:text-foreground" href="#zmoznosti">
+              <a className="inline-flex min-h-11 items-center px-1 transition-colors hover:text-foreground sm:min-h-9" href="#zmoznosti">
                 Zmožnosti
               </a>
             </li>

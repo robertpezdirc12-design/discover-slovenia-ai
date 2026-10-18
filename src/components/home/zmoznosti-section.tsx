@@ -12,7 +12,7 @@ const ZMOZNOSTI = [
     id: 'vodic',
     icon: Compass,
     title: 'Vodič po zemljevidu',
-    desc: 'En gumb: samodejna turneja po 31 krajih Balkana — mesta, vasi, kmečki turizem, narava — z glasom in napredkom.',
+    desc: 'En klik: samodejna turneja po 31 krajih Balkana — z glasom, napredkom in filtri.',
   },
   {
     id: 'pot',
@@ -30,7 +30,7 @@ const ZMOZNOSTI = [
     id: 'odprti-podatki',
     icon: Globe,
     title: 'Odprti podatki',
-    desc: 'Vreme in zrak, višine (ARSO LiDAR), Wikipedija, tečaji in prazniki — brez prijave, z navedenimi viri.',
+    desc: 'Vreme in zrak, višine, Wikipedija, tečaji in prazniki — brez prijave, z navedenimi viri.',
   },
 ] as const;
 
@@ -39,7 +39,7 @@ export function ZmoznostiSection() {
     <section
       id="zmoznosti"
       aria-labelledby="zmoznosti-heading"
-      className="mx-auto w-full max-w-6xl px-4 sm:px-6"
+      className="mx-auto w-full max-w-6xl scroll-mt-20 px-4 sm:px-6"
     >
       <h2 id="zmoznosti-heading" className="text-lg font-semibold tracking-tight">
         Vse v enem mestu

@@ -1120,3 +1120,19 @@ Stage Summary:
 - Repozitorij je PUSH-READY: zgodovina čista od prvega commita (brez skills/research/tool-results/.env/artefaktov), .gitignore zakonsko preprečuje ponovitev, ko pride žeton — push gre čisto na GitHub/GitLab.
 - UI brez dev markerjev in dev žargona; vsak onemogočen korak razložen; vse tarče na mobilnem ≥44px; zlata pot (vodič → pot → navigacija → prenočišče → rezervacija → Mojo pot) brskalniško dokazana do konca.
 - Zunanji issue-ji (GitHub/GitLab) ostajajo nedosegljivi brez žetona — pošteno zabeleženo, nič pretvarjanja.
+---
+Task ID: POLIRAJ-2-NAVIGACIJA
+Agent: Z.ai Code (main session)
+Task: "poliraj" — drugi krog poliranja (navigacija, mrtvi ančorji, preliv besedila, OG meta)
+
+Work Log:
+- IZMERJENO (agent-browser): ① nav "Za tebe" → #osebno je MRTVA povezava za odjavljene (PersonalHomeSection se renderira samo pri prijavi — klik naredi NIČ); ② 2 od 4 kartic "Vse v enem mestu" prelivata fiksno h-[168px] (scrollHeight 172 > 166 — opisa predolga); ③ #zmoznosti in #osebno brez scroll-mt → lepljiva glava (h-14) prekrije naslov ob skoku; ④ navigacija na mobilnem SKRITA (hidden md:block) — uporabnik brez načina skoka na Zemljevid/Zmožnosti; ⑤ "Prijava (demo)" 32px < 44px; ⑥ nav povezave ~16px visoke.
+- POPRAVKI: ① site-header dobi dinamičen href: loggedIn ? '#osebno' : '#vodic' (odjavljen → vodeni tok, ki je začetek personalizacije); ② skrajšana in bolj udarna opisa kartic ("En klik: samodejna turneja po 31 krajih Balkana — z glasom, napredkom in filtri." / "… višine, Wikipedija …" brez oklepaja ARSO LiDAR) → preliv 0; ③ scroll-mt-20 na #zmoznosti in #osebno; ④ navigacija zdaj VEDNO vidna — mobilno text-xs gap-3 (komaj 324/390 px), namizje nespremenjeno; ⑤ Prijava h-11 sm:h-8 → 44px mobilno; ⑥ nav povezave inline-flex min-h-11 sm:min-h-9 px-1 → 44px mobilno / 36px namizje.
+- OG META (layout.tsx): openGraph (title, description, locale sl_SI, type website, siteName) + twitter card summary — dozdaj jih ni bilo (deljene povezave brez predogleda).
+- E2E (agent-browser, fresh-poliraj2): mobilno 390px — scrollWidth 390 (brez preliva), nav vidna [Zemljevid, Za tebe→#vodic, Zmožnosti], povezave 44px, header še vedno 56px, Prijava 44px; klik "Za tebe" (odjavljen) → scrollY 565, #vodic top=80 (pod glavo, scroll-mt dela); namizje 1280px — povezave 36px, kartice preliv 0, postavitev logov+nav+Prijava čista; 0 page errors.
+- VRATA: tsc 0 (src) · eslint 0 · bun test **141/141** (611 expect).
+
+Stage Summary:
+- Navigacija vodi VEDNO in POVSEJ: mobilna glava zdaj ima vse tri skoke, vsak ančor pristane pod lepljivo glavo, odjavljen "Za tebe" pripelje do vodenega toka namesto v nič.
+- Deljene povezave dobijo OG predogled (sl_SI).
+- Commit lokalno; push/PR čaka žeton.

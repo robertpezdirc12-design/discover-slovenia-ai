@@ -30,7 +30,7 @@ export async function PersonalHomeSection({ name }: { name: string }) {
   const suggestions = await loadSuggestions();
 
   return (
-    <section id="osebno" aria-labelledby="personal-heading" className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+    <section id="osebno" aria-labelledby="personal-heading" className="mx-auto w-full max-w-6xl scroll-mt-20 px-4 sm:px-6">
       <div className="rounded-xl border bg-card">
         <div className="p-6">
           <div className="flex h-7 items-center gap-2">

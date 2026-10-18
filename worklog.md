@@ -931,3 +931,27 @@ Stage Summary:
 - ARSO LiDAR je zdaj dvojen: (a) vizuelni relief sloj (prejšnja seja) + (b) **kvantitativna višina na točko** (ta seja) — oba izmerjena na pravih podatkih, obe poti fair-use zavarovani (cache + proxy)
 - Zaključna zanka vodenega toka je zdaj semantično pravilna: nova destinacija = nova regija, shranjeni odgovori se ne ponovijo
 - Commit f09ed73 (sandbox main); push/PR še vedno žetonsko odvisen (repo privaten, žeton ponastavljen)
+
+---
+Task ID: BALKAN-POKRITOST + VISINA-VERIGA-3-VIROV
+Agent: Z.ai Code (main session)
+Task: "odlicno ali je to narejeno za cel balkan kaj imamo predstavljeno" — pošten odgovor z meritvami pokritosti + (nerazbričljiv korak) višina za celoten Balkan
+
+Work Log:
+- MERITVE POKRITOSTI (vse žive, 18. 10. 2026):
+  - ARSO DMR identify za Zagreb → **value="NoData"** (potrjeno: ARSO = samo Slovenija)
+  - Open-Meteo elevation (Copernicus GLO-90): 8/8 balkanskih glavnih mest z realnimi višinami (Zagreb 142 · Sarajevo 543 · Beograd 138 · Podgorica 48 · Tirana 110 · Skopje 249 · Sofija 548 · Ljubljana 299 m) — potem **429 "Daily API request limit exceeded"** (deljen odhodni IP peskovnika, kvota do jutri)
+  - AWS Terrarium (Mapzen, AWS Open Data): ploščice 200 brez ključa; dekodiran RGB → **Zagreb 123 m, Triglav ploščica 110–2707 m** (pravi DEM)
+  - Globalna relief sloja za možni fallback LiDAR preklopa: Esri World Hillshade 200 (0,25 s), OpenTopoMap 200 (1,4 s) — izmerjeno, še NI integrirano
+- IMPLEMENTACIJA (commit d2124df): padalna veriga višine v /api/arso/elevation:
+  **SI bbox → ARSO LiDAR 1 m → (NoData/fail) → AWS Terrarium z11 ≈ 53 m/px → Open-Meteo (rezerva)**
+  - lib: latLonToTile, terrariumTileUrl, decodeTerrariumElevation (pngjs; **LOKALNI piksel ploščice — testi so ulovili bug globalnih koordinat, popravljen pred živim testom**), parseOpenMeteoElevation, ELEVATION_SOURCE_INFO ×3
+  - parseElevationQuery: globalna meja (|lat|≤85) + izrecna zavrnitev null/empty (Number(null)===0 past — test jo je ulovil)
+  - map-section: čip + popup prikazujejo dejanski vir ("ARSO LiDAR 1 m" / "DEM ~30 m") + licenco
+- ŽIVE VERIFIKACIJE (route 200): Zagreb 132,8 · Sarajevo 539,2 · Beograd 138,3 · Sofija 551,2 m (Terrarium) · Bled 475,9 · Ljubljana 297,7 m (ARSO, identično direktnemu identify)
+- VRATA: bun test **42/42** (5 novih Terrarium + 3 spremembe) · tsc 0 · eslint 0
+- BROWSER E2E: klik v Sloveniji → čip "101,7 m · ARSO LiDAR 1 m" + popup "Višina: 101,7 m — ARSO LiDAR 1 m · CC BY 4.0 — GURS/ARSO"; **0 page errors**
+
+Stage Summary:
+- ODGOVOR UPORABNIKU: pokritost je bila Slovenija-only (ARSO višina + relief + vodeni tok vsebine); osnovni OSM zemljevid je ves svet. ZDAJ je višina na klik razširjena na CELOTEN BALKAN/svet (SRTM ~30 m) z avtomatsko izbiro vira in poštenim izpisom vira+licence
+- Odprto (iskreno): Open-Meteo rezerva danes 429 (kvota peskovnika, reset jutri) — ni bloker, ker Terrarium pokriva; LiDAR relief preklop ostaja SI-only (globalni hillshade fallback izmerjen, ni integriran); produktivni push še vedno čaka žeton

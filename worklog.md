@@ -1221,3 +1221,19 @@ Stage Summary:
 - GitHub: main = tvoj aktivni produkt; arhivska veja = celotna no-AI platforma (povratno: git push --force origin archive/no-ai-platform-2.68.0:main vrne staro stanje).
 - GitLab dokončanje (ko mine blokada): git fetch <GL> main && git push <GL> FETCH_HEAD:refs/heads/archive/no-ai-platform-2.68.0 && git push --force-with-lease=refs/heads/main:92110de6b0284614ac87d1b3cdae1d85249aad7b <GL> main:main && git push --force <GL> main:refs/heads/sandbox/guided-ux-line (ali odpri zaščito v Settings→Repository→Protected branches).
 - Produkcija: če je Vercel povezan na GitHub main, sedaj sproži deploy aktualne (delujoče) aplikacije — popravilo pokvarjenih API-jev starega deploja.
+---
+Task ID: LINIJE-ODLOCITEV-DOKONCANJE
+Agent: Z.ai Code (main session)
+Task: dokoncanje preurejitve linij — GitHub popupoln, GitLab write-blokada
+
+Work Log:
+- GITHUB (ls-remote potrjeno, KONČNO STANJE): main = b8ad907 (sandbox linija + worklog), archive/no-ai-platform-2.68.0 = 92110de (prava stara no-AI platforma), sandbox/guided-ux-line = 3b6de0d (alias main). Vse tri veje na mestu.
+- GITLAB: anti-abuse blokira VSE write operacije z IP peskovnika (API POST branch → HTML "Blocked - GitLab"; git fetch/push → 403). Read operacije delujejo (API GET project = 200). Blokada je začasna (minut~ur); vsak nadaljnji poskus jo lahko podaljša → ustavil poskuse.
+- GitLab stanje (zabeleženo za kasnejše): main = 92110de (nespremenjen, stara linija), sandbox/guided-ux-line = 5d6933d (pred-purgom, še z db blobom), archive veja NE obstaja še.
+- Retri ukazi (enkrat, po odbloki, brez ponavljanja): ① curl -X POST "https://gitlab.com/api/v4/projects/87464605/repository/branches?branch=archive%2Fno-ai-platform-2.68.0&ref=92110de6b0284614ac87d1b3cdae1d85249aad7b" (arhiv iz obstoječega sha — ni treba pushati objektov); ② EN push z dvema refspec-oma: git push --force-with-lease=refs/heads/main:92110de6b0284614ac87d1b3cdae1d85249aad7b --force-with-lease=refs/heads/sandbox/guided-ux-line:5d6933d912d317e540a6b9b523ead3b29cba74cf <GL> main:main main:refs/heads/sandbox/guided-ux-line; ③ če 403 kljub odbloki → main je zaščiten: Settings → Repository → Protected branches → odstrani zaščito main → push → ponovno zaščiti.
+- Produkcija (i-feel-slovenia.vercel.app): ~6 min po force-pushu še stari naslov ("Kaj želiš doživeti v Sloveniji?") + stays API 404 — Vercel build bodisi še teče bodisi ni povezan na GitHub main (preveriti v Vercel nadzorni plošči; ni dostopna iz peskovnika).
+
+Stage Summary:
+- GitHub je POPOLNOMA uredjen: tvoj aktivni produkt = main, celotna no-AI platforma = arhivska veja, vse povratno z enim ukazom.
+- GitLab dokončanje je pripravljeno v treh ukazih zgoraj — čaka le preteka blokade (ni Tehnična ovira, samo hitnost).
+- Zadnji commit: b8ad907 + ta vnos.

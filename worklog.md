@@ -1260,3 +1260,17 @@ Stage Summary:
 - NOVA ZMOŽNOST: "Moja pot" je deljiva — uporabnik klikne "Deli pot" dobi kratko povezavo /pot/[10-mestna koda]; sopotnik vidi povzetek poti (OG predogled v WhatsApp/Twitter s per-trip naslovom) in jo uvozi z enim klikom; vodič prejemnika nadaljuje SAMO pri manjkajočih korakih (vsebina odloča).
 - Varnost vgrajena: strežniška sanitizacija, noindex za osebne poti, fail-clean parsing, nikoli tiho prepisovanje prejemnikovega načrta.
 - Naslednje prioritete (iz raziskave, neurazščene): dnevni trak z OSRM časi → RKD kulturna dediščina kot sloj → OJPP javni prevoz; GitLab dokončanje ko mine blokada (ukazi v prejšnjem vnosu).
+---
+Task ID: POLIRAJ-4-GITLAB-DOKONCANJE
+Agent: Z.ai Code (main session)
+Task: dokoncanje GitLab usklajevanja (blokada je počela pri git protokolu)
+
+Work Log:
+- GitLab API je ŠE VEDNO blokiran (HTML "Blocked - GitLab"), git protokol pa NE — arhivska veja je bila zato ustvarjena prek GITA (ne API-ja): git push gitlab 92110de:refs/heads/archive/no-ai-platform-2.68.0 → * [new branch] (objekti so že bili na GitLabu — brez prenosa zgodovine).
+- KOMBINIRANI PUSH po dokumentiranem načrtu: git push --force-with-lease=refs/heads/main:92110de… --force-with-lease=refs/heads/sandbox/guided-ux-line:5d6933d… gitlab main:main main:refs/heads/sandbox/guided-ux-line → + 92110de...4d7b215 main (forced update) + 5d6933d...4d7b215 sandbox/guided-ux-line (forced update). OBA uspešna.
+- POTRDITEV (ls-remote takoj po pushu): GitLab HEAD = 4d7b215, archive/no-ai-platform-2.68.0 = 92110de. Ponovni ls-remote = 403 (blokada utripa — hitnostno odvisna), a push izpisi so nedvoumni.
+- GitHub stanje (ls-remote): main = 4d7b215, sandbox/guided-ux-line in archive = pravilni; stare Feature veje (chore/*, docs/*) pustljene nedotaknjene.
+
+Stage Summary:
+- OBA remote-a sta zdaj POPOLNOMA usklajena z lokalnim main (4d7b215): main = aktivni produkt (vodeni UX + deljena pot), sandbox/guided-ux-line = alias, archive/no-ai-platform-2.68.0 = arhiv no-AI platforme (92110de) na OBAH.
+- GitLab usklajevanje je ZAKLJUČENO — ni več odpravih git nalog; priporočilo o rotaciji žetonov ostaja (deljena v klepetu).

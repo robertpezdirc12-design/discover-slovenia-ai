@@ -25,6 +25,7 @@ import {
   type GuideStayStop,
 } from '@/lib/guide-store';
 import { useGuideState } from '@/components/home/use-guide-state';
+import { ShareTripButton } from '@/components/home/share-trip-button';
 import { tripPlanFor, type TripStop } from '@/lib/trip-plan';
 import {
   MAP_GUIDE_CATEGORIES,
@@ -1187,6 +1188,13 @@ export function MapSection() {
                     <p className="px-1 pt-1.5 text-[11px] text-muted-foreground">
                       {guide?.days ? `${guide.days} dni · ` : ''}tempo: {guide?.pace ?? '—'} · klikni destinacijo
                     </p>
+                  )}
+                  {/* DELITEV POTI — kratka povezava /pot/[koda] (sopotniki
+                      si načrt ogledajo in ga uvozijo z enim klikom). */}
+                  {guide && guide.answered.length > 0 && (
+                    <div className="mt-2 border-t pt-2">
+                      <ShareTripButton state={guide} />
+                    </div>
                   )}
                 </>
               ) : (

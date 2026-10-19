@@ -44,3 +44,13 @@ model StayReservation {
   priceFrom Int?
   createdAt DateTime @default(now())
 }
+
+/// Deljena pot (/pot/[id]) — posnetek vodenega toka, ki ga uporabnik
+/// deli s povezavo (Wanderlotov vzorec: "poglej moj načrt").
+/// `data` = JSON sanitiziranega GuideState (brez glasu/časovnih žigov —
+/// prejemnik dobi svojo svežo sejo, ne tuje nastavitve).
+model SharedTrip {
+  id        String   @id
+  data      String
+  createdAt DateTime @default(now())
+}

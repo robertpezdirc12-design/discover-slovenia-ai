@@ -1237,3 +1237,26 @@ Stage Summary:
 - GitHub je POPOLNOMA uredjen: tvoj aktivni produkt = main, celotna no-AI platforma = arhivska veja, vse povratno z enim ukazom.
 - GitLab dokončanje je pripravljeno v treh ukazih zgoraj — čaka le preteka blokade (ni Tehnična ovira, samo hitnost).
 - Zadnji commit: b8ad907 + ta vnos.
+---
+Task ID: POLIRAJ-4-DELJENA-POT
+Agent: Z.ai Code (main session)
+Task: "odlicno nadaljuj poliraj" — naslednja prioriteta iz raziskave: delitvena povezava /pot/[id] + OG predogled (Wanderlogov vzorec)
+
+Work Log:
+- ŠT. 1 NASLEDNJI KORAK po SEO hitrih zmagah: delitvena povezava (mali trud, velik učinek — viralnost).
+- PRISMA: nov model SharedTrip { id (kratka koda, PK), data (JSON sanitiziranega GuideState), createdAt } → db:push uspešen.
+- LIB src/lib/share-trip.ts (čisto, testabilno): generateTripCode (baza 32 brez 0/O/1/I/L, Web Crypto), sharedTripPayload (NASPORNE vsebina — glas/žigi/answered se NE prenašajo), parseSharedTrip (hostilen vnos → null; tudi polja!; isShareable zahteva vsaj regijo/interese/prenočišče), tripHeadline (slovensko sklanjanje: 1 dan/3 dni, 1 prenočišče/2 prenočišči/3 prenočišča/5 prenočišč), tripShareDescription, sharedStays, importSharedState (glas VEDNO od prejemnika), hasOwnPlan.
+- API POST /api/pot/share: strežnik SAM sanitizira (klientu se ne zaupa), 400 z razlago za prazno pot, do 3 poskusi ob trku kode, vrne { ok, id, url }.
+- STRAN /pot/[id]: server component; generateMetadata PER-POT (title "Pot: Gorenjska · 3 dni · 1 prenočišče", og:title/description/url, canonical, robots noindex — osebne poti ne konkurirajo vsebini); blagovna OG slika s korena velja avtomatsko; pogled: interesi (čipi), regija, dni+tempo, številčena prenočišča s ceno; notFound() za neveljavne kode (regex ^[2-9A-Z]{6,16}$ blokira tudi path traversal).
+- UVOZ (import-button.tsx, client): payload PONOVNO sanitiziran (defense in depth); če prejemnik že ima načrt → window.confirm (nikoli tiho ne prepiše); uvoz → redirect /#zemljevid → zemljevid takoj vodi (potrjeno: destinacije vidne).
+- GUMB "Deli pot" v plošči "Tvoja pot" (share-trip-button.tsx; map-section vstavljen pod povzetek, samo kadar answered>0; h-11 sm:h-8 = 44px tarča mobilno).
+- E2E JE UJEL PRAVI HROŠČ (popravljen): v headless/iframe okolju (predogled je IFRAME!) navigator.clipboard.writeText ZAVRNE → uporabnik je videl napako, čeprav je bil zapis v bazi že ustvarjen. Rešitev: 3-stopnjska veriga ① Web Share API (mobilno) ② odložišče + toast ③ FALLBACK dialog z readonly povezavo + gumb "Kopiraj" — nikoli slepa ulica.
+- E2E POTRJENO (agent-browser, fresh-deli, RAM higiena — close): zlati tok deluje od konca do konca: seeded stanje → plošča vidna → klik "Deli pot" → POST ustvari kodo (Z9UPR9YZQF) → dialog s povezavo (fallback deluje) → stran /pot/Z9UPR9YZQF: title/h1/OG pravilni → brisanje localStorage → klik "Odpri to pot pri sebi" → redirect /#zemljevid → uvoz potrjen (region=gorenjska, days=3, stays=1) → destinacije vidne na karti. Mobilno 390: scrollW 390 (brez preliva), gumb 44px, slika čista.
+- API testi (curl): veljavno stanje → { ok, url } ✓; prazno → 400 z razlago ✓; /pot/XXXXXXXXXX → 404 ✓; /pot/../../../etc → 404 ✓. OG metapodatki v DOM: og:title "Moja pot po Sloveniji — Gorenjska · 3 dni · 1 prenočišče", og:url produkcijski ✓.
+- VRATA: tsc 0 (projektni src; edini "src/" zadetek = vnaprejšnja napaka skills/stock-analysis-skill, izven projekta) · eslint 0 · bun test 154/154 (1200 expect; +13 novih testov: kodirnik 50× dolžina/abeceda/unikatnost, payload round-trip, hostilen vnos, delna pot, sklanjanje naslovov, pravilo uvoza, hasOwnPlan).
+- COMMIT + PUSH: koda na main (origin GitHub); GitLab poskus ENKRAT (blokada je lahko še aktivna) — izid zabeležen spodaj.
+
+Stage Summary:
+- NOVA ZMOŽNOST: "Moja pot" je deljiva — uporabnik klikne "Deli pot" dobi kratko povezavo /pot/[10-mestna koda]; sopotnik vidi povzetek poti (OG predogled v WhatsApp/Twitter s per-trip naslovom) in jo uvozi z enim klikom; vodič prejemnika nadaljuje SAMO pri manjkajočih korakih (vsebina odloča).
+- Varnost vgrajena: strežniška sanitizacija, noindex za osebne poti, fail-clean parsing, nikoli tiho prepisovanje prejemnikovega načrta.
+- Naslednje prioritete (iz raziskave, neurazščene): dnevni trak z OSRM časi → RKD kulturna dediščina kot sloj → OJPP javni prevoz; GitLab dokončanje ko mine blokada (ukazi v prejšnjem vnosu).

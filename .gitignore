@@ -63,3 +63,6 @@ server.log
 /probe.txt
 /rid.txt
 /server.pid
+
+# SQLite baza — podatki ne sodijo v git (cisceno 2026-10-19)
+/db/

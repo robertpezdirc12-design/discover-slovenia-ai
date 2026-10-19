@@ -1202,3 +1202,22 @@ Stage Summary:
 - Najpomembnejše odkritje za uporabnika: obstojita DVE nepovezani liniji projekta (remote main v2.68.0 z 2490 testi in data-inženiringom vs sandbox v0.2.1 z vodenim UX tokom in 141 testi); produkcija je tretje stanje — odločitev (združi / zamenjaj / ohrani oba) je izrecno na uporabniku.
 - Platforma je SEO-vidna: sitemap.xml, robots.txt, canonical, dinamična OG slika, JSON-LD — deljene povezave dobijo polni predogled (sl_SI).
 - Varnost: žetona sta le v .git/config (lokalno, ne gre v push); priporočilo: po zaključku rotirati oba žetona, ker sta bila deljena v klepetu.
+---
+Task ID: LINIJE-ODLOCITEV (nadaljevanje POLIRAJ-3-SEO-PUSH)
+Agent: Z.ai Code (main session)
+Task: "nevem kaj je v teh linijah preveri naredi po svoji logiki" — preveri obe liniji in razreši
+
+Work Log:
+- DEJSTVA IZMERJENA: ① remote main README pove, kaj je: "Discover Slovenia AI — AI potovalni concierge", od 2.24.0 KANON P1 "100 % deterministično, 0 AI modelov" (z-ai-web-dev-sdk ODSTRANJEN), struktura src/app/[locale] (i18n), /pot/[shareId] deljene poti + Dnevnik (2.68.0), MapLibre vektorji z 44px gručenjem (2.67.1), Prisma, 2490 testov; ② sandbox linija = AI-vodeni UX (vodič, glas, zemljevid, OSM prenočišča, 141 testov), src NE potrebuje nobenih API ključev (samo NODE_ENV); ③ PRODUKCIJA (i-feel-slovenia.vercel.app) je stari deploy SANDBOX linije — h1 "Kaj želiš doživeti v Sloveniji?" obstaja v sandbox zgodovini (commit c8ccc5c), NE v remote main; in NENADALJENO: produkcijski API-ji /api/stays/search in /api/open-data/weather vračajo __next_error__ HTML (pokvarjeni!); ④ strukturi sta NESLJUBIVI za merge ([locale] i18n app vs enotna page.tsx; različen src/lib).
+- ODLOČITEV (po logiki: uporabnik ureja in vidi izključno sandbox linijo; produkcija je stari deploy iste linije): sandbox linija postane main, bogata no-AI linija se V CELOTI ohrani kot veja. Nič ni izgubljeno, vse je povratno.
+- HIGIENA PRED POVYŠITVIJO: db/custom.db (SQLite; tabele Post 0, User 0, StayReservation 3 — samo demo podatki) je bila SLEDENA v git → git rm --cached + /db/ v .gitignore + filter-branch purge iz vseh 64 commitov + reflog expire + gc → git log --all -- db/custom.db = 0; .git 1,4 MB; commit 3b6de0d.
+- IZVEDBA NA GITHUB: ① push main → main z --force-with-lease=92110de (uspešno: + 92110de...3b6de0d forced update); ② arhivska veja archive/no-ai-platform-2.68.0 = 92110de; NAPAKA ULovljENA IN POPRAVLJENA: prvi arhivski push je poslal FETCH_HEAD, ki je bil ZEŽE novi main (fetch po force-pushu) → arhiv je kažal 3b6de0d; popravljen z git fetch GH <sha 92110de> + forced update → arhiv zdaj = 92110de (potrjeno z ls-remote); ③ sandbox/guided-ux-line sinhronizirana z main (3b6de0d).
+- GITLAB: main je ZAŠČITEN (force-push → 403, privzeta GitLab zaščita) + anti-abuse je ZAČASNO blokiral IP peskovnika ("Blocked - GitLab" na API in git operacijah po več zaporednih pushih). GitLab main ostaja 92110de (stara linija), sandbox/guided-ux-line = 5d6933d (stara pred-purgom zgodovina, še vsebuje db blob). Ponovni poskus po odbloki; ukazi v Stage Summary.
+- STANJE REMOTE (ls-remote GitHub, potrjeno): main=3b6de0d · archive/no-ai-platform-2.68.0=92110de · sandbox/guided-ux-line=3b6de0d.
+- POVZETEK LINIJ ZA UPORABNIKA: main (sandbox) = vodeni UX produkt, ki ga vidiš v predogledu (vodič, zemljevid, prenočišča, odprti podatki, SEO osnova); archive/no-ai-platform-2.68.0 = zrela deterministična platforma (38 destinacij, deljene poti /pot/[shareId] z dnevnikom, MapLibre, i18n, 2490 testov) — dobre ideje iz arhiva za prevzet: deljene poti, i18n, KiwiTaxi prenosi.
+- VRATA: koda nespremenjena od 6abaa87 (tsc 0 · eslint 0 · bun test 141/141 ostajajo); push potrjen z ls-remote.
+
+Stage Summary:
+- GitHub: main = tvoj aktivni produkt; arhivska veja = celotna no-AI platforma (povratno: git push --force origin archive/no-ai-platform-2.68.0:main vrne staro stanje).
+- GitLab dokončanje (ko mine blokada): git fetch <GL> main && git push <GL> FETCH_HEAD:refs/heads/archive/no-ai-platform-2.68.0 && git push --force-with-lease=refs/heads/main:92110de6b0284614ac87d1b3cdae1d85249aad7b <GL> main:main && git push --force <GL> main:refs/heads/sandbox/guided-ux-line (ali odpri zaščito v Settings→Repository→Protected branches).
+- Produkcija: če je Vercel povezan na GitHub main, sedaj sproži deploy aktualne (delujoče) aplikacije — popravilo pokvarjenih API-jev starega deploja.

@@ -1151,3 +1151,54 @@ Work Log:
 Stage Summary:
 - Strežnik zanesljivo teče (PPID 1, vztraja čez ukaze), postopek zagona zapisan za prihodnje seje; vzroki uhajanja pošteno diagnosticirana (OOM + zastal cache), nič ugibanja.
 - Commit 86f5bd0 ostane vrh; push/PR čaka žeton.
+---
+Task ID: 3
+Agent: research-subagent
+Task: "raziskuj" — raziskava konkurence/UX vzorcev, brezplačnih virov brez poverilnic in SEO za Next.js/Vercel
+
+Work Log:
+- METODA: 5 spletnih iskanj (z-ai web_search) + ~12 živih `curl --max-time 12..15` preizkusov iz peskovnika; vsak rezultat je izmerjen ali pošteno označen "ni živo preverjeno". Nituks nobena datoteka v src/ ni bila spremenjena (samo ta vnos).
+- A) UX KONKURENCE (Wanderlog, Roadtrippers, Komoot, Outdooractive; Sygic Travel po znanju — ni živo preverjeno):
+  • Wanderlog (wanderlog.com, App Store/Play, blog 2024): drag&drop urejanje postaj med dnevi z opombami na postajo; sledenje proračuna + delitev stroškov med sopotniki; sodelovanje v realnem času (live sync); offline dostop; organizacija rezervacij (let/hotel/avto); "share a trip report" po poti.
+  • Roadtrippers (roadtrippers.com, Play 2025): vnaprej izdelani vodniki po rutah kot vstop točko ("get inspired by pre-made trip guides"); "najdi najboljše postaje OB poti" (scenic detours) — nasveti vzdolž že obstoječe linije; sodelovanje.
+  • Komoot/Outdooractive (komoot.com): predogled po površinah tipov cest, izpostavki (highlights) ob poti, offline paketi, navigacija z napredkom.
+  • Sygic Travel (znanje, NI živo preverjeno): dneveni časovni trak z časom prevoza med postajami, optimizator dni, offline mestni vodniki.
+  • VRZELI NAŠE PLATFORME glede na to: ① brez drag&drop prerazporeditve postaj v "Moji poti" (31 postaj je samo zaporedje vodiča); ② brez skupinskega proračuna/štoparice (tečaji RSD/MKD/ALL/BAM so že v bazi — manjka seštevek in delitev); ③ brez delitvene povezave na pot (OG meta obstaja, a pot ni naslovljiva); ④ brez dnevnega pogleda s časom prevoza (OSRM že integriran — manjka izračun postaja→postaja); ⑤ brez izvoza (GPX/print/PDF) in sodelovanja.
+- B) NOVI VIRI BREZ POVERILNIC — živo preizkušeno iz peskovnika (18. 10. 2026, UA "Mozilla/5.0 (research)"):
+  • podatki.gov.si (ODPIS/OPSI) CKAN API → HTTP 200, 1,4 s, `package_search?q=turizem` = 161 zbirok, `q=namestitve` = 28. BREZ KLJUČA. Integracija: programski odklop kataloga za prihodnje sloje (ni ročnih CSV).
+  • RKD — Register nepremične kulturne dediščine → CKAN `package_show?id=register-nepremicne-kulturne-dediscine` HTTP 200 (57 KB): viri ZIP/GML/**GPKG** (GeoPackage!) + pregledovalnik geohub.gov.si/ghapp/giskd in rkd.situla.org (HTTP 200, 27 KB HTML). 30.000+ enot (gradovi, cerkve, spomeniki). BREZ KLJUČA. Integracija: kulturno-dediščinski sloj POI pod Wikipedijo — GPKG prenesemo enkrat, prečno povežemo z obstoječimi 31 postajami (EŠD).
+  • OJPP (ojpp.si, Odprti javni potniški promet) → HTTP 200 (po 302). Odprti vozni redi/GTFS za slovenski javni prevoz; skupnostno orodje nejc.dev/projects/ojpp. BREZ KLJUČA. Integracija: "kako tja z busom/vlakom" za postaje vodiča — dopolnitev OSRM (ki je samo avto).
+  • Wikidata SPARQL (query.wikidata.org/sparql) → HTTP 200, prazen rezultat za testni P847/Q215 (pošteno zapisano: endpoint ŽIV, poizvedbo je treba še napisati pravilno). BREZ KLJUČA. Integracija: večjezične oznake postaj (sl+en+de+hr), UNESKO svetovna dediščina po državah SEE (P1435), povezava OSM relacija↔wiki naslov (P847) — krepi obstoječo wiki plast.
+  • UNESCO WHC XML (whc.unesco.org/en/list/xml) → HTTP 403 "Just a moment…" (Cloudflare izziv) — iz peskovnika NEDOSEGLJIVO, preizkusiti v produkciji; rezervna pot = Wikidata P1435.
+  • spiis.si (register namestitev) → DNS FAIL v peskovniku — nedosegljivo od tu, preizkusiti v produkciji; CKAN "spiis"/"register namestitev" = 0 zbirok, "namestitve" = 28 (sploh ni pod tem imenom) → prihodnja ročna preverba.
+  • izlet.pzs.si (PZS poti) → DNS FAIL v peskovniku; overpass.kumi.systems zrcalo → povezava ni uspela; overpass-api.de tokrat Cloudflare izziv (v produkciji projekt Overpass že uporablja uspešno — izjema peskovnika).
+- C) SEO Next.js 16 App Router na Vercelu — stanje izmerjeno iz repozitorija: src/app ima SAMO layout.tsx + page.tsx + api/*; NI sitemap.ts, NI robots.ts, NI JSON-LD, NI opengraph-image.tsx; layout.tsx TUDI NIMA `metadataBase` (OG/twitter URL-ji ostanejo relativni — Next izrecno opozarja). Iskanja: pagepro/stanza/digitalapplied vodniki 2025–26 potrjujejo vrstni red: sitemap.ts + robots.ts + JSON-LD + opengraph-image.tsx + generateMetadata po ruti.
+  • Največji SEO zmagi za najmanj truda (vrstni red): ① `metadataBase` v layout.tsx (1 vrstica); ② src/app/robots.ts + src/app/sitemap.ts (~30 vrstic skupaj); ③ JSON-LD WebApplication + TouristDestination na domači strani (script ld+json); ④ src/app/opengraph-image.tsx z ImageResponse (satori na Edge, brez odvisnosti) + twitter card → summary_large_image; ⑤ SREDNJE-ROK: statične strani po postaji /kraj/[slug] iz obstoječega kataloga 31 postaj (generateStaticParams + generateMetadata + TouristDestination JSON-LD) — ena indeksirana stran na kraj, največja organska rast.
+  • LCP: next/font že v uporabi (Geist), OG slike predpomni Vercel; dodati `priority` na glavno hero sliko če je <img> (ni preverjeno v page.tsx — prepustiti implementaciji).
+
+Stage Summary:
+- 5 konkretnih UX vzorcev za prevzem (siljenje po učinku/trudu): ① drag&drop + dnevni trak "Moje poti" z OSRM časi postaja→postaja (Wanderlog/Sygic; OSRM že je — velik učinek, srednji trud); ② delitvena povezava /pot/[id] z OG predogledom (Wanderlog; mali trud, viralnost); ③ proračun + delitev stroškov na prenočitvah z obstoječimi tečaji (Wanderlog; mali trud); ④ "dodaj vredne postaje ob poti" s Overpass tourism POI ob OSRM geometriji (Roadtrippers/Komoot; srednji trud, edinstvena prednost z OSM); ⑤ izvoz GPX/print za offline (Komoot; mali trud, zahtevnost poti odpravlja apgrejd).
+- 4 živo potrjeni NOVI viri brez ključev: podatki.gov.si CKAN (katalog, 161 turističnih zbirk), RKD GPKG (kulturna dediščina, 30.000+ enot, direktno zemljeviden sloj), OJPP (javni prevoz/vozni redi), Wikidata SPARQL (večjezičnost + UNESKO). 2 kandidata blokirana v peskovniku (spiis.si, izlet.pzs.si — DNS) in 1 z Cloudflare (UNESCO XML) → pošteno preizkusiti v produkciji.
+- SEO: hitri zmagi so mehanski in brez tveganja (metadataBase → robots.ts/sitemap.ts → JSON-LD → opengraph-image.tsx); največja rast = per-destination statične rute iz kataloga 31 postaj. Predlagani vrstni red implementacije: SEO hitri zmagi (1 seja) → delitvena povezava → dnevni trak z OSRM → RKD sloj → OJPP.
+---
+Task ID: POLIRAJ-3-SEO-PUSH (podtaski 2-7)
+Agent: Z.ai Code (main session) + research-subagent (Task 3)
+Task: "poliraj testiraj predlagaj raziskuj" + prejeta žetona za GitHub/GitLab
+
+Work Log:
+- ŽETONA PREJETA (uporabnik v klepetu) → remote-a konfigurirana: origin (GitHub robertpezdirc12-design/discover-slovenia-ai) + gitlab (gitlab.com/markec-group1/discover-slovenia-ai, prek API-ja ID 87464605 — prej 404 brez žetona). Žetona NISTA zapisana v worklog ali kodo.
+- KLJUČNO ODKRITJE (push je skoraj šel narobe): remote-a NISTA prazna — GitHub main = 390 commitov, v2.68.0, zadnji PR #67 (KiwiTaxi vir, FSQ OS Places, data gates), bun test 2490/2490 (26.848 expect); lokalna sandbox linija = 63 commitov, v0.2.1, 141/141. git merge-base → UNRELATED (brez skupnega prednika). Produkcija i-feel-slovenia.vercel.app prikazuje TRETJE stanje (h1 "Kaj želiš doživeti v Sloveniji?"; brez markerjev obeh linij — verjetno starejši deploy). Force-push bi UNIČIL bogatejšo linijo → NE izveden.
+- NEDESTRUKTIVNI PUSH: lokalni main (63 commitov) poslan kot NOVA veja sandbox/guided-ux-line na OBA remote-a (* [new branch] potrjeno na obeh). main + obstoječe veje nedotaknjene. Združitev/menjava linij = odločitev uporabnika.
+- RAZISKAVA (subagent, Task 3 — podrobnosti v njegovem vnosu zgoraj): 5 UX vzorcev (drag&drop dnevni trak, /pot/[id] delitev, proračun s obstoječimi tečaji, POI ob poti, GPX izvoz); 4 živo potrjeni novi viri brez ključev (podatki.gov.si CKAN 161 turističnih zbirk, RKD GPKG 30.000+ enot dediščine, OJPP vozni redi, Wikidata SPARQL); 2 blokirana v peskovniku (spiis.si, izlet.pzs.si DNS; UNESCO XML Cloudflare) → preveriti v produkciji; SEO vrstni red (metadataBase → robots/sitemap → JSON-LD → OG slika → /kraj/[slug]).
+- TESTIRANJE/E2E (agent-browser, fresh-poliraj3 + fresh-seo): namizje 1280 — 0 page errors, konzola čista, sekcije [vodic, zemljevid, zmoznosti], noga naravno pod prelomom (dolga stran = pravilno); mobilno 390 — scrollWidth 390 (brez preliva), nav viden, prvi CTA 44px. Zlata pot ni regredirala (map-section/guided-flow nedotaknjena).
+- POLIRAJ #1 — dev markerji: 11 mest "POLIR15-a/b/c/d" + "poliraj 2026-10-18" + "cikel POLIR15" iz komentarjev v src/ (seasonal-hero, map-section ×4, personal-home, session-toggle, zmoznosti, hero, page.tsx ×2, globals.css, demo-session) → smiselni opisi; rg "POLIR[0-9]+" src/ = 0.
+- POLIRAJ #2 — javni dev artefakti v public/: polir15.zip (17 kB stari posnetek kode, javno serviran na /polir15.zip!) in statični robots.txt (brez sitemap) odstranjena → /polir15.zip zdaj 404.
+- POLIRAJ #3 — SEO osnova (po raziskavi): layout.tsx metadataBase + alternates.canonical + openGraph.url + twitter summary_large_image; novi src/app/robots.ts (Disallow /api/ + sitemap) in sitemap.xml (200, pravilen XML); JSON-LD @graph [WebApplication + TouristDestination] na domači strani; dinamična OG slika src/app/opengraph-image.tsx (ImageResponse, 1200×630, PNG 145 kB, HTTP 200). Brskalniško potrjeno v DOM: og:url ✓ · canonical ✓ · og:image ✓ · twitter:card=summary_large_image ✓ · ld+json=WebApplication+TouristDestination ✓. (Prvi poskus robots.txt = 500 "conflicting public file and page file" → rešeno z odstranitvijo statičnega predhodnika.)
+- VRATA: tsc 0 (src; preostale napake samo examples/+skills/, predhodne in izven src) · eslint 0 · bun test 141/141 (611 expect).
+- COMMIT: 6abaa87 (koda) + ta worklog commit; push na sandbox/guided-ux-line sledi takoj.
+
+Stage Summary:
+- Push je ZDAJ izveden NEDESTRUKTIVNO: kompletna zgodovina sandbox linije (63 commitov) je javno vidna kot veja na GitHub + GitLab po 61+ dneh čakanja na žeton; nič na remote-u ni bilo uničeno.
+- Najpomembnejše odkritje za uporabnika: obstojita DVE nepovezani liniji projekta (remote main v2.68.0 z 2490 testi in data-inženiringom vs sandbox v0.2.1 z vodenim UX tokom in 141 testi); produkcija je tretje stanje — odločitev (združi / zamenjaj / ohrani oba) je izrecno na uporabniku.
+- Platforma je SEO-vidna: sitemap.xml, robots.txt, canonical, dinamična OG slika, JSON-LD — deljene povezave dobijo polni predogled (sl_SI).
+- Varnost: žetona sta le v .git/config (lokalno, ne gre v push); priporočilo: po zaključku rotirati oba žetona, ker sta bila deljena v klepetu.

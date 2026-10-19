@@ -2,10 +2,10 @@ import { Compass, Globe, MapPinned, Route } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
 /**
- * Uporabniška sekcija "Vse v enem mestu" (poliraj 2026-10-18):
- * prejšnja dev-jargon sekcija ("Kaj ta stran dokazuje", cikel POLIR15) je
- * bila razvijalska; potniku pove nič. Zdaj štiri konkretnne zmožnosti
- * platforme v jeziku uporabnika. Višina kartic je rezervirana (CLS 0).
+ * Uporabniška sekcija "Vse v enem mestu":
+ * Štiri konkretne zmožnosti platforme v jeziku uporabnika
+ * (vodič, pot, prenočišča, odprti podatki). Višina kartic je
+ * rezervirana (CLS 0).
  */
 const ZMOZNOSTI = [
   {

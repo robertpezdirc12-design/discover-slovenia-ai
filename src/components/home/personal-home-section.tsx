@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 /**
- * POLIR15-c — PersonalHomeSection (server component, streamirana).
+ * PersonalHomeSection (server component, streamirana).
  *
  * Produkcija: parent počne `const session = await getSession()` ENKRAT
  * (React `cache()` dedup — brez waterfalla) in podaja le `userId`.

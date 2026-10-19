@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * POLIR15-c — demo seja (namesto next-auth getServerSession).
+ * Demo seja (namesto next-auth getServerSession).
  * Bralca seje v produkciji zamenja `getSession()` (React cache + next-auth),
  * mehanika prikaza (Suspense + rezervirana višina) ostane enaka.
  */

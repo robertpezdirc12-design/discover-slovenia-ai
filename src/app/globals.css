@@ -121,7 +121,7 @@
   }
 }
 
-/* POLIR15 — prilagojen drsnik za sezname (vidnost + tanki robovi) */
+/* Prilagojen drsnik za sezname (vidnost + tanki robovi) */
 .nice-scroll {
   scrollbar-width: thin;
   scrollbar-color: var(--muted-foreground) transparent;

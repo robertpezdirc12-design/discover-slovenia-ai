@@ -6,7 +6,7 @@ import { Loader2, LogIn, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 /**
- * POLIR15-c — demo preklop prijave (cookie namesto next-auth).
+ * Demo preklop prijave (cookie namesto next-auth).
  * router.refresh() ponovno zažene server render → pokaže Streaming
  * PersonalHomeSection brez layout premika (rezerviran skeleton).
  */

@@ -1,5 +1,5 @@
 /**
- * POLIR15-b — Sezonska afiniteta heroja (vrzel #3)
+ * Sezonska afiniteta heroja
  *
  * Raziskava: Switzerland Tourism vrne vsebino po rigidnem sezonskem koledarju
  * (Partner Winter / Summer / Autumn kampanje), Tourism Ireland pa izkorišča

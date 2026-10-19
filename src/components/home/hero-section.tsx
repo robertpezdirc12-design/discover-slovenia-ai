@@ -5,7 +5,7 @@ import { buttonVariants } from '@/components/ui/button';
 import type { SeasonalHeroVariant, MicroEvent } from '@/lib/seasonal-hero';
 
 /**
- * POLIR15-b — sezonski hero (server rendered).
+ * Sezonski hero (server rendered).
  * Fiksno razmerje strani (aspect-*) na wrapperju + absolute Image fill
  * → višina hero-ja je znana pred nalaganjem slike (CLS = 0).
  * Sezona je rešena na strežniku — brez flickerja ob hydrataciji.

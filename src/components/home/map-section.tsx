@@ -53,13 +53,13 @@ import type { OsrmLegInfo } from '@/lib/osrm-route';
 import { SHOW_TRIP_EVENT, speak } from '@/lib/speech';
 
 /**
- * POLIR15-a — sticky preklop brez z-index nasprotja z Leafletom:
+ * Lepljiv (sticky) preklop brez z-index nasprotja z Leafletom:
  *   • mapa je zaprta v lasten stacking context (wrapper: `relative z-0 isolate`),
  *     tako da Leafletove interne vrednosti (pane ≈ 400, kontrole ≈ 1000)
  *     ne morejo prekriti sticky vrstice (`z-30`); Leaflet CSS NI spreminjan.
  *   • vrstica je `sticky top-14 z-30` — top-14 se ujema z višino lepljive glave.
  *
- * POLIR15-d — CLS skeleta zemljevida = 0:
+ * CLS skeleta zemljevida = 0:
  *   • EEN vir višine (`MAP_H`) za skeleton IN mapo; vsebina je `absolute inset-0`,
  *     tako da wrapper višine nikoli ne spremeni (0,023 → 0).
  */
@@ -881,7 +881,7 @@ export function MapSection() {
         Zemljevid destinacij s preklopilem pogledom
       </h2>
 
-      {/* POLIR15-a: sticky preklop — leži NAD izolirano mapo (z-30 > kontekst z-0) */}
+      {/* Lepljiv preklop — leži NAD izolirano mapo (z-30 > kontekst z-0) */}
       <div className="sticky top-14 z-30 -mx-2 mt-6 mb-4 rounded-xl border bg-background/90 px-3 py-2.5 shadow-sm backdrop-blur">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -1031,7 +1031,7 @@ export function MapSection() {
 
       {/* Enoten vir višine: skeleton, mapa in seznam so absolutni znotraj te škatle */}
       <div className={`relative w-full overflow-hidden rounded-xl border bg-muted ${MAP_H}`}>
-        {/* POLIR15-a: izolacija — vse Leaflet z-index pane ostanejo tu znotraj */}
+        {/* Izolacija — vse Leaflet z-index pane ostanejo tu znotraj */}
         <div className={`absolute inset-0 z-0 isolate ${mode === 'map' ? '' : 'pointer-events-none opacity-0'}`}>
           <div ref={containerRef} className="h-full w-full" aria-label="Interaktivni zemljevid Slovenije" role="application" />
         </div>

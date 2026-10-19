@@ -11,7 +11,7 @@ import { getHeroVariant } from '@/lib/seasonal-hero';
 const SESSION_COOKIE = 'dsa_demo_user';
 
 /**
- * Referenčna stran cikla POLIR15 (issue #34, discover-slovenia-ai):
+ * Domača stran (discover-slovenia-ai):
  *   a) sticky preklop nad izolirano Leaflet mapo
  *   b) SSR sezonska afiniteta heroja (+ ?season= DEMO override)
  *   c) streamirana PersonalHomeSection z rezerviranim skeletom
@@ -20,6 +20,33 @@ const SESSION_COOKIE = 'dsa_demo_user';
  * V produkciji: `getSession()` (next-auth + React cache) namesto cookie,
  * `export const revalidate = 3600` za sezonski hero (ISR).
  */
+const SITE_URL = "https://i-feel-slovenia.vercel.app";
+
+/** Strukturirani podatki (schema.org) — bogati rezultati iskalnikov. */
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      name: "Discover Slovenia AI",
+      url: SITE_URL,
+      applicationCategory: "TravelApplication",
+      inLanguage: "sl",
+      operatingSystem: "Web",
+      offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
+      description:
+        "Vodič po zemljevidu, prenočišča, vreme in pot — Slovenija in Balkan na odprtih podatkih.",
+    },
+    {
+      "@type": "TouristDestination",
+      name: "Slovenija",
+      url: SITE_URL,
+      description:
+        "Jezera, gore, mesta in kmečki turizem — od Bleda in Bohinja do doline Soče in Ljubljane.",
+    },
+  ],
+};
+
 export default async function Home({
   searchParams,
 }: {
@@ -34,6 +61,10 @@ export default async function Home({
 
   return (
     <div className="flex min-h-screen flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <SiteHeader loggedIn={Boolean(userName)} />
 
       <main className="flex-1">
@@ -46,7 +77,7 @@ export default async function Home({
 
           <MapSection />
 
-          {/* POLIR15-c: streamiranje — skeleton rezervira točno toliko prostora,
+          {/* Streamiranje — skeleton rezervira točno toliko prostora,
               kot ga zasede sekcija → ni premika heroja/seznama (CLS 0). */}
           {userName && (
             <Suspense fallback={<PersonalHomeSkeleton />}>

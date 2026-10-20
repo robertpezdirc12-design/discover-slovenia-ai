@@ -29,6 +29,7 @@ Preveri, da je baza dosegljiva: `GET /api/health` → `{ "ok": true, "db": "up" 
 |---|---|---|
 | `DATABASE_URL` | da | PostgreSQL connection string (s poolingom v produkciji) |
 | `NEXT_PUBLIC_SITE_URL` | priporočeno | Javni URL za canonical, Open Graph in JSON-LD |
+| `CRON_SECRET` | za čiščenje | Skrivnost za `/api/cron/cleanup`; brez nje je čiščenje onemogočeno |
 
 Nikoli ne committaj `.env`; v repozitoriju je samo `.env.example`.
 
@@ -47,8 +48,9 @@ Nikoli ne committaj `.env`; v repozitoriju je samo `.env.example`.
   priporočila na domači strani osvežijo.
 
 To **ni produkcijska avtentikacija**: ni gesla, e-pošte ali OAuth ponudnika.
-Profil je vezan na brskalnik; po čiščenju piškotkov ali odjavi nastane nov
-profil (tudi pri enakem imenu). Pred javnim zagonom dodaj OAuth ali magic-link
+Profil je vezan na brskalnik; po čiščenju piškotkov nastane nov profil (tudi
+pri enakem imenu). Zato UI ne ponuja gole odjave: uporabnik profil izvozi ali
+izbriše, kar ga hkrati odjavi. Pred javnim zagonom dodaj OAuth ali magic-link
 prijavo ter dopolni demo politiko zasebnosti na `/zasebnost` (upravljavec,
 kontakt, pravna podlaga).
 
@@ -61,6 +63,13 @@ kontakt, pravna podlaga).
   uporabnik ne počisti z »Začni znova«.
 - Oba klica sta v pogovornem oknu **Profil**. Deljene poti niso vezane na
   uporabnika in se z izbrisom profila ne odstranijo; potečejo po 90 dneh.
+
+### Dnevno čiščenje
+
+`GET /api/cron/cleanup` (Vercel Cron, dnevno ob 3:00) odstrani potekle
+seje, deljene poti, starejše od 90 dni, in demo uporabnike brez aktivne seje,
+ki niso bili aktivni 60 dni. Ruta je zaklenjena z `CRON_SECRET`; brez njega
+vrne 503.
 
 ## Skripti
 
@@ -79,7 +88,8 @@ kontakt, pravna podlaga).
 ## Deployment (Vercel)
 
 1. Ustvari Postgres (npr. Neon) in kopiraj pooled connection string.
-2. V Vercelu nastavi `DATABASE_URL` in `NEXT_PUBLIC_SITE_URL`.
+2. V Vercelu nastavi `DATABASE_URL`, `NEXT_PUBLIC_SITE_URL` in `CRON_SECRET`
+   (naključna dolga vrednost).
 3. Build command je že v `package.json` (`prisma generate && next build`).
 4. Po prvem deployu zaženi `bunx prisma migrate deploy` — za migracije
    uporabi **neposredno (nepooled) povezavo**, ker pooled PgBouncer URL ni
@@ -87,7 +97,10 @@ kontakt, pravna podlaga).
    Pri obstoječi bazi, ustvarjeni z `db push`, najprej primerjaj dejansko
    stanje sheme in označi ustrezne migracije kot uporabljene
    (`prisma migrate resolve --applied <migration>`); če baza že vsebuje
-   tudi `User`/`Session`/`UserProfile`, označi obe migraciji.
+   tabele in indeks `SharedTrip_createdAt_idx`, lahko po pregledu označiš vse
+   tri migracije.
+5. `vercel.json` nastavi dnevni cron na `/api/cron/cleanup`; preveri, da je
+   `CRON_SECRET` nastavljen tudi v produkcijskem okolju.
 
 SQLite ni primeren za Vercel: datotečni sistem je efemeren in write-i se izgubijo.
 
@@ -95,9 +108,11 @@ SQLite ni primeren za Vercel: datotečni sistem je efemeren in write-i se izgubi
 
 - Prijava je demo brez gesla (glej zgoraj). Seje so v PostgreSQL; rate
   limiting je per-instance in best-effort (brez globalnega Redis kvota).
+- Ob izgubi seje ali čiščenju piškotkov profil ostane nedosegljiv; dnevni
+  cron ga odstrani po 60 dneh od zadnje aktivnosti.
 - Deljene poti (`/pot/[koda]`) so anonimne in nimajo lastnika ali možnosti
-  preklica; povezava poteče po 90 dneh, zapis pa se počisti ob obisku potekle
-  povezave ali ob naslednjem deljenju. Pred javnim zagonom razmisli o
+  preklica; povezava poteče po 90 dneh, zapis pa počisti dnevni cron, obisk
+  potekle povezave ali naslednje deljenje. Pred javnim zagonom razmisli o
   lastništvu in takojšnjem preklicu.
 - Če isto pot urejata dve napravi hkrati, zadnji uspešni PUT zmaga; ob
   nalaganju se primerja `updatedAt`. Za produkcijo je priporočljivo

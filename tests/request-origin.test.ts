@@ -2,10 +2,11 @@
 import { describe, expect, test } from 'bun:test';
 import { isSameOriginRequest } from '../src/lib/request-origin';
 
-function requestWithSite(site?: string): Request {
-  return new Request('https://example.com/api/account', {
-    headers: site ? { 'sec-fetch-site': site } : {},
-  });
+function requestWithSite(site?: string, origin?: string): Request {
+  const headers: Record<string, string> = {};
+  if (site) headers['sec-fetch-site'] = site;
+  if (origin) headers.origin = origin;
+  return new Request('https://example.com/api/account', { headers });
 }
 
 describe('request-origin — zaščita mutacij', () => {
@@ -21,5 +22,20 @@ describe('request-origin — zaščita mutacij', () => {
   test('cross-site in same-site sta zavrnjena', () => {
     expect(isSameOriginRequest(requestWithSite('cross-site'))).toBe(false);
     expect(isSameOriginRequest(requestWithSite('same-site'))).toBe(false);
+  });
+
+  test('brez Sec-Fetch-Site uporabi Origin kot rezervo', () => {
+    expect(isSameOriginRequest(requestWithSite(undefined, 'https://example.com'))).toBe(true);
+    expect(isSameOriginRequest(requestWithSite(undefined, 'https://evil.example'))).toBe(false);
+    expect(isSameOriginRequest(requestWithSite(undefined, 'ni-url'))).toBe(false);
+  });
+
+  test('Sec-Fetch-Site ima prednost pred Origin', () => {
+    expect(
+      isSameOriginRequest(requestWithSite('same-origin', 'https://evil.example')),
+    ).toBe(true);
+    expect(
+      isSameOriginRequest(requestWithSite('cross-site', 'https://example.com')),
+    ).toBe(false);
   });
 });

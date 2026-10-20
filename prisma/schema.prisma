@@ -75,4 +75,6 @@ model SharedTrip {
   id        String   @id
   data      String
   createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }

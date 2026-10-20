@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { buildAccountExport } from '@/lib/account-export';
 import { db } from '@/lib/db';
 import { withDbTimeout } from '@/lib/db-timeout';
-import { accountLimiter, clientKey } from '@/lib/rate-limit';
+import { accountExportLimiter, clientKey } from '@/lib/rate-limit';
 import { getSession } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +14,7 @@ const NO_STORE = { 'Cache-Control': 'private, no-store' };
  * Sejni žetoni in njihovi hashi niso del izvoza.
  */
 export async function GET(request: NextRequest) {
-  const limit = accountLimiter(clientKey(request));
+  const limit = accountExportLimiter(clientKey(request));
   if (!limit.ok) {
     return NextResponse.json(
       { ok: false, error: 'Preveč zahtev profila — poskusi znova čez minuto.' },

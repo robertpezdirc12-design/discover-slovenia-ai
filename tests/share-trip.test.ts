@@ -91,6 +91,13 @@ describe('share-trip — payload (nasporne vsebina, ne nastavitve seje)', () => 
     expect(obj.stays).toHaveLength(1);
   });
 
+  test('payload ne razkrije datumov rezervacij ali zaključka', () => {
+    const obj = JSON.parse(sharedTripPayload(FULL)) as Record<string, unknown>;
+    expect(obj.completedAt).toBeNull();
+    expect(JSON.stringify(obj)).not.toContain('reservedAt');
+    expect(JSON.stringify(obj)).not.toContain('2026-01-01');
+  });
+
   test('okrogel sprehod: payload → parseSharedTrip → enaka vsebina, sveža seja', () => {
     const parsed = parseSharedTrip(sharedTripPayload(FULL));
     expect(parsed).not.toBeNull();

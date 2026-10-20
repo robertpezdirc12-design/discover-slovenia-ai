@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
+import { RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { db } from '@/lib/db';
 import { withDbTimeout } from '@/lib/db-timeout';
-import { GUIDE_REGIONS, formatDaysCount } from '@/lib/guide-store';
+import { GUIDE_REGIONS, formatDaysCount, type GuideState } from '@/lib/guide-store';
 import {
   isSharedTripExpired,
   parseSharedTrip,
@@ -25,22 +28,38 @@ import { ImportSharedTripButton } from './import-button';
  * aplikacije (opengraph-image na korenu velja za vse rute).
  */
 
-async function loadSharedTrip(id: string) {
-  // Koda mora biti iz našega abecede — a priori zaščita pred čudnimi vhodi.
-  if (!/^[2-9A-Z]{6,16}$/.test(id)) return null;
-  const row = await withDbTimeout(db.sharedTrip.findUnique({ where: { id } }));
-  if (!row) return null;
+type SharedTripResult =
+  | { status: 'ok'; state: GuideState; expiresAt: Date }
+  | { status: 'missing' }
+  | { status: 'error' };
+
+// cache() prepreči dvojno poizvedbo v istem requestu (metadata + page).
+// Baze NE pretvarjamo v 404: 404 bi pomenil "pot ne obstaja", zato napako
+// vrnemo kot ločeno stanje in stran pokaže jasno sporočilo.
+const loadSharedTrip = cache(async (id: string): Promise<SharedTripResult> => {
+  // Koda mora biti iz naše abecede — a priori zaščita pred čudnimi vhodi.
+  if (!/^[2-9A-Z]{6,16}$/.test(id)) return { status: 'missing' };
+
+  let row;
+  try {
+    row = await withDbTimeout(db.sharedTrip.findUnique({ where: { id } }));
+  } catch (err) {
+    console.error('pot: branje deljene poti ni uspelo', err);
+    return { status: 'error' };
+  }
+
+  if (!row) return { status: 'missing' };
   if (isSharedTripExpired(row.createdAt)) {
     // Ob obisku potekle povezave počistimo zapis (best effort, ne blokira 404).
     void withDbTimeout(db.sharedTrip.deleteMany({ where: { id } }), 2_000).catch(() => {
       /* čiščenje je prijetnost */
     });
-    return null;
+    return { status: 'missing' };
   }
   const state = parseSharedTrip(row.data);
-  if (!state) return null;
-  return { state, expiresAt: sharedTripExpiry(row.createdAt) };
-}
+  if (!state) return { status: 'missing' };
+  return { status: 'ok', state, expiresAt: sharedTripExpiry(row.createdAt) };
+});
 
 export async function generateMetadata({
   params,
@@ -48,8 +67,13 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const trip = await loadSharedTrip(id).catch(() => null);
-  if (!trip) return { title: 'Deljena pot · Odkrij Slovenijo' };
+  const trip = await loadSharedTrip(id);
+  if (trip.status !== 'ok') {
+    return {
+      title: 'Deljena pot · Odkrij Slovenijo',
+      robots: { index: false }, // napake in potekle povezave ne sodijo v iskalnike
+    };
+  }
   const state = trip.state;
   return {
     title: `Pot: ${tripHeadline(state)} · Odkrij Slovenijo`,
@@ -71,14 +95,43 @@ export async function generateMetadata({
   };
 }
 
+function SharedTripUnavailable({ id }: { id: string }) {
+  return (
+    <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col items-center justify-center px-4 py-10 text-center sm:px-6">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        Deljena pot
+      </p>
+      <h1 className="mt-2 text-2xl font-semibold tracking-tight">
+        Poti trenutno ni mogoče naložiti
+      </h1>
+      <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
+        Povezava je videti veljavna, a se strežnik s podatki ni odzval. Poskusi
+        znova; če se napaka ponovi, povezavo odpri nekoliko kasneje.
+      </p>
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+        <Button asChild>
+          <a href={`/pot/${id}`}>
+            <RefreshCw className="size-4" aria-hidden />
+            Poskusi znova
+          </a>
+        </Button>
+        <Button variant="outline" asChild>
+          <Link href="/">Nazaj na začetek</Link>
+        </Button>
+      </div>
+    </main>
+  );
+}
+
 export default async function SharedTripPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const trip = await loadSharedTrip(id).catch(() => null);
-  if (!trip) notFound();
+  const trip = await loadSharedTrip(id);
+  if (trip.status === 'missing') notFound();
+  if (trip.status === 'error') return <SharedTripUnavailable id={id} />;
   const state = trip.state;
 
   const region = GUIDE_REGIONS.find((g) => g.id === state.region);
@@ -88,7 +141,16 @@ export default async function SharedTripPage({
     region: state.region,
     days: state.days,
     pace: state.pace,
-    stays: state.stays,
+    // Tudi tu ne prenašajmo datumov rezervacij: prejemnik dobi vsebino poti,
+    // ne kdaj si je lastnik kaj rezerviral.
+    stays: state.stays.map(({ id, name, city, lat, lng, priceFrom }) => ({
+      id,
+      name,
+      city,
+      lat,
+      lng,
+      priceFrom,
+    })),
     completedAt: state.completedAt,
   });
 

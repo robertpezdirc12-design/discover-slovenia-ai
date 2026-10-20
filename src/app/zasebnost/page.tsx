@@ -55,6 +55,7 @@ export default function PrivacyPage() {
         <ul className="mt-2 list-disc space-y-2 pl-5 text-sm leading-6 text-muted-foreground">
           <li>prikazno ime, ki ga vneseš,</li>
           <li>sanitizirano stanje vodenega toka in rezervacije,</li>
+          <li>nastavitev govornih nasvetov (del stanja vodiča),</li>
           <li>naključni sejni žeton v piškotku in njegov SHA-256 hash v bazi.</li>
         </ul>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
@@ -92,8 +93,9 @@ export default function PrivacyPage() {
           Ko ustvariš deljeno pot, se posnetek načrta shrani pod kratko kodo.
           Vsak, ki ima povezavo, jo lahko vidi. Deljena pot ni vezana na tvoj
           profil in se z izbrisom profila ne odstrani. Povezava samodejno
-          poteče po 90 dneh; potekel zapis se ob obisku ali naslednjem deljenju
-          počisti. Ne deli poti z občutljivimi podatki.
+          poteče po 90 dneh; potekel zapis počisti dnevno čiščenje, obisk
+          potekle povezave ali naslednje deljenje. Ne deli poti z občutljivimi
+          podatki.
         </p>
       </section>
 
@@ -103,7 +105,9 @@ export default function PrivacyPage() {
           V odprtem profilu lahko preneseš svoje strežniške podatke v JSON ali
           trajno izbrišeš profil. Izbris odstrani uporabnika, seje, vodič in
           rezervacije iz baze. Lokalni vodič v brskalniku ostane, dokler ga ne
-          počistiš sam.
+          počistiš sam. Če se seja izgubi ali počistiš piškotke, profil ni več
+          dosegljiv; dnevno čiščenje ga odstrani po največ 60 dneh od zadnje
+          aktivnosti.
         </p>
       </section>
 

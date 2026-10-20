@@ -71,8 +71,17 @@ export function sharedTripPayload(state: GuideState): string {
     region: clean.region,
     days: clean.days,
     pace: clean.pace,
-    stays: clean.stays,
-    completedAt: clean.completedAt,
+    // Datumi rezervacij in zaključka so osebni podatek lastnika poti;
+    // prejemnik dobi le vsebino, ne kdaj je kdo kaj rezerviral.
+    stays: clean.stays.map(({ id, name, city, lat, lng, priceFrom }) => ({
+      id,
+      name,
+      city,
+      lat,
+      lng,
+      priceFrom,
+    })),
+    completedAt: null,
   });
 }
 

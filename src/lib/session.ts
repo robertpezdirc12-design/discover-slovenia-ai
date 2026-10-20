@@ -71,15 +71,3 @@ export async function createUserSession(name: string): Promise<{
 
   return { token, user: { id: user.id, name: user.name } };
 }
-
-/** Prekliče sejo po surovem žetonu iz piškotka. */
-export async function revokeSessionToken(token: string): Promise<void> {
-  try {
-    await withDbTimeout(
-      db.session.deleteMany({ where: { tokenHash: hashSessionToken(token) } }),
-      2_500,
-    );
-  } catch {
-    /* odjava naj nikoli ne pusti uporabnika v nedoločenem stanju */
-  }
-}

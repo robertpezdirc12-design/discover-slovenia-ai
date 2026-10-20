@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition, type FormEvent } from 'react';
-import { Download, Loader2, LogIn, LogOut, Trash2, UserRound } from 'lucide-react';
+import { useEffect, useRef, useState, useTransition, type FormEvent } from 'react';
+import { Download, Loader2, LogIn, Trash2, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -17,15 +17,25 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 
-type BusyAction = 'login' | 'logout' | 'export' | 'delete' | null;
+type BusyAction = 'login' | 'export' | 'delete' | null;
+
+const REQUEST_TIMEOUT_MS = 10_000;
+
+function errorMessage(err: unknown, fallback: string): string {
+  if (err instanceof DOMException && err.name === 'TimeoutError') {
+    return 'Strežnik se ni odzval — poskusi znova.';
+  }
+  return err instanceof Error && err.message ? err.message : fallback;
+}
 
 /**
  * Prijava v demo profil: strežniška seja (opaque token, httpOnly) namesto
  * nepodpisanega piškotka. Gesla ni — to je še vedno demo identiteta, a
  * omogoča per-user rezervacije in resnična priporočila.
  *
- * Ko je uporabnik prijavljen, gumb odpre profil z izvozom in izbrisom
- * podatkov; odjava je zdaj namerna izbira v tem oknu.
+ * Ker profila brez gesla ni mogoče obnoviti, UI ne ponuja gole odjave:
+ * odjava bi pustila nedosegljive strežniške podatke. Namesto tega uporabnik
+ * profil izvozi ali trajno izbriše (kar ga hkrati odjavi).
  */
 export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
   const router = useRouter();
@@ -36,8 +46,31 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
   const [busyAction, setBusyAction] = useState<BusyAction>(null);
   const [error, setError] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
+  const cancelDeleteRef = useRef<HTMLButtonElement>(null);
+  const restoreDeleteFocus = useRef(false);
 
   const busy = busyAction !== null;
+
+  useEffect(() => {
+    if (confirmDelete) {
+      cancelDeleteRef.current?.focus();
+    } else if (restoreDeleteFocus.current) {
+      restoreDeleteFocus.current = false;
+      deleteButtonRef.current?.focus();
+    }
+  }, [confirmDelete]);
+
+  function cancelDelete() {
+    restoreDeleteFocus.current = true;
+    setConfirmDelete(false);
+  }
+
+  function expireSession() {
+    setConfirmDelete(false);
+    setOpen(false);
+    startTransition(() => router.refresh());
+  }
 
   function openDialog() {
     setError('');
@@ -62,6 +95,7 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ name }),
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
       const json = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok || !json.ok) {
@@ -71,30 +105,8 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
       setOpen(false);
       setName('');
       startTransition(() => router.refresh());
-    } catch {
-      setError('Strežnik ni dosegljiv — poskusi znova.');
-    } finally {
-      setBusyAction(null);
-    }
-  }
-
-  async function logout() {
-    setBusyAction('logout');
-    try {
-      const res = await fetch('/api/session', { method: 'DELETE' });
-      if (!res.ok) throw new Error('logout-failed');
-      setOpen(false);
-      toast({
-        title: 'Odjavljen',
-        description: 'Lokalni vodič ostaja v tem brskalniku. Znova se prijavi, ko ga želiš sinhronizirati.',
-      });
-      startTransition(() => router.refresh());
-    } catch {
-      toast({
-        title: 'Odjava ni uspela',
-        description: 'Povezava s strežnikom ni uspela. Poskusi znova.',
-        variant: 'destructive',
-      });
+    } catch (err) {
+      setError(errorMessage(err, 'Strežnik ni dosegljiv — poskusi znova.'));
     } finally {
       setBusyAction(null);
     }
@@ -103,7 +115,13 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
   async function exportData() {
     setBusyAction('export');
     try {
-      const res = await fetch('/api/account/export');
+      const res = await fetch('/api/account/export', {
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      });
+      if (res.status === 401) {
+        expireSession();
+        throw new Error('Seja je potekla — prijavi se znova.');
+      }
       if (!res.ok) {
         const json = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(json.error ?? 'Izvoz ni uspel.');
@@ -116,7 +134,7 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 0);
+      setTimeout(() => URL.revokeObjectURL(url), 1_000);
       toast({
         title: 'Podatki so preneseni',
         description: 'JSON datoteka je shranjena med prenosi.',
@@ -124,7 +142,7 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
     } catch (err) {
       toast({
         title: 'Izvoz ni uspel',
-        description: err instanceof Error ? err.message : 'Poskusi znova.',
+        description: errorMessage(err, 'Poskusi znova.'),
         variant: 'destructive',
       });
     } finally {
@@ -135,20 +153,27 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
   async function deleteAccount() {
     setBusyAction('delete');
     try {
-      const res = await fetch('/api/account', { method: 'DELETE' });
+      const res = await fetch('/api/account', {
+        method: 'DELETE',
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      });
+      if (res.status === 401) {
+        expireSession();
+        throw new Error('Seja je potekla — prijavi se znova.');
+      }
       const json = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
       if (!res.ok || !json.ok) throw new Error(json.error ?? 'Izbris ni uspel.');
       setConfirmDelete(false);
       setOpen(false);
       toast({
-        title: 'Profil je izbrisan',
+        title: 'Profil je izbrisan — odjavljen si',
         description: 'Strežniški podatki in seja so odstranjeni. Lokalni vodič ostaja v tem brskalniku.',
       });
       startTransition(() => router.refresh());
     } catch (err) {
       toast({
         title: 'Izbris ni uspel',
-        description: err instanceof Error ? err.message : 'Poskusi znova.',
+        description: errorMessage(err, 'Poskusi znova.'),
         variant: 'destructive',
       });
     } finally {
@@ -183,9 +208,11 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
               <DialogHeader>
                 <DialogTitle>Tvoj profil</DialogTitle>
                 <DialogDescription>
-                  Tu lahko preneseš svoje strežniške podatke ali izbrišeš profil.
-                  Izbris odstrani ime, vodič, rezervacije in sejo; lokalni vodič v
-                  tem brskalniku ostane.
+                  Demo prijava nima gesla, zato se po izbrisu v ta profil ne
+                  moreš vrniti. Podatke lahko najprej preneseš. Izbris odstrani
+                  ime, vodič, rezervacije in sejo; lokalni vodič v tem
+                  brskalniku ostane. Deljene povezave niso vezane na profil in
+                  ostanejo do poteka (90 dni).
                 </DialogDescription>
               </DialogHeader>
 
@@ -204,20 +231,6 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
                   )}
                   Prenesi moje podatke (JSON)
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="justify-start"
-                  onClick={() => void logout()}
-                  disabled={busy}
-                >
-                  {busyAction === 'logout' ? (
-                    <Loader2 className="size-4 animate-spin" aria-hidden />
-                  ) : (
-                    <LogOut className="size-4" aria-hidden />
-                  )}
-                  Odjava
-                </Button>
               </div>
 
               <Link
@@ -233,17 +246,22 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
                     role="alert"
                     className="rounded-lg border border-destructive/30 bg-destructive/5 p-3"
                   >
-                    <p className="text-sm font-medium">Res trajno izbrišeš profil?</p>
+                    <p className="text-sm font-medium">
+                      Res izbrišeš profil in se odjaviš?
+                    </p>
                     <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                      Strežniški podatki in seja bodo odstranjeni. Lokalni vodič
-                      ostane v tem brskalniku. Tega ni mogoče razveljaviti.
+                      Uporabnik, seje, vodič in rezervacije bodo trajno
+                      odstranjeni. Deljene povezave ostanejo do poteka (90 dni).
+                      Lokalni vodič ostane v tem brskalniku. Tega ni mogoče
+                      razveljaviti.
                     </p>
                     <div className="mt-3 flex gap-2">
                       <Button
+                        ref={cancelDeleteRef}
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => setConfirmDelete(false)}
+                        onClick={cancelDelete}
                         disabled={busy}
                       >
                         Prekliči
@@ -258,12 +276,13 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
                         {busyAction === 'delete' && (
                           <Loader2 className="size-4 animate-spin" aria-hidden />
                         )}
-                        Izbriši trajno
+                        Izbriši in se odjavi
                       </Button>
                     </div>
                   </div>
                 ) : (
                   <Button
+                    ref={deleteButtonRef}
                     type="button"
                     variant="ghost"
                     className="w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive"
@@ -271,7 +290,7 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
                     disabled={busy}
                   >
                     <Trash2 className="size-4" aria-hidden />
-                    Izbriši profil
+                    Izbriši profil in se odjavi
                   </Button>
                 )}
               </div>

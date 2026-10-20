@@ -60,7 +60,8 @@ export function clientKey(request: Request): string {
 
 export const sessionLimiter = createRateLimiter({ limit: 20, windowMs: 60_000 });
 export const profileLimiter = createRateLimiter({ limit: 60, windowMs: 60_000 });
-export const accountLimiter = createRateLimiter({ limit: 10, windowMs: 60_000 });
+export const accountExportLimiter = createRateLimiter({ limit: 20, windowMs: 60_000 });
+export const accountDeleteLimiter = createRateLimiter({ limit: 5, windowMs: 60_000 });
 export const shareTripLimiter = createRateLimiter({ limit: 10, windowMs: 60_000 });
 export const reservationLimiter = createRateLimiter({ limit: 20, windowMs: 60_000 });
 export const photoLimiter = createRateLimiter({ limit: 20, windowMs: 60_000 });

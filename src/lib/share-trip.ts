@@ -23,6 +23,20 @@ import {
 export const TRIP_CODE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
 export const TRIP_CODE_LENGTH = 10;
 
+/** Deljena povezava ni trajna: po 90 dneh preneha veljati. */
+export const SHARED_TRIP_TTL_DAYS = 90;
+export const SHARED_TRIP_TTL_MS = SHARED_TRIP_TTL_DAYS * 24 * 60 * 60 * 1_000;
+
+export function sharedTripExpiry(createdAt: Date): Date {
+  return new Date(createdAt.getTime() + SHARED_TRIP_TTL_MS);
+}
+
+export function isSharedTripExpired(createdAt: Date, now: Date = new Date()): boolean {
+  const created = createdAt.getTime();
+  if (!Number.isFinite(created)) return true;
+  return now.getTime() >= created + SHARED_TRIP_TTL_MS;
+}
+
 /**
  * Kratka koda deljene poti (npr. "K7M2XRQ4ZP"). Uporablja Web Crypto
  * (Node 18+ in brskalniki jo imajo); povratno Math.random samo če crypto

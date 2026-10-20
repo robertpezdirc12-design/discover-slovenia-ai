@@ -91,8 +91,9 @@ export default function PrivacyPage() {
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
           Ko ustvariš deljeno pot, se posnetek načrta shrani pod kratko kodo.
           Vsak, ki ima povezavo, jo lahko vidi. Deljena pot ni vezana na tvoj
-          profil in se z izbrisom profila ne odstrani; trenutno tudi nima
-          samodejnega poteka. Ne deli poti z občutljivimi podatki.
+          profil in se z izbrisom profila ne odstrani. Povezava samodejno
+          poteče po 90 dneh; potekel zapis se ob obisku ali naslednjem deljenju
+          počisti. Ne deli poti z občutljivimi podatki.
         </p>
       </section>
 

@@ -60,7 +60,7 @@ kontakt, pravna podlaga).
   seje, profil in rezervacije. Lokalni vodič v brskalniku ostane, dokler ga
   uporabnik ne počisti z »Začni znova«.
 - Oba klica sta v pogovornem oknu **Profil**. Deljene poti niso vezane na
-  uporabnika in se z izbrisom profila ne odstranijo.
+  uporabnika in se z izbrisom profila ne odstranijo; potečejo po 90 dneh.
 
 ## Skripti
 
@@ -95,9 +95,10 @@ SQLite ni primeren za Vercel: datotečni sistem je efemeren in write-i se izgubi
 
 - Prijava je demo brez gesla (glej zgoraj). Seje so v PostgreSQL; rate
   limiting je per-instance in best-effort (brez globalnega Redis kvota).
-- Deljene poti (`/pot/[koda]`) so anonimne, nimajo lastnika ali TTL ter se
-  ne izbrišejo z izbrisom profila. Pred javnim zagonom dodaj potek in
-  možnost preklica.
+- Deljene poti (`/pot/[koda]`) so anonimne in nimajo lastnika ali možnosti
+  preklica; povezava poteče po 90 dneh, zapis pa se počisti ob obisku potekle
+  povezave ali ob naslednjem deljenju. Pred javnim zagonom razmisli o
+  lastništvu in takojšnjem preklicu.
 - Če isto pot urejata dve napravi hkrati, zadnji uspešni PUT zmaga; ob
   nalaganju se primerja `updatedAt`. Za produkcijo je priporočljivo
   strežniško verzioniranje ali optimistic locking.

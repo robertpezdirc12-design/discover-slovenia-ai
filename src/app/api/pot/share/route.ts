@@ -5,6 +5,7 @@ import { clientKey, shareTripLimiter } from '@/lib/rate-limit';
 import { sanitizeGuideState } from '@/lib/guide-store';
 import { SITE_URL } from '@/lib/site';
 import {
+  SHARED_TRIP_TTL_MS,
   generateTripCode,
   isShareable,
   sharedTripPayload,
@@ -44,6 +45,16 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+
+  // Počisti potekle deljene poti (best effort, ne blokira ustvarjanja nove).
+  void withDbTimeout(
+    db.sharedTrip.deleteMany({
+      where: { createdAt: { lt: new Date(Date.now() - SHARED_TRIP_TTL_MS) } },
+    }),
+    2_000,
+  ).catch(() => {
+    /* čiščenje je prijetnost */
+  });
 
   // Koda je unikatna (primarni ključ) — trk praktično nemogoč; pri trku
   // poskusimo do 3× z novo kodo.

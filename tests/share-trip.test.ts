@@ -2,14 +2,18 @@
 import { describe, expect, test } from 'bun:test';
 import { emptyGuideState, type GuideState } from '../src/lib/guide-store';
 import {
+  SHARED_TRIP_TTL_DAYS,
+  SHARED_TRIP_TTL_MS,
   TRIP_CODE_ALPHABET,
   TRIP_CODE_LENGTH,
   generateTripCode,
   hasOwnPlan,
   importSharedState,
   isShareable,
+  isSharedTripExpired,
   parseSharedTrip,
   sharedStays,
+  sharedTripExpiry,
   sharedTripPayload,
   tripHeadline,
   tripShareDescription,
@@ -53,6 +57,27 @@ describe('share-trip — kodirnik deljene poti', () => {
     const set = new Set<string>();
     for (let i = 0; i < 50; i++) set.add(generateTripCode());
     expect(set.size).toBe(50);
+  });
+});
+
+describe('share-trip — potek povezave', () => {
+  test('povezava velja 90 dni od nastanka', () => {
+    const created = new Date('2026-10-20T12:00:00.000Z');
+    expect(SHARED_TRIP_TTL_DAYS).toBe(90);
+    expect(sharedTripExpiry(created).toISOString()).toBe('2027-01-18T12:00:00.000Z');
+  });
+
+  test('tik pred potekom še velja, ob poteku in po njem ne', () => {
+    const created = new Date('2026-10-20T12:00:00.000Z');
+    const justBefore = new Date(created.getTime() + SHARED_TRIP_TTL_MS - 1);
+    const atExpiry = new Date(created.getTime() + SHARED_TRIP_TTL_MS);
+    expect(isSharedTripExpired(created, justBefore)).toBe(false);
+    expect(isSharedTripExpired(created, atExpiry)).toBe(true);
+    expect(isSharedTripExpired(created, new Date('2027-02-01T00:00:00.000Z'))).toBe(true);
+  });
+
+  test('neveljaven datum obravnavamo kot potekel (fail-closed)', () => {
+    expect(isSharedTripExpired(new Date('ni-datum'))).toBe(true);
   });
 });
 

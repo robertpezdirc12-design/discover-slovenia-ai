@@ -7,8 +7,10 @@ import { db } from '@/lib/db';
 import { withDbTimeout } from '@/lib/db-timeout';
 import { GUIDE_REGIONS, formatDaysCount } from '@/lib/guide-store';
 import {
+  isSharedTripExpired,
   parseSharedTrip,
   sharedStays,
+  sharedTripExpiry,
   tripHeadline,
   tripShareDescription,
 } from '@/lib/share-trip';
@@ -28,9 +30,16 @@ async function loadSharedTrip(id: string) {
   if (!/^[2-9A-Z]{6,16}$/.test(id)) return null;
   const row = await withDbTimeout(db.sharedTrip.findUnique({ where: { id } }));
   if (!row) return null;
+  if (isSharedTripExpired(row.createdAt)) {
+    // Ob obisku potekle povezave počistimo zapis (best effort, ne blokira 404).
+    void withDbTimeout(db.sharedTrip.deleteMany({ where: { id } }), 2_000).catch(() => {
+      /* čiščenje je prijetnost */
+    });
+    return null;
+  }
   const state = parseSharedTrip(row.data);
   if (!state) return null;
-  return state;
+  return { state, expiresAt: sharedTripExpiry(row.createdAt) };
 }
 
 export async function generateMetadata({
@@ -39,8 +48,9 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const state = await loadSharedTrip(id).catch(() => null);
-  if (!state) return { title: 'Deljena pot · Odkrij Slovenijo' };
+  const trip = await loadSharedTrip(id).catch(() => null);
+  if (!trip) return { title: 'Deljena pot · Odkrij Slovenijo' };
+  const state = trip.state;
   return {
     title: `Pot: ${tripHeadline(state)} · Odkrij Slovenijo`,
     description: tripShareDescription(state),
@@ -67,8 +77,9 @@ export default async function SharedTripPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const state = await loadSharedTrip(id).catch(() => null);
-  if (!state) notFound();
+  const trip = await loadSharedTrip(id).catch(() => null);
+  if (!trip) notFound();
+  const state = trip.state;
 
   const region = GUIDE_REGIONS.find((g) => g.id === state.region);
   const stays = sharedStays(state);
@@ -162,6 +173,15 @@ export default async function SharedTripPage({
           Odkrij Slovenijo
         </Link>{' '}
         — vodič, zemljevid, prenočišča in odprti podatki.
+      </p>
+      <p className="mt-2 text-center text-xs text-muted-foreground">
+        Povezava poteče{' '}
+        {trip.expiresAt.toLocaleDateString('sl-SI', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })}
+        .
       </p>
     </main>
   );

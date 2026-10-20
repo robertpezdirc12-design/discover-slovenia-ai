@@ -13,7 +13,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import type { GuideState } from '@/lib/guide-store';
-import { tripHeadline } from '@/lib/share-trip';
+import { SHARED_TRIP_TTL_DAYS, tripHeadline } from '@/lib/share-trip';
 
 /**
  * "Deli pot" — delitvena povezava za "Mojo pot" (Wanderlogov vzorec).
@@ -76,7 +76,7 @@ export function ShareTripButton({
       if (await writeClipboard(j.url)) {
         toast({
           title: 'Povezava kopirana',
-          description: 'Pošlji jo sopotnikom — videli bodo tvojo pot.',
+          description: `Pošlji jo sopotnikom — povezava velja ${SHARED_TRIP_TTL_DAYS} dni.`,
         });
         return;
       }
@@ -123,6 +123,7 @@ export function ShareTripButton({
             <DialogDescription>
               Samodejno kopiranje ni na voljo v tem brskalniku. Označi povezavo
               in jo kopiraj ročno (Ctrl/Cmd + C), nato jo pošlji sopotnikom.
+              Povezava velja {SHARED_TRIP_TTL_DAYS} dni.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2 sm:flex-row">

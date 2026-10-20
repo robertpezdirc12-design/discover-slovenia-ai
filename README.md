@@ -131,8 +131,10 @@ SQLite ni primeren za Vercel: datotečni sistem je efemeren in write-i se izgubi
 ## Znane omejitve
 
 - Prijava je magic link prek Resenda. Če ponudnik ne deluje, se novi
-  uporabniki ne morejo prijaviti; obstoječe seje delujejo do poteka. Rate
-  limiting je per-instance in best-effort (brez globalnega Redis kvota).
+  uporabniki ne morejo prijaviti; obstoječe seje delujejo do poteka. IP rate
+  limiting je per-instance in best-effort (brez globalnega Redis kvota);
+  omejitev treh povezav na e-poštni naslov v 15 minutah se dodatno preverja v
+  bazi, zato velja tudi med instancami.
 - Stari demo profili brez e-pošte niso obnovljivi; po poteku seje jih dnevni
   cron odstrani po 60 dneh od zadnje aktivnosti. Profili z e-pošto ostanejo
   do izbrisa.

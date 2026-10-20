@@ -78,6 +78,33 @@ export async function POST(request: NextRequest) {
       }),
       3_000,
     );
+    // In-memory omejitev je na Vercelu vezana na posamezno instanco. Za
+    // zaščito pred pošiljanjem neomejenega števila povezav preverimo še
+    // zadnje žetone v bazi; tako velja omejitev tudi med instancami.
+    const recentTokens = await withDbTimeout(
+      db.loginToken.findMany({
+        where: {
+          email,
+          createdAt: { gt: new Date(now.getTime() - LOGIN_TOKEN_TTL_MS) },
+        },
+        orderBy: { createdAt: 'asc' },
+        take: 3,
+        select: { createdAt: true },
+      }),
+      3_000,
+    );
+    if (recentTokens.length >= 3) {
+      const oldest = recentTokens[0]?.createdAt.getTime() ?? now.getTime();
+      const retryAfterSeconds = Math.max(
+        1,
+        Math.ceil((oldest + LOGIN_TOKEN_TTL_MS - now.getTime()) / 1_000),
+      );
+      return tooManyRequests(
+        retryAfterSeconds,
+        'Preveč zahtev za ta naslov — poskusi znova kasneje.',
+      );
+    }
+
     await withDbTimeout(
       db.loginToken.create({
         data: {

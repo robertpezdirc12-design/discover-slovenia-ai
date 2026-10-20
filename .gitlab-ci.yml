@@ -1,0 +1,15 @@
+image: oven/bun:latest
+
+stages:
+  - build
+
+build:
+  stage: build
+  script:
+    - bun install --frozen-lockfile
+    - bun run db:generate
+    - bun run build
+  cache:
+    paths:
+      - node_modules/
+      - .next/cache/

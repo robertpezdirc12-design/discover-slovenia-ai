@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { SITE_URL } from "@/lib/site";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://i-feel-slovenia.vercel.app"),
+  metadataBase: new URL(SITE_URL),
   title: "Discover Slovenia AI",
   description:
     "Odkrij Slovenijo in Balkan: vodič po zemljevidu, prenočišča z indikativnimi cenami, vreme in zrak, pot v enem mestu — na odprtih podatkih (OpenStreetMap, ARSO).",
@@ -22,14 +23,11 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
-  icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
-  },
   openGraph: {
     title: "Discover Slovenia AI",
     description:
       "Vodič po zemljevidu, prenočišča, vreme in pot — Slovenija in Balkan na odprtih podatkih.",
-    url: "https://i-feel-slovenia.vercel.app",
+    url: SITE_URL,
     locale: "sl_SI",
     type: "website",
     siteName: "Discover Slovenia AI",

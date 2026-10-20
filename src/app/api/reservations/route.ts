@@ -1,24 +1,30 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db';
+import { withDbTimeout } from '@/lib/db-timeout';
+import { clientKey, reservationLimiter } from '@/lib/rate-limit';
+import { getSession } from '@/lib/session';
 
 /**
- * Rezervacija prenočišča — zapis v bazo (SQLite/Prisma).
+ * Rezervacija prenočišča — zapis v bazo (PostgreSQL/Prisma), vezan na sejo.
  *
  * Poštenost: »Rezerviraj« SHRANI objekt v »Mojo pot« (+ ta zapis v bazi,
- * idempotentno prek stayId unique). Pravo plačilo poteka pri objektu ali
+ * idempotentno prek [userId, stayId]). Pravo plačilo poteka pri objektu ali
  * na uradni strani (povezava je vidna v podrobnostih) — to UI izrecno piše.
  *
  * POST /api/reservations  { stayId, name, city, lat, lng, priceFrom? }
- *   → 200 { ok:true, already:true, reservation } (že obstaja — brez podvajanja)
- *   → 200 { ok:true, reservation }              (novo shranjeno)
- *   → 400 { ok:false, error }                   (neveljaven vnos)
- *   → 500 { ok:false, error }                   (baza nedosegljiva)
+ *   → 200 { ok:true, reservation }  (novo ali že obstoječe — idempotentno)
+ *   → 400 { ok:false, error }       (neveljaven vnos)
+ *   → 401 { ok:false, error }       (ni prijave)
+ *   → 429 { ok:false, error }       (preveč zahtev)
+ *   → 503 { ok:false, error }       (baza nedosegljiva)
  *
- * GET /api/reservations → 200 { ok:true, reservations:[…najnovejših 50] }
+ * Javnega GET seznama NI: rezervacije so zasebne, seznam bi razkril vsebino.
  */
 
 export const dynamic = 'force-dynamic';
+
+const NO_STORE = { 'Cache-Control': 'private, no-store' };
 
 const reservationSchema = z.object({
   stayId: z.string().min(1).max(64),
@@ -30,57 +36,69 @@ const reservationSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  // Omejitev pred branjem seje: nepreverjeni promet ne sme obremenjevati baze.
+  const limit = reservationLimiter(clientKey(request));
+  if (!limit.ok) {
+    return NextResponse.json(
+      { ok: false, error: 'Preveč rezervacij v kratkem času — poskusi znova čez minuto.' },
+      { status: 429, headers: { ...NO_STORE, 'Retry-After': String(limit.retryAfterSeconds) } },
+    );
+  }
+
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json(
+      { ok: false, error: 'Za shranjevanje v profil se prijavi.' },
+      { status: 401, headers: NO_STORE },
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ ok: false, error: 'Telo zahteve ni veljaven JSON.' }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: 'Telo zahteve ni veljaven JSON.' },
+      { status: 400, headers: NO_STORE },
+    );
   }
   const parsed = reservationSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { ok: false, error: 'Neveljavni podatki rezervacije (stayId, name, city, lat, lng, priceFrom).' },
-      { status: 400 },
+      { status: 400, headers: NO_STORE },
     );
   }
   const d = parsed.data;
   try {
-    const existing = await db.stayReservation.findUnique({ where: { stayId: d.stayId } });
-    if (existing) {
-      return NextResponse.json({ ok: true, already: true, reservation: existing });
-    }
-    const reservation = await db.stayReservation.create({
-      data: {
-        stayId: d.stayId,
-        name: d.name,
-        city: d.city,
-        lat: d.lat,
-        lng: d.lng,
-        priceFrom: d.priceFrom ?? null,
-      },
-    });
-    return NextResponse.json({ ok: true, reservation });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'neznan odziv baze';
-    return NextResponse.json(
-      { ok: false, error: `Rezervacije trenutno ni mogoče shraniti (${message}).` },
-      { status: 500 },
+    // Native upsert je atomski: dve hkratni zahtevi isti objekt shranita enkrat.
+    const reservation = await withDbTimeout(
+      db.stayReservation.upsert({
+        where: { userId_stayId: { userId: session.userId, stayId: d.stayId } },
+        create: {
+          userId: session.userId,
+          stayId: d.stayId,
+          name: d.name,
+          city: d.city,
+          lat: d.lat,
+          lng: d.lng,
+          priceFrom: d.priceFrom ?? null,
+        },
+        update: {
+          name: d.name,
+          city: d.city,
+          lat: d.lat,
+          lng: d.lng,
+          priceFrom: d.priceFrom ?? null,
+        },
+      }),
     );
-  }
-}
-
-export async function GET() {
-  try {
-    const reservations = await db.stayReservation.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-    });
-    return NextResponse.json({ ok: true, reservations });
+    return NextResponse.json({ ok: true, reservation }, { headers: NO_STORE });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'neznan odziv baze';
+    console.error('reservations: shranjevanje ni uspelo', err);
     return NextResponse.json(
-      { ok: false, error: `Rezervacij trenutno ni mogoče prebrati (${message}).` },
-      { status: 500 },
+      { ok: false, error: 'Rezervacije trenutno ni mogoče shraniti. Poskusi znova.' },
+      { status: 503, headers: NO_STORE },
     );
   }
 }

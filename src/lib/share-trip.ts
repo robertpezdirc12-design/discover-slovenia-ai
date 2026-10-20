@@ -12,6 +12,8 @@
 
 import {
   GUIDE_REGIONS,
+  formatDaysCount,
+  formatStayCount,
   sanitizeGuideState,
   type GuideState,
   type GuideStayStop,
@@ -85,11 +87,8 @@ const GUIDE_STEPS_ALL = ['interests', 'region', 'days', 'pace'] as const;
 export function tripHeadline(state: GuideState): string {
   const region = GUIDE_REGIONS.find((g) => g.id === state.region);
   const parts: string[] = [region ? region.label.replace(/\s*\(.*\)$/, '') : 'Slovenija'];
-  if (state.days) parts.push(`${state.days} ${state.days === 1 ? 'dan' : 'dni'}`);
-  if (state.stays.length > 0) {
-    const n = state.stays.length;
-    parts.push(`${n} ${n === 1 ? 'prenočišče' : n === 2 ? 'prenočišči' : n === 3 || n === 4 ? 'prenočišča' : 'prenočišč'}`);
-  }
+  if (state.days) parts.push(formatDaysCount(state.days));
+  if (state.stays.length > 0) parts.push(formatStayCount(state.stays.length));
   return parts.join(' · ');
 }
 

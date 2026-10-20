@@ -114,6 +114,8 @@ describe('share-trip — pogoj deljenja in naslovi', () => {
     expect(tripHeadline(none)).toBe('Slovenija');
     const oneDay = stateWith({ days: 1 });
     expect(tripHeadline(oneDay)).toBe('Slovenija · 1 dan');
+    const twoDays = stateWith({ days: 2 });
+    expect(tripHeadline(twoDays)).toBe('Slovenija · 2 dneva');
   });
 
   test('opis vsebuje interese in tempo; brez njiju spodbuda na zemljevid', () => {

@@ -4,7 +4,8 @@ import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { db } from '@/lib/db';
-import { GUIDE_REGIONS } from '@/lib/guide-store';
+import { withDbTimeout } from '@/lib/db-timeout';
+import { GUIDE_REGIONS, formatDaysCount } from '@/lib/guide-store';
 import {
   parseSharedTrip,
   sharedStays,
@@ -25,7 +26,7 @@ import { ImportSharedTripButton } from './import-button';
 async function loadSharedTrip(id: string) {
   // Koda mora biti iz našega abecede — a priori zaščita pred čudnimi vhodi.
   if (!/^[2-9A-Z]{6,16}$/.test(id)) return null;
-  const row = await db.sharedTrip.findUnique({ where: { id } });
+  const row = await withDbTimeout(db.sharedTrip.findUnique({ where: { id } }));
   if (!row) return null;
   const state = parseSharedTrip(row.data);
   if (!state) return null;
@@ -119,7 +120,7 @@ export default async function SharedTripPage({
             <div className="rounded-lg border bg-muted/30 px-3 py-2">
               <p className="text-xs text-muted-foreground">Podrobnosti</p>
               <p className="font-medium">
-                {state.days ? `${state.days} ${state.days === 1 ? 'dan' : 'dni'}` : 'dolžina: prosti tok'}
+                {state.days ? formatDaysCount(state.days) : 'dolžina: prosti tok'}
                 {state.pace ? ` · tempo: ${state.pace}` : ''}
               </p>
             </div>

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { clientKey, osrmLimiter } from '@/lib/rate-limit';
 import { osrmRouteUrl, parseOsrmRoute, type OsrmRouteResult, type OsrmWaypoint } from '@/lib/osrm-route';
 
 /**
@@ -142,6 +143,14 @@ async function fetchRoute(key: string, stops: OsrmWaypoint[]): Promise<OsrmRoute
 }
 
 export async function GET(request: Request) {
+  const limit = osrmLimiter(clientKey(request));
+  if (!limit.ok) {
+    return NextResponse.json(
+      { ok: false, error: 'Preveč zahtev za pot v kratkem času — poskusi znova čez minuto.' },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } },
+    );
+  }
+
   const url = new URL(request.url);
   const parsed = parseStopsParam(url.searchParams.get('stops'));
   if ('error' in parsed) {
@@ -154,9 +163,9 @@ export async function GET(request: Request) {
     const route = await fetchRoute(key, stops);
     return NextResponse.json({ ok: true, coords: route.coords, legs: route.legs, totalKm: route.totalKm });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'neznan odziv vira';
+    console.error('osrm/route: pot ni uspela', err);
     return NextResponse.json(
-      { ok: false, error: `Cestna pot trenutno ni na voljo (${message}). Poskusi znova.` },
+      { ok: false, error: 'Cestna pot trenutno ni na voljo. Poskusi znova.' },
       { status: 502 },
     );
   }

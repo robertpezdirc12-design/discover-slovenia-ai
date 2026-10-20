@@ -9,40 +9,62 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+/// Uporabnik demo profila. Prijava je brez gesla (opaque seja); za pravo
+/// avtentikacijo pred javnim zagonom dodaj OAuth/magic link.
 model User {
   id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
+  name      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  sessions     Session[]
+  profile      UserProfile?
+  reservations StayReservation[]
 }
 
-model Post {
+/// Strežniška seja: v bazi je samo SHA-256 hash žetona, ne surov žeton.
+model Session {
   id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
   createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+/// Sanitiziran GuideState (interesi, regija, dnevi, tempo, rezervacije),
+/// ki ga odjemalec sinhronizira iz localStorage. Podlaga za priporočila.
+model UserProfile {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guideData Json?
   updatedAt DateTime @updatedAt
 }
 
 /// Rezervacija prenočišča ("Rezerviraj" na zemljevidu).
-/// Vsak OSM objekt je enkraten (stayId unique, idempotentno); zapis je
-/// evidenca poštenega rezerviranja — pravo plačilo pri objektu/uradni strani.
+/// Per-user idempotentno: isti uporabnik ne more dvakrat shraniti istega
+/// objekta, dva uporabnika pa lahko. Pravo plačilo pri objektu/uradni strani.
 model StayReservation {
   id        String   @id @default(cuid())
-  stayId    String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stayId    String
   name      String
   city      String
   lat       Float
   lng       Float
   priceFrom Int?
   createdAt DateTime @default(now())
+
+  @@unique([userId, stayId])
+  @@index([userId])
 }
 
 /// Deljena pot (/pot/[id]) — posnetek vodenega toka, ki ga uporabnik

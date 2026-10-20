@@ -145,10 +145,12 @@ describe('open-data — razčlenjevanje vremena', () => {
   test('weatherOneLiner: enovrstični povzetek', () => {
     const base = parseOpenMeteoWeather(OPEN_METEO_FIXTURE)!;
     expect(weatherOneLiner(null)).toBe('');
-    expect(weatherOneLiner(mergeWeather(base, null))).toBe('13 °C · preobláčno · jutri 7–23 °C');
+    expect(weatherOneLiner(mergeWeather(base, null))).toBe('13 °C · preobláčno · jutri 7-22 °C');
     expect(weatherOneLiner(mergeWeather(base, { aqi: 46.2, pm25: 26.3 }))).toBe(
-      '13 °C · preobláčno · jutri 7–23 °C · zrak 46 (zmerno)',
+      '13 °C · preobláčno · jutri 7-22 °C · zrak 46 (zmerno)',
     );
+    const onlyToday = { ...base, days: base.days.slice(0, 1) };
+    expect(weatherOneLiner(mergeWeather(onlyToday, null))).toContain('danes 7-23 °C');
   });
 });
 

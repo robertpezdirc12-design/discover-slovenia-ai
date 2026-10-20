@@ -9,6 +9,7 @@ import {
   GUIDE_EVENT,
   loadGuideState,
   saveGuideState,
+  type GuideState,
 } from '@/lib/guide-store';
 import { hasOwnPlan, importSharedState, parseSharedTrip } from '@/lib/share-trip';
 
@@ -33,15 +34,34 @@ export function ImportSharedTripButton({ payload }: { payload: string }) {
       });
       return;
     }
-    const current = loadGuideState(window.localStorage);
+
+    let current: GuideState | null = null;
+    try {
+      current = loadGuideState(window.localStorage);
+    } catch {
+      current = null;
+    }
+
     if (hasOwnPlan(current)) {
       const proceed = window.confirm(
         'To bo zamenjalo tvoj trenutni načrt. Nadaljujem?',
       );
       if (!proceed) return;
     }
-    saveGuideState(window.localStorage, importSharedState(current, incoming));
-    window.dispatchEvent(new Event(GUIDE_EVENT));
+
+    try {
+      saveGuideState(window.localStorage, importSharedState(current, incoming));
+      window.dispatchEvent(new Event(GUIDE_EVENT));
+    } catch {
+      toast({
+        title: 'Shramba ni na voljo',
+        description:
+          'Brskalnik ne dovoli shranjevanja. Omogoči shrambo ali poskusi v drugem brskalniku.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     toast({
       title: 'Pot uvožena',
       description: 'Tvoja pot je na zemljevidu — vodič te vodi naprej.',

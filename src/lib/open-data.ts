@@ -265,8 +265,15 @@ export function fmtThousand(n: number): string {
 export function weatherOneLiner(w: WeatherPayload | null): string {
   if (!w) return '';
   const parts = [`${Math.round(w.tempC)} °C`, w.desc];
-  const day1 = w.days[0];
-  if (day1) parts.push(`jutri ${Math.round(day1.minC)}–${Math.round(day1.maxC)} °C`);
+  // Viri začnejo z današnjim dnem: [0] = danes, [1] = jutri.
+  const tomorrow = w.days[1];
+  const today = w.days[0];
+  const day = tomorrow ?? today;
+  if (day) {
+    parts.push(
+      `${tomorrow ? 'jutri' : 'danes'} ${Math.round(day.minC)}-${Math.round(day.maxC)} °C`,
+    );
+  }
   if (w.aqi !== null) parts.push(`zrak ${Math.round(w.aqi)} (${aqiLabel(w.aqi)})`);
   return parts.join(' · ');
 }

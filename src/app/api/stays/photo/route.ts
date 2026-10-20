@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { clientKey, photoLimiter } from '@/lib/rate-limit';
 
 /**
  * Zastopne fotografije prenočišča — strežniški posrednik za iskalnico slik
@@ -132,6 +133,14 @@ async function photosWithCache(key: string, query: string): Promise<PhotoResult>
 }
 
 export async function GET(request: Request) {
+  const limit = photoLimiter(clientKey(request));
+  if (!limit.ok) {
+    return NextResponse.json(
+      { ok: false, photos: [], error: 'Preveč iskanj fotografij v kratkem času.' },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } },
+    );
+  }
+
   const url = new URL(request.url);
   const parsed = parsePhotoQuery(url.searchParams.get('name'), url.searchParams.get('city'));
   if ('error' in parsed) {

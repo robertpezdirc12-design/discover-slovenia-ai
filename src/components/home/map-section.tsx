@@ -13,11 +13,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { ARSO_LIDAR_ATTRIBUTION, arsoLidarTileUrl, formatElevation } from '@/lib/arso-lidar';
+import { escapeHtml } from '@/lib/escape-html';
 import {
   GUIDE_EVENT,
   GUIDE_REGIONS,
   addStayStop,
   emptyGuideState,
+  formatDaysCount,
+  formatStayCount,
   isStayReserved,
   loadGuideState,
   saveGuideState,
@@ -151,7 +154,7 @@ const TOUR_COLORS: Record<MapGuideCategory, string> = {
   narava: '#0d9488',
 };
 
-export function MapSection() {
+export function MapSection({ loggedIn = false }: { loggedIn?: boolean }) {
   const [mode, setMode] = useState<'map' | 'list'>('map');
   const [mapReady, setMapReady] = useState(false);
   const relief = useSyncExternalStore(subscribeLidarPref, getLidarSnapshot, () => false);
@@ -322,47 +325,91 @@ export function MapSection() {
   };
 
   /**
-   * »Rezerviraj« — izrazita želja uporabnika: en klik SAMODEJNO shrani
-   * prenočišče v »Mojo pot« in OPOZORI (toast + glas). Zapis tudi v bazi
-   * (idempotentno); pravo plačilo pri objektu/uradni strani.
+   * »Rezerviraj« — en klik TAKOJ shrani prenočišče v »Mojo pot« (localStorage).
+   * Če je uporabnik prijavljen, isto stanje sinhroniziramo še v bazo
+   * (per-user, idempotentno). Pravo plačilo pri objektu/uradni strani.
    */
   const reserveStay = (stay: StayResult) => {
     if (reserving || isStayReserved(guide, stay.id)) return;
     setReserving(true);
     const city = staySearch.status === 'ok' ? staySearch.place.name : '';
+
+    const saveLocally = (syncNote?: string): boolean => {
+      try {
+        const storage: GuideStorage = {
+          getItem: (k) => window.localStorage.getItem(k),
+          setItem: (k, v) => window.localStorage.setItem(k, v),
+          removeItem: (k) => window.localStorage.removeItem(k),
+        };
+        const base = loadGuideState(storage) ?? emptyGuideState();
+        saveGuideState(
+          storage,
+          addStayStop(base, {
+            id: stay.id,
+            name: stay.name,
+            city,
+            lat: stay.lat,
+            lng: stay.lng,
+            priceFrom: stay.priceFrom,
+          }),
+        );
+        window.dispatchEvent(new CustomEvent(GUIDE_EVENT));
+      } catch {
+        toast({
+          title: 'Shranjevanje ni uspelo',
+          description: 'Brskalnik ne dovoli lokalne shrambe. Omogoči shrambo ali poskusi v drugem brskalniku.',
+          variant: 'destructive',
+        });
+        return false;
+      }
+      setPlanDismissed(false); // plošča »Tvoja pot« se sama odpre — rezultat je VIDEN
+      setStayPanelClosed(true); // rezultate pospravimo, pot je v ospredju
+      toast({
+        title: 'Rezervirano — dodano v tvojo pot',
+        description: syncNote
+          ? `${stay.name} · od ${stay.priceFrom} €/noč (indikativno) · ${syncNote}`
+          : `${stay.name} · od ${stay.priceFrom} €/noč (indikativno) · shranjeno v »Mojo pot«.`,
+      });
+      speak(`Rezervacija shranjena v tvojo pot: ${stay.name}.`, guide?.voiceEnabled ?? false);
+      setSelectedStay(null);
+      return true;
+    };
+
+    if (!loggedIn) {
+      if (!saveLocally('za sinhronizacijo s profilom se prijavi.')) {
+        setReserving(false);
+        return;
+      }
+      setReserving(false);
+      return;
+    }
+
+    if (!saveLocally()) {
+      setReserving(false);
+      return;
+    }
     fetch('/api/reservations', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ stayId: stay.id, name: stay.name, city, lat: stay.lat, lng: stay.lng, priceFrom: stay.priceFrom }),
     })
-      .then((r) => r.json() as Promise<{ ok: boolean; already?: boolean; error?: string }>)
+      .then((r) => r.json() as Promise<{ ok: boolean; error?: string }>)
       .then((j) => {
         if (!j.ok) {
-          toast({ title: 'Rezervacija ni uspela', description: j.error ?? 'Poskusi znova.', variant: 'destructive' });
-          return;
+          toast({
+            title: 'Sinhronizacija ni uspela',
+            description: j.error ?? 'Pot je shranjena lokalno; poskusi znova pozneje.',
+            variant: 'destructive',
+          });
         }
-        try {
-          const storage: GuideStorage = {
-            getItem: (k) => window.localStorage.getItem(k),
-            setItem: (k, v) => window.localStorage.setItem(k, v),
-            removeItem: (k) => window.localStorage.removeItem(k),
-          };
-          const base = loadGuideState(storage) ?? emptyGuideState();
-          saveGuideState(storage, addStayStop(base, { id: stay.id, name: stay.name, city, lat: stay.lat, lng: stay.lng, priceFrom: stay.priceFrom }));
-          window.dispatchEvent(new CustomEvent(GUIDE_EVENT));
-        } catch {
-          /* shramba je prijetnost — rezervacija je že varna v bazi */
-        }
-        setPlanDismissed(false);  // plošča »Tvoja pot« se sama odpre — rezultat je VIDEN
-        setStayPanelClosed(true); // rezultate pospravimo, pot je v ospredju
-        toast({
-          title: j.already ? 'Že shranjeno v tvojo pot' : 'Rezervirano — dodano v tvojo pot',
-          description: `${stay.name} · od ${stay.priceFrom} €/noč (indikativno) · shranjeno v »Mojo pot«.`,
-        });
-        speak(`Rezervacija shranjena v tvojo pot: ${stay.name}.`, guide?.voiceEnabled ?? false);
-        setSelectedStay(null);
       })
-      .catch(() => toast({ title: 'Rezervacija ni uspela', description: 'Strežnik ni dosegljiv — poskusi znova.', variant: 'destructive' }))
+      .catch(() =>
+        toast({
+          title: 'Sinhronizacija ni uspela',
+          description: 'Pot je shranjena lokalno, v profil pa je trenutno ni mogoče zapisati.',
+          variant: 'destructive',
+        }),
+      )
       .finally(() => setReserving(false));
   };
 
@@ -378,7 +425,9 @@ export function MapSection() {
   const routeAbortRef = useRef<AbortController | null>(null);
   const routeLayerRef = useRef<unknown>(null);
   const planRef = useRef<readonly TripStop[] | null>(null);
-  planRef.current = plan;
+  useEffect(() => {
+    planRef.current = plan;
+  }, [plan]);
   const navActive = navIndex !== null;
 
   // ————— VODIČ PO ZEMLJEVIDU (cel Balkan: mesta · vasi · kmečki · narava) —————
@@ -529,7 +578,7 @@ export function MapSection() {
     plan.forEach((stop) => {
       const m = L.marker([stop.lat, stop.lng], { icon, title: stop.name, zIndexOffset: 500 })
         .addTo(group)
-        .bindPopup(`<strong>${stop.name}</strong><br/>${stop.note}`);
+        .bindPopup(`<strong>${escapeHtml(stop.name)}</strong><br/>${escapeHtml(stop.note)}`);
       planMarkersRef.current.set(stop.name, m);
     });
     planLayerRef.current = group.addTo(map);
@@ -561,7 +610,7 @@ export function MapSection() {
         zIndexOffset: 300,
       })
         .addTo(group)
-        .bindPopup(`<strong>${p.name}</strong><br/>${mapGuideCategoryNoun(p.category)} · ${p.note}`);
+        .bindPopup(`<strong>${escapeHtml(p.name)}</strong><br/>${escapeHtml(mapGuideCategoryNoun(p.category))} · ${escapeHtml(p.note)}`);
       m.on('click', () => setTourIndex(i));
       tourMarkersRef.current.set(p.id, m);
     });
@@ -646,7 +695,7 @@ export function MapSection() {
       const price = s.priceFrom != null ? ` · od ${s.priceFrom} €/noč` : '';
       const m = L.marker([s.lat, s.lng], { icon, title: s.name, zIndexOffset: 700 })
         .addTo(group)
-        .bindPopup(`<strong>${s.name}</strong><br/>Rezervirano v tvoji poti · ${s.city}${price}`);
+        .bindPopup(`<strong>${escapeHtml(s.name)}</strong><br/>Rezervirano v tvoji poti · ${escapeHtml(s.city)}${escapeHtml(price)}`);
       reservedMarkersRef.current.set(s.id, m);
     });
     reservedLayerRef.current = group.addTo(map);
@@ -669,7 +718,7 @@ export function MapSection() {
       const stars = s.stars != null ? ` · ${'★'.repeat(s.stars)}` : '';
       const m = L.marker([s.lat, s.lng], { icon, title: s.name, zIndexOffset: 600 })
         .addTo(group)
-        .bindPopup(`<strong>${s.name}</strong><br/>${STAY_KIND_LABELS[s.kind]}${stars} · od ${s.priceFrom} €/noč (indikativno)`);
+        .bindPopup(`<strong>${escapeHtml(s.name)}</strong><br/>${escapeHtml(STAY_KIND_LABELS[s.kind])}${escapeHtml(stars)} · od ${escapeHtml(s.priceFrom)} €/noč (indikativno)`);
       stayMarkersRef.current.set(s.id, m);
     });
     stayLayerRef.current = group.addTo(map);
@@ -703,7 +752,7 @@ export function MapSection() {
       DESTINATIONS.forEach((d) =>
         L.marker([d.pos[0], d.pos[1]], { icon, title: d.name })
           .addTo(map)
-          .bindTooltip(`${d.name} — ${d.region}`),
+          .bindTooltip(`${escapeHtml(d.name)} — ${escapeHtml(d.region)}`),
       );
 
       // VODENI TOK: regija iz shranjenih odgovorov → mapa lepo pripotuje.
@@ -759,7 +808,7 @@ export function MapSection() {
           let elevText: string | null = null;
           const updatePopup = () => {
             const parts = [revText, elevText].filter(Boolean);
-            marker.setPopupContent(parts.length > 0 ? parts.join(' · ') : 'Višina …');
+            marker.setPopupContent(parts.length > 0 ? escapeHtml(parts.join(' · ')) : 'Višina …');
           };
 
           fetch(`/api/open-data/reverse?lat=${lat.toFixed(5)}&lng=${lng.toFixed(5)}`, {
@@ -879,7 +928,7 @@ export function MapSection() {
   return (
     <section id="zemljevid" aria-labelledby="map-heading" className="mx-auto w-full scroll-mt-20 max-w-6xl px-4 sm:px-6">
       <h2 id="map-heading" className="sr-only">
-        Zemljevid destinacij s preklopilem pogledom
+        Zemljevid destinacij z zemljevidom in seznamom
       </h2>
 
       {/* Lepljiv preklop — leži NAD izolirano mapo (z-30 > kontekst z-0) */}
@@ -915,7 +964,7 @@ export function MapSection() {
           </span>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="hidden sm:inline-flex">
-              {mode === 'map' ? 'Zemljevid' : 'Seznam'} · CLS 0
+              {mode === 'map' ? 'Zemljevid' : 'Seznam'}
             </Badge>
             <div className="flex items-center gap-1.5">
               <Mountain className="size-3.5 text-stone-600" aria-hidden />
@@ -986,7 +1035,7 @@ export function MapSection() {
           <span aria-live="polite" className="ml-auto min-w-0 truncate text-xs text-muted-foreground">
             {staySearch.status === 'ok'
               ? staySearch.stays.length > 0
-                ? `${staySearch.stays.length} prenočišč · ${staySearch.place.name}`
+                ? `${formatStayCount(staySearch.stays.length)} · ${staySearch.place.name}`
                 : `Ni zadetkov za “${staySearch.place.name}” — poskusi širše ime`
               : staySearch.status === 'error'
                 ? staySearch.message
@@ -1044,7 +1093,9 @@ export function MapSection() {
         {mode === 'map' && !planDismissed && (guideRegion || reservedStays.length > 0) && (
           <aside
             aria-label="Tvoja pot — postanke in prenočišča"
-            className="absolute left-3 top-3 z-20 w-[min(280px,calc(100%-1.5rem))] overflow-hidden rounded-xl border bg-background/95 shadow-lg backdrop-blur"
+            className={`absolute left-3 top-3 z-20 w-[min(280px,calc(100%-1.5rem))] overflow-hidden rounded-xl border bg-background/95 shadow-lg backdrop-blur ${
+              staySearch.status === 'ok' && !stayPanelClosed ? 'hidden sm:block' : ''
+            }`}
           >
             <div className="flex items-center gap-2 border-b bg-emerald-600/5 px-3 py-2">
               <Route className="size-4 shrink-0 text-emerald-600" aria-hidden />
@@ -1186,7 +1237,7 @@ export function MapSection() {
                   )}
                   {guideRegion && (
                     <p className="px-1 pt-1.5 text-[11px] text-muted-foreground">
-                      {guide?.days ? `${guide.days} dni · ` : ''}tempo: {guide?.pace ?? '—'} · klikni destinacijo
+                      {guide?.days ? `${formatDaysCount(guide.days)} · ` : ''}tempo: {guide?.pace ?? '—'} · klikni destinacijo
                     </p>
                   )}
                   {/* DELITEV POTI — kratka povezava /pot/[koda] (sopotniki
@@ -1313,7 +1364,7 @@ export function MapSection() {
               ) : (
                 <div>
                   <p className="px-1 pb-1.5 text-xs text-muted-foreground">
-                    {staySearch.stays.length} zadetkov · klikni za slike in ceno
+                    {formatStayCount(staySearch.stays.length)} · klikni za slike in ceno
                   </p>
                   <div className="space-y-1">
                     {staySearch.stays.map((s) => {

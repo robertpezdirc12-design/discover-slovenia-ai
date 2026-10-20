@@ -1,14 +1,14 @@
 import { Suspense } from 'react';
-import { cookies } from 'next/headers';
 import { GuidedFlow } from '@/components/home/guided-flow';
 import { HeroSection } from '@/components/home/hero-section';
 import { MapSection } from '@/components/home/map-section';
 import { PersonalHomeSection, PersonalHomeSkeleton } from '@/components/home/personal-home-section';
+import { ProfileSync } from '@/components/home/profile-sync';
 import { ZmoznostiSection } from '@/components/home/zmoznosti-section';
 import { SiteHeader } from '@/components/home/site-header';
 import { getHeroVariant } from '@/lib/seasonal-hero';
-
-const SESSION_COOKIE = 'dsa_demo_user';
+import { getSession } from '@/lib/session';
+import { SITE_URL } from '@/lib/site';
 
 /**
  * Domača stran (discover-slovenia-ai):
@@ -17,12 +17,11 @@ const SESSION_COOKIE = 'dsa_demo_user';
  *   c) streamirana PersonalHomeSection z rezerviranim skeletom
  *   d) zemljevid z enotnim virom višine (CLS 0)
  *
- * V produkciji: `getSession()` (next-auth + React cache) namesto cookie,
- * `export const revalidate = 3600` za sezonski hero (ISR).
+ * Seja: `getSession()` (React cache + PostgreSQL, opaque žeton v httpOnly
+ * piškotku). Zaradi piškotka je stran dinamična; sezonski hero se izračuna
+ * na strežniku ob vsakem requestu (brez ISR).
  */
-const SITE_URL = "https://i-feel-slovenia.vercel.app";
-
-/** Strukturirani podatki (schema.org) — bogati rezultati iskalnikov. */
+/** Strukturirani podatki (schema.org) - bogati rezultati iskalnikov. */
 const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [
@@ -52,20 +51,20 @@ export default async function Home({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [sp, cookieStore] = await Promise.all([searchParams, cookies()]);
+  const [sp, session] = await Promise.all([searchParams, getSession()]);
 
-  const userName = cookieStore.get(SESSION_COOKIE)?.value ?? null;
   const { variant, microEvent } = getHeroVariant({
     seasonOverride: typeof sp.season === 'string' ? sp.season : null,
   });
 
   return (
     <div className="flex min-h-screen flex-col">
+      <ProfileSync enabled={Boolean(session)} />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
-      <SiteHeader loggedIn={Boolean(userName)} />
+      <SiteHeader loggedIn={Boolean(session)} />
 
       <main className="flex-1">
         <HeroSection variant={variant} microEvent={microEvent} />
@@ -75,13 +74,13 @@ export default async function Home({
               vsak korak izreče naslednji predlog (besedilo + glas). */}
           <GuidedFlow />
 
-          <MapSection />
+          <MapSection loggedIn={Boolean(session)} />
 
           {/* Streamiranje — skeleton rezervira točno toliko prostora,
               kot ga zasede sekcija → ni premika heroja/seznama (CLS 0). */}
-          {userName && (
+          {session && (
             <Suspense fallback={<PersonalHomeSkeleton />}>
-              <PersonalHomeSection name={userName} />
+              <PersonalHomeSection name={session.name} userId={session.userId} />
             </Suspense>
           )}
 

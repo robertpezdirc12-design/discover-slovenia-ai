@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { DbTimeoutError, withDbTimeout } from '@/lib/db-timeout';
+import { clientKey, shareTripLimiter } from '@/lib/rate-limit';
 import { sanitizeGuideState } from '@/lib/guide-store';
+import { SITE_URL } from '@/lib/site';
 import {
   generateTripCode,
   isShareable,
@@ -15,6 +18,14 @@ import {
  * Neveljavno/prazno stanje → 400 (nič ne nastane; UI pokaže razlago).
  */
 export async function POST(request: Request) {
+  const limit = shareTripLimiter(clientKey(request));
+  if (!limit.ok) {
+    return NextResponse.json(
+      { ok: false, error: 'Preveč deljenj v kratkem času — poskusi znova čez minuto.' },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } },
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -40,13 +51,19 @@ export async function POST(request: Request) {
   for (let attempt = 0; attempt < 3; attempt++) {
     const code = generateTripCode();
     try {
-      await db.sharedTrip.create({
-        data: { id: code, data: sharedTripPayload(state) },
-      });
-      const origin = new URL(request.url).origin;
+      await withDbTimeout(
+        db.sharedTrip.create({
+          data: { id: code, data: sharedTripPayload(state) },
+        }),
+      );
+      const origin = process.env.NEXT_PUBLIC_SITE_URL?.trim()
+        ? SITE_URL
+        : new URL(request.url).origin;
       return NextResponse.json({ ok: true, id: code, url: `${origin}/pot/${code}` });
     } catch (err) {
       lastError = err;
+      // Ob nedosegljivi bazi nima smisla ponavljati s tremi različnimi kodami.
+      if (err instanceof DbTimeoutError) break;
     }
   }
   console.error('pot/share: ustvarjanje ni uspelo', lastError);

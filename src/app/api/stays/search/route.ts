@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { clientKey, searchLimiter } from '@/lib/rate-limit';
 import {
   STAY_KINDS,
   nominatimSearchUrl,
@@ -139,6 +140,14 @@ async function searchWithCache(key: string, q: string, kinds: readonly StayKind[
 }
 
 export async function GET(request: Request) {
+  const limit = searchLimiter(clientKey(request));
+  if (!limit.ok) {
+    return NextResponse.json(
+      { ok: false, error: 'Preveč iskanj v kratkem času — poskusi znova čez minuto.' },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } },
+    );
+  }
+
   const url = new URL(request.url);
   const parsed = parseSearchQuery(url.searchParams.get('q'));
   if ('error' in parsed) {
@@ -154,9 +163,9 @@ export async function GET(request: Request) {
     if (err instanceof Error && err.name === 'NotFound') {
       return NextResponse.json({ ok: false, error: err.message }, { status: 404 });
     }
-    const message = err instanceof Error ? err.message : 'neznan odziv vira';
+    console.error('stays/search: iskanje ni uspelo', err);
     return NextResponse.json(
-      { ok: false, error: `Iskanje trenutno ni na voljo (${message}). Poskusi znova.` },
+      { ok: false, error: 'Iskanje trenutno ni na voljo. Poskusi znova.' },
       { status: 502 },
     );
   }

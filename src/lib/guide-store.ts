@@ -100,17 +100,38 @@ export function emptyGuideState(): GuideState {
 }
 
 /** Varstvo pred neveljavnimi vnosi — fail-clean (neenaka shema → prazen state). */
+const MAX_STAYS = 30;
+const MAX_TIMESTAMP_LENGTH = 40;
+const EPOCH_ISO = new Date(0).toISOString();
+
+/**
+ * Normalizira časovni žig iz localStorage/API-ja. Neznane ali predolge
+ * vrednosti ne smejo priti v bazo ali v primerjavo svežine stanja.
+ */
+function normalizeTimestamp(value: unknown, fallback: string | null): string | null {
+  if (typeof value !== 'string' || value.length === 0 || value.length > MAX_TIMESTAMP_LENGTH) {
+    return fallback;
+  }
+  const ms = Date.parse(value);
+  return Number.isFinite(ms) ? new Date(ms).toISOString() : fallback;
+}
+
+/** Stisne ponovitve — API lahko prejme poljubno dolge sezname. */
+function unique<T>(values: T[]): T[] {
+  return Array.from(new Set(values));
+}
+
 export function sanitizeGuideState(raw: unknown): GuideState | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
   if (r.version !== 1) return null;
   if (!Array.isArray(r.answered)) return null;
-  const interests = Array.isArray(r.interests)
-    ? (r.interests.filter((i): i is GuideInterest =>
-        typeof i === 'string' && (GUIDE_INTEREST_OPTIONS as readonly string[]).includes(i)))
-    : [];
-  const answered = (r.answered as unknown[]).filter((s): s is GuideStepId =>
-    typeof s === 'string' && (GUIDE_STEPS as readonly string[]).includes(s));
+  const interests = unique(Array.isArray(r.interests)
+    ? r.interests.filter((i): i is GuideInterest =>
+        typeof i === 'string' && (GUIDE_INTEREST_OPTIONS as readonly string[]).includes(i))
+    : []);
+  const answered = unique((r.answered as unknown[]).filter((s): s is GuideStepId =>
+    typeof s === 'string' && (GUIDE_STEPS as readonly string[]).includes(s)));
   const pace = typeof r.pace === 'string' && ['počasen', 'zmeren', 'športen'].includes(r.pace)
     ? (r.pace as GuidePace)
     : null;
@@ -125,6 +146,7 @@ export function sanitizeGuideState(raw: unknown): GuideState | null {
   const stays: GuideStayStop[] = [];
   if (Array.isArray(r.stays)) {
     for (const s of r.stays) {
+      if (stays.length >= MAX_STAYS) break;
       if (!s || typeof s !== 'object') continue;
       const o = s as Record<string, unknown>;
       if (typeof o.id !== 'string' || o.id.length === 0 || o.id.length > 64) continue;
@@ -142,7 +164,7 @@ export function sanitizeGuideState(raw: unknown): GuideState | null {
         lat,
         lng,
         priceFrom: price === null ? null : Math.round(price),
-        reservedAt: typeof o.reservedAt === 'string' ? o.reservedAt : new Date(0).toISOString(),
+        reservedAt: normalizeTimestamp(o.reservedAt, EPOCH_ISO) ?? EPOCH_ISO,
       });
     }
   }
@@ -153,10 +175,82 @@ export function sanitizeGuideState(raw: unknown): GuideState | null {
     days,
     pace,
     answered,
-    stays: stays.slice(0, 30),
+    stays,
     voiceEnabled: r.voiceEnabled === true,
-    completedAt: typeof r.completedAt === 'string' ? r.completedAt : null,
-    updatedAt: typeof r.updatedAt === 'string' ? r.updatedAt : new Date(0).toISOString(),
+    completedAt: normalizeTimestamp(r.completedAt, null),
+    updatedAt: normalizeTimestamp(r.updatedAt, EPOCH_ISO) ?? EPOCH_ISO,
+  };
+}
+
+/**
+ * Enakost vsebine brez `updatedAt` — za preprečevanje nepotrebnih PUT
+ * zahtevkov in za odločitev, ali je treba osvežiti strežniški render.
+ */
+export function sameGuideContent(a: GuideState | null, b: GuideState | null): boolean {
+  if (!a || !b) return a === b;
+  return JSON.stringify({
+    interests: a.interests,
+    region: a.region,
+    days: a.days,
+    pace: a.pace,
+    answered: a.answered,
+    stays: a.stays,
+    voiceEnabled: a.voiceEnabled,
+    completedAt: a.completedAt,
+  }) === JSON.stringify({
+    interests: b.interests,
+    region: b.region,
+    days: b.days,
+    pace: b.pace,
+    answered: b.answered,
+    stays: b.stays,
+    voiceEnabled: b.voiceEnabled,
+    completedAt: b.completedAt,
+  });
+}
+
+/**
+ * Ali je stanje brez vsebinskih odgovorov (dovoljeni so le govor in
+ * morebitni koraki)? Uporablja se pri varnem spajanju med sinhronizacijo.
+ */
+export function isGuideSparse(state: GuideState): boolean {
+  return (
+    state.interests.length === 0 &&
+    state.region === null &&
+    state.days === null &&
+    state.pace === null &&
+    state.stays.length === 0 &&
+    state.completedAt === null
+  );
+}
+
+/**
+ * Varno spoji novo lokalno stanje s strežniškim profilom.
+ *
+ * Uporablja se, ko je uporabnik v novem brskalniku kliknil, še preden se je
+ * končalo prvo branje profila. Takrat lokalno stanje ni popolna resnica
+ * (npr. vsebuje samo vklop govora), zato ga ne smemo poslati čez celoten
+ * profil. Ohranimo strežniške odgovore, lokalne pa dodamo/prevzamemo.
+ */
+export function mergeGuideStates(server: GuideState, local: GuideState): GuideState {
+  const voiceOnly = isGuideSparse(local) && local.answered.length === 0;
+
+  const stays = new Map(server.stays.map((s) => [s.id, s]));
+  for (const stay of local.stays) stays.set(stay.id, stay);
+
+  return {
+    version: 1,
+    interests: unique([...server.interests, ...local.interests]),
+    region: local.region ?? server.region,
+    days: local.days ?? server.days,
+    pace: local.pace ?? server.pace,
+    answered: unique([...server.answered, ...local.answered]),
+    stays: Array.from(stays.values()).slice(0, MAX_STAYS),
+    // Ob drugih spremembah je lokalni `voiceEnabled: false` samo privzeta
+    // vrednost, ne izrecna odločitev uporabnika — ohrani strežniško izbiro.
+    voiceEnabled: local.voiceEnabled || (voiceOnly ? false : server.voiceEnabled),
+    completedAt: local.completedAt ?? server.completedAt,
+    updatedAt: new Date().toISOString(),
   };
 }
 
@@ -214,6 +308,23 @@ function interestsNoun(n: number): string {
   if (n === 2) return 'interesa';
   if (n === 3 || n === 4) return 'interesi';
   return 'interesov';
+}
+
+/** Koliko dni — 1 dan, 2 dneva, sicer dni (uporaba: trajanje poti). */
+export function formatDaysCount(days: number): string {
+  const n = Number.isFinite(days) ? Math.max(0, Math.round(days)) : 0;
+  if (n === 1) return '1 dan';
+  if (n === 2) return '2 dneva';
+  return `${n} dni`;
+}
+
+/** Slovensko sklanjanje prenočišč: 1 prenočišče, 2 prenočišči, 3–4 prenočišča, 5+ prenočišč. */
+export function formatStayCount(count: number): string {
+  const n = Number.isFinite(count) ? Math.max(0, Math.round(count)) : 0;
+  if (n === 1) return '1 prenočišče';
+  if (n === 2) return '2 prenočišči';
+  if (n === 3 || n === 4) return `${n} prenočišča`;
+  return `${n} prenočišč`;
 }
 
 /**
@@ -278,7 +389,7 @@ export function guideSummaryChips(state: GuideState): string[] {
   const region = GUIDE_REGIONS.find((g) => g.id === state.region);
   if (state.interests.length) chips.push(state.interests.join(', '));
   if (region) chips.push(region.label);
-  if (state.days) chips.push(`${state.days} dni`);
+  if (state.days) chips.push(formatDaysCount(state.days));
   if (state.pace) chips.push(`tempo: ${state.pace}`);
   return chips;
 }

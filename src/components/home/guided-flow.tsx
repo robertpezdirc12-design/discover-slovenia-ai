@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useGuideState } from '@/components/home/use-guide-state';
+import { useToast } from '@/hooks/use-toast';
 import { SHOW_TRIP_EVENT, speak } from '@/lib/speech';
 import {
   GUIDE_EVENT,
@@ -62,6 +63,7 @@ type ViewStep = GuideStepId | 'welcome' | 'done';
 
 export function GuidedFlow() {
   const state = useGuideState();
+  const { toast } = useToast();
   // uporabnikova navigacija povozi samodejni korak (null = sledi toku)
   const [userStep, setUserStep] = useState<ViewStep | null>(null);
   const [dismissed, setDismissed] = useState(false);
@@ -75,9 +77,26 @@ export function GuidedFlow() {
   const step: ViewStep = userStep ?? autoStep;
   const complete = state ? isGuideComplete(state) : false;
 
+  const persist = useCallback(
+    (next: GuideState): boolean => {
+      try {
+        saveGuideState(browserStorage(), next);
+        return true;
+      } catch {
+        toast({
+          title: 'Shramba ni na voljo',
+          description:
+            'Brskalnik ne dovoli shranjevanja. Omogoči shrambo ali poskusi v drugem brskalniku.',
+          variant: 'destructive',
+        });
+        return false;
+      }
+    },
+    [toast],
+  );
+
   const commit = useCallback(
     (patch: Partial<GuideState>, nextStep: ViewStep) => {
-      const storage = browserStorage();
       const base: GuideState = state ?? emptyGuideState();
       const next: GuideState = {
         ...base,
@@ -85,7 +104,7 @@ export function GuidedFlow() {
         answered: Array.from(new Set([...base.answered, ...(patch.answered ?? [])])),
         completedAt: nextStep === 'done' ? new Date().toISOString() : base.completedAt,
       };
-      saveGuideState(storage, next);
+      if (!persist(next)) return;
       try {
         window.dispatchEvent(new CustomEvent(GUIDE_EVENT));
       } catch {
@@ -95,13 +114,12 @@ export function GuidedFlow() {
       const s = nextStepSuggestion(next);
       speak(s.text, next.voiceEnabled);
     },
-    [state],
+    [state, persist],
   );
 
   const toggleVoice = () => {
-    const storage = browserStorage();
     const next = { ...(state ?? emptyGuideState()), voiceEnabled: !(state?.voiceEnabled ?? false) };
-    saveGuideState(storage, next);
+    if (!persist(next)) return;
     try {
       window.dispatchEvent(new CustomEvent(GUIDE_EVENT));
     } catch {
@@ -111,7 +129,16 @@ export function GuidedFlow() {
   };
 
   const restart = () => {
-    clearGuideState(browserStorage());
+    try {
+      clearGuideState(browserStorage());
+    } catch {
+      toast({
+        title: 'Shramba ni na voljo',
+        description: 'Brskalnik ne dovoli brisanja shrambe. Poskusi v drugem brskalniku.',
+        variant: 'destructive',
+      });
+      return;
+    }
     try {
       window.dispatchEvent(new CustomEvent(GUIDE_EVENT));
     } catch {
@@ -421,7 +448,7 @@ export function GuidedFlow() {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Odgovori so shranjeni na tej napravi — naslednjič vas vodič ne bo več vprašal.
+                Odgovori so shranjeni v tem brskalniku; ob prijavi tudi v tvojem profilu. Naslednjič te vodič ne bo več vprašal.
               </p>
             </div>
           )}

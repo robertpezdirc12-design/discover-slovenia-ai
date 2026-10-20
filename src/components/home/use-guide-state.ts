@@ -1,7 +1,12 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import { GUIDE_EVENT, sanitizeGuideState, type GuideState } from '@/lib/guide-store';
+import {
+  GUIDE_EVENT,
+  GUIDE_STORAGE_KEY,
+  sanitizeGuideState,
+  type GuideState,
+} from '@/lib/guide-store';
 
 /**
  * Skupna naročnina na vodeni tok (Komoot onboarding vzorec).
@@ -16,7 +21,16 @@ import { GUIDE_EVENT, sanitizeGuideState, type GuideState } from '@/lib/guide-st
 let snapshotCache: { raw: string | null; parsed: GuideState | null } | null = null;
 function getGuideSnapshot(): GuideState | null {
   if (typeof window === 'undefined') return null;
-  const raw = window.localStorage.getItem('dsa.guide.v1');
+
+  // V brskalnikih z blokirano shrambo `getItem` vrže SecurityError.
+  // Takrat se vodič obnaša, kot da odgovorov še ni — stran se ne sesuje.
+  let raw: string | null = null;
+  try {
+    raw = window.localStorage.getItem(GUIDE_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+
   if (snapshotCache && snapshotCache.raw === raw) return snapshotCache.parsed;
   let parsed: GuideState | null = null;
   try {

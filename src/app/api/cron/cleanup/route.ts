@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
   const userCutoff = new Date(now - 60 * DAY_MS);
 
   try {
-    const [trips, sessions, loginTokens, users] = await Promise.all([
+    const [trips, sessions, loginTokens] = await Promise.all([
       withDbTimeout(
         db.sharedTrip.deleteMany({ where: { createdAt: { lt: expiredTripCutoff } } }),
         4_000,
@@ -70,20 +70,23 @@ export async function GET(request: NextRequest) {
         }),
         4_000,
       ),
-      withDbTimeout(
-        db.user.deleteMany({
-          where: {
-            // Samo stari demo profili; profili z e-pošto so obnovljivi.
-            email: null,
-            updatedAt: { lt: userCutoff },
-            // `every` velja tudi za uporabnika brez sej; vsaka še veljavna
-            // seja ga obvaruje pred brisanjem.
-            sessions: { every: { expiresAt: { lt: sessionCutoff } } },
-          },
-        }),
-        4_000,
-      ),
     ]);
+
+    // Uporabnika brišemo po sejah: sicer bi kaskadni delete lahko odstranil
+    // sejo pred poročanjem in bi `deletedSessions` napačno kazal 0.
+    const users = await withDbTimeout(
+      db.user.deleteMany({
+        where: {
+          // Samo stari demo profili; profili z e-pošto so obnovljivi.
+          email: null,
+          updatedAt: { lt: userCutoff },
+          // `every` velja tudi za uporabnika brez sej; vsaka še veljavna
+          // seja ga obvaruje pred brisanjem.
+          sessions: { every: { expiresAt: { lt: sessionCutoff } } },
+        },
+      }),
+      4_000,
+    );
 
     return NextResponse.json(
       {

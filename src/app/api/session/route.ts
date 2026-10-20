@@ -3,22 +3,13 @@ import { db } from '@/lib/db';
 import { withDbTimeout } from '@/lib/db-timeout';
 import { normalizeDisplayName } from '@/lib/display-name';
 import { clientKey, sessionLimiter } from '@/lib/rate-limit';
+import { isSameOriginRequest } from '@/lib/request-origin';
 import { createUserSession, getSession, revokeSessionToken } from '@/lib/session';
 import { SESSION_COOKIE, sessionCookieOptions } from '@/lib/session-token';
 
 export const dynamic = 'force-dynamic';
 
 const NO_STORE = { 'Cache-Control': 'private, no-store' };
-
-/**
- * Prepreči login/logout CSRF iz tuje domene. Brskalniki ob pošiljanju
- * pošljejo `Sec-Fetch-Site`; če ga ni (npr. curl/uptime), zahteve ne
- * blokiramo, ker ne moremo ugotoviti izvora.
- */
-function isSameOriginRequest(request: NextRequest): boolean {
-  const site = request.headers.get('sec-fetch-site');
-  return !site || site === 'same-origin' || site === 'none';
-}
 
 /**
  * POST /api/session — ustvari demo profil + strežniško sejo.

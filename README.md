@@ -49,7 +49,18 @@ Nikoli ne committaj `.env`; v repozitoriju je samo `.env.example`.
 To **ni produkcijska avtentikacija**: ni gesla, e-pošte ali OAuth ponudnika.
 Profil je vezan na brskalnik; po čiščenju piškotkov ali odjavi nastane nov
 profil (tudi pri enakem imenu). Pred javnim zagonom dodaj OAuth ali magic-link
-prijavo in politiko zasebnosti.
+prijavo ter dopolni demo politiko zasebnosti na `/zasebnost` (upravljavec,
+kontakt, pravna podlaga).
+
+### Izvoz in izbris podatkov
+
+- `GET /api/account/export` vrne ime, vodič in rezervacije prijavljenega
+  uporabnika kot JSON (brez sejnih žetonov).
+- `DELETE /api/account` trajno izbriše uporabnika; kaskadno se odstranijo
+  seje, profil in rezervacije. Lokalni vodič v brskalniku ostane, dokler ga
+  uporabnik ne počisti z »Začni znova«.
+- Oba klica sta v pogovornem oknu **Profil**. Deljene poti niso vezane na
+  uporabnika in se z izbrisom profila ne odstranijo.
 
 ## Skripti
 
@@ -84,6 +95,9 @@ SQLite ni primeren za Vercel: datotečni sistem je efemeren in write-i se izgubi
 
 - Prijava je demo brez gesla (glej zgoraj). Seje so v PostgreSQL; rate
   limiting je per-instance in best-effort (brez globalnega Redis kvota).
+- Deljene poti (`/pot/[koda]`) so anonimne, nimajo lastnika ali TTL ter se
+  ne izbrišejo z izbrisom profila. Pred javnim zagonom dodaj potek in
+  možnost preklica.
 - Če isto pot urejata dve napravi hkrati, zadnji uspešni PUT zmaga; ob
   nalaganju se primerja `updatedAt`. Za produkcijo je priporočljivo
   strežniško verzioniranje ali optimistic locking.

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Suspense } from 'react';
 import { GuidedFlow } from '@/components/home/guided-flow';
 import { HeroSection } from '@/components/home/hero-section';
@@ -92,9 +93,14 @@ export default async function Home({
       <footer className="mt-auto border-t bg-muted/40 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 text-sm text-muted-foreground sm:flex-row sm:px-6">
           <p>Discover Slovenia AI — potovanje po Sloveniji in Balkanu</p>
-          <p>
-            Zemljevid &copy; <a className="underline underline-offset-2" href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> sodelavci
-          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+            <Link href="/zasebnost" className="underline underline-offset-2 hover:text-foreground">
+              Zasebnost in podatki
+            </Link>
+            <p>
+              Zemljevid &copy; <a className="underline underline-offset-2" href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> sodelavci
+            </p>
+          </div>
         </div>
       </footer>
     </div>

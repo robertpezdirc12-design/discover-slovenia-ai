@@ -59,7 +59,7 @@ export default function PrivacyPage() {
           <li>sanitizirano stanje vodenega toka in rezervacije,</li>
           <li>nastavitev govornih nasvetov (del stanja vodiča),</li>
           <li>naključni sejni žeton v piškotku in njegov SHA-256 hash v bazi,</li>
-          <li>hash enkratne prijavne povezave, dokler ni uporabljena ali potekla.</li>
+          <li>hash enkratne prijavne povezave; po uporabi ali poteku ga odstranimo, najpozneje z dnevnim čiščenjem.</li>
         </ul>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
           Ne shranjujemo gesla, telefonske številke ali podatkov o plačilu.

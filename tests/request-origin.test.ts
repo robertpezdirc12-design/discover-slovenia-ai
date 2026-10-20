@@ -30,6 +30,41 @@ describe('request-origin — zaščita mutacij', () => {
     expect(isSameOriginRequest(requestWithSite(undefined, 'ni-url'))).toBe(false);
   });
 
+  test('za proxyjem primerja Origin z javnim Host, ne z internim URL', () => {
+    const request = new Request('http://localhost:3000/api/account', {
+      headers: {
+        origin: 'https://example.com',
+        host: 'example.com',
+        'x-forwarded-proto': 'https',
+      },
+    });
+    expect(isSameOriginRequest(request)).toBe(true);
+
+    const wrongHost = new Request('http://localhost:3000/api/account', {
+      headers: { origin: 'https://evil.example', host: 'example.com' },
+    });
+    expect(isSameOriginRequest(wrongHost)).toBe(false);
+
+    const defaultPort = new Request('http://localhost:3000/api/account', {
+      headers: {
+        origin: 'https://example.com',
+        host: 'example.com:443',
+        'x-forwarded-host': 'example.com:443',
+        'x-forwarded-proto': 'https',
+      },
+    });
+    expect(isSameOriginRequest(defaultPort)).toBe(true);
+
+    const wrongProtocol = new Request('http://localhost:3000/api/account', {
+      headers: {
+        origin: 'https://example.com',
+        host: 'example.com',
+        'x-forwarded-proto': 'http',
+      },
+    });
+    expect(isSameOriginRequest(wrongProtocol)).toBe(false);
+  });
+
   test('Sec-Fetch-Site ima prednost pred Origin', () => {
     expect(
       isSameOriginRequest(requestWithSite('same-origin', 'https://evil.example')),

@@ -21,7 +21,10 @@ export async function GET() {
 
   const startedAt = Date.now();
   try {
-    await withDbTimeout(db.$queryRaw`SELECT 1`, DB_TIMEOUT_MS);
+    // Konstantna poizvedba brez uporabniškega vnosa. `queryRawUnsafe` je tu
+    // varen in hkrati združljiv z lokalnim PGlite strežnikom, ki ne podpira
+    // pripravljenih poizvedb enako kot PostgreSQL.
+    await withDbTimeout(db.$queryRawUnsafe('SELECT 1'), DB_TIMEOUT_MS);
     return NextResponse.json(
       { ok: true, db: 'up', latencyMs: Date.now() - startedAt },
       { headers: NO_STORE },

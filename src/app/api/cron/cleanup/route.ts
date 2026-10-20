@@ -23,9 +23,9 @@ function isAuthorized(request: NextRequest): boolean {
  * GET /api/cron/cleanup — dnevno čiščenje, ki ga nastavi Vercel Cron.
  *
  * 1. Odstrani deljene poti, starejše od 90 dni (TTL).
- * 2. Odstrani potekle seje.
- * 3. Odstrani demo uporabnike brez aktivne seje, ki niso bili aktivni vsaj
- *    60 dni. Brez tega bi po poteku seje ostali nedosegljivi profili.
+ * 2. Odstrani potekle seje in prijavne povezave.
+ * 3. Odstrani stare demo uporabnike brez e-pošte in brez aktivne seje
+ *    (60 dni). Profili z e-pošto so obnovljivi in se ne brišejo samodejno.
  *
  * Ruta je zaklenjena s CRON_SECRET; brez njega vrne 503, da čiščenja ne
  * more sprožiti vsak obiskovalec.
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
   const userCutoff = new Date(now - 60 * DAY_MS);
 
   try {
-    const [trips, sessions, users] = await Promise.all([
+    const [trips, sessions, loginTokens, users] = await Promise.all([
       withDbTimeout(
         db.sharedTrip.deleteMany({ where: { createdAt: { lt: expiredTripCutoff } } }),
         4_000,
@@ -60,8 +60,21 @@ export async function GET(request: NextRequest) {
         4_000,
       ),
       withDbTimeout(
+        db.loginToken.deleteMany({
+          where: {
+            OR: [
+              { expiresAt: { lt: new Date(now) } },
+              { usedAt: { lt: new Date(now - DAY_MS) } },
+            ],
+          },
+        }),
+        4_000,
+      ),
+      withDbTimeout(
         db.user.deleteMany({
           where: {
+            // Samo stari demo profili; profili z e-pošto so obnovljivi.
+            email: null,
             updatedAt: { lt: userCutoff },
             // `every` velja tudi za uporabnika brez sej; vsaka še veljavna
             // seja ga obvaruje pred brisanjem.
@@ -77,6 +90,7 @@ export async function GET(request: NextRequest) {
         ok: true,
         deletedSharedTrips: trips.count,
         deletedSessions: sessions.count,
+        deletedLoginTokens: loginTokens.count,
         deletedUsers: users.count,
       },
       { headers: NO_STORE },

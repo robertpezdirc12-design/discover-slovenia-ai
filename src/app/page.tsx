@@ -65,7 +65,7 @@ export default async function Home({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
-      <SiteHeader loggedIn={Boolean(session)} />
+      <SiteHeader user={session} />
 
       <main className="flex-1">
         <HeroSection variant={variant} microEvent={microEvent} />

@@ -59,6 +59,12 @@ export function clientKey(request: Request): string {
 }
 
 export const sessionLimiter = createRateLimiter({ limit: 20, windowMs: 60_000 });
+export const magicLinkLimiter = createRateLimiter({ limit: 8, windowMs: 60_000 });
+export const magicLinkEmailLimiter = createRateLimiter({
+  limit: 3,
+  windowMs: 15 * 60_000,
+  maxEntries: 10_000,
+});
 export const profileLimiter = createRateLimiter({ limit: 60, windowMs: 60_000 });
 export const accountExportLimiter = createRateLimiter({ limit: 20, windowMs: 60_000 });
 export const accountDeleteLimiter = createRateLimiter({ limit: 5, windowMs: 60_000 });

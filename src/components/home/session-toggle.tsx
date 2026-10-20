@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition, type FormEvent } from 'react';
-import { Download, Loader2, LogIn, Trash2, UserRound } from 'lucide-react';
+import { Download, Loader2, LogIn, LogOut, Mail, Trash2, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -16,8 +16,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import type { SessionUser } from '@/lib/session';
 
-type BusyAction = 'login' | 'export' | 'delete' | null;
+type BusyAction = 'request' | 'logout' | 'export' | 'delete' | null;
 
 const REQUEST_TIMEOUT_MS = 10_000;
 
@@ -29,20 +30,21 @@ function errorMessage(err: unknown, fallback: string): string {
 }
 
 /**
- * Prijava v demo profil: strežniška seja (opaque token, httpOnly) namesto
- * nepodpisanega piškotka. Gesla ni — to je še vedno demo identiteta, a
- * omogoča per-user rezervacije in resnična priporočila.
+ * Prijava v profil z enkratno povezavo na e-pošto (magic link).
  *
- * Ker profila brez gesla ni mogoče obnoviti, UI ne ponuja gole odjave:
- * odjava bi pustila nedosegljive strežniške podatke. Namesto tega uporabnik
- * profil izvozi ali trajno izbriše (kar ga hkrati odjavi).
+ * Seja je opaque žeton v httpOnly piškotku; profil je z e-poštno prijavo
+ * mogoče obnoviti, zato je odjava varna. Trajni izbris in izvoz ostaneta
+ * ločeni, uničujoči dejanji.
  */
-export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
+export function SessionToggle({ user }: { user: SessionUser | null }) {
   const router = useRouter();
   const { toast } = useToast();
   const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [sentTo, setSentTo] = useState('');
+  const [loginSent, setLoginSent] = useState(false);
+  const [devLink, setDevLink] = useState('');
   const [busyAction, setBusyAction] = useState<BusyAction>(null);
   const [error, setError] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -50,6 +52,7 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
   const cancelDeleteRef = useRef<HTMLButtonElement>(null);
   const restoreDeleteFocus = useRef(false);
 
+  const loggedIn = user !== null;
   const busy = busyAction !== null;
 
   useEffect(() => {
@@ -75,6 +78,9 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
   function openDialog() {
     setError('');
     setConfirmDelete(false);
+    setLoginSent(false);
+    setSentTo('');
+    setDevLink('');
     setOpen(true);
   }
 
@@ -82,31 +88,73 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
     if (!next) {
       setError('');
       setConfirmDelete(false);
+      setLoginSent(false);
+      setSentTo('');
+      setDevLink('');
     }
     setOpen(next);
   }
 
-  async function login(event: FormEvent<HTMLFormElement>) {
+  async function requestMagicLink(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setBusyAction('login');
+    const targetEmail = email.trim();
+    if (!targetEmail) {
+      setError('Vnesi e-poštni naslov.');
+      return;
+    }
+
+    setBusyAction('request');
     setError('');
+    setDevLink('');
     try {
-      const res = await fetch('/api/session', {
+      const res = await fetch('/api/auth/magic-link', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ email: targetEmail }),
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
-      const json = (await res.json()) as { ok?: boolean; error?: string };
+      const json = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        devLink?: string;
+      };
       if (!res.ok || !json.ok) {
-        setError(json.error ?? 'Prijava ni uspela.');
+        setError(json.error ?? 'Povezave ni bilo mogoče poslati.');
         return;
       }
-      setOpen(false);
-      setName('');
-      startTransition(() => router.refresh());
+
+      setSentTo(targetEmail);
+      setLoginSent(true);
+      if (typeof json.devLink === 'string') setDevLink(json.devLink);
     } catch (err) {
       setError(errorMessage(err, 'Strežnik ni dosegljiv — poskusi znova.'));
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  async function logout() {
+    setBusyAction('logout');
+    try {
+      const res = await fetch('/api/session', {
+        method: 'DELETE',
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      });
+      const json = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!res.ok || !json.ok) throw new Error(json.error ?? 'Odjava ni uspela.');
+
+      setOpen(false);
+      toast({
+        title: 'Odjavljen si',
+        description: 'Profil ostaja shranjen; znova se prijavi z e-poštno povezavo.',
+      });
+      startTransition(() => router.refresh());
+    } catch (err) {
+      toast({
+        title: 'Odjava ni uspela',
+        description: errorMessage(err, 'Poskusi znova.'),
+        variant: 'destructive',
+      });
     } finally {
       setBusyAction(null);
     }
@@ -166,8 +214,9 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
       setConfirmDelete(false);
       setOpen(false);
       toast({
-        title: 'Profil je izbrisan — odjavljen si',
-        description: 'Strežniški podatki in seja so odstranjeni. Lokalni vodič ostaja v tem brskalniku.',
+        title: 'Profil je izbrisan',
+        description:
+          'E-pošta, seje, vodič in rezervacije so odstranjeni. Lokalni vodič ostaja v tem brskalniku.',
       });
       startTransition(() => router.refresh());
     } catch (err) {
@@ -189,7 +238,7 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
         className="h-11 sm:h-8"
         onClick={openDialog}
         disabled={pending || busy}
-        aria-label={loggedIn ? 'Odpri profil in podatke' : 'Prijava v demo profil'}
+        aria-label={loggedIn ? 'Odpri profil in podatke' : 'Prijava v profil'}
       >
         {pending || busy ? (
           <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -203,18 +252,30 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="sm:max-w-md">
-          {loggedIn ? (
+          {loggedIn && user ? (
             <>
               <DialogHeader>
                 <DialogTitle>Tvoj profil</DialogTitle>
                 <DialogDescription>
-                  Demo prijava nima gesla, zato se po izbrisu v ta profil ne
-                  moreš vrniti. Podatke lahko najprej preneseš. Izbris odstrani
-                  ime, vodič, rezervacije in sejo; lokalni vodič v tem
-                  brskalniku ostane. Deljene povezave niso vezane na profil in
-                  ostanejo do poteka (90 dni).
+                  Prijavljen si kot {user.email ?? 'profil brez e-pošte'}. Odjava
+                  profila ne izbriše; podatke lahko preneseš ali trajno izbrišeš.
                 </DialogDescription>
               </DialogHeader>
+
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <p className="text-sm font-medium">{user.name}</p>
+                <p className="break-all text-xs text-muted-foreground">
+                  {user.email ?? 'E-pošta ni povezana'}
+                </p>
+              </div>
+
+              {!user.email && (
+                <p className="text-xs leading-5 text-amber-700">
+                  Ta profil je iz stare demo prijave brez e-pošte. Če želiš
+                  uporabljati prijavo z e-pošto, profil izbriši in se znova
+                  prijavi; lokalni vodič lahko pred tem preneseš.
+                </p>
+              )}
 
               <div className="grid gap-2">
                 <Button
@@ -231,6 +292,20 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
                   )}
                   Prenesi moje podatke (JSON)
                 </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="justify-start"
+                  onClick={() => void logout()}
+                  disabled={busy}
+                >
+                  {busyAction === 'logout' ? (
+                    <Loader2 className="size-4 animate-spin" aria-hidden />
+                  ) : (
+                    <LogOut className="size-4" aria-hidden />
+                  )}
+                  Odjava
+                </Button>
               </div>
 
               <Link
@@ -246,11 +321,9 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
                     role="alert"
                     className="rounded-lg border border-destructive/30 bg-destructive/5 p-3"
                   >
-                    <p className="text-sm font-medium">
-                      Res izbrišeš profil in se odjaviš?
-                    </p>
+                    <p className="text-sm font-medium">Res trajno izbrišeš profil?</p>
                     <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                      Uporabnik, seje, vodič in rezervacije bodo trajno
+                      E-pošta, uporabnik, seje, vodič in rezervacije bodo trajno
                       odstranjeni. Deljene povezave ostanejo do poteka (90 dni).
                       Lokalni vodič ostane v tem brskalniku. Tega ni mogoče
                       razveljaviti.
@@ -276,7 +349,7 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
                         {busyAction === 'delete' && (
                           <Loader2 className="size-4 animate-spin" aria-hidden />
                         )}
-                        Izbriši in se odjavi
+                        Izbriši trajno
                       </Button>
                     </div>
                   </div>
@@ -290,7 +363,7 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
                     disabled={busy}
                   >
                     <Trash2 className="size-4" aria-hidden />
-                    Izbriši profil in se odjavi
+                    Izbriši profil trajno
                   </Button>
                 )}
               </div>
@@ -306,27 +379,87 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
                 </Button>
               </DialogFooter>
             </>
-          ) : (
-            <form onSubmit={login} className="grid gap-4">
+          ) : loginSent ? (
+            <>
               <DialogHeader>
-                <DialogTitle>Demo profil</DialogTitle>
+                <DialogTitle>Preveri e-pošto</DialogTitle>
                 <DialogDescription>
-                  Ime uporabimo za pozdrav v tvojem profilu. Demo prijava brez gesla
-                  — seja je shranjena v tem brskalniku 30 dni. Ne vnašaj občutljivih
-                  podatkov.
+                  Če je naslov {sentTo} veljaven, smo poslali enkratno povezavo.
+                  Velja 15 minut in je uporabna samo enkrat.
+                </DialogDescription>
+              </DialogHeader>
+
+              <p className="text-sm leading-6 text-muted-foreground">
+                Povezavo odpri v tem ali drugem brskalniku in na strani potrdi
+                prijavo. Seja se ustvari šele po potrditvi. Preveri tudi
+                vsiljeno pošto.
+              </p>
+
+              {devLink && (
+                <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+                  <p className="font-medium">Razvojni način</p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    E-poštni ponudnik ni nastavljen, zato je povezava prikazana
+                    tukaj. V produkciji se nikoli ne prikaže.
+                  </p>
+                  <a
+                    href={devLink}
+                    className="mt-2 inline-block break-all font-medium text-emerald-700 underline underline-offset-2"
+                  >
+                    Odpri povezavo za prijavo
+                  </a>
+                </div>
+              )}
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setLoginSent(false);
+                    setSentTo('');
+                    setDevLink('');
+                    setError('');
+                  }}
+                  disabled={busy}
+                >
+                  Uporabi drug naslov
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  disabled={busy}
+                >
+                  Zapri
+                </Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <form onSubmit={requestMagicLink} className="grid gap-4">
+              <DialogHeader>
+                <DialogTitle>Prijava v profil</DialogTitle>
+                <DialogDescription>
+                  Pošljemo ti enkratno povezavo na e-pošto. Gesla ne shranjujemo;
+                  povezava velja 15 minut in je uporabna samo enkrat.
                 </DialogDescription>
               </DialogHeader>
 
               <div className="grid gap-2">
-                <Label htmlFor="display-name">Ime</Label>
+                <Label htmlFor="login-email">E-poštni naslov</Label>
                 <Input
-                  id="display-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  maxLength={40}
-                  placeholder="npr. Ana"
-                  autoComplete="nickname"
+                  id="login-email"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  maxLength={254}
+                  placeholder="ana@example.com"
+                  spellCheck={false}
                   autoFocus
+                  required
+                  disabled={busy}
                 />
               </div>
 
@@ -335,6 +468,17 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
                   {error}
                 </p>
               )}
+
+              <p className="text-xs leading-5 text-muted-foreground">
+                E-pošto hranimo za prijavo in sinhronizacijo profila.{' '}
+                <Link
+                  href="/zasebnost"
+                  className="underline underline-offset-2 hover:text-foreground"
+                >
+                  Več o zasebnosti
+                </Link>
+                .
+              </p>
 
               <DialogFooter>
                 <Button
@@ -346,10 +490,12 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
                   Prekliči
                 </Button>
                 <Button type="submit" disabled={busy}>
-                  {busyAction === 'login' && (
+                  {busyAction === 'request' ? (
                     <Loader2 className="size-4 animate-spin" aria-hidden />
+                  ) : (
+                    <Mail className="size-4" aria-hidden />
                   )}
-                  Prijavi se
+                  Pošlji povezavo
                 </Button>
               </DialogFooter>
             </form>

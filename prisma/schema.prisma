@@ -13,10 +13,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// Uporabnik demo profila. Prijava je brez gesla (opaque seja); za pravo
-/// avtentikacijo pred javnim zagonom dodaj OAuth/magic link.
+/// Uporabnik profila. Prijava poteka z enkratno povezavo na e-pošto
+/// (magic link); gesla ne shranjujemo. Stari demo uporabniki imajo email null.
 model User {
   id        String   @id @default(cuid())
+  email     String?  @unique
   name      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -24,6 +25,21 @@ model User {
   sessions     Session[]
   profile      UserProfile?
   reservations StayReservation[]
+}
+
+/// Enkratna prijavna povezava. V bazi je samo SHA-256 hash žetona; surov
+/// žeton potuje le po e-pošti. `usedAt` prepreči ponovno uporabo.
+model LoginToken {
+  id        String    @id @default(cuid())
+  email     String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email, createdAt])
+  @@index([expiresAt])
+  @@index([usedAt])
 }
 
 /// Strežniška seja: v bazi je samo SHA-256 hash žetona, ne surov žeton.

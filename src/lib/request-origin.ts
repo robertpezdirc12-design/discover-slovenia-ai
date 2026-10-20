@@ -14,8 +14,27 @@ export function isSameOriginRequest(request: Request): boolean {
   // Če ga ni (curl, uptime), zahteve ne blokiramo — piškotka seje ni.
   const origin = request.headers.get('origin');
   if (!origin) return true;
+
   try {
-    return new URL(origin).origin === new URL(request.url).origin;
+    const originUrl = new URL(origin);
+    const requestUrl = new URL(request.url);
+    if (originUrl.origin === requestUrl.origin) return true;
+
+    // Za proxyjem je request.url lahko interni; primerjaj še z javnim Host
+    // (in protokolom, ki ga nastavi proxy). Brskalnik ne more ponarediti
+    // Host glave za tujo domeno.
+    const forwardedHost = request.headers.get('x-forwarded-host')?.split(',')[0]?.trim();
+    const host = forwardedHost || request.headers.get('host')?.trim();
+    if (!host) return false;
+
+    const forwardedProto = request.headers.get('x-forwarded-proto')?.split(',')[0]?.trim();
+    const protocol = forwardedProto ? `${forwardedProto}:` : requestUrl.protocol;
+    const expected = new URL(`${protocol}//${host}`);
+    return (
+      originUrl.protocol === expected.protocol &&
+      originUrl.hostname === expected.hostname &&
+      originUrl.port === expected.port
+    );
   } catch {
     return false;
   }

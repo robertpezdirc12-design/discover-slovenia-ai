@@ -1,5 +1,5 @@
 /**
- * Varen prikazni ime za demo profil.
+ * Varno prikazno ime za uporabniški profil.
  *
  * Vnos je uporabniški, zato ga stisnemo in omejimo na 40 kodnih točk
  * (ne UTF-16 enot — emoji se ne sme razpoloviti). Krmilni in nevidni

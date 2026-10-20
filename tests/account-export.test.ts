@@ -4,6 +4,7 @@ import { buildAccountExport } from '../src/lib/account-export';
 
 const user = {
   id: 'usr_1',
+  email: 'ana@example.com',
   name: 'Ana',
   createdAt: new Date('2026-10-01T08:00:00.000Z'),
 };
@@ -46,6 +47,7 @@ describe('account-export — prenos lastnih podatkov', () => {
     expect(payload.exportedAt).toBe('2026-10-20T12:00:00.000Z');
     expect(payload.user).toEqual({
       id: 'usr_1',
+      email: 'ana@example.com',
       name: 'Ana',
       createdAt: '2026-10-01T08:00:00.000Z',
     });

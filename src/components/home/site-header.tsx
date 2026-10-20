@@ -1,11 +1,14 @@
 import { Mountain } from 'lucide-react';
+import type { SessionUser } from '@/lib/session';
 import { SessionToggle } from './session-toggle';
 
 /**
  * Lepljiva glava (top-0, z-40) — višina h-14 je referenčni odmik za
  * sticky preklop v MapSection (top-14, z-30).
  */
-export function SiteHeader({ loggedIn }: { loggedIn: boolean }) {
+export function SiteHeader({ user }: { user: SessionUser | null }) {
+  const loggedIn = user !== null;
+
   return (
     <header className="sticky top-0 z-40 h-14 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
       <div className="mx-auto flex h-full max-w-6xl items-center gap-3 px-4 sm:px-6">
@@ -46,7 +49,7 @@ export function SiteHeader({ loggedIn }: { loggedIn: boolean }) {
         </nav>
 
         <div className="ml-auto md:ml-4">
-          <SessionToggle loggedIn={loggedIn} />
+          <SessionToggle user={user} />
         </div>
       </div>
     </header>

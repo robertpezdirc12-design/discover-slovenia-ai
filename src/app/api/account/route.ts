@@ -26,9 +26,9 @@ function deletedResponse() {
 /**
  * DELETE /api/account — trajno izbriše uporabnika in vse povezane podatke.
  *
- * Kaskadno se odstranijo seje, profil in rezervacije. Lokalni vodič v
- * brskalniku ostane; uporabnik ga lahko počisti z »Začni znova« ali v
- * nastavitvah brskalnika.
+ * Pred kaskadnim brisanjem se odstranijo tudi še veljavne prijavne povezave
+ * za ta e-poštni naslov. Lokalni vodič v brskalniku ostane; uporabnik ga
+ * lahko počisti z »Začni znova« ali v nastavitvah brskalnika.
  */
 export async function DELETE(request: NextRequest) {
   if (!isSameOriginRequest(request)) {
@@ -50,6 +50,15 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
+    // Prijavne povezave niso vezane na User (veljajo tudi pred prvim
+    // ustvarjanjem profila), zato jih odstranimo po e-pošti.
+    if (session.email) {
+      await withDbTimeout(
+        db.loginToken.deleteMany({ where: { email: session.email } }),
+        3_000,
+      );
+    }
+
     // deleteMany ne vrže P2025, če je uporabnik medtem že izbrisan; kaskada
     // na ravni baze poskrbi za seje, profil in rezervacije.
     await withDbTimeout(db.user.deleteMany({ where: { id: session.userId } }), 4_000);

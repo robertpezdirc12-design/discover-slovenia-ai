@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       withDbTimeout(
         db.user.findUnique({
           where: { id: session.userId },
-          select: { id: true, name: true, createdAt: true },
+          select: { id: true, email: true, name: true, createdAt: true },
         }),
         3_000,
       ),

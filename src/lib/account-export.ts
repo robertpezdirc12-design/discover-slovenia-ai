@@ -9,6 +9,7 @@ import { sanitizeGuideState, type GuideState } from '@/lib/guide-store';
  */
 export interface AccountExportUser {
   id: string;
+  email: string | null;
   name: string;
   createdAt: Date;
 }
@@ -34,6 +35,7 @@ export interface AccountExport {
   exportedAt: string;
   user: {
     id: string;
+    email: string | null;
     name: string;
     createdAt: string;
   };
@@ -69,6 +71,7 @@ export function buildAccountExport({
     exportedAt: exportedAt.toISOString(),
     user: {
       id: user.id,
+      email: user.email,
       name: user.name,
       createdAt: user.createdAt.toISOString(),
     },

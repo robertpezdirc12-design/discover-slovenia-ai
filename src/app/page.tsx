@@ -4,7 +4,6 @@ import { GuidedFlow } from '@/components/home/guided-flow';
 import { HeroSection } from '@/components/home/hero-section';
 import { MapSection } from '@/components/home/map-section';
 import { PersonalHomeSection, PersonalHomeSkeleton } from '@/components/home/personal-home-section';
-import { ZmoznostiSection } from '@/components/home/zmoznosti-section';
 import { SiteHeader } from '@/components/home/site-header';
 import { getHeroVariant } from '@/lib/seasonal-hero';
 
@@ -84,8 +83,6 @@ export default async function Home({
               <PersonalHomeSection name={userName} />
             </Suspense>
           )}
-
-          <ZmoznostiSection />
         </div>
       </main>
 

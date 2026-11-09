@@ -37,11 +37,6 @@ export function SiteHeader({ loggedIn }: { loggedIn: boolean }) {
                 Za tebe
               </a>
             </li>
-            <li>
-              <a className="inline-flex min-h-11 items-center px-1 transition-colors hover:text-foreground sm:min-h-9" href="#zmoznosti">
-                Zmožnosti
-              </a>
-            </li>
           </ul>
         </nav>
 

@@ -50,6 +50,7 @@ import {
   type WikiSummary,
 } from '@/lib/open-data';
 import { navChipText, navIsLast, navNext, navPrev, navProgressLabel } from '@/lib/route-guidance';
+import { buildDayTrack, driveLabel } from '@/lib/day-track';
 import type { OsrmLegInfo } from '@/lib/osrm-route';
 import { SHOW_TRIP_EVENT, speak } from '@/lib/speech';
 
@@ -380,6 +381,14 @@ export function MapSection() {
   const planRef = useRef<readonly TripStop[] | null>(null);
   planRef.current = plan;
   const navActive = navIndex !== null;
+
+  // ————— DNEVNI TRAK (dnevi + OSRM časi vožnje med postanki) —————
+  // postanke poti razdelimo na dneve (po vodiču: days + pace); časi pritečejo
+  // iz routeInfo (OSRM nožice) takoj, ko je cestna pot izračunana.
+  const dayTrack = useMemo(
+    () => buildDayTrack(plan ?? [], guide?.days ?? null, guide?.pace ?? null, routeInfo?.legs ?? null),
+    [plan, guide?.days, guide?.pace, routeInfo],
+  );
 
   // ————— VODIČ PO ZEMLJEVIDU (cel Balkan: mesta · vasi · kmečki · narava) —————
   // EN gumb vklopi/izklopi; ko je vklopljen, zemljevid SAMA pelje uporabnika
@@ -1135,7 +1144,38 @@ export function MapSection() {
                         Začni navigacijo po poti
                       </Button>
                       <div className="space-y-1">
-                        {plan.map((stop) => (
+                        {dayTrack.length > 1
+                          ? dayTrack.map((d) => (
+                              <div key={d.day} className="space-y-1">
+                                <p className="px-1 pt-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-700">
+                                  {d.day}. dan{d.driveMinInDay > 0 ? ` · vožnja ${d.driveMinInDay} min` : ''}
+                                </p>
+                                {d.stops.map((stop) => {
+                                  const i = (plan ?? []).findIndex((p) => p.name === stop.name);
+                                  return (
+                                    <div key={stop.name}>
+                                      {stop.driveMin !== null && (
+                                        <p className="px-4 text-[11px] text-muted-foreground">🚗 {driveLabel(stop)}</p>
+                                      )}
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-auto w-full justify-start gap-2 px-2 py-1.5 text-left"
+                                        onClick={() => focusStop(stop)}
+                                        aria-label={`Prikaži ${stop.name} na zemljevidu`}
+                                      >
+                                        <MapPin className="size-3.5 shrink-0 text-emerald-600" aria-hidden />
+                                        <span className="min-w-0">
+                                          <span className="block text-sm font-medium leading-tight">{stop.name}</span>
+                                          <span className="block truncate text-xs text-muted-foreground">{stop.note}</span>
+                                        </span>
+                                      </Button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ))
+                          : (plan ?? []).map((stop) => (
                           <Button
                             key={stop.name}
                             size="sm"

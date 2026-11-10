@@ -1557,3 +1557,21 @@ Work Log:
 - PRODUKCIJA: /kraj/zagreb in /kraj/ohrid 200 s pravilnimi naslovi; sitemap vsebuje 31 /kraj/ urljev.
 - GIT: 42d5131 → GitHub main + GitLab sandbox/guided-ux-line.
 - Naslednje faze (po dogovoru): B i18n, C večvalutni proračun, D mednarodni prevoz/meje, E/F kolaboracija/AI.
+
+---
+Task ID: POLIRAJ-20-BALKAN-FAZA-C (valute)
+Datum: 2026-11-10
+Agent: ZCode (main session)
+Task: večvalutni proračun za Balkan
+
+Work Log:
+- src/lib/currency.ts: REGION_CURRENCY (RSD/BAM/ALL/MKD; EUR za SI/HR/XK/ME), convertFromEur (varstvo vnosa), formatMoney (Intl sl-SI + rezerva), localCurrencyNote.
+- map-section: ob regiji zunaj EUR se tečaji naložijo iz /api/open-data/rates (predpomnilnik, brez ponavljanja) in proračun doda vrstico »Približno v lokalni valuti: ≈ 11.760 RSD …«.
+- Tisk: localCurrencyNote gre v načrt (PDF) kot poudarjena opomba.
+- TESTI: +8 → 309 pass / 0 fail / 2926 expect; tsc 0; lint 0; build OK.
+- PRODUKCIJA: /api/open-data/rates vrača RSD/BAM/ALL/MKD (117,64/1,956/90,93/61,50).
+- GIT: b69b321 → GitHub main + GitLab sandbox/guided-ux-line.
+
+Stage Summary:
+- Proračun zdaj govori »jezik« države: za Srbijo RSD, BiH BAM, Albanijo ALL, Makedonijo MKD (EUR ostaja referenca).
+- Preostale faze: B i18n, D mednarodni prevoz/meje, E/F kolaboracija/AI.

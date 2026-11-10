@@ -2439,7 +2439,7 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
 
         {/* PLAVAJOČI SEZNAM REZULTATOV (»Iščem«) — mapa + seznam, kot Kayak. */}
         {placesResult && !placesResult.error && placesResult.places.length > 0 && resultsVisible && (
-          <div className="absolute inset-y-3 right-3 z-30 flex w-[min(300px,calc(100%-1.5rem))] flex-col overflow-hidden rounded-xl border bg-background/95 shadow-lg backdrop-blur">
+          <div className="absolute inset-y-3 left-3 right-3 z-30 flex flex-col overflow-hidden rounded-xl border bg-background/95 shadow-lg backdrop-blur sm:left-auto sm:w-[min(300px,calc(100%-1.5rem))]">
             <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
               <p className="truncate text-xs font-medium">
                 {placeCategoryById(placeSel)?.label ?? 'Rezultati'} · {placesResult.places.length}
@@ -2482,6 +2482,15 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+
+        {/* NAMIG — ko ni aktivnega iskanja/poti, da uporabnik ve, kje začeti. */}
+        {mapReady && !placeSel && !countrySel && !plan?.length && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-3 z-10 flex justify-center px-4">
+            <p className="rounded-full border bg-background/90 px-4 py-2 text-center text-xs text-muted-foreground shadow-lg backdrop-blur">
+              Izberi kategorijo ali državo zgoraj, da najdeš kraje — in jih dodaj v pot.
+            </p>
           </div>
         )}
 

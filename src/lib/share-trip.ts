@@ -78,6 +78,7 @@ export function sharedTripPayload(
     days: clean.days,
     pace: clean.pace,
     stays: clean.stays,
+    savedPois: clean.savedPois,
     completedAt: clean.completedAt,
     ...(order ? { stopOrder: order } : {}),
   });

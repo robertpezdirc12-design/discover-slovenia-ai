@@ -69,6 +69,7 @@ export function rkdPopupHtml(
     <div style="display:flex;justify-content:space-between;gap:8px;margin-top:2px">${municipality}</div>
     ${desc}
     <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" style="color:#247251;font-size:12px;text-decoration:underline">Več o enoti (eID) →</a>
+    <br/><button type="button" class="dsa-add-poi-btn" data-kind="rkd" data-id="rkd-${feature.e}" data-name="${escapeHtml(feature.n)}" data-lat="${feature.lat}" data-lng="${feature.lng}" data-category="${escapeHtml(label)}" data-source="rkd" style="margin-top:4px;padding:3px 10px;border-radius:999px;border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;font-size:12px;cursor:pointer">+ Dodaj v pot</button>
   </div>`;
 }
 

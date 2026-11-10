@@ -2,6 +2,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   GUIDE_STEPS,
+  addSavedPoi,
   clearGuideState,
   emptyGuideState,
   firstUnansweredStep,
@@ -238,5 +239,30 @@ describe('guide-store — extraRegions (večdržavna pot)', () => {
       updatedAt: '',
     };
     expect(sanitizeGuideState(raw)?.extraRegions.length).toBe(6);
+  });
+});
+
+describe('guide-store — savedPois (»Dodaj v pot«)', () => {
+  test('addSavedPoi: doda, idempotentno po id', () => {
+    const poi = { id: 'poi-x', name: 'Blejski grad', note: '', lat: 46.3697, lng: 14.1067, category: 'kultura', source: 'izbor' };
+    const a = addSavedPoi(emptyGuideState(), poi);
+    expect(a.savedPois).toHaveLength(1);
+    expect(addSavedPoi(a, poi)).toBe(a);
+  });
+
+  test('sanitize: ohrani veljavne, zavrže slabe', () => {
+    const raw = {
+      version: 1, interests: [], region: 'gorenjska', extraRegions: [],
+      days: null, pace: null, answered: [], stays: [],
+      savedPois: [
+        { id: 'a', name: 'Vintgar', lat: 46.3903, lng: 14.0853, category: 'narava', source: 'osm' },
+        { id: 'b', name: '', lat: 46, lng: 14, category: null, source: null },
+        { id: 'c', name: 'Slab', lat: 999, lng: 0 },
+      ],
+      voiceEnabled: false, completedAt: null, updatedAt: '',
+    };
+    const s = sanitizeGuideState(raw);
+    expect(s?.savedPois).toHaveLength(1);
+    expect(s?.savedPois[0].name).toBe('Vintgar');
   });
 });

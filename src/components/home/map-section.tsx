@@ -16,6 +16,7 @@ import { ARSO_LIDAR_ATTRIBUTION, arsoLidarTileUrl, formatElevation } from '@/lib
 import {
   GUIDE_EVENT,
   GUIDE_REGIONS,
+  addSavedPoi,
   addStayStop,
   emptyGuideState,
   isStayReserved,
@@ -24,6 +25,7 @@ import {
   type GuideRegionId,
   type GuideStorage,
   type GuideStayStop,
+  type SavedPoi,
 } from '@/lib/guide-store';
 import { useGuideState } from '@/components/home/use-guide-state';
 import { ShareTripButton } from '@/components/home/share-trip-button';
@@ -498,6 +500,54 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
     };
   }, [mapReady, destSlug]);
 
+  // ————— »DODAJ V POT« (POI/RKD): en klik shrani v »Mojo pot« —————
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      const btn = target?.closest?.('.dsa-add-poi-btn') as HTMLElement | null;
+      if (!btn) return;
+      const id = btn.dataset.id;
+      const name = btn.dataset.name;
+      const lat = Number(btn.dataset.lat);
+      const lng = Number(btn.dataset.lng);
+      if (!id || !name || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      const poi: SavedPoi = {
+        id,
+        name,
+        note: '',
+        lat,
+        lng,
+        category: btn.dataset.category || null,
+        source: btn.dataset.source || null,
+      };
+      const storage: GuideStorage = {
+        getItem: (k) => window.localStorage.getItem(k),
+        setItem: (k, v) => window.localStorage.setItem(k, v),
+        removeItem: (k) => window.localStorage.removeItem(k),
+      };
+      const base = loadGuideState(storage) ?? emptyGuideState();
+      const next = addSavedPoi(base, poi);
+      if (next === base) {
+        toast({ title: `»${name}« je že v tvoji poti` });
+        return;
+      }
+      saveGuideState(storage, next);
+      toast({
+        title: `Dodano v tvojo pot: ${name}`,
+        description: 'Zemljevid in načrt sta posodobljena.',
+      });
+      // V pojavnem oknu označi shranjeno.
+      if (btn.closest('.leaflet-popup-content')) {
+        const button = btn as HTMLButtonElement;
+        button.textContent = '✓ Shranjeno';
+        button.disabled = true;
+        button.style.opacity = '0.6';
+      }
+    };
+    document.addEventListener('click', onClick);
+    return () => document.removeEventListener('click', onClick);
+  }, [toast]);
+
   // ————— JAVNI PREVOZ (OJPP / brezavta): gumb v pojavnem oknu postanke → —————
   // poišče naslednje povezave iz Ljubljane in izbrano pot nariše na zemljevid.
   useEffect(() => {
@@ -866,6 +916,69 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
     });
   }, [planKey, regionCurrency, rates]);
   const localNote = localCurrencyNote(planKey, budget.totalEur, rates);
+
+  // ————— »OKOLI IZBRANEGA«: zanimivosti v bližini izbrane točke —————
+  const [ctx, setCtx] = useState<{ name: string; lat: number; lng: number } | null>(null);
+  const [exploreCat, setExploreCat] = useState<'all' | 'bivanje' | 'zanimivosti' | 'dediscina'>('all');
+  const [nearbySel, setNearbySel] = useState<'poi' | 'rkd' | 'bivanje' | ''>('');
+  const [ctxPoiResult, setCtxPoiResult] = useState<{
+    key: string;
+    status: 'done' | 'error';
+    pois: RoutePoi[];
+  } | null>(null);
+  const ctxPoiKey =
+    ctx && nearbySel === 'poi' ? `${ctx.lat.toFixed(4)},${ctx.lng.toFixed(4)}` : null;
+  const ctxPoiStatus: 'idle' | 'loading' | 'done' | 'error' = ctxPoiKey
+    ? ctxPoiResult?.key === ctxPoiKey
+      ? ctxPoiResult.status
+      : 'loading'
+    : 'idle';
+  const ctxPoiPois = ctxPoiResult?.key === ctxPoiKey ? ctxPoiResult.pois : [];
+  const ctxPoiLayerRef = useRef<unknown>(null);
+  const ctxPoiAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    if (ctxPoiLayerRef.current) {
+      const L = LeafletRef.current;
+      if (L) (ctxPoiLayerRef.current as L.LayerGroup).remove();
+      ctxPoiLayerRef.current = null;
+    }
+    ctxPoiAbortRef.current?.abort();
+    if (!ctxPoiKey || !ctx) return;
+    const controller = new AbortController();
+    ctxPoiAbortRef.current = controller;
+    fetch(`/api/pot/nearby?stops=${ctx.lat},${ctx.lng}&radius=12`, { signal: controller.signal })
+      .then((r) => r.json() as Promise<{ ok: boolean; pois?: RoutePoi[] }>)
+      .then((j) => {
+        if (controller.signal.aborted) return;
+        const pois = j.ok && Array.isArray(j.pois) ? j.pois.slice(0, 12) : [];
+        setCtxPoiResult({ key: ctxPoiKey, status: 'done', pois });
+        const L = LeafletRef.current;
+        const map = mapRef.current;
+        if (!L || !map || pois.length === 0) return;
+        const group = L.layerGroup();
+        const icon = L.divIcon({ className: 'dsa-pin-poi', html: PoiPinSvg(), iconSize: [24, 32], iconAnchor: [12, 32] });
+        for (const p of pois) {
+          L.marker([p.lat, p.lng], { icon, title: p.name, zIndexOffset: 560 })
+            .addTo(group)
+            .bindPopup(
+              `<strong>${escapeXml(p.name)}</strong><br/>` +
+                `${POI_CATEGORY_LABELS[p.category]} · ${poiDistanceLabel(p.distanceKm)}<br/>` +
+                `<small>${p.source === 'osm' ? '© OpenStreetMap' : CATALOG_ATTRIBUTION}</small><br/>` +
+                `<button type="button" class="dsa-add-poi-btn" data-kind="poi" data-id="poi-${escapeXml(p.id)}" ` +
+                `data-name="${escapeXml(p.name)}" data-lat="${p.lat}" data-lng="${p.lng}" ` +
+                `data-category="${escapeXml(p.category)}" data-source="${escapeXml(p.source)}" ` +
+                `style="margin-top:4px;padding:3px 10px;border-radius:999px;border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;font-size:12px;cursor:pointer">+ Dodaj v pot</button>`,
+            );
+        }
+        ctxPoiLayerRef.current = group.addTo(map);
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setCtxPoiResult({ key: ctxPoiKey, status: 'error', pois: [] });
+      });
+    return () => controller.abort();
+  }, [ctx, nearbySel]);
 
   // ————— IZVOZ GPX (offline pot) —————
   // Vrstni red: destinacije načrta, nato rezervirana prenočišča; čista
@@ -1337,7 +1450,11 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
       .bindPopup(
         `<strong>${escapeXml(p.name)}</strong><br/>` +
         `${POI_CATEGORY_LABELS[p.category]} · ${poiDistanceLabel(p.distanceKm)}<br/>` +
-        `<small>${p.source === 'osm' ? '© OpenStreetMap' : CATALOG_ATTRIBUTION}</small>`,
+        `<small>${p.source === 'osm' ? '© OpenStreetMap' : CATALOG_ATTRIBUTION}</small><br/>` +
+        `<button type="button" class="dsa-add-poi-btn" data-kind="poi" data-id="poi-${escapeXml(p.id)}" ` +
+        `data-name="${escapeXml(p.name)}" data-lat="${p.lat}" data-lng="${p.lng}" ` +
+        `data-category="${escapeXml(p.category)}" data-source="${escapeXml(p.source)}" ` +
+        `style="margin-top:4px;padding:3px 10px;border-radius:999px;border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;font-size:12px;cursor:pointer">+ Dodaj v pot</button>`,
       );
       poiMarkersRef.current.set(p.id, m);
     });
@@ -1475,6 +1592,17 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
               updatePopup();
             });
         },
+      });
+
+      // »DRUGI SPUSTNIK« — shrani kontekst izbranega (odprto pojavno okno).
+      map.on('popupopen', (e) => {
+        const content = e.popup?.getElement?.();
+        const el = content?.querySelector?.('[data-lat][data-lng]') as HTMLElement | null;
+        if (!el) return;
+        const lat = Number(el.dataset.lat);
+        const lng = Number(el.dataset.lng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+        setCtx({ name: el.dataset.name ?? '', lat, lng });
       });
 
       map.on('unload', () => {
@@ -1652,6 +1780,114 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
           <p className="mt-1.5 text-[10px] leading-snug text-muted-foreground">
             Register nepremične kulturne dediščine (RKD) — MOP/GURS, OPSI (CC BY 4.0). Zbira: podatki.gov.si. Klik na gručo približa pogled.
           </p>
+        )}
+
+        {/* RAZISKOVANJE — čipi kategorij (vzorec Google Maps/Tripomatic): izbira
+            kategorije prikaže ustrezni sloj/seznam; ob izbrani točki se pojavi
+            druga vrsta »okoli izbranega«. */}
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-border/60 pt-2">
+          <span className="text-[11px] font-medium text-muted-foreground">Razišči:</span>
+          {(
+            [
+              ['all', 'Vse'],
+              ['bivanje', 'Prebivanje'],
+              ['zanimivosti', 'Zanimivosti'],
+              ['dediscina', 'Dediščina'],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              data-active={exploreCat === value}
+              aria-pressed={exploreCat === value}
+              onClick={() => {
+                setExploreCat(value);
+                if (value === 'bivanje') {
+                  document.getElementById('stay-search-input')?.focus();
+                } else if (value === 'dediscina') {
+                  if (!rkdEnabled) setRkdEnabled(true);
+                } else if (value === 'zanimivosti') {
+                  if (ctx) setNearbySel('poi');
+                  else togglePois();
+                }
+              }}
+              className="rounded-full border border-border/80 bg-card/70 px-3 py-1 text-xs transition-colors hover:border-primary/30 hover:bg-primary/5 data-[active=true]:border-primary/40 data-[active=true]:bg-primary/10 data-[active=true]:text-primary"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* »OKOLI IZBRANEGA« — drugi nivo (po izbiri točke na zemljevidu). */}
+        {ctx && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <span className="max-w-40 truncate text-[11px] font-medium text-muted-foreground" title={ctx.name}>
+              Okoli: {ctx.name}
+            </span>
+            {(
+              [
+                ['poi', 'Zanimivosti'],
+                ['rkd', 'Dediščina'],
+                ['bivanje', 'Prenočišča'],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                data-active={nearbySel === value}
+                aria-pressed={nearbySel === value}
+                onClick={() => {
+                  setNearbySel(value);
+                  if (value === 'rkd') {
+                    if (!rkdEnabled) setRkdEnabled(true);
+                    mapRef.current?.flyTo([ctx.lat, ctx.lng], 13, { duration: 1.2 });
+                  } else if (value === 'bivanje') {
+                    setStayQuery(ctx.name);
+                    runStaySearch(ctx.name);
+                  }
+                }}
+                className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs transition-colors hover:border-primary/40 hover:bg-primary/10 data-[active=true]:border-primary/40 data-[active=true]:bg-primary/10 data-[active=true]:text-primary"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Rezultati »okoli izbranega« (čipi + dodajanje, kot drugje). */}
+        {ctxPoiStatus === 'loading' && (
+          <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <Loader2 className="size-3 animate-spin" aria-hidden /> Iščem zanimivosti okoli {ctx?.name} …
+          </p>
+        )}
+        {ctxPoiStatus === 'error' && (
+          <p className="mt-1.5 text-[11px] text-destructive">Zanimivosti okoli izbranega trenutno niso dosegljive.</p>
+        )}
+        {ctxPoiStatus === 'done' && ctxPoiPois.length > 0 && (
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {ctxPoiPois.map((p) => (
+              <span
+                key={p.id}
+                className="flex items-center gap-1 rounded-full border border-border/80 bg-card/70 py-1 pl-3 pr-1 text-xs"
+              >
+                {p.name}
+                <button
+                  type="button"
+                  className="dsa-add-poi-btn rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary transition-colors hover:bg-primary/20"
+                  data-kind="poi"
+                  data-id={`poi-${p.id}`}
+                  data-name={p.name}
+                  data-lat={p.lat}
+                  data-lng={p.lng}
+                  data-category={p.category}
+                  data-source={p.source}
+                  aria-label={`Dodaj ${p.name} v pot`}
+                >
+                  + Dodaj
+                </button>
+              </span>
+            ))}
+          </div>
         )}
       </div>
 
@@ -1886,6 +2122,37 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
                         isCustomOrder={isCustomOrder}
                       />
                     </>
+                  )}
+                  {/* SHRANJENE ZANIMIVOSTI/DEDIŠČINA — »Dodaj v pot« (POI/RKD). */}
+                  {(guide?.savedPois?.length ?? 0) > 0 && (
+                    <div className="mt-2 border-t pt-2">
+                      <p className="px-1 pb-1 text-xs font-medium text-muted-foreground">
+                        Zanimivosti v tvoji poti ({guide!.savedPois.length})
+                      </p>
+                      <div className="space-y-1">
+                        {guide!.savedPois.map((p) => (
+                          <Button
+                            key={p.id}
+                            size="sm"
+                            variant="ghost"
+                            className="h-auto w-full justify-start gap-2 px-2 py-1.5 text-left"
+                            onClick={() => {
+                              mapRef.current?.flyTo([p.lat, p.lng], 14, { duration: 1.2 });
+                            }}
+                            aria-label={`Prikaži ${p.name} na zemljevidu`}
+                          >
+                            <Landmark className="size-3.5 shrink-0 text-primary" aria-hidden />
+                            <span className="min-w-0">
+                              <span className="block text-sm font-medium leading-tight">{p.name}</span>
+                              <span className="block truncate text-xs text-muted-foreground">
+                                {p.category ?? 'Zanimivost'}
+                                {p.source ? ` · ${p.source}` : ''}
+                              </span>
+                            </span>
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
                   )}
                   {/* REZERVIRANA PRENOČIŠČA — del »Moje poti« (trajno shranjeno). */}
                   {reservedStays.length > 0 && (

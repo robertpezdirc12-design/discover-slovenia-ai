@@ -1505,3 +1505,23 @@ Work Log:
 Stage Summary:
 - SEO strani so zdaj funkcionalno zaprte v produkt: klik na destinacijo odpre zemljevid točno na njej. BreadcrumbList krepi bogate rezultate.
 - Naslednji možni koraki: čiščenje react-hooks lint dolga, večjezičnost (HR/ME/AL), združitev linij.
+
+---
+Task ID: POLIRAJ-17-LINT-CISCENJE (profesionalno vzdrževanje)
+Datum: 2026-11-10
+Agent: ZCode (main session)
+Task: odpraviti ves react-hooks lint dolg (8 → 0)
+
+Work Log:
+- map-section (7 napak → 0):
+  • plošča »Tvoja pot«: dismissed je zdaj KLJUČANA na planKey (izpeljano) — efekta s setState (reset ob regiji, odpiranje ob rezervaciji) odpravljena; odpiranje ob rezervaciji ostane v rezervacijskem toku, ob nalaganju z zapisi ga pokrije pogoj v JSX;
+  • navigacija: navIndex/routeInfo/routeFailed v EN objekt s ključem routeKey — ob spremembi poti se staro stanje samodejno izniči; efekt je ostal le za preklic zahtevkov (abort);
+  • planRef: posodobitev prestavljena v efekt (ne več v render);
+  • turneja: tourWeather/tourWiki ključana na indeks kraja (nalaganje izpeljano), clamp indeksa izpeljan (tourIndexSafe) namesto efekta s setState;
+  • linija javnega prevoza: čiščenje prestavljeno v ločen efekt (cleanup), izven plan efekta.
+- carousel.tsx + use-mobile.ts (2 napaki → 0): začetni onSelect prestavljen v requestAnimationFrame; useIsMobile z lenim začetnim stanjem.
+- VRATA: eslint GLOBALNO 0 napak (prej 8) · tsc 0 v src · 301 testov / 0 fail · build OK · sanity domača stran (0 page/console napak).
+- GIT: push na GitHub main + GitLab sandbox/guided-ux-line.
+
+Stage Summary:
+- Koda je zdaj čista pod react-hooks/React Compiler pravili — prihodnje funkcionalne spremembe ne bodo več »pokopane« pod starim lint dolgom.

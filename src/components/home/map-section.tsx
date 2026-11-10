@@ -303,7 +303,16 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
     window.dispatchEvent(new Event(TRIP_ORDER_EVENT));
   };
 
-  const [planDismissed, setPlanDismissed] = useState(false);
+  /**
+   * Plošča »Tvoja pot« — skrita/zaprtost je vezana na KLJUČ poti: ob
+   * spremembi regije se samodejno odpre (dismiss je per-route, ne globalen),
+   * zato ni potreben noben useEffect z setState.
+   */
+  const [planPanel, setPlanPanel] = useState<{ key: string | null; dismissed: boolean }>(
+    () => ({ key: null, dismissed: false }),
+  );
+  const planDismissed = planPanel.key === planKey ? planPanel.dismissed : false;
+  const setPlanDismissed = (value: boolean) => setPlanPanel({ key: planKey, dismissed: value });
   const planLayerRef = useRef<unknown>(null);
   const planMarkersRef = useRef<Map<string, LeafletMarker>>(new Map());
   // Ključ poti vključuje VRSTNI RED: preureditev mora preklicati zastarele
@@ -555,8 +564,6 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
 
   // ————— ODPRTI PODATKI BREZ POVERILNIC (vse živo izmerjeno): vreme+zrak,
   // Wikipedia, tečaji, prazniki — vstavljeno v vodič in prenočišča —————
-  const [tourWeather, setTourWeather] = useState<LiveData<WeatherPayload>>('loading');
-  const [tourWiki, setTourWiki] = useState<LiveData<WikiSummary>>('loading');
   const tourInfoAbortRef = useRef<AbortController | null>(null);
   const [stayWeather, setStayWeather] = useState<LiveData<WeatherPayload>>('loading');
   const stayWeatherAbortRef = useRef<AbortController | null>(null);
@@ -721,15 +728,25 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
       .finally(() => setReserving(false));
   };
 
-  // nova regija v vodiču → plošča se znova pokaže (uporabnik vidi rezultat)
-  useEffect(() => {
-    setPlanDismissed(false);
-  }, [planKey]);
-
   // ————— NAVIGACIJA PO POTI (postanek-po-postanku do destinacije) —————
-  const [navIndex, setNavIndex] = useState<number | null>(null);
-  const [routeInfo, setRouteInfo] = useState<{ legs: OsrmLegInfo[]; totalKm: number } | null>(null);
-  const [routeFailed, setRouteFailed] = useState(false);
+  // Stanje je PER-ROUTE: če se pot spremeni, se staro stanje samodejno
+  // izniči (routeKey ne ustreza) — brez useEffect-a s setState.
+  interface NavState {
+    routeKey: string | null;
+    index: number | null;
+    info: { legs: OsrmLegInfo[]; totalKm: number } | null;
+    failed: boolean;
+  }
+  const [nav, setNav] = useState<NavState>({ routeKey: null, index: null, info: null, failed: false });
+  const navActive = nav.routeKey === routeKey && nav.index !== null;
+  const navIndex = navActive ? nav.index : null;
+  const routeInfo = nav.routeKey === routeKey ? nav.info : null;
+  const routeFailed = nav.routeKey === routeKey ? nav.failed : false;
+  const setNavIndex = (index: number | null) => setNav((n) => ({ ...n, routeKey, index }));
+  const setRouteInfo = (info: NavState['info']) => setNav((n) => ({ ...n, routeKey, info }));
+  const setRouteFailed = (failed: boolean) => setNav((n) => ({ ...n, routeKey, failed }));
+  const resetNav = () => setNav({ routeKey, index: null, info: null, failed: false });
+
   const routeAbortRef = useRef<AbortController | null>(null);
   const routeLayerRef = useRef<unknown>(null);
   /** Linija izbrane povezave javnega prevoza (vijolična, ločena od OSRM). */
@@ -737,8 +754,10 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
   /** Začasni marker za globoko povezavo ?dest=slug (ko destinacija ni v planu). */
   const focusMarkerRef = useRef<unknown>(null);
   const planRef = useRef<readonly TripStop[] | null>(null);
-  planRef.current = plan;
-  const navActive = navIndex !== null;
+  // Ref z NAJNOVEJŠIM planom za klicatelje (posodobi se po vsakem renderu).
+  useEffect(() => {
+    planRef.current = plan;
+  });
 
   // ————— DNEVNI TRAK (dnevi + OSRM časi vožnje med postanki) —————
   // postanke poti razdelimo na dneve (po vodiču: days + pace); časi pritečejo
@@ -902,9 +921,34 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
   const [tourPaused, setTourPaused] = useState(false);
   const [tourIndex, setTourIndex] = useState(0);
   const [tourCats, setTourCats] = useState<readonly MapGuideCategory[]>(['mesto', 'vas', 'kmecki', 'narava']);
+
+  /**
+   * Vreme/Wikipedia trenutnega kraja turneje — stanje je KLJUČANO na indeks:
+   * ob spremembi kraja se staro stanje samodejno izniči (pokaže se
+   * nalaganje), brez useEffect-a s setState.
+   */
+  interface TourInfoState {
+    key: number | null;
+    weather: LiveData<WeatherPayload>;
+    wiki: LiveData<WikiSummary>;
+  }
+  const [tourInfo, setTourInfo] = useState<TourInfoState>({
+    key: null,
+    weather: 'loading',
+    wiki: 'loading',
+  });
   const tourLayerRef = useRef<unknown>(null);
   const tourMarkersRef = useRef<Map<string, LeafletMarker>>(new Map());
   const tourPlaces = useMemo(() => placesForCategories(tourCats), [tourCats]);
+  const tourIndexSafe =
+    tourPlaces.length > 0 ? Math.min(tourIndex, tourPlaces.length - 1) : 0;
+  const tourInfoMatches = tourInfo.key === tourIndexSafe;
+  const tourWeather = tourInfoMatches ? tourInfo.weather : 'loading';
+  const tourWiki = tourInfoMatches ? tourInfo.wiki : 'loading';
+  const setTourWeather = (weather: LiveData<WeatherPayload>) =>
+    setTourInfo((n) => ({ ...n, key: tourIndexSafe, weather }));
+  const setTourWiki = (wiki: LiveData<WikiSummary>) =>
+    setTourInfo((n) => ({ ...n, key: tourIndexSafe, wiki }));
   const catCounts = useMemo(() => {
     const m: Record<MapGuideCategory, number> = { mesto: 0, vas: 0, kmecki: 0, narava: 0 };
     for (const p of MAP_GUIDE_PLACES) m[p.category] += 1;
@@ -949,18 +993,14 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
 
   /** Zaključi navigacijo — nazaj na ploščo postankov. */
   const endNavigation = () => {
-    setNavIndex(null);
-    setRouteInfo(null);
-    setRouteFailed(false);
+    resetNav();
     routeAbortRef.current?.abort();
     removeRouteLayer();
   };
 
-  // Sprememba poti → prekini zastarele zahtevke; stanje POI se vodi po routeKey.
+  // Sprememba poti → prekini zastarele zahtevke (stanje navigacije se
+  // izniči samodejno prek routeKey v `nav`; POI stanje se vodi po routeKey).
   useEffect(() => {
-    setNavIndex(null);
-    setRouteInfo(null);
-    setRouteFailed(false);
     routeAbortRef.current?.abort();
     const poiRequest = poiAbortRef.current;
     if (poiRequest && poiRequest.routeKey !== routeKey) {
@@ -1040,10 +1080,6 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
       planLayerRef.current = null;
       planMarkersRef.current = new Map();
     }
-    if (transitLayerRef.current) {
-      (transitLayerRef.current as L.Polyline).remove();
-      transitLayerRef.current = null;
-    }
     if (!plan) return;
     const group = L.layerGroup();
     plan.forEach((stop, i) => {
@@ -1063,6 +1099,17 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
       planMarkersRef.current.set(stop.name, m);
     });
     planLayerRef.current = group.addTo(map);
+  }, [plan, mapReady]);
+
+  // Linija javnega prevoza se počisti ob spremembi plana/mape (ali unmount).
+  useEffect(() => {
+    const L = LeafletRef.current;
+    return () => {
+      if (L && transitLayerRef.current) {
+        (transitLayerRef.current as L.Polyline).remove();
+        transitLayerRef.current = null;
+      }
+    };
   }, [plan, mapReady]);
 
   // VODIČ PO ZEMLJEVIDU: oznake turneje — barvne točke po kategorijah
@@ -1098,15 +1145,13 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
     tourLayerRef.current = group.addTo(map);
   }, [tourOn, tourPlaces, mapReady]);
 
-  // izbor kategorij se skrči → indeks varno nazaj na začetek
-  useEffect(() => {
-    if (tourIndex >= tourPlaces.length) setTourIndex(0);
-  }, [tourIndex, tourPlaces.length]);
+  // Izbor kategorij se skrči → indeks je varno omejen prek `tourIndexSafe`
+  // (izpeljano, brez efekta s setState).
 
   // polet na trenutni kraj + pojavno okno + govor (isti glas kot navigacija)
   useEffect(() => {
     if (!tourOn || tourPlaces.length === 0 || !mapReady) return;
-    const i = Math.max(0, Math.min(tourIndex, tourPlaces.length - 1));
+    const i = tourIndexSafe;
     const p = tourPlaces[i];
     mapRef.current?.flyTo([p.lat, p.lng], p.category === 'mesto' ? 10 : 11, { duration: 1.2 });
     tourMarkersRef.current.get(p.id)?.openPopup();
@@ -1126,13 +1171,11 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
   // Wikipedia povzetek (če naslov obstaja) — ena vrstica v kontrolnem traku.
   useEffect(() => {
     if (!tourOn || tourPlaces.length === 0) return;
-    const i = Math.max(0, Math.min(tourIndex, tourPlaces.length - 1));
+    const i = tourIndexSafe;
     const p = tourPlaces[i];
     tourInfoAbortRef.current?.abort();
     const controller = new AbortController();
     tourInfoAbortRef.current = controller;
-    setTourWeather('loading');
-    setTourWiki(p.wikiTitle ? 'loading' : null);
     fetch(`/api/open-data/weather?lat=${p.lat.toFixed(4)}&lng=${p.lng.toFixed(4)}`, { signal: controller.signal })
       .then((r) => r.json() as Promise<{ ok: boolean; weather?: WeatherPayload }>)
       .then((j) => {
@@ -1154,10 +1197,9 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
     return () => controller.abort();
   }, [tourOn, tourIndex, tourPlaces]);
 
-  // nova rezervacija → plošča »Tvoja pot« se sama odpre (uporabnik VIDI zapis)
-  useEffect(() => {
-    if (reservedStays.length > 0) setPlanDismissed(false);
-  }, [reservedStays.length]);
+  // Nova rezervacija → plošča »Tvoja pot« se sama odpre (setPlanDismissed(false)
+  // je v rezervacijskem toku); ob nalaganju z obstoječimi zapisi jo odpre
+  // pogoj v JSX (reservedStays.length > 0) — useEffect ni potreben.
 
   // oznake REZERVIRANIH prenočišč — trajne (iz shrambe, ob vrnitvi spet vidne)
   useEffect(() => {
@@ -2143,7 +2185,7 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
                 <Compass className="size-4 text-emerald-600" aria-hidden />
                 Izklopi vodiča
               </Button>
-              <Button size="icon" variant="outline" className="size-11 shrink-0 sm:size-8" disabled={tourIndex === 0} onClick={tourPrev} aria-label="Nazaj — prejšnji kraj">
+              <Button size="icon" variant="outline" className="size-11 shrink-0 sm:size-8" disabled={tourIndexSafe === 0} onClick={tourPrev} aria-label="Nazaj — prejšnji kraj">
                 <ChevronLeft className="size-4" aria-hidden />
               </Button>
               <Button size="icon" variant="outline" className="size-11 shrink-0 sm:size-8" onClick={() => setTourPaused((v) => !v)} aria-label={tourPaused ? 'Nadaljuj vodiča' : 'Premor vodiča'}>
@@ -2153,7 +2195,7 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
                 <ChevronRight className="size-4" aria-hidden />
               </Button>
               <p role="status" aria-live="polite" className="ml-1 min-w-0 flex-1 truncate text-xs font-medium">
-                {mapGuideProgressLabel(tourPlaces, tourIndex)}
+                {mapGuideProgressLabel(tourPlaces, tourIndexSafe)}
               </p>
               <span className="hidden truncate text-[11px] text-muted-foreground md:inline">izbor krajev · polna baza sledi</span>
             </div>

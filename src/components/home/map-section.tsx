@@ -47,6 +47,7 @@ import { CATALOG_ATTRIBUTION } from '@/lib/poi-catalog';
 import { clusterRkd, filterRkd, filterRkdInBounds, parseRkdData, type RkdDataset } from '@/lib/rkd';
 import { buildRkdLayer } from '@/lib/rkd-layer';
 import { BALKAN_COUNTRY_VIEWS } from '@/lib/countries';
+import { PLACE_CATEGORIES, placeCategoryById, type PlaceResult } from '@/lib/place-categories';
 import {
   TRANSIT_ATTRIBUTION,
   TRANSIT_DEFAULT_ORIGIN,
@@ -273,8 +274,89 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
   const [mode, setMode] = useState<'map' | 'list'>('map');
   /** Navigacija pogleda: izbrana država → približaj (brez filtriranja). */
   const [countrySel, setCountrySel] = useState('');
+  /** »Iščem:« — kategorija krajev okoli izbranega območja (država/center). */
+  const [placeSel, setPlaceSel] = useState('');
+  const [placesResult, setPlacesResult] = useState<{
+    key: string;
+    places: PlaceResult[];
+    error?: string;
+  } | null>(null);
+  const placesLayerRef = useRef<unknown>(null);
+  const placesAbortRef = useRef<AbortController | null>(null);
+
   const [mapReady, setMapReady] = useState(false);
   const relief = useSyncExternalStore(subscribeLidarPref, getLidarSnapshot, () => false);
+
+  // »IŠČEM:« — poišči kraje izbrane kategorije okoli območja (država/center).
+  useEffect(() => {
+    const L = LeafletRef.current;
+    const map = mapRef.current;
+    if (placesLayerRef.current) {
+      if (L) (placesLayerRef.current as L.LayerGroup).remove();
+      placesLayerRef.current = null;
+    }
+    placesAbortRef.current?.abort();
+    if (!L || !map || !mapReady || !placeSel) {
+      setPlacesResult(null);
+      return;
+    }
+    const category = placeCategoryById(placeSel);
+    if (!category) return;
+    let center: { lat: number; lng: number };
+    if (countrySel) {
+      const c = BALKAN_COUNTRY_VIEWS.find((x) => x.id === countrySel);
+      if (!c) return;
+      center = { lat: c.lat, lng: c.lng };
+    } else {
+      const c = map.getCenter();
+      center = { lat: c.lat, lng: c.lng };
+    }
+    const key = `${placeSel}:${center.lat.toFixed(1)},${center.lng.toFixed(1)}`;
+    const controller = new AbortController();
+    placesAbortRef.current = controller;
+    fetch(
+      `/api/pot/places?cat=${encodeURIComponent(placeSel)}&lat=${center.lat.toFixed(4)}&lng=${center.lng.toFixed(4)}&radius=20`,
+      { signal: controller.signal },
+    )
+      .then(
+        (r) => r.json() as Promise<{ ok: boolean; places?: PlaceResult[]; error?: string }>,
+      )
+      .then((j) => {
+        if (controller.signal.aborted) return;
+        if (!j.ok) {
+          setPlacesResult({ key, places: [], error: j.error ?? 'Iskanje ni uspelo.' });
+          return;
+        }
+        const places = Array.isArray(j.places) ? j.places : [];
+        setPlacesResult({ key, places });
+        if (places.length === 0) return;
+        const group = L.layerGroup();
+        for (const p of places) {
+          const icon = L.divIcon({
+            className: 'dsa-pin-place',
+            html: `<div style="width:15px;height:15px;border-radius:50%;background:${category.color};border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,.4)"></div>`,
+            iconSize: [15, 15],
+            iconAnchor: [8, 8],
+          });
+          L.marker([p.lat, p.lng], { icon, title: p.name, zIndexOffset: 570 })
+            .addTo(group)
+            .bindPopup(
+              `<strong>${escapeXml(p.name)}</strong><br/>` +
+                `${category.label}<br/>` +
+                `<button type="button" class="dsa-add-poi-btn" data-kind="place" data-id="place-${escapeXml(p.id)}" ` +
+                `data-name="${escapeXml(p.name)}" data-lat="${p.lat}" data-lng="${p.lng}" ` +
+                `data-category="${escapeXml(category.label)}" data-source="osm" ` +
+                `style="margin-top:4px;padding:3px 10px;border-radius:999px;border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;font-size:12px;cursor:pointer">+ Dodaj v pot</button>`,
+            );
+        }
+        placesLayerRef.current = group.addTo(map);
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setPlacesResult({ key, places: [], error: 'Vir OpenStreetMap ni dosegljiv.' });
+      });
+    return () => controller.abort();
+  }, [placeSel, countrySel, mapReady]);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const reliefLayerRef = useRef<unknown>(null);
@@ -1612,6 +1694,7 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
       planLayerRef.current = null;
       planMarkersRef.current = new Map();
       transitLayerRef.current = null;
+      placesLayerRef.current = null;
       stayLayerRef.current = null;
       reservedLayerRef.current = null;
       tourLayerRef.current = null;
@@ -1682,6 +1765,34 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
               ))}
             </select>
           </div>
+          {/* »IŠČEM:« — kategorija krajev okoli izbranega območja. */}
+          <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-muted/40 px-2.5 py-1">
+            <Label htmlFor="place-cat" className="text-xs text-muted-foreground">
+              Iščem
+            </Label>
+            <select
+              id="place-cat"
+              value={placeSel}
+              onChange={(e) => setPlaceSel(e.target.value)}
+              aria-label="Kategorija krajev, ki jih iščem"
+              className="h-7 rounded-md border border-border/70 bg-background/80 px-1.5 text-xs text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <option value="">—</option>
+              {PLACE_CATEGORIES.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          {placesResult && placesResult.error && (
+            <span className="text-[11px] text-destructive">{placesResult.error}</span>
+          )}
+          {placesResult && !placesResult.error && placesResult.places.length > 0 && (
+            <span className="text-[11px] text-muted-foreground">
+              {placesResult.places.length} najdenih · {placeCategoryById(placeSel)?.label ?? ''}
+            </span>
+          )}
           <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-muted/40 px-2.5 py-1">
             <Mountain className="size-3.5 text-stone-600" aria-hidden />
             <Label htmlFor="lidar-toggle" className="text-xs text-muted-foreground">

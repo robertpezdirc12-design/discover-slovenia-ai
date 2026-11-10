@@ -253,6 +253,13 @@ type LiveData<T> = 'loading' | T | null;
 
 const EMPTY_STAYS: GuideStayStop[] = [];
 
+/** Stabilna prazna vrednost za START ANYWHERE snapshot (server + predpomnilnik). */
+const EMPTY_CUSTOM_STOPS: readonly TripStop[] = [];
+const customStopsCache: { raw: string | null; stops: readonly TripStop[] } = {
+  raw: null,
+  stops: EMPTY_CUSTOM_STOPS,
+};
+
 /** Barve točk vodiča po kategorijah (označevalci + čipi filtra). */
 const TOUR_COLORS: Record<MapGuideCategory, string> = {
   mesto: '#059669',
@@ -282,6 +289,8 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
       : null;
   const planKey = guideRegion?.id ?? null;
   // START ANYWHERE: lastno uvoženi kraji (localStorage, tako kot vrstni red).
+  // Snapshot-a morata biti STABILNI (ista referenca ob nespremenjenem
+  // surovem nizu), sicer useSyncExternalStore opozori na neskončno zanko.
   const customStops = useSyncExternalStore(
     (onChange) => {
       window.addEventListener(CUSTOM_STOPS_EVENT, onChange);
@@ -293,12 +302,20 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
     },
     () => {
       try {
-        return parseCustomStops(window.localStorage.getItem(CUSTOM_STOPS_KEY));
+        const raw = window.localStorage.getItem(CUSTOM_STOPS_KEY);
+        if (customStopsCache.raw !== raw) {
+          customStopsCache.raw = raw;
+          customStopsCache.stops = parseCustomStops(raw);
+        }
       } catch {
-        return [] as readonly TripStop[];
+        if (customStopsCache.raw !== null) {
+          customStopsCache.raw = null;
+          customStopsCache.stops = EMPTY_CUSTOM_STOPS;
+        }
       }
+      return customStopsCache.stops;
     },
-    () => [] as readonly TripStop[],
+    () => EMPTY_CUSTOM_STOPS,
   );
   // VEČDRŽAVNA POT: unija destinacij glavne regije + dodatnih regij
   // (Faza E-lite) + uvoženi kraji. Dedupe po imenu; vrstni red: glavna,

@@ -1810,7 +1810,6 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
           {(
             [
               ['all', 'Vse'],
-              ['bivanje', 'Prebivanje'],
               ['zanimivosti', 'Zanimivosti'],
               ['dediscina', 'Dediščina'],
             ] as const
@@ -1822,9 +1821,7 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
               aria-pressed={exploreCat === value}
               onClick={() => {
                 setExploreCat(value);
-                if (value === 'bivanje') {
-                  document.getElementById('stay-search-input')?.focus();
-                } else if (value === 'dediscina') {
+                if (value === 'dediscina') {
                   if (!rkdEnabled) setRkdEnabled(true);
                 } else if (value === 'zanimivosti') {
                   if (ctx) setNearbySel('poi');
@@ -1909,99 +1906,6 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
             ))}
           </div>
         )}
-      </div>
-
-      {/* PRENOČIŠČA — iskalna vrstica: aplikacija VODI (vzorci + izrečeno stanje).
-          Klik na vzorec = en klik do zadetkov; dela povsod (Skopje, Zagreb …). */}
-      <div className="mt-3 rounded-2xl border border-border/80 bg-card/90 px-3.5 py-3 shadow-sm backdrop-blur-sm">
-        <form
-          className="flex flex-col gap-2.5 sm:flex-row sm:items-center"
-          onSubmit={(e) => {
-            e.preventDefault();
-            runStaySearch(stayQuery);
-          }}
-        >
-          <div className="flex flex-1 items-center gap-2">
-            <BedDouble className="size-4 shrink-0 text-amber-700" aria-hidden />
-            <Input
-              id="stay-search-input"
-              value={stayQuery}
-              onChange={(e) => setStayQuery(e.target.value)}
-              placeholder="Išči prenočišča — npr. Skopje, Bled, Zagreb"
-              aria-label="Iskanje prenočišč po imenu kraja"
-              className="h-11 border-border/80 bg-background/80 sm:h-10"
-              autoComplete="off"
-            />
-          </div>
-          <Button type="submit" size="sm" className="h-11 sm:h-10" disabled={staySearch.status === 'loading'}>
-            {staySearch.status === 'loading' ? (
-              <Loader2 className="size-4 animate-spin" aria-hidden />
-            ) : (
-              <Search className="size-4" aria-hidden />
-            )}
-            Išči prenočišča
-          </Button>
-        </form>
-        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-          <span className="text-xs text-muted-foreground">Ne veš, kje? Poskusi:</span>
-          {['Skopje', 'Bled', 'Zagreb'].map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => runStaySearch(c)}
-              className="rounded-full border border-border/80 bg-background/70 px-2.5 py-1 text-xs transition-colors hover:border-primary/30 hover:bg-primary/5"
-              aria-label={`Išči prenočišča v ${c}`}
-            >
-              {c}
-            </button>
-          ))}
-          <span aria-live="polite" className="ml-auto min-w-0 truncate text-xs text-muted-foreground">
-            {staySearch.status === 'ok'
-              ? staySearch.stays.length > 0
-                ? `${staySearch.stays.length} prenočišč · ${staySearch.place.name}`
-                : `Ni zadetkov za “${staySearch.place.name}” — poskusi širše ime`
-              : staySearch.status === 'error'
-                ? staySearch.message
-                : ''}
-          </span>
-        </div>
-        {/* VRSTA PRENOČIŠČA — apartmaji za cel Balkan, hoteli, gostišča …
-            Strežniški filter (Overpass + Photon dobita samo izbrane vrste,
-            zato meja 24 zadetkov ne pogrešne izbranih). Klik na aktivni
-            čip vrne nazaj na vse vrste. */}
-        <div className="mt-2.5 flex flex-wrap items-center gap-1.5 border-t border-border/70 pt-2.5">
-          <span className="text-xs text-muted-foreground">Vrsta:</span>
-          <button
-            type="button"
-            aria-pressed={stayKinds.length === STAY_KINDS.length}
-            onClick={() => clickStayKind('all')}
-            className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1 text-xs transition-colors sm:min-h-8 sm:px-2.5 sm:py-0.5 ${
-              stayKinds.length === STAY_KINDS.length
-                ? 'border-primary/40 bg-primary/10 text-primary'
-                : 'border-transparent text-muted-foreground hover:bg-muted'
-            }`}
-          >
-            Vse
-          </button>
-          {STAY_KINDS.map((k) => {
-            const active = stayKinds.length === 1 && stayKinds[0] === k;
-            return (
-              <button
-                key={k}
-                type="button"
-                aria-pressed={active}
-                onClick={() => clickStayKind(k)}
-                className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1 text-xs transition-colors sm:min-h-8 sm:px-2.5 sm:py-0.5 ${
-                  active
-                    ? 'border-primary/40 bg-primary/10 text-primary'
-                    : 'border-transparent text-muted-foreground hover:bg-muted'
-                }`}
-              >
-                {STAY_KIND_LABELS[k]}
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       {/* Enoten vir višine: skeleton, mapa in seznam so absolutni znotraj te škatle */}

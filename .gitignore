@@ -79,3 +79,4 @@ server.log
 
 /test-results/
 /playwright-report/
+/ui-*.png

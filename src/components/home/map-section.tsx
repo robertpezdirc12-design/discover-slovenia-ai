@@ -89,7 +89,6 @@ import {
 } from '@/lib/currency';
 import { ImportPlacesDialog } from '@/components/home/import-places-dialog';
 import { PackingDialog } from '@/components/home/packing-dialog';
-import { AUTUMN_CATEGORY_LABELS, autumnByCategory, type AutumnCategory } from '@/lib/autumn';
 import { CUSTOM_STOPS_EVENT, CUSTOM_STOPS_KEY, parseCustomStops } from '@/lib/import-places';
 import type { OsrmLegInfo } from '@/lib/osrm-route';
 import { SHOW_TRIP_EVENT, speak } from '@/lib/speech';
@@ -938,43 +937,6 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
   }, [planKey, regionCurrency, rates]);
   const localNote = localCurrencyNote(planKey, budget.totalEur, rates);
 
-  // ————— JESENSKE DESTINACIJE (kuriran sloj: vino + kostanj) —————
-  const [autumnOn, setAutumnOn] = useState(false);
-  const [autumnCat, setAutumnCat] = useState<AutumnCategory | null>(null);
-  const autumnLayerRef = useRef<unknown>(null);
-
-  useEffect(() => {
-    const L = LeafletRef.current;
-    const map = mapRef.current;
-    if (autumnLayerRef.current) {
-      if (L) (autumnLayerRef.current as L.LayerGroup).remove();
-      autumnLayerRef.current = null;
-    }
-    if (!L || !map || !autumnOn || !mapReady) return;
-    const group = L.layerGroup();
-    for (const d of autumnByCategory(autumnCat)) {
-      const color = d.category === 'vino' ? '#7c2d12' : '#9a3412';
-      const icon = L.divIcon({
-        className: 'dsa-pin-autumn',
-        html: `<div style="width:16px;height:16px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,.4)"></div>`,
-        iconSize: [16, 16],
-        iconAnchor: [8, 8],
-      });
-      L.marker([d.lat, d.lng], { icon, title: d.name, zIndexOffset: 580 })
-        .addTo(group)
-        .bindPopup(
-          `<strong>${escapeXml(d.name)}</strong><br/>` +
-            `${AUTUMN_CATEGORY_LABELS[d.category]} · ${escapeXml(d.country)}<br/>` +
-            `${escapeXml(d.note)}<br/>` +
-            `<button type="button" class="dsa-add-poi-btn" data-kind="autumn" data-id="${escapeXml(d.id)}" ` +
-            `data-name="${escapeXml(d.name)}" data-lat="${d.lat}" data-lng="${d.lng}" ` +
-            `data-category="${AUTUMN_CATEGORY_LABELS[d.category]}" data-source="jesen" ` +
-            `style="margin-top:4px;padding:3px 10px;border-radius:999px;border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;font-size:12px;cursor:pointer">+ Dodaj v pot</button>`,
-        );
-    }
-    autumnLayerRef.current = group.addTo(map);
-  }, [autumnOn, autumnCat, mapReady]);
-
   // ————— IZVOZ GPX (offline pot) —————
   // Vrstni red: destinacije načrta, nato rezervirana prenočišča; čista
   // podatkovna plast v gpx-export.ts poskrbi za veljavnost koordinat.
@@ -1647,7 +1609,6 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
       planLayerRef.current = null;
       planMarkersRef.current = new Map();
       transitLayerRef.current = null;
-      autumnLayerRef.current = null;
       stayLayerRef.current = null;
       reservedLayerRef.current = null;
       tourLayerRef.current = null;
@@ -1745,45 +1706,6 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
             Register nepremične kulturne dediščine (RKD) — MOP/GURS, OPSI (CC BY 4.0). Zbira: podatki.gov.si. Klik na gručo približa pogled.
           </p>
         )}
-
-        {/* JESENSKE DESTINACIJE — kuriran sloj (vinske ceste + kostanj). */}
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-border/60 pt-2">
-          <span className="text-[11px] font-medium text-muted-foreground">Razišči:</span>
-          <button
-            type="button"
-            data-active={autumnOn}
-            aria-pressed={autumnOn}
-            onClick={() => setAutumnOn((v) => !v)}
-            className="rounded-full border border-border/80 bg-card/70 px-3 py-1 text-xs transition-colors hover:border-primary/30 hover:bg-primary/5 data-[active=true]:border-primary/40 data-[active=true]:bg-primary/10 data-[active=true]:text-primary"
-          >
-            Jesenske destinacije
-          </button>
-          {autumnOn && (
-            <>
-              <button
-                type="button"
-                data-active={autumnCat === null}
-                aria-pressed={autumnCat === null}
-                onClick={() => setAutumnCat(null)}
-                className="rounded-full border border-border/80 bg-card/70 px-3 py-1 text-xs transition-colors hover:border-primary/30 hover:bg-primary/5 data-[active=true]:border-primary/40 data-[active=true]:bg-primary/10 data-[active=true]:text-primary"
-              >
-                Vse
-              </button>
-              {(['vino', 'kostanj'] as const).map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  data-active={autumnCat === cat}
-                  aria-pressed={autumnCat === cat}
-                  onClick={() => setAutumnCat(cat)}
-                  className="rounded-full border border-border/80 bg-card/70 px-3 py-1 text-xs transition-colors hover:border-primary/30 hover:bg-primary/5 data-[active=true]:border-primary/40 data-[active=true]:bg-primary/10 data-[active=true]:text-primary"
-                >
-                  {AUTUMN_CATEGORY_LABELS[cat]}
-                </button>
-              ))}
-            </>
-          )}
-        </div>
       </div>
 
       {/* Enoten vir višine: skeleton, mapa in seznam so absolutni znotraj te škatle */}

@@ -1575,3 +1575,19 @@ Work Log:
 Stage Summary:
 - Proračun zdaj govori »jezik« države: za Srbijo RSD, BiH BAM, Albanijo ALL, Makedonijo MKD (EUR ostaja referenca).
 - Preostale faze: B i18n, D mednarodni prevoz/meje, E/F kolaboracija/AI.
+
+---
+Task ID: POLIRAJ-21-BALKAN-FAZA-D (meje in prevoz)
+Datum: 2026-11-10
+Agent: ZCode (main session)
+Task: informativni modul »meje in prevoz« za 7 držav
+
+Work Log:
+- src/lib/countries.ts: kurirane informacije po državah — EU/Schengen status, prevozni vozli (avtobusi/vlaki/trajekti/letališča), praktične opombe (vstop, gotovina, sezone), uradne/koristne povezave. Nevtralno, informativno, brez API-ja.
+- /kraj/[slug]: za destinacije zunaj Slovenije nova sekcija »{država}: meje in prevoz« — značka statusa (EU · Schengen / ni EU), seznam prevoza, okvir »Praktično« in povezave.
+- TESTI: +4 (pokritost 7 držav, veljavnost https povezav, enoličnost imen) → 313 pass / 0 fail / 3007 expect.
+- PRODUKCIJA: /kraj/beograd vsebuje sekcijo (»ni EU · mejne kontrole«, »Praktično«, povezave); /kraj/bled je brez nje (0 zadetkov).
+- GIT: c54476e → GitHub main + GitLab sandbox/guided-ux-line.
+
+Stage Summary:
+- Faze A–D so izvedene: katalog 8 držav, valute, meje/prevoz. Preostala: B i18n, E/F kolaboracija/AI.

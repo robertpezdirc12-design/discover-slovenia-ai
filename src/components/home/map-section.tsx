@@ -276,7 +276,7 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
   const [countrySel, setCountrySel] = useState('');
   /** »Iščem:« — kategorija krajev okoli izbranega območja (država/center). */
   const [placeSel, setPlaceSel] = useState('');
-  const [resultsVisible, setResultsVisible] = useState(true);
+  const [resultsVisible, setResultsVisible] = useState(false);
   const [placesResult, setPlacesResult] = useState<{
     key: string;
     places: PlaceResult[];
@@ -304,10 +304,14 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
     }
     const category = placeCategoryById(placeSel);
     if (!category) return;
-    const key = placeSel; // iskanje po VSEM BALKANU (ne le okolica)
+    // Če je izbrana država, omejimo iskanje na njo; sicer iščemo po vsem Balkanu.
+    const key = countrySel ? `${placeSel}:${countrySel}` : placeSel;
+    const params = countrySel
+      ? `cat=${encodeURIComponent(placeSel)}&scope=country&country=${encodeURIComponent(countrySel)}`
+      : `cat=${encodeURIComponent(placeSel)}&scope=balkan`;
     const controller = new AbortController();
     placesAbortRef.current = controller;
-    fetch(`/api/pot/places?cat=${encodeURIComponent(placeSel)}&scope=balkan`, {
+    fetch(`/api/pot/places?${params}`, {
       signal: controller.signal,
     })
       .then(
@@ -322,15 +326,17 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
         }
         const places = Array.isArray(j.places) ? j.places : [];
         setPlacesResult({ key, places, curated: j.curated });
-        setResultsVisible(true);
+        // Rezultatni seznam (»okence«) se NE odpira samodejno — pini so
+        // glavni izhod in morajo biti vidni na zemljevidu. Seznam uporabnik
+        // odpre s preklopom »pokaži« ob iskalni vrstici.
         if (places.length === 0) return;
         const group = L.layerGroup();
         for (const p of places) {
           const icon = L.divIcon({
             className: 'dsa-pin-place',
-            html: `<div style="width:15px;height:15px;border-radius:50%;background:${category.color};border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,.4)"></div>`,
-            iconSize: [15, 15],
-            iconAnchor: [8, 8],
+            html: `<div style="width:18px;height:18px;border-radius:50%;background:${category.color};border:2px solid #fff;box-shadow:0 0 4px rgba(0,0,0,.5)"></div>`,
+            iconSize: [18, 18],
+            iconAnchor: [9, 9],
           });
           L.marker([p.lat, p.lng], { icon, title: p.name, zIndexOffset: 570 })
             .addTo(group)
@@ -353,7 +359,7 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
         setPlacesResult({ key, places: [], error: 'Vir OpenStreetMap ni dosegljiv.' });
       });
     return () => controller.abort();
-  }, [placeSel, mapReady]);
+  }, [placeSel, countrySel, mapReady]);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const reliefLayerRef = useRef<unknown>(null);
@@ -1754,26 +1760,9 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
               )}
             </span>
           </div>
-          {/* ENOTNA ISKALNA VRSTICA — kategorija »Iščem« + država (v enem okvirju). */}
+          {/* ENOTNA ISKALNA VRSTICA — najprej država, nato kategorija »Iščem« (v enem okvirju). */}
           <div className="flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/40 py-1 pl-3 pr-1.5">
             <span className="text-[11px] font-medium text-muted-foreground">Razišči:</span>
-            <select
-              id="place-cat"
-              value={placeSel}
-              onChange={(e) => {
-                setPlaceSel(e.target.value);
-                if (e.target.value) setResultsVisible(true);
-              }}
-              aria-label="Kategorija krajev, ki jih iščem"
-              className="h-7 rounded-full border border-border/70 bg-background/80 px-2 text-xs text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <option value="">—</option>
-              {PLACE_CATEGORIES.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
             <select
               id="country-view"
               value={countrySel}
@@ -1784,29 +1773,35 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
                 const c = BALKAN_COUNTRY_VIEWS.find((x) => x.id === v);
                 if (c) mapRef.current?.flyTo([c.lat, c.lng], c.zoom, { duration: 1.4 });
               }}
-              aria-label="Približaj državo na zemljevidu"
+              aria-label="Država — omeji iskanje in približaj na zemljevidu"
               className="h-7 rounded-full border border-border/70 bg-background/80 px-2 text-xs text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
-              <option value="">Vse</option>
+              <option value="">Vse države</option>
               {BALKAN_COUNTRY_VIEWS.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
               ))}
             </select>
+            <select
+              id="place-cat"
+              value={placeSel}
+              onChange={(e) => {
+                setPlaceSel(e.target.value);
+              }}
+              aria-label="Kategorija krajev, ki jih iščem"
+              className="h-7 rounded-full border border-border/70 bg-background/80 px-2 text-xs text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <option value="">— kaj iščem?</option>
+              {PLACE_CATEGORIES.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
           </div>
           {placesResult && placesResult.error && (
             <span className="text-[11px] text-destructive">{placesResult.error}</span>
-          )}
-          {placesResult && !placesResult.error && placesResult.places.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setResultsVisible((v) => !v)}
-              className="text-[11px] text-muted-foreground underline underline-offset-2 hover:text-foreground"
-            >
-              {placesResult.places.length} najdenih · {placeCategoryById(placeSel)?.label ?? ''}
-              {placesResult.curated ? ' · kurirano' : ''} {resultsVisible ? '· skrij' : '· pokaži'}
-            </button>
           )}
           <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-muted/40 px-2.5 py-1">
             <Mountain className="size-3.5 text-stone-600" aria-hidden />

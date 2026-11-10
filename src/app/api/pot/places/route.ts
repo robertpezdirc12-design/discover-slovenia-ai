@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import {
   BALKAN_BBOX,
   buildFallbackPlaces,
+  COUNTRY_BBOX,
   overpassPlacesQuery,
   parseOverpassPlaces,
   placeCategoryById,
@@ -38,7 +39,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, error: 'Neznana kategorija.' }, { status: 400 });
   }
   // Privzeto iščemo PO VSEM BALKANU; z `scope=local&lat&lng` je mogoče
-  // omejeno iskanje okoli točke (uporabno za prihodnje razširitve).
+  // omejeno iskanje okoli točke, z `scope=country&country=<id>` pa poženemo
+  // iskanje znotraj izbrane države (uporabno za vmesnik »država → kaj iščem«).
   const scope = url.searchParams.get('scope') ?? 'balkan';
   let bbox = BALKAN_BBOX;
   let radius = 20;
@@ -51,6 +53,13 @@ export async function GET(request: Request) {
     }
     const d = (radius / 100) * 0.02;
     bbox = `${lat - d},${lng - d},${lat + d},${lng + d}`;
+  } else if (scope === 'country') {
+    const country = (url.searchParams.get('country') ?? '').trim();
+    const cb = COUNTRY_BBOX[country];
+    if (!cb) {
+      return NextResponse.json({ ok: false, error: 'Neznana država.' }, { status: 400 });
+    }
+    bbox = cb;
   }
   const query = overpassPlacesQuery(category, bbox, scope === 'local' ? 30 : 60);
 
@@ -82,12 +91,14 @@ export async function GET(request: Request) {
   }
 
   // REZERVA: kurirani predlogi območij — pini so vedno vidni, vir je
-  // izrecno označen (curated: true).
+  // izrecno označen (curated: true). Omejimo jih na izbrano državo, da se
+  // ne prikažejo »povsod« po Balkanu.
+  const fbCountry = scope === 'country' ? (url.searchParams.get('country') ?? '').trim() : '';
   return NextResponse.json({
     ok: true,
     category: catId,
     radius,
     curated: true,
-    places: buildFallbackPlaces(category, catId as PlaceCategoryId),
+    places: buildFallbackPlaces(category, catId as PlaceCategoryId, fbCountry || undefined),
   });
 }

@@ -32,6 +32,15 @@ export const dynamic = 'force-dynamic';
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const CACHE_MAX_ENTRIES = 30;
 const UPSTREAM_TIMEOUT_MS = 20_000;
+/**
+ * Overpass ima SVOJO, krajšo omejitev. Izmerjeno na Vercelu z `?debug=1`
+ * pri /api/pot/nearby: odhodni klic do globalnih zrcal se prekine šele pri
+ * ~10 s, zato je iskanje prenočišč čakalo 10,6 s, preden je Photon rezerva
+ * vseeno priskrbela zadetke. Hitro zrcalo odgovori v <4 s; sicer takoj
+ * nadaljujemo na naslednje zrcalo / Photon. Nominatim in Photon ostaneta
+ * pri 20 s (to sta zanesljiva vira).
+ */
+const OVERPASS_TIMEOUT_MS = 4_000;
 const MAX_QUERY_LEN = 80;
 const USER_AGENT =
   'discover-slovenia-ai-demo/0.2 (slovenian travel guide; fair-use demo)';
@@ -92,7 +101,7 @@ async function searchUpstream(q: string, kinds: readonly StayKind[]): Promise<Se
     try {
       const ovRes = await fetch(url, {
         headers: { 'user-agent': USER_AGENT, accept: 'application/json' },
-        signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+        signal: AbortSignal.timeout(OVERPASS_TIMEOUT_MS),
       });
       if (!ovRes.ok) throw new Error(`Overpass odgovoril HTTP ${ovRes.status}`);
       const parsed = parseStayResults(await ovRes.json());

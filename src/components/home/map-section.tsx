@@ -47,6 +47,7 @@ import { CATALOG_ATTRIBUTION } from '@/lib/poi-catalog';
 import { clusterRkd, filterRkd, filterRkdInBounds, parseRkdData, type RkdDataset } from '@/lib/rkd';
 import { buildRkdLayer } from '@/lib/rkd-layer';
 import { BALKAN_COUNTRY_VIEWS } from '@/lib/countries';
+import { DESTINATIONS as BALKAN_DESTINATIONS } from '@/lib/destinations';
 import { PLACE_CATEGORIES, placeCategoryById, type PlaceResult } from '@/lib/place-categories';
 import {
   TRANSIT_ATTRIBUTION,
@@ -287,6 +288,36 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
 
   const [mapReady, setMapReady] = useState(false);
   const relief = useSyncExternalStore(subscribeLidarPref, getLidarSnapshot, () => false);
+  /** Privzeti sloj: vse destinacije Balkana (vidne takoj ob nalaganju). */
+  const defaultDestLayerRef = useRef<unknown>(null);
+
+  useEffect(() => {
+    const L = LeafletRef.current;
+    const map = mapRef.current;
+    if (!L || !map || !mapReady) return;
+    if (defaultDestLayerRef.current) return;
+    const group = L.layerGroup();
+    for (const d of BALKAN_DESTINATIONS) {
+      const icon = L.divIcon({
+        className: 'dsa-pin-dest',
+        html: `<div style="width:15px;height:15px;border-radius:50%;background:#059669;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,.45)"></div>`,
+        iconSize: [15, 15],
+        iconAnchor: [8, 8],
+      });
+      L.marker([d.lat, d.lng], { icon, title: d.name, zIndexOffset: 500 })
+        .addTo(group)
+        .bindPopup(
+          `<strong>${escapeXml(d.name)}</strong><br/>` +
+            `${escapeXml(d.regionLabel)}<br/>` +
+            `${escapeXml(d.note)}<br/>` +
+            `<button type="button" class="dsa-add-poi-btn" data-kind="destinacija" data-id="dest-${escapeXml(d.slug)}" ` +
+            `data-name="${escapeXml(d.name)}" data-lat="${d.lat}" data-lng="${d.lng}" ` +
+            `data-category="Destinacija" data-source="izbor" ` +
+            `style="margin-top:4px;padding:3px 10px;border-radius:999px;border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;font-size:12px;cursor:pointer">+ Dodaj v pot</button>`,
+        );
+    }
+    defaultDestLayerRef.current = group.addTo(map);
+  }, [mapReady]);
 
   // »IŠČEM:« — poišči kraje izbrane kategorije okoli območja (država/center).
   useEffect(() => {
@@ -1690,6 +1721,7 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
       planMarkersRef.current = new Map();
       transitLayerRef.current = null;
       placesLayerRef.current = null;
+      defaultDestLayerRef.current = null;
       stayLayerRef.current = null;
       reservedLayerRef.current = null;
       tourLayerRef.current = null;

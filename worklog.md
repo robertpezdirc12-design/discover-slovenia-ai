@@ -1610,3 +1610,30 @@ Work Log:
 
 Stage Summary:
 - Uporabnik lahko zdaj načrtuje pot čez več držav (npr. Zagreb → Sarajevo → Mostar → Kotor) — zemljevid, cestna pot, GPX, dnevi, proračun, POI in tisk sledijo vsem izbranim regijam.
+
+---
+Task ID: POLIRAJ-23-START-ANYWHERE (skriptni ekvivalent Mindtrip)
+Datum: 2026-11-10
+Agent: ZCode (main session)
+Task: uresničiti najmočnejšo konkurenčno funkcijo brez AI modela
+
+Work Log:
+- PREDLOG iz raziskave (Mindtrip »Start Anywhere«, Wanderlog checkliste idr.): zemljevid funkcij konkurence → naši skriptni ekvivalenti.
+- IMPLEMENTIRANO: uvoz krajev iz besedila (Start Anywhere):
+  • src/lib/import-places.ts: parser (vrstice/podpičja, dedupe, cap 20),
+    storitev localStorage (serialize/parse, varstvo), placesToStops z
+    enoličnimi imeni (sufiks 2, 3 … ob konfliktih), Balkan bbox info;
+  • /api/pot/geocode: Photon/Komoot batch posrednik (timeout, varstvo);
+  • ImportPlacesDialog (v plošči »Tvoja pot«): prilepi seznam →
+    geokodiranje → izbira (checkbox) → dodaj v pot;
+  • map-section: uvoženi kraji se prek localStorage združijo v plan
+    (OSRM/GPX/dnevi/POI/tisk delujejo samodejno).
+- HROŠČČ NAJEN (produkcija 0/4): Photon NE podpira lang=sl → 400. Popravek: izpustimo jezik → lokalno 3/3 in produkcija 3/3 (Zagreb, Sarajevo, Mostar).
+- TESTI: +8 → 327 pass / 0 fail / 3030 expect.
+- GIT: b296edf (feat) + 2f4697e (fix) → GitHub main + GitLab sandbox/guided-ux-line.
+
+Stage Summary:
+- Uporabnik lahko zdaj prilepi seznam krajev (tudi iz Google Maps) in jih
+  dodamo v pot — brez AI modela, povsem s skriptami (Photon + OSRM).
+- Preostali skriptni ekvivalenti iz raziskave: packing checkliste,
+  delitev stroškov po postavkah, offline karte (PWA).

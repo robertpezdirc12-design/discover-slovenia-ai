@@ -217,3 +217,25 @@ describe('share-trip — pravilo uvoza', () => {
     expect(hasOwnPlan(FULL)).toBe(true);
   });
 });
+
+describe('share-trip — extraRegions (večdržavna pot)', () => {
+  test('round-trip: payload prenese extraRegions, sanitizacija jih omeji', () => {
+    const multi = stateWith({
+      region: 'srbija',
+      extraRegions: ['hrvaska', 'crna-gora'],
+    });
+    const payload = sharedTripPayload(multi);
+    const decoded = parseSharedTrip(payload)!;
+    expect(decoded.region).toBe('srbija');
+    expect(decoded.extraRegions).toEqual(['hrvaska', 'crna-gora']);
+  });
+
+  test('neveljavne dodatne regije se zavržejo', () => {
+    const bad = stateWith({
+      region: 'srbija',
+      extraRegions: ['hrvaska', 'neznana'] as never[],
+    });
+    const decoded = parseSharedTrip(sharedTripPayload(bad))!;
+    expect(decoded.extraRegions).toEqual(['hrvaska']);
+  });
+});

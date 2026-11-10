@@ -75,6 +75,11 @@ export interface GuideState {
   version: 1;
   interests: GuideInterest[];
   region: GuideRegionId | null;
+  /**
+   * Dodatne regije/države (Faza E-lite: večdržavna pot). Pot je unija
+   * destinacij glavne regije in teh regij. Stari zapisi brez polja → [].
+   */
+  extraRegions: GuideRegionId[];
   days: number | null;
   pace: GuidePace | null;
   /** Koraki, ki jih je uporabnik potrdil (tipkal "Naprej" / "Zaključi"). */
@@ -98,6 +103,7 @@ export function emptyGuideState(): GuideState {
     version: 1,
     interests: [],
     region: null,
+    extraRegions: [],
     days: null,
     pace: null,
     answered: [],
@@ -127,6 +133,18 @@ export function sanitizeGuideState(raw: unknown): GuideState | null {
       (GUIDE_REGIONS.some((g) => g.id === r.region))
     ? (r.region as GuideRegionId)
     : null;
+  // extraRegions: znane regije, unikatne, brez glavne regije, največ 6.
+  const extraRegions: GuideRegionId[] = [];
+  if (Array.isArray(r.extraRegions)) {
+    for (const id of r.extraRegions) {
+      if (typeof id !== 'string') continue;
+      if (!GUIDE_REGIONS.some((g) => g.id === id)) continue;
+      if (id === region) continue;
+      if (extraRegions.includes(id as GuideRegionId)) continue;
+      extraRegions.push(id as GuideRegionId);
+      if (extraRegions.length >= 6) break;
+    }
+  }
   const days = typeof r.days === 'number' && Number.isFinite(r.days) && r.days >= 1 && r.days <= 30
     ? Math.round(r.days)
     : null;
@@ -159,6 +177,7 @@ export function sanitizeGuideState(raw: unknown): GuideState | null {
     version: 1,
     interests,
     region,
+    extraRegions,
     days,
     pace,
     answered,

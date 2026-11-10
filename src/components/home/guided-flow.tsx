@@ -67,6 +67,7 @@ export function GuidedFlow() {
   const [dismissed, setDismissed] = useState(false);
   const [draftInterests, setDraftInterests] = useState<GuideInterest[]>([]);
   const [draftRegion, setDraftRegion] = useState<GuideRegionId | null>(null);
+  const [draftExtras, setDraftExtras] = useState<GuideRegionId[]>([]);
   const [draftDays, setDraftDays] = useState<number>(2);
   const [draftPace, setDraftPace] = useState<GuidePace>('zmeren');
   const cardRef = useRef<HTMLDivElement | null>(null);
@@ -119,6 +120,7 @@ export function GuidedFlow() {
     }
     setDraftInterests([]);
     setDraftRegion(null);
+    setDraftExtras([]);
     setDraftDays(2);
     setDraftPace('zmeren');
     setUserStep(null);
@@ -129,6 +131,7 @@ export function GuidedFlow() {
   const syncDrafts = (s: GuideState) => {
     setDraftInterests(s.interests);
     setDraftRegion(s.region);
+    setDraftExtras(s.extraRegions ?? []);
     setDraftDays(s.days ?? 2);
     setDraftPace(s.pace ?? 'zmeren');
   };
@@ -357,11 +360,43 @@ export function GuidedFlow() {
                   Izberi regijo, da se vklopi gumb Naprej.
                 </p>
               )}
+              {/* VEČDRŽAVNA POT: opcijske dodatne regije/države (unija destinacij) */}
+              <div className="pt-1">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Dodaj še regije/države (izbirno):
+                </p>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {GUIDE_REGIONS.filter((r) => r.id !== draftRegion).map((r) => {
+                    const active = draftExtras.includes(r.id);
+                    return (
+                      <button
+                        key={r.id}
+                        type="button"
+                        data-active={active}
+                        aria-pressed={active}
+                        onClick={() =>
+                          setDraftExtras((prev) =>
+                            active ? prev.filter((id) => id !== r.id) : [...prev, r.id],
+                          )
+                        }
+                        className="rounded-full border border-border/80 bg-card/70 px-3 py-1.5 text-xs transition-colors hover:border-primary/30 hover:bg-primary/5 data-[active=true]:border-primary/40 data-[active=true]:bg-primary/10"
+                      >
+                        {r.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {draftExtras.length > 0 && (
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    Pot bo vključevala destinacije izbranih regij.
+                  </p>
+                )}
+              </div>
               {state && isStepAnswered(state, 'region') && (
                 <p className="text-xs text-emerald-700">· odgovor shranjen prejšnjič</p>
               )}
               <div className="flex gap-2">
-                <Button disabled={!draftRegion} className="h-11 sm:h-9" onClick={() => commit({ region: draftRegion as GuideRegionId, answered: ['region'] }, 'days')}>
+                <Button disabled={!draftRegion} className="h-11 sm:h-9" onClick={() => commit({ region: draftRegion as GuideRegionId, extraRegions: draftExtras, answered: ['region'] }, 'days')}>
                   Naprej — dni
                   <ChevronRight className="size-4" aria-hidden />
                 </Button>

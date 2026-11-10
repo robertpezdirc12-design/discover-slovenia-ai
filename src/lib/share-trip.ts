@@ -74,6 +74,7 @@ export function sharedTripPayload(
   return JSON.stringify({
     interests: clean.interests,
     region: clean.region,
+    extraRegions: clean.extraRegions,
     days: clean.days,
     pace: clean.pace,
     stays: clean.stays,

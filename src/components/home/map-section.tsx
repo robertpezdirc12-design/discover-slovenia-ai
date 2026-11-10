@@ -21,6 +21,7 @@ import {
   isStayReserved,
   loadGuideState,
   saveGuideState,
+  type GuideRegionId,
   type GuideStorage,
   type GuideStayStop,
 } from '@/lib/guide-store';
@@ -53,7 +54,7 @@ import {
   type TransitPlan,
 } from '@/lib/public-transport';
 import { destinationBySlug } from '@/lib/destinations';
-import { tripPlanFor, type TripStop } from '@/lib/trip-plan';
+import { TRIP_PLAN, tripPlanFor, type TripStop } from '@/lib/trip-plan';
 import {
   MAP_GUIDE_CATEGORIES,
   MAP_GUIDE_PLACES,
@@ -275,7 +276,25 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
       ? (GUIDE_REGIONS.find((g) => g.id === guide.region) ?? null)
       : null;
   const planKey = guideRegion?.id ?? null;
-  const basePlan = guideRegion ? tripPlanFor(guideRegion.id) : null;
+  // VEČDRŽAVNA POT: unija destinacij glavne regije + dodatnih regij
+  // (Faza E-lite). Dedupe po imenu; vrstni red: glavna, nato dodatne.
+  const basePlan = useMemo<readonly TripStop[] | null>(() => {
+    if (!guideRegion) return null;
+    const regionIds: readonly GuideRegionId[] = [
+      guideRegion.id,
+      ...(guide?.extraRegions ?? []),
+    ];
+    const seen = new Set<string>();
+    const out: TripStop[] = [];
+    for (const rid of regionIds) {
+      for (const stop of TRIP_PLAN[rid]) {
+        if (seen.has(stop.name)) continue;
+        seen.add(stop.name);
+        out.push(stop);
+      }
+    }
+    return out;
+  }, [guideRegion, guide?.extraRegions]);
 
   // Uporabnikov vrstni red (localStorage, po regijah) je EDINI vir reda.
   // `plan` je iz njega izpeljan — zato OSRM pot, GPX, dnevni trak, proračun,

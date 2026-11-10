@@ -10,6 +10,7 @@ import {
   isStepAnswered,
   loadGuideState,
   nextStepSuggestion,
+  sanitizeGuideState,
   saveGuideState,
   type GuideState,
   type GuideStorage,
@@ -179,5 +180,63 @@ describe('arso-lidar — čista geometrija ploščic', () => {
     expect(url).toContain('imageSR=3857');
     expect(url).toContain('size=256%2C256');
     expect(url).toContain('format=png');
+  });
+});
+
+describe('guide-store — extraRegions (večdržavna pot)', () => {
+  test('emptyGuideState ima prazno polje extraRegions', () => {
+    expect(emptyGuideState().extraRegions).toEqual([]);
+  });
+
+  test('sanitize: ohrani veljavne, izloči neznane/podvojene in glavno regijo', () => {
+    const raw = {
+      version: 1,
+      interests: [],
+      region: 'srbija',
+      extraRegions: ['hrvaska', 'neznana', 'srbija', 'hrvaska', 'albanija'],
+      days: null,
+      pace: null,
+      answered: ['region'],
+      stays: [],
+      voiceEnabled: false,
+      completedAt: null,
+      updatedAt: '',
+    };
+    const s = sanitizeGuideState(raw);
+    expect(s?.extraRegions).toEqual(['hrvaska', 'albanija']);
+  });
+
+  test('sanitize: odsotnost polja (stari zapisi) → []', () => {
+    const old = {
+      version: 1,
+      interests: [],
+      region: 'gorenjska',
+      days: 2,
+      pace: null,
+      answered: ['region', 'days'],
+      stays: [],
+      voiceEnabled: false,
+      completedAt: null,
+      updatedAt: '',
+    };
+    expect(sanitizeGuideState(old)?.extraRegions).toEqual([]);
+  });
+
+  test('sanitize: omejitev na 6 dodatnih regij', () => {
+    const all = ['hrvaska', 'bosna-hercegovina', 'srbija', 'kosovo', 'crna-gora', 'albanija', 'severna-makedonija'];
+    const raw = {
+      version: 1,
+      interests: [],
+      region: 'gorenjska',
+      extraRegions: all,
+      days: null,
+      pace: null,
+      answered: ['region'],
+      stays: [],
+      voiceEnabled: false,
+      completedAt: null,
+      updatedAt: '',
+    };
+    expect(sanitizeGuideState(raw)?.extraRegions.length).toBe(6);
   });
 });

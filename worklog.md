@@ -1591,3 +1591,22 @@ Work Log:
 
 Stage Summary:
 - Faze A–D so izvedene: katalog 8 držav, valute, meje/prevoz. Preostala: B i18n, E/F kolaboracija/AI.
+
+---
+Task ID: POLIRAJ-22-VECDRZAVNA-POT (»nadaljuj po logiki«)
+Datum: 2026-11-10
+Agent: ZCode (main session)
+Task: omogočiti pot čez več držav (največja funkcionalna vrzel za »cel Balkan«)
+
+Work Log:
+- ANALIZA: vse izpeljanke (OSRM, GPX, dnevni trak, proračun, POI, deljenje, tisk) že delujejo na seznamu postankov — omejitev je bila le ena glavna regija vodiča.
+- guide-store: GuideState dobi extraRegions: GuideRegionId[] (privzeto []); sanitizeGuideState: znane regije, unikatne, brez glavne, ≤6; stari zapisi brez polja → [].
+- guided-flow: v koraku Regija pod radio gumbi izbirni čipi »Dodaj še regije/države« (aria-pressed); commit shrani extraRegions.
+- map-section: basePlan = unija TRIP_PLAN glavne regije + dodatnih (dedupe po imenu, vrstni red: glavna → dodatne); applyStopOrder/routeKey/plan ostanejo nespremenjeni — vse izpeljanke delujejo samodejno.
+- share-trip: payload prenaša extraRegions (sanitizirano); uvoz jih obnovi.
+- TESTI: +6 (sanitize/dedupe/cap/stari zapisi; share round-trip) → 319 pass / 0 fail / 3014 expect.
+- VRATA: tsc 0, lint 0, build OK.
+- GIT: push na GitHub main + GitLab sandbox/guided-ux-line.
+
+Stage Summary:
+- Uporabnik lahko zdaj načrtuje pot čez več držav (npr. Zagreb → Sarajevo → Mostar → Kotor) — zemljevid, cestna pot, GPX, dnevi, proračun, POI in tisk sledijo vsem izbranim regijam.

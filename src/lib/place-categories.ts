@@ -59,6 +59,37 @@ export function placeCategoryById(id: string): PlaceCategory | null {
 /** Zajetje celega Balkana (za iskanje »po vsem Balkanu«). */
 export const BALKAN_BBOX = '39.5,13.0,47.2,24.2';
 
+/** Glavna mesta Balkana — rezerva za predloge območij, ko OSM ni dosegljiv. */
+export const FALLBACK_HUBS: readonly { name: string; lat: number; lng: number }[] = [
+  { name: 'Ljubljana', lat: 46.0569, lng: 14.5058 },
+  { name: 'Zagreb', lat: 45.815, lng: 15.9819 },
+  { name: 'Split', lat: 43.5081, lng: 16.4402 },
+  { name: 'Sarajevo', lat: 43.8563, lng: 18.4131 },
+  { name: 'Mostar', lat: 43.3438, lng: 17.8078 },
+  { name: 'Beograd', lat: 44.7866, lng: 20.4489 },
+  { name: 'Novi Sad', lat: 45.2671, lng: 19.8335 },
+  { name: 'Niš', lat: 43.3209, lng: 21.8956 },
+  { name: 'Priština', lat: 42.6629, lng: 21.1655 },
+  { name: 'Prizren', lat: 42.2139, lng: 20.7396 },
+  { name: 'Podgorica', lat: 42.4304, lng: 19.2594 },
+  { name: 'Kotor', lat: 42.4247, lng: 18.7715 },
+  { name: 'Tirana', lat: 41.3275, lng: 19.8187 },
+  { name: 'Skopje', lat: 41.9973, lng: 21.428 },
+  { name: 'Ohrid', lat: 41.1231, lng: 20.8016 },
+];
+
+/** Kurirani predlogi območij (»{kategorija} — {mesto}«) — jasno označeni. */
+export function buildFallbackPlaces(category: PlaceCategory, categoryId: PlaceCategoryId): PlaceResult[] {
+  return FALLBACK_HUBS.map((hub, i) => ({
+    id: `fb-${categoryId}-${i + 1}`,
+    name: `${category.label} — ${hub.name}`,
+    category: categoryId,
+    lat: hub.lat,
+    lng: hub.lng,
+    curated: true,
+  }));
+}
+
 /** Overpass URL-kompatibilna poizvedba za posamezno kategorijo. */
 export function overpassPlacesQuery(category: PlaceCategory, bbox: string, limit = 30): string {
   return `[out:json][timeout:15];nwr[${category.tag}](bbox:${bbox});out center ${limit};`;
@@ -71,6 +102,8 @@ export interface PlaceResult {
   category: PlaceCategoryId;
   lat: number;
   lng: number;
+  /** Rezerva (kurirano območje) — OSM ni bil dosegljiv. */
+  curated?: boolean;
 }
 
 export function parseOverpassPlaces(raw: unknown, categoryId: PlaceCategoryId): PlaceResult[] {

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import {
   BALKAN_BBOX,
+  buildFallbackPlaces,
   overpassPlacesQuery,
   parseOverpassPlaces,
   placeCategoryById,
@@ -53,38 +54,40 @@ export async function GET(request: Request) {
   }
   const query = overpassPlacesQuery(category, bbox, scope === 'local' ? 30 : 60);
 
-  let lastError = '';
-  for (const endpoint of OVERPASS_ENDPOINTS) {
-    // Poskusi najprej GET (overpass-api.de sprejme le GET), nato POST.
-    for (const method of ['GET', 'POST'] as const) {
-      try {
-        const init: RequestInit = {
-          method,
-          headers: { 'user-agent': UA },
-          signal: AbortSignal.timeout(TIMEOUT_MS),
-        };
-        const res =
-          method === 'GET'
-            ? await fetch(`${endpoint}?data=${encodeURIComponent(query)}`, init)
-            : await fetch(endpoint, {
-                ...init,
-                headers: { ...(init.headers as Record<string, string>), 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `data=${encodeURIComponent(query)}`,
-              });
-        if (!res.ok) {
-          lastError = `HTTP ${res.status}`;
-          continue;
-        }
-        const raw: unknown = await res.json();
-        const places = parseOverpassPlaces(raw, catId as PlaceCategoryId);
-        return NextResponse.json({ ok: true, category: catId, radius, places });
-      } catch (e) {
-        lastError = e instanceof Error ? e.message : 'mrežna napaka';
-      }
+  // Vzporedni poskusi zrcal; zmaga prvi uspešen odziv.
+  const attempts = OVERPASS_ENDPOINTS.map((endpoint) => {
+    const init: RequestInit = {
+      method: 'POST',
+      headers: { 'user-agent': UA, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `data=${encodeURIComponent(query)}`,
+      signal: AbortSignal.timeout(10000),
+    };
+    return fetch(endpoint, init).then(async (res) => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return (await res.json()) as unknown;
+    });
+  });
+  let raw: unknown = null;
+  try {
+    raw = await Promise.any(attempts);
+  } catch {
+    raw = null;
+  }
+
+  if (raw !== null) {
+    const places = parseOverpassPlaces(raw, catId as PlaceCategoryId);
+    if (places.length > 0) {
+      return NextResponse.json({ ok: true, category: catId, radius, places });
     }
   }
-  return NextResponse.json(
-    { ok: false, error: 'Vir OpenStreetMap ni dosegljiv (' + lastError + ').' },
-    { status: 502 },
-  );
+
+  // REZERVA: kurirani predlogi območij — pini so vedno vidni, vir je
+  // izrecno označen (curated: true).
+  return NextResponse.json({
+    ok: true,
+    category: catId,
+    radius,
+    curated: true,
+    places: buildFallbackPlaces(category, catId as PlaceCategoryId),
+  });
 }

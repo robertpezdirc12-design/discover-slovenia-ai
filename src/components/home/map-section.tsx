@@ -280,6 +280,7 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
     key: string;
     places: PlaceResult[];
     error?: string;
+    curated?: boolean;
   } | null>(null);
   const placesLayerRef = useRef<unknown>(null);
   const placesAbortRef = useRef<AbortController | null>(null);
@@ -309,7 +310,8 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
       signal: controller.signal,
     })
       .then(
-        (r) => r.json() as Promise<{ ok: boolean; places?: PlaceResult[]; error?: string }>,
+        (r) =>
+          r.json() as Promise<{ ok: boolean; places?: PlaceResult[]; error?: string; curated?: boolean }>,
       )
       .then((j) => {
         if (controller.signal.aborted) return;
@@ -318,7 +320,7 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
           return;
         }
         const places = Array.isArray(j.places) ? j.places : [];
-        setPlacesResult({ key, places });
+        setPlacesResult({ key, places, curated: j.curated });
         if (places.length === 0) return;
         const group = L.layerGroup();
         for (const p of places) {
@@ -333,9 +335,12 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
             .bindPopup(
               `<strong>${escapeXml(p.name)}</strong><br/>` +
                 `${category.label}<br/>` +
+                (p.curated
+                  ? `<small>Urejeni predlog območja (vir OSM trenutno ni dosegljiv).</small><br/>`
+                  : '') +
                 `<button type="button" class="dsa-add-poi-btn" data-kind="place" data-id="place-${escapeXml(p.id)}" ` +
                 `data-name="${escapeXml(p.name)}" data-lat="${p.lat}" data-lng="${p.lng}" ` +
-                `data-category="${escapeXml(category.label)}" data-source="osm" ` +
+                `data-category="${escapeXml(category.label)}" data-source="${p.curated ? 'izbor' : 'osm'}" ` +
                 `style="margin-top:4px;padding:3px 10px;border-radius:999px;border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;font-size:12px;cursor:pointer">+ Dodaj v pot</button>`,
             );
         }
@@ -1781,6 +1786,7 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
           {placesResult && !placesResult.error && placesResult.places.length > 0 && (
             <span className="text-[11px] text-muted-foreground">
               {placesResult.places.length} najdenih · {placeCategoryById(placeSel)?.label ?? ''}
+              {placesResult.curated ? ' · kurirano' : ''}
             </span>
           )}
           <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-muted/40 px-2.5 py-1">

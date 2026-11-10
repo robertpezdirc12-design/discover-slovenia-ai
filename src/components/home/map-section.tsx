@@ -302,22 +302,12 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
     }
     const category = placeCategoryById(placeSel);
     if (!category) return;
-    let center: { lat: number; lng: number };
-    if (countrySel) {
-      const c = BALKAN_COUNTRY_VIEWS.find((x) => x.id === countrySel);
-      if (!c) return;
-      center = { lat: c.lat, lng: c.lng };
-    } else {
-      const c = map.getCenter();
-      center = { lat: c.lat, lng: c.lng };
-    }
-    const key = `${placeSel}:${center.lat.toFixed(1)},${center.lng.toFixed(1)}`;
+    const key = placeSel; // iskanje po VSEM BALKANU (ne le okolica)
     const controller = new AbortController();
     placesAbortRef.current = controller;
-    fetch(
-      `/api/pot/places?cat=${encodeURIComponent(placeSel)}&lat=${center.lat.toFixed(4)}&lng=${center.lng.toFixed(4)}&radius=20`,
-      { signal: controller.signal },
-    )
+    fetch(`/api/pot/places?cat=${encodeURIComponent(placeSel)}&scope=balkan`, {
+      signal: controller.signal,
+    })
       .then(
         (r) => r.json() as Promise<{ ok: boolean; places?: PlaceResult[]; error?: string }>,
       )
@@ -356,7 +346,7 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
         setPlacesResult({ key, places: [], error: 'Vir OpenStreetMap ni dosegljiv.' });
       });
     return () => controller.abort();
-  }, [placeSel, countrySel, mapReady]);
+  }, [placeSel, mapReady]);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const reliefLayerRef = useRef<unknown>(null);

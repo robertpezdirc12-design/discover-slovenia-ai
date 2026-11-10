@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import {
+  BALKAN_BBOX,
   overpassPlacesQuery,
   parseOverpassPlaces,
   placeCategoryById,
@@ -35,17 +36,22 @@ export async function GET(request: Request) {
   if (!category) {
     return NextResponse.json({ ok: false, error: 'Neznana kategorija.' }, { status: 400 });
   }
-  const lat = parseCoord(url.searchParams.get('lat'));
-  const lng = parseCoord(url.searchParams.get('lng'));
-  const radius = Math.min(50, Math.max(3, Number(url.searchParams.get('radius') ?? 15)));
-  if (lat === null || lng === null || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
-    return NextResponse.json({ ok: false, error: 'Manjka veljavno središče (lat/lng).' }, { status: 400 });
+  // Privzeto iščemo PO VSEM BALKANU; z `scope=local&lat&lng` je mogoče
+  // omejeno iskanje okoli točke (uporabno za prihodnje razširitve).
+  const scope = url.searchParams.get('scope') ?? 'balkan';
+  let bbox = BALKAN_BBOX;
+  let radius = 20;
+  if (scope === 'local') {
+    const lat = parseCoord(url.searchParams.get('lat'));
+    const lng = parseCoord(url.searchParams.get('lng'));
+    radius = Math.min(50, Math.max(3, Number(url.searchParams.get('radius') ?? 15)));
+    if (lat === null || lng === null || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+      return NextResponse.json({ ok: false, error: 'Manjka veljavno središče (lat/lng).' }, { status: 400 });
+    }
+    const d = (radius / 100) * 0.02;
+    bbox = `${lat - d},${lng - d},${lat + d},${lng + d}`;
   }
-
-  // Bbox okoli točke (približek: 0.02° ≈ 2 km).
-  const d = (radius / 100) * 0.02;
-  const bbox = `${lat - d},${lng - d},${lat + d},${lng + d}`;
-  const query = overpassPlacesQuery(category, bbox);
+  const query = overpassPlacesQuery(category, bbox, scope === 'local' ? 30 : 60);
 
   let lastError = '';
   for (const endpoint of OVERPASS_ENDPOINTS) {

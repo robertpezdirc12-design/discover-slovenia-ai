@@ -56,9 +56,12 @@ export function placeCategoryById(id: string): PlaceCategory | null {
   return PLACE_CATEGORIES.find((c) => c.id === id) ?? null;
 }
 
+/** Zajetje celega Balkana (za iskanje »po vsem Balkanu«). */
+export const BALKAN_BBOX = '39.5,13.0,47.2,24.2';
+
 /** Overpass URL-kompatibilna poizvedba za posamezno kategorijo. */
-export function overpassPlacesQuery(category: PlaceCategory, bbox: string): string {
-  return `[out:json][timeout:12];nwr[${category.tag}](bbox:${bbox});out center 30;`;
+export function overpassPlacesQuery(category: PlaceCategory, bbox: string, limit = 30): string {
+  return `[out:json][timeout:15];nwr[${category.tag}](bbox:${bbox});out center ${limit};`;
 }
 
 /** Razčleni Overpass odziv v enotne kraje (varstvo vnosa). */
@@ -95,7 +98,7 @@ export function parseOverpassPlaces(raw: unknown, categoryId: PlaceCategoryId): 
     if (Math.abs(lat) > 90 || Math.abs(lng) > 180) continue;
     seen.add(id);
     out.push({ id, name: name.slice(0, 120), category: categoryId, lat, lng });
-    if (out.length >= 30) break;
+    if (out.length >= 80) break;
   }
   return out;
 }

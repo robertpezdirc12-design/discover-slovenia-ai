@@ -34,7 +34,8 @@ function parsePhotonFeature(raw: unknown): { name: string; lat: number; lng: num
 
 async function geocodeOne(q: string): Promise<GeocodedPlace> {
   try {
-    const url = `${PHOTON}?q=${encodeURIComponent(q)}&limit=1&lang=sl`;
+    // Photon podpira le default/de/en/fr jezike — language izpustimo.
+    const url = `${PHOTON}?q=${encodeURIComponent(q)}&limit=1`;
     const res = await fetch(url, {
       headers: { 'user-agent': UA, accept: 'application/json' },
       signal: AbortSignal.timeout(TIMEOUT_MS),

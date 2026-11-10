@@ -44,7 +44,8 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     "no-useless-escape": "off",
   },
 }, {
-  ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts", "examples/**", "skills", "research/**"]
+  // .playwright-cli = lokalni E2E skripti (gitignorirani, CommonJS, niso del aplikacije)
+  ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts", "examples/**", "skills", "research/**", ".playwright-cli/**"]
 }];
 
 export default eslintConfig;

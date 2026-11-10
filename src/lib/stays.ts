@@ -25,8 +25,11 @@ export const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org';
 /**
  * Overpass končnice — poskusimo po vrsti (failover).
  * Izmerjeno v peskovniku (18. 10. 2026): overpass-api.de je blokiran
- * (ConnectionRefused), overpass.osm.ch (švicarsko zrcalo, isti podatki
- * OSM) odgovarja 200. V produkciji dela tudi primarni.
+ * (ConnectionRefused), overpass.osm.ch odgovarja 200. POZOR: osm.ch je
+ * ŠVICARSKI izvleček OSM — izven Švice vrne 200 s PRAZNIM `elements`.
+ * Iskalnik zato prazne zadetke obravnava kot neuspeh in nadaljuje z
+ * naslednjim zrcalom oziroma Photon rezervo. Funkcija /api/pot/nearby
+ * to zrcalo namerno izpusti in uporablja izključno globalna zrcala.
  */
 export const OVERPASS_ENDPOINTS = [
   'https://overpass.osm.ch/api/interpreter',

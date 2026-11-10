@@ -27,7 +27,9 @@ import {
 import { useGuideState } from '@/components/home/use-guide-state';
 import { ShareTripButton } from '@/components/home/share-trip-button';
 import { ExportTripButton } from '@/components/home/export-trip-button';
-import type { GpxPoint } from '@/lib/gpx-export';
+import { escapeXml, type GpxPoint } from '@/lib/gpx-export';
+import { POI_CATEGORY_LABELS, poiDistanceLabel, type PoiCategory, type RoutePoi } from '@/lib/route-poi';
+import { CATALOG_ATTRIBUTION } from '@/lib/poi-catalog';
 import { tripPlanFor, type TripStop } from '@/lib/trip-plan';
 import {
   MAP_GUIDE_CATEGORIES,
@@ -127,6 +129,35 @@ function StayPinSvg() {
   return `<svg width="24" height="32" viewBox="0 0 24 32" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z" fill="#d97706"/><g stroke="#ffffff" stroke-width="1.6" fill="none" stroke-linecap="round" transform="translate(3.1,3.6) scale(0.75)"><path d="M3 16v-4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4"/><path d="M3 14h14"/><path d="M5 10V8a1 1 0 0 1 1-1h3v3"/><path d="M9 10V7h3a1 1 0 0 1 1 1v2"/></g></svg>`;
 }
 
+/** Vijolična čepkinja z zvezdo — predlogi zanimivosti ob poti. */
+function PoiPinSvg() {
+  return `<svg width="24" height="32" viewBox="0 0 24 32" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z" fill="#7c3aed"/><path d="m12 6 1.6 3.5 3.8.4-2.8 2.6.8 3.8-3.4-2-3.4 2 .8-3.8-2.8-2.6 3.8-.4z" fill="#ffffff"/></svg>`;
+}
+
+/** Ikona po kategoriji — hitrejša orientacija v seznamu predlogov. */
+const POI_ICONS: Record<PoiCategory, typeof Landmark> = {
+  razgled: Mountain,
+  kultura: Landmark,
+  narava: Waves,
+  hrana: Wine,
+  drugo: MapPin,
+};
+
+function PoiIcon({ category }: { category: PoiCategory }) {
+  const Icon = POI_ICONS[category] ?? MapPin;
+  return <Icon className="size-3.5 shrink-0 text-violet-600" aria-hidden />;
+}
+
+type PoiPanelState = {
+  routeKey: string | null;
+  status: 'idle' | 'loading' | 'ok' | 'error';
+  pois: RoutePoi[];
+  warning?: string;
+  sources?: { osm: number; catalog: number; radiusKm: number };
+};
+
+const IDLE_POI_PANEL: Omit<PoiPanelState, 'routeKey'> = { status: 'idle', pois: [] };
+
 /** Spletne strani iz OSM včasih brez protokola — varno dopolni. */
 function stayWebsiteUrl(url: string): string {
   return /^https?:\/\//i.test(url) ? url : `https://${url}`;
@@ -178,6 +209,9 @@ export function MapSection() {
   const planLayerRef = useRef<unknown>(null);
   const planMarkersRef = useRef<Map<string, LeafletMarker>>(new Map());
   const planKey = guideRegion?.id ?? null;
+  // TRIP_PLAN je statičen na regijo — identiteta regije je stabilen ključ poti
+  // (brez prehajanja `plan` med renderiranjem, kar moti React Compiler).
+  const routeKey = planKey;
 
   /** Klik na postanko v "Tvoji poti" → mapa pripotuje + odpre pojavnno okno. */
   const focusStop = (stop: TripStop) => {
@@ -425,6 +459,82 @@ export function MapSection() {
     [plan, reservedStays],
   );
 
+  // ————— VREDNE POSTAJE OB POTI (OSM + urejeni izbor ob OSRM geometriji) —————
+  // Roadtrippers/Komoot vzorec: ne iščemo "nekje v bližini", ampak
+  // znotraj 3 km od DEJANSKE cestne poti in porazdeljeno po celi poti.
+  // Regije z enim ciljem dobijo način »v okolici« (12 km) — nobena regija
+  // ne ostane brez predlogov.
+  const [poiState, setPoiState] = useState<PoiPanelState>({ routeKey, status: 'idle', pois: [] });
+  const currentPoiState = poiState.routeKey === routeKey ? poiState : IDLE_POI_PANEL;
+  const poiAbortRef = useRef<{ routeKey: string | null; controller: AbortController } | null>(null);
+  const poiLayerRef = useRef<unknown>(null);
+  const poiMarkersRef = useRef<Map<string, LeafletMarker>>(new Map());
+  const poiSectionRef = useRef<HTMLDivElement | null>(null);
+
+  const togglePois = () => {
+    if (currentPoiState.status === 'loading') return;
+    if (currentPoiState.status === 'ok') {
+      const request = poiAbortRef.current;
+      if (request?.routeKey === routeKey) {
+        request.controller.abort();
+        poiAbortRef.current = null;
+      }
+      setPoiState({ routeKey, status: 'idle', pois: [] });
+      return;
+    }
+    if (!plan || plan.length === 0) {
+      setPoiState({ routeKey, status: 'error', pois: [], warning: 'Za predloge najprej izberi regijo v vodiču.' });
+      return;
+    }
+    poiAbortRef.current?.controller.abort();
+    const controller = new AbortController();
+    poiAbortRef.current = { routeKey, controller };
+    setPoiState({ routeKey, status: 'loading', pois: [] });
+    const stopsParam = plan.map((s) => `${s.lat},${s.lng}`).join(';');
+    const radiusKm = plan.length === 1 ? 12 : 3;
+    fetch(`/api/pot/nearby?stops=${encodeURIComponent(stopsParam)}&radius=${radiusKm}`, { signal: controller.signal })
+      .then((r) => r.json() as Promise<{
+        ok: boolean;
+        pois?: RoutePoi[];
+        error?: string;
+        radiusKm?: number;
+        osmCount?: number;
+        catalogCount?: number;
+      }>)
+      .then((j) => {
+        if (controller.signal.aborted || poiAbortRef.current?.controller !== controller) return;
+        poiAbortRef.current = null;
+        setPoiState({
+          routeKey,
+          status: j.ok ? 'ok' : 'error',
+          pois: Array.isArray(j.pois) ? j.pois : [],
+          warning: j.error,
+          sources: j.ok
+            ? { osm: j.osmCount ?? 0, catalog: j.catalogCount ?? 0, radiusKm: j.radiusKm ?? radiusKm }
+            : undefined,
+        });
+        // Plošča je drseča — po kliku uporabniku pokažemo SAM rezultat,
+        // ne da bi moral ugibati, da je seznam spodaj.
+        if (j.ok && Array.isArray(j.pois) && j.pois.length > 0) {
+          requestAnimationFrame(() => {
+            const section = poiSectionRef.current;
+            const scroller = section?.closest('.nice-scroll') as HTMLElement | null;
+            if (section && scroller) {
+              // Premaknemo SAMO notranjo ploščo — stran ne skače, začetek
+              // bloka z rezultati pa je poravnan z vrhom vidnega območja.
+              scroller.scrollTop = Math.max(0, section.offsetTop - scroller.offsetTop);
+            }
+          });
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted && poiAbortRef.current?.controller === controller) {
+          poiAbortRef.current = null;
+          setPoiState({ routeKey, status: 'error', pois: [], warning: 'Predlogi trenutno niso na voljo. Poskusi znova.' });
+        }
+      });
+  };
+
   // ————— VODIČ PO ZEMLJEVIDU (cel Balkan: mesta · vasi · kmečki · narava) —————
   // EN gumb vklopi/izklopi; ko je vklopljen, zemljevid SAMA pelje uporabnika
   // od kraja do kraja (poleti + pojavno okno + govor), s filtri kategorij.
@@ -486,16 +596,20 @@ export function MapSection() {
     removeRouteLayer();
   };
 
-  // nova regija → navigacija se resetira (nova pot, nov začetek)
+  // Sprememba poti → prekini zastarele zahtevke; stanje POI se vodi po routeKey.
   useEffect(() => {
     setNavIndex(null);
     setRouteInfo(null);
     setRouteFailed(false);
     routeAbortRef.current?.abort();
-  }, [planKey]);
+    const poiRequest = poiAbortRef.current;
+    if (poiRequest && poiRequest.routeKey !== routeKey) {
+      poiRequest.controller.abort();
+      poiAbortRef.current = null;
+    }
+  }, [routeKey]);
 
   // pot na karti: prava cestna (OSRM posrednik) ali premočrtna rezerva
-  const routeKey = plan ? plan.map((s) => `${s.lat.toFixed(4)},${s.lng.toFixed(4)}`).join(';') : null;
   useEffect(() => {
     const L = LeafletRef.current;
     const map = mapRef.current;
@@ -546,9 +660,12 @@ export function MapSection() {
   // čiščenje plana ob odstranitvi mape
   useEffect(() => {
     return () => {
+      poiAbortRef.current?.controller.abort();
       planLayerRef.current = null;
       planMarkersRef.current = new Map();
       routeLayerRef.current = null;
+      poiLayerRef.current = null;
+      poiMarkersRef.current = new Map();
     };
   }, []);
 
@@ -718,6 +835,33 @@ export function MapSection() {
     });
     stayLayerRef.current = group.addTo(map);
   }, [staySearch, mapReady]);
+
+  // oznake PREDLOGOV OB POTI — začasne (skrij / nova pot jih počisti).
+  // Imena iz OSM tagov so tuji vnos → popup VEDNO escapamo.
+  useEffect(() => {
+    const L = LeafletRef.current;
+    const map = mapRef.current;
+    if (!L || !map) return;
+    if (poiLayerRef.current) {
+      (poiLayerRef.current as L.LayerGroup).remove();
+      poiLayerRef.current = null;
+      poiMarkersRef.current = new Map();
+    }
+    if (currentPoiState.pois.length === 0) return;
+    const group = L.layerGroup();
+    const icon = L.divIcon({ className: 'dsa-pin-poi', html: PoiPinSvg(), iconSize: [24, 32], iconAnchor: [12, 32] });
+    currentPoiState.pois.forEach((p) => {
+      const m = L.marker([p.lat, p.lng], { icon, title: p.name, zIndexOffset: 550 })
+        .addTo(group)
+      .bindPopup(
+        `<strong>${escapeXml(p.name)}</strong><br/>` +
+        `${POI_CATEGORY_LABELS[p.category]} · ${poiDistanceLabel(p.distanceKm)}<br/>` +
+        `<small>${p.source === 'osm' ? '© OpenStreetMap' : CATALOG_ATTRIBUTION}</small>`,
+      );
+      poiMarkersRef.current.set(p.id, m);
+    });
+    poiLayerRef.current = group.addTo(map);
+  }, [currentPoiState.pois, mapReady]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1110,6 +1254,15 @@ export function MapSection() {
                   ≈ {formatEur(budget.totalEur)}
                 </span>
               )}
+              {/* Število predlogov je vidno brez drsenja (enako kot proračunski čip). */}
+              {currentPoiState.status === 'ok' && currentPoiState.pois.length > 0 && (
+                <span
+                  className="flex shrink-0 items-center gap-1 rounded-md bg-violet-500/10 px-1.5 py-0.5 text-[11px] font-semibold text-violet-700 dark:text-violet-300"
+                  title="Zanimivosti ob poti"
+                >
+                  <Compass className="size-3" aria-hidden /> {currentPoiState.pois.length}
+                </span>
+              )}
               <Button
                 size="icon"
                 variant="ghost"
@@ -1176,7 +1329,10 @@ export function MapSection() {
                 </div>
               </div>
             )}
-            <div className="max-h-[220px] overflow-y-auto nice-scroll p-2">
+            {/* Ko so predlogi odprti, plošča dobi več prostora — seznam ni odrezan. */}
+            {/* Na mobilnem je plošča nižja, da plavajoči gumb »Vklopi vodiča«
+                ne prekriva zadnjega predloga; seznam ostane drseč. */}
+            <div className={`${currentPoiState.status === 'ok' ? 'max-h-[280px] sm:max-h-[340px]' : 'max-h-[220px]'} overflow-y-auto nice-scroll p-2 pb-8 sm:pb-2`}>
               {navIndex === null ? (
                 <>
                   {guideRegion && (
@@ -1330,6 +1486,81 @@ export function MapSection() {
                       <ShareTripButton state={guide} />
                       {/* GPX = pot za offline (navigacija/OsmAnd/Komoot). */}
                       <ExportTripButton points={exportPoints} className="mt-1.5" />
+                    </div>
+                  )}
+                  {/* VREDNE POSTAJE OB POTI — OSM + urejeni izbor, znotraj
+                      3 km od prave OSRM geometrije, porazdeljeno po celi poti. */}
+                  {plan && (
+                    <div ref={poiSectionRef} className="mt-2 border-t pt-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-11 w-full sm:h-8"
+                        onClick={togglePois}
+                        disabled={currentPoiState.status === 'loading'}
+                        aria-expanded={currentPoiState.status === 'ok'}
+                        aria-label="Prikaži ali skrij zanimivosti ob poti"
+                      >
+                        {currentPoiState.status === 'loading' ? (
+                          <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                        ) : (
+                          <Compass className="size-3.5" aria-hidden />
+                        )}
+                        {currentPoiState.status === 'loading'
+                          ? 'Iščem zanimivosti …'
+                          : currentPoiState.status === 'ok'
+                            ? `Skrij zanimivosti (${currentPoiState.pois.length})`
+                            : plan?.length === 1
+                              ? 'Zanimivosti v okolici'
+                              : 'Zanimivosti ob poti'}
+                      </Button>
+                      <div aria-live="polite">
+                        {currentPoiState.status === 'ok' && currentPoiState.pois.length === 0 && (
+                          <p className="mt-1 px-1 text-[11px] text-muted-foreground">
+                            {currentPoiState.warning ?? 'V bližini poti ni najdenih zanimivosti. Poskusi drugo regijo.'}
+                          </p>
+                        )}
+                        {currentPoiState.status === 'error' && (
+                          <p className="mt-1 px-1 text-[11px] text-muted-foreground">
+                            {currentPoiState.warning ?? 'Predlogi trenutno niso na voljo.'}
+                          </p>
+                        )}
+                        {currentPoiState.status === 'ok' && currentPoiState.pois.length > 0 && (
+                          <div className="mt-1.5 space-y-1">
+                            {currentPoiState.warning && (
+                              <p className="px-1 text-[11px] text-muted-foreground">{currentPoiState.warning}</p>
+                            )}
+                            {currentPoiState.pois.map((p) => (
+                              <Button
+                                key={p.id}
+                                size="sm"
+                                variant="ghost"
+                                className="h-auto w-full justify-start gap-2 px-2 py-1.5 text-left"
+                                onClick={() => {
+                                  mapRef.current?.flyTo([p.lat, p.lng], 13, { duration: 1.2 });
+                                  poiMarkersRef.current.get(p.id)?.openPopup();
+                                }}
+                                aria-label={`Prikaži zanimivost ${p.name} na zemljevidu`}
+                              >
+                                <PoiIcon category={p.category} />
+                                <span className="min-w-0">
+                                  <span className="block text-sm font-medium leading-tight">{p.name}</span>
+                                  <span className="block truncate text-xs text-muted-foreground">
+                                    {POI_CATEGORY_LABELS[p.category]} · {poiDistanceLabel(p.distanceKm)}
+                                  </span>
+                                </span>
+                              </Button>
+                            ))}
+                            <p className="px-1 pt-0.5 text-[11px] text-muted-foreground">
+                              Vir: {[
+                                currentPoiState.sources?.osm ? '© OpenStreetMap' : null,
+                                currentPoiState.sources?.catalog ? CATALOG_ATTRIBUTION : null,
+                              ].filter(Boolean).join(' · ') || CATALOG_ATTRIBUTION}
+                              {' · odmik ≤ '}{currentPoiState.sources?.radiusKm ?? 3}{' km'}
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </>

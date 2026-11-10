@@ -73,3 +73,6 @@ server.log
 /home-*.png
 /panel-*.png
 /gpx-export-sample.gpx
+/poi-*.png
+# Projekt uporablja bun.lock; package-lock.json je stranski produkt npm/npx orodij
+/package-lock.json

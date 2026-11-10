@@ -1683,3 +1683,14 @@ Work Log:
     (id-ji sekcij; CSS).
 - VRATA: 334 pass / 0 fail; tsc 0; lint 0; build OK.
 - GIT: 3eced24 → GitHub main + GitLab sandbox/guided-ux-line.
+
+---
+Task ID: POLIRAJ-27-POPRAVEK
+Datum: 2026-11-10
+Agent: ZCode (main session)
+Task: popraviti napačno odstranitev (uporabnik je pokazal pravi element)
+
+Work Log:
+- Prejšnja odstranitev (čipi Razišči/Okoli) je bila NAPAČNA — uporabnik je mislil seznam »Razišči: Bled … Bitola« na domači strani.
+- Izvedeno: git revert 6339c33 (vrnjeni čipi) + odstranjen navigacijski seznam DESTINATIONS iz page.tsx (in import). SEO strani /kraj/[slug] ostanejo.
+- VRATA: 334 pass / 0 fail; tsc 0; lint 0; build OK; lokalno 0 × /kraj/ na domači strani, čipi prisotni.

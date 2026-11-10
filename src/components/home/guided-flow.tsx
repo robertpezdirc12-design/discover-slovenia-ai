@@ -72,7 +72,8 @@ export function GuidedFlow() {
   const [draftPace, setDraftPace] = useState<GuidePace>('zmeren');
   const cardRef = useRef<HTMLDivElement | null>(null);
 
-  const autoStep: ViewStep = state === null ? 'welcome' : (firstUnansweredStep(state) ?? 'done');
+  // Enostavno: brez vstopnega zaslona — tok začne kar pri prvem vprašanju.
+  const autoStep: ViewStep = state === null ? 'interests' : (firstUnansweredStep(state) ?? 'done');
   const step: ViewStep = userStep ?? autoStep;
   const complete = state ? isGuideComplete(state) : false;
 
@@ -193,11 +194,8 @@ export function GuidedFlow() {
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <Sparkles className="size-4" aria-hidden />
                 </span>
-                {complete ? 'Tvoj vodič' : 'Vprašam le enkrat — ostalo si zapomnim'}
+                {complete ? 'Tvoj vodič' : 'Vodič'}
               </CardTitle>
-              <p aria-live="polite" className="text-sm leading-relaxed text-muted-foreground">
-                {suggestion.text}
-              </p>
             </div>
             <Button
               size="icon"
@@ -215,39 +213,6 @@ export function GuidedFlow() {
         </CardHeader>
 
         <CardContent>
-          {step === 'welcome' && (
-            <div className="space-y-4">
-              {state && (
-                <p className="text-sm">
-                  Nadaljuj, kjer si ostal — že shranjeno:{' '}
-                  {guideSummaryChips(state).map((c) => (
-                    <Badge key={c} variant="secondary" className="mr-1 font-normal">
-                      {c}
-                    </Badge>
-                  ))}
-                </p>
-              )}
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  className="h-11 sm:h-9"
-                  onClick={() => {
-                    enterStep(state ? (firstUnansweredStep(state) ?? 'done') : 'interests');
-                    focusCard();
-                  }}
-                >
-                  {state ? 'Nadaljuj' : 'Začni'}
-                  <ChevronRight className="size-4" aria-hidden />
-                </Button>
-                {state && (
-                  <Button variant="ghost" className="h-11 sm:h-9" onClick={restart}>
-                    <RotateCcw className="size-4" aria-hidden />
-                    Začni znova
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-
           {step === 'interests' && (
             <fieldset className="space-y-3">
               <legend className="text-sm font-medium">Kaj te zanimajo?</legend>

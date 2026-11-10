@@ -1542,3 +1542,18 @@ Work Log:
 
 Stage Summary:
 - Razvojni tok je zdaj standardiziran: en ukaz verify, CI z vsemi vrati, dokumentacija v repozitoriju.
+
+---
+Task ID: POLIRAJ-19-BALKAN-FAZA-A (katalog)
+Datum: 2026-11-10
+Agent: ZCode (main session)
+Task: razširitev kataloga na 8 držav (na podlagi analize konkurence)
+
+Work Log:
+- ANALIZA (research/balkan-analysis.md — lokalno, research/ je gitignoriran): TripMind spletni produkt ne obstaja; kategorijo vodijo Wanderlog (kolaboracija, proračun, AI), Mindtrip/Layla (AI + rezervacije), Komoot (offline/outdoor). Naše prednosti: brez paywalla, resnični regionalni podatki (RKD, ARSO, OJPP), PDF/tisk, SEO strani. Vrzeli: katalog samo SI, i18n, valute, mednarodni prevoz, kolaboracija, AI.
+- FAZA A IZVEDENA: GUIDE_REGIONS + TRIP_PLAN +7 regij (hrvaska, bosna-hercegovina, srbija, kosovo, crna-gora, albanija, severna-makedonija); +24 destinacij (skupaj 31). Vse obstoječe funkcije so globalne (mapa, vreme, prenočišča, POI/Overpass), zato nove destinacije takoj dobijo vodič, mapo in SEO strani.
+- POI katalog: +33 kuriranih vnosov (≥4/državo); atribucija »urejeni izbor znamenitosti« (ni več samo slovenskih).
+- TESTI: meje posodobljene na Balkan bbox; pokritost VSEH regij vodiča; 301 pass / 0 fail / 2882 expect.
+- PRODUKCIJA: /kraj/zagreb in /kraj/ohrid 200 s pravilnimi naslovi; sitemap vsebuje 31 /kraj/ urljev.
+- GIT: 42d5131 → GitHub main + GitLab sandbox/guided-ux-line.
+- Naslednje faze (po dogovoru): B i18n, C večvalutni proračun, D mednarodni prevoz/meje, E/F kolaboracija/AI.

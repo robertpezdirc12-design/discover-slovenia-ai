@@ -51,6 +51,7 @@ import {
 } from '@/lib/open-data';
 import { navChipText, navIsLast, navNext, navPrev, navProgressLabel } from '@/lib/route-guidance';
 import { buildDayTrack, driveLabel } from '@/lib/day-track';
+import { buildTripBudget, formatEur, nightsNoun, personsNoun, unpricedNote } from '@/lib/trip-budget';
 import type { OsrmLegInfo } from '@/lib/osrm-route';
 import { SHOW_TRIP_EVENT, speak } from '@/lib/speech';
 
@@ -388,6 +389,15 @@ export function MapSection() {
   const dayTrack = useMemo(
     () => buildDayTrack(plan ?? [], guide?.days ?? null, guide?.pace ?? null, routeInfo?.legs ?? null),
     [plan, guide?.days, guide?.pace, routeInfo],
+  );
+
+  // ————— PRORAČUN (ocena stroška prenočišč + delitev med sopotnike) —————
+  // Wanderlogov vzorec: uporabnik vidi okvirni skupni znesek in delež na
+  // osebo brez kalkulatorja; noči = dnevi iz vodiča (privzeto 1/prenočišče).
+  const [budgetPersons, setBudgetPersons] = useState(2);
+  const budget = useMemo(
+    () => buildTripBudget(reservedStays, guide?.days ?? null, budgetPersons),
+    [reservedStays, guide?.days, budgetPersons],
   );
 
   // ————— VODIČ PO ZEMLJEVIDU (cel Balkan: mesta · vasi · kmečki · narava) —————
@@ -1066,6 +1076,15 @@ export function MapSection() {
             <div className="flex items-center gap-2 border-b border-primary/10 bg-primary/5 px-3 py-2">
               <Route className="size-4 shrink-0 text-primary" aria-hidden />
               <p className="min-w-0 truncate text-sm font-semibold">Tvoja pot</p>
+              {/* Povzetek proračuna je VIDEN takoj (plošča se sicer drsi). */}
+              {budget.totalEur !== null && (
+                <span
+                  className="shrink-0 rounded-md bg-primary/10 px-1.5 py-0.5 text-[11px] font-semibold text-primary"
+                  title="Ocena proračuna prenočišč"
+                >
+                  ≈ {formatEur(budget.totalEur)}
+                </span>
+              )}
               <Button
                 size="icon"
                 variant="ghost"
@@ -1230,6 +1249,48 @@ export function MapSection() {
                           </Button>
                         ))}
                       </div>
+                    </div>
+                  )}
+                  {/* PRORAČUN — okvirni skupni strošek prenočišč + delitev med
+                      sopotnike (Wanderlogov vzorec). Cene so indikativne in
+                      prenočišča brez cene so iz seštevka izrecno izvzeta. */}
+                  {reservedStays.length > 0 && (
+                    <div className="mt-2 border-t px-1 pt-2" aria-label="Ocena proračuna prenočišč">
+                      <p className="pb-1 text-xs font-medium text-muted-foreground">
+                        Ocena proračuna · {budget.nights} {nightsNoun(budget.nights)}
+                      </p>
+                      {budget.totalEur !== null ? (
+                        <>
+                          <p className="text-sm font-semibold">≈ {formatEur(budget.totalEur)} skupaj</p>
+                          <div className="mt-1.5 flex overflow-hidden rounded-md border border-border/80" role="group" aria-label="Število oseb za delitev stroška">
+                            {[1, 2, 3, 4].map((n) => (
+                              <button
+                                key={n}
+                                type="button"
+                                onClick={() => setBudgetPersons(n)}
+                                aria-pressed={budgetPersons === n}
+                                aria-label={`${n} ${personsNoun(n)}`}
+                                className={`min-h-9 min-w-9 flex-1 px-2 text-xs font-medium transition-colors ${
+                                  budgetPersons === n
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-background hover:bg-accent'
+                                }`}
+                              >
+                                {n}
+                              </button>
+                            ))}
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {budget.persons} {personsNoun(budget.persons)} · ≈ {formatEur(budget.perPersonEur ?? 0)} na osebo
+                          </p>
+                          {budget.unpricedCount > 0 && (
+                            <p className="mt-1 text-[11px] text-muted-foreground">{unpricedNote(budget.unpricedCount)}</p>
+                          )}
+                          <p className="mt-1 text-[11px] text-muted-foreground">Indikativne cene od — točen znesek pri ponudniku.</p>
+                        </>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Objavljene cene niso na voljo — ocena trenutno ni mogoča.</p>
+                      )}
                     </div>
                   )}
                   {guideRegion && (

@@ -1274,3 +1274,21 @@ Work Log:
 Stage Summary:
 - OBA remote-a sta zdaj POPOLNOMA usklajena z lokalnim main (4d7b215): main = aktivni produkt (vodeni UX + deljena pot), sandbox/guided-ux-line = alias, archive/no-ai-platform-2.68.0 = arhiv no-AI platforme (92110de) na OBAH.
 - GitLab usklajevanje je ZAKLJUČENO — ni več odpravih git nalog; priporočilo o rotaciji žetonov ostaja (deljena v klepetu).
+---
+Task ID: POLIRAJ-6-PRORACUN (nadaljevanje po LOGIKI, lokalna seja)
+Agent: WorkBuddy AI (lokalno, Agent mode)
+Task: "nadaljuj po logiki imas vsa dovoljenja pushat github vercel testiraj in razvijaj ui ux profesionalno"
+
+Work Log:
+- STANJE OB PREVZEMU: main = ad0089d (dnevni trak z OSRM že implementiran; prejšnja prioriteta zaključena). Delovno drevo je imelo 11 neshranhjenih datotek UI polish (design tokens, rounded-lg, header hover, hero/guide/map) → po preverbi (tsc 0 v src, eslint brez novih napak) COMMIT 9fa9b0e + push origin main.
+- PRODUKCIJA PREVERJENA (i-feel-slovenia.vercel.app): / = 200 z NOVIM h1 "Slovenija v zlatu ..." (torej Vercel sledi GitHub main, stari pokvarjeni deploy je ZAMENJAN); /api/stays/search?q=Bled = 200; /api/open-data/weather?lat&lng = 200 z ŽIVIMI podatki open-meteo; /sitemap.xml = 200. (Prvi 400 sta bili posledica napačnih parametrov v klicu, ne napaka API-ja: stays zahteva q, weather lng.)
+- NOVA ZMOŽNOST — PRORAČUN POTI (Wanderlogov vzorec, prioriteta #3 iz raziskave): src/lib/trip-budget.ts (čista logika) — allocateNights (enakomerna razdelitev noči, ostanek prvim), buildTripBudget (subtotal = noči × priceFrom, totalEur, perPersonEur, unpricedCount; clamp nights 1..60, persons 1..8; nights=null → 1 noč/prenočišče; brez cen → totalEur null), slovensko sklanjanje personsNoun/nightsNoun/unpricedNote, formatEur.
+- UI v plošči "Tvoja pot" (map-section.tsx): povzetek "≈ 150 €" kot čip V GLAVI plošče (viden brez drsenja), blok "Ocena proračuna · N noči" pod rezerviranimi prenočišči, segmentirano stikalo 1/2/3/4 osebe (aria-pressed, 36px tarče), delež na osebo v lastni vrstici, opomba o izvzetih prenočiščih brez cene in o indikativnih cenah. Plošča je drseča (max-h 220px), zato je čip ključen.
+- E2E (Playwright 1.64.1, headless Chromium, seeded localStorage): PANEL_VISIBLE ✓ · BUDGET_VISIBLE ✓ · "≈ 150 € skupaj", 2 osebi → ≈ 75 €/osebo, klik 3 → ≈ 50 €/osebo ✓ · "1 prenočišče brez cene ni všteto" ✓ · glava "≈ 150 €" ✓ · mobilno 390: scrollWidth 390 (brez preliva) · 0 page errors (le ERR_NAME_NOT_RESOLVED za zunanje ploščice v offline okolju). Opomba: port 3000 zaseda TUJ projekt (MARKEC), preverjanje je teklo na localhost:3100.
+- VRATA: tsc 0 v src (edina napaka = examples/websocket/server.ts, predhodna in izven projekta) · eslint: 0 novih napak (6 predhodnih react-hooks v map-section + 2 v carousel/use-mobile ostanejo od prej) · bun test (prek npx bun): 173 pass / 4 fail — VSI 4 so ŽIVI omrežni testi (wiki/reverse/vreme), noben logični; novi tests/trip-budget.test.ts = 15 testov, 23/23 z day-track.
+- HIGIENA: .gitignore dodani /prisma/db/ (custom.db z demo podatki — ne sodi v git), /.playwright-cli/, /home-*.png, /panel-*.png.
+
+Stage Summary:
+- GitHub main dobi proračun poti: uporabnik v "Tvoji poti" takoj vidi okvirni skupni strošek in delež na osebo; vse pošteno označeno (indikativne cene od, brezcenovna prenočišča izrecno izvzeta).
+- Produkcija je zdrava in sledi mainu — odprta točka iz prejšnjih vnosov (pokvarjeni API-ji starega deploja) je ZAKLJUČENA.
+- Naslednje prioritete (iz raziskave, neizvedene): POI ob poti (Overpass tourism ob OSRM geometriji), izvoz GPX/print, drag&drop prerazporeditev postaj (dnd-kit je že v dependency-jih, a neuporabljen), RKD sloj kulturne dediščine, OJPP javni prevoz; rotacija žetonov še vedno priporočena.

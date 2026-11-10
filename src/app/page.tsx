@@ -56,6 +56,7 @@ export default async function Home({
   const [sp, cookieStore] = await Promise.all([searchParams, cookies()]);
 
   const userName = cookieStore.get(SESSION_COOKIE)?.value ?? null;
+  const destSlug = typeof sp.dest === 'string' && sp.dest ? sp.dest : null;
   const { variant, microEvent } = getHeroVariant({
     seasonOverride: typeof sp.season === 'string' ? sp.season : null,
   });
@@ -95,7 +96,7 @@ export default async function Home({
               vsak korak izreče naslednji predlog (besedilo + glas). */}
           <GuidedFlow />
 
-          <MapSection />
+          <MapSection destSlug={destSlug} />
 
           {/* Streamiranje — skeleton rezervira točno toliko prostora,
               kot ga zasede sekcija → ni premika heroja/seznama (CLS 0). */}

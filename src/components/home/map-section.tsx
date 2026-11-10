@@ -52,6 +52,7 @@ import {
   transitPlanSummary,
   type TransitPlan,
 } from '@/lib/public-transport';
+import { destinationBySlug } from '@/lib/destinations';
 import { tripPlanFor, type TripStop } from '@/lib/trip-plan';
 import {
   MAP_GUIDE_CATEGORIES,
@@ -249,7 +250,7 @@ const TOUR_COLORS: Record<MapGuideCategory, string> = {
   narava: '#0d9488',
 };
 
-export function MapSection() {
+export function MapSection({ destSlug }: { destSlug?: string | null }) {
   const [mode, setMode] = useState<'map' | 'list'>('map');
   const [mapReady, setMapReady] = useState(false);
   const relief = useSyncExternalStore(subscribeLidarPref, getLidarSnapshot, () => false);
@@ -387,6 +388,55 @@ export function MapSection() {
       rkdLayerRef.current = null;
     };
   }, [mapReady, rkdEnabled, rkdFeatures, rkdData]);
+
+  // ————— GLOBOKA POVEZAVA ?dest=slug (s strani /kraj/[slug]): —————
+  // mapa prileti do destinacije; če je v trenutnem planu vodiča, se odpre
+  // njeno pojavno okno, sicer se prikaže začasni marker z opisom.
+  useEffect(() => {
+    const L = LeafletRef.current;
+    const map = mapRef.current;
+    if (!L || !map || !mapReady || !destSlug) return;
+    const dest = destinationBySlug(destSlug);
+    if (!dest) return;
+
+    if (focusMarkerRef.current) {
+      (focusMarkerRef.current as L.Marker).remove();
+      focusMarkerRef.current = null;
+    }
+    map.flyTo([dest.lat, dest.lng], 12, { duration: 1.5 });
+
+    const openAfterFly = () => {
+      const existing = planMarkersRef.current.get(dest.name);
+      if (existing) {
+        existing.openPopup();
+        return;
+      }
+      const marker = L.marker([dest.lat, dest.lng], {
+        icon: L.divIcon({
+          className: 'dsa-pin-focus',
+          html: PinSvg(1),
+          iconSize: [24, 32],
+          iconAnchor: [12, 32],
+        }),
+        title: dest.name,
+        zIndexOffset: 600,
+      })
+        .addTo(map)
+        .bindPopup(
+          `<strong>${escapeHtml(dest.name)}</strong><br/>${escapeHtml(dest.note)} · ${escapeHtml(dest.regionLabel)}`,
+        );
+      focusMarkerRef.current = marker;
+      marker.openPopup();
+    };
+    const timer = window.setTimeout(openAfterFly, 1700);
+    return () => {
+      window.clearTimeout(timer);
+      if (focusMarkerRef.current) {
+        (focusMarkerRef.current as L.Marker).remove();
+        focusMarkerRef.current = null;
+      }
+    };
+  }, [mapReady, destSlug]);
 
   // ————— JAVNI PREVOZ (OJPP / brezavta): gumb v pojavnem oknu postanke → —————
   // poišče naslednje povezave iz Ljubljane in izbrano pot nariše na zemljevid.
@@ -684,6 +734,8 @@ export function MapSection() {
   const routeLayerRef = useRef<unknown>(null);
   /** Linija izbrane povezave javnega prevoza (vijolična, ločena od OSRM). */
   const transitLayerRef = useRef<unknown>(null);
+  /** Začasni marker za globoko povezavo ?dest=slug (ko destinacija ni v planu). */
+  const focusMarkerRef = useRef<unknown>(null);
   const planRef = useRef<readonly TripStop[] | null>(null);
   planRef.current = plan;
   const navActive = navIndex !== null;

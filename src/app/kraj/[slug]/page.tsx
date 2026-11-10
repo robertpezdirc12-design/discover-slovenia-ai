@@ -69,6 +69,25 @@ export default async function DestinationPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(destinationJsonLd(dest, BASE)) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Odkrij Slovenijo', item: `${BASE}/` },
+              {
+                '@type': 'ListItem',
+                position: 2,
+                name: dest.regionLabel,
+                item: `${BASE}/#zemljevid`,
+              },
+              { '@type': 'ListItem', position: 3, name: dest.name },
+            ],
+          }),
+        }}
+      />
 
       <p className="text-xs text-muted-foreground">
         <Link href="/" className="underline underline-offset-2 hover:text-foreground">
@@ -87,7 +106,7 @@ export default async function DestinationPage({
         </p>
         <div className="mt-6 flex flex-wrap gap-2.5">
           <Button asChild size="sm" className="h-11 sm:h-9">
-            <Link href="/#zemljevid">Načrtuj pot · {dest.name}</Link>
+            <Link href={`/?dest=${dest.slug}#zemljevid`}>Načrtuj pot · {dest.name}</Link>
           </Button>
           <Button asChild size="sm" variant="outline" className="h-11 sm:h-9">
             <Link href="/">Domov</Link>

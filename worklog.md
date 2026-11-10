@@ -1468,3 +1468,22 @@ Work Log:
 - Odprava napak: (1) star remote je kazal na groupo markec-group1 (ne obstaja več) → markec-group; (2) projekt je bil ARHIVIRAN (»can't push to archived project«) → unarchive prek API-ja (201, archived:false).
 - PUSH: main → sandbox/guided-ux-line (nova veja, 023a05c) — main na GitLabu smo PUSTILI nedotaknjen (obnovljeni platformni projekt; prepis bi bil uničujoč brez odločitve uporabnika).
 - ODLOČITEV ČAKA UPORABNIKA: vrstni red/združitev dveh linij (sandbox UX vs platformna obnova) — enaka točka kot POLIRAJ-3. Priporočilo: ohrani obe veji (main = platformna obnova, sandbox/guided-ux-line = UX produkt), morebitna združitev je velik projekt, ne hitri push.
+
+---
+Task ID: POLIRAJ-15-SEO-DESTINACIJE (zadnja prioriteta iz raziskave)
+Datum: 2026-11-10
+Agent: ZCode (main session)
+Task: per-destination statične rute iz kataloga postaj (SEO največja rast)
+
+Work Log:
+- KATALOG: 7 destinacij iz TRIP_PLAN (vse regije; raziskava je omenjala 31, dejanski katalog vodiča ima 7 — pokrita pokritost).
+- src/lib/destinations.ts: DESTINATIONS (stabilen vrstni red po GUIDE_REGIONS), enolični ASCII slugi (NFD strip → dolina-soce), nearbyAttractions (POI_CATALOG, haversine, ≤30 km, sort), destinationTitle/Description (SEO besedilo z imeni bližnjih znamenitosti), destinationJsonLd (schema.org Place + GeoCoordinates).
+- src/app/kraj/[slug]/page.tsx: generateStaticParams → 7 statičnih strani; metadata (title/description/canonical/OG sl_SI), JSON-LD, hero + "Na pogled" + "Kako do tja" ter seznam zanimivosti s kategorijo/razdaljo; notFound za neznan slug.
+- src/app/page.tsx: vrstica »Razišči« z notranjimi povezavami (pod herojem).
+- src/app/sitemap.ts: +7 urljev (monthly, 0.8).
+- TESTI: +8 (pokritost, enoličnost slugov, opis z znamenitostmi, JSON-LD, razvrščanje) → 301 pass / 0 fail / 2237 expect.
+- PRODUKCIJA (po deployu): /kraj/bled 200, title »Bled · Gorenjska (Bled, Bohinj) — Odkrij Slovenijo«, canonical, JSON-LD; sitemap.xml vsebuje 7 /kraj/ urljev.
+- GITLAB: veja sandbox/guided-ux-line usklajena z mainom (2217edb); main na GitLabu PUSTLJEN (odločitev uporabnika: ohrani obe veji).
+
+Stage Summary:
+- Vse prioritete iz raziskave so izvedene (SEO hitre zmage, delitev, dnevni trak, proračun, POI, GPX/tisk, prerazporeditev, RKD, OJPP, SEO destinacije). Priporočilo: rotacija GitLab žetona (bil je deljen v klepetu).

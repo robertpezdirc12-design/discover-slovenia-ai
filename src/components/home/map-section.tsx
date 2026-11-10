@@ -46,6 +46,7 @@ import { POI_CATEGORY_LABELS, poiDistanceLabel, type PoiCategory, type RoutePoi 
 import { CATALOG_ATTRIBUTION } from '@/lib/poi-catalog';
 import { clusterRkd, filterRkd, filterRkdInBounds, parseRkdData, type RkdDataset } from '@/lib/rkd';
 import { buildRkdLayer } from '@/lib/rkd-layer';
+import { BALKAN_COUNTRY_VIEWS } from '@/lib/countries';
 import {
   TRANSIT_ATTRIBUTION,
   TRANSIT_DEFAULT_ORIGIN,
@@ -270,6 +271,8 @@ const TOUR_COLORS: Record<MapGuideCategory, string> = {
 
 export function MapSection({ destSlug }: { destSlug?: string | null }) {
   const [mode, setMode] = useState<'map' | 'list'>('map');
+  /** Navigacija pogleda: izbrana država → približaj (brez filtriranja). */
+  const [countrySel, setCountrySel] = useState('');
   const [mapReady, setMapReady] = useState(false);
   const relief = useSyncExternalStore(subscribeLidarPref, getLidarSnapshot, () => false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -1652,6 +1655,32 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
                 </>
               )}
             </span>
+          </div>
+          {/* DRŽAVA — navigacija pogleda: izbira približa državo (brez filtrov). */}
+          <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-muted/40 px-2.5 py-1">
+            <Label htmlFor="country-view" className="text-xs text-muted-foreground">
+              Država
+            </Label>
+            <select
+              id="country-view"
+              value={countrySel}
+              onChange={(e) => {
+                const v = e.target.value;
+                setCountrySel(v);
+                if (!v) return;
+                const c = BALKAN_COUNTRY_VIEWS.find((x) => x.id === v);
+                if (c) mapRef.current?.flyTo([c.lat, c.lng], c.zoom, { duration: 1.4 });
+              }}
+              aria-label="Približaj državo na zemljevidu"
+              className="h-7 rounded-md border border-border/70 bg-background/80 px-1.5 text-xs text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <option value="">Vse</option>
+              {BALKAN_COUNTRY_VIEWS.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-muted/40 px-2.5 py-1">
             <Mountain className="size-3.5 text-stone-600" aria-hidden />

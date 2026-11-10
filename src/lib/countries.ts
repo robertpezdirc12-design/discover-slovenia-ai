@@ -171,3 +171,23 @@ export function countryInfoForRegion(regionId: GuideRegionId | null): CountryInf
   if (!regionId) return null;
   return REGION_COUNTRY[regionId] ?? null;
 }
+
+/** Pogledi (središče + zoom) za navigacijo po državah na zemljevidu. */
+export interface CountryView {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  zoom: number;
+}
+
+export const BALKAN_COUNTRY_VIEWS: readonly CountryView[] = [
+  { id: 'slovenija', name: 'Slovenija', lat: 46.1, lng: 14.8, zoom: 7 },
+  { id: 'hrvaska', name: 'Hrvaška', lat: 45.4, lng: 16.5, zoom: 6 },
+  { id: 'bosna-hercegovina', name: 'Bosna in Hercegovina', lat: 44.2, lng: 17.9, zoom: 7 },
+  { id: 'srbija', name: 'Srbija', lat: 44.0, lng: 20.9, zoom: 7 },
+  { id: 'kosovo', name: 'Kosovo', lat: 42.55, lng: 20.9, zoom: 9 },
+  { id: 'crna-gora', name: 'Črna gora', lat: 42.75, lng: 19.2, zoom: 8 },
+  { id: 'albanija', name: 'Albanija', lat: 41.0, lng: 20.0, zoom: 8 },
+  { id: 'severna-makedonija', name: 'Severna Makedonija', lat: 41.5, lng: 21.7, zoom: 8 },
+];

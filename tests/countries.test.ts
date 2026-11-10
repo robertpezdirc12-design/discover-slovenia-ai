@@ -1,6 +1,6 @@
 /// <reference types="bun-types" />
 import { describe, expect, test } from 'bun:test';
-import { REGION_COUNTRY, countryInfoForRegion } from '../src/lib/countries';
+import { BALKAN_COUNTRY_VIEWS, REGION_COUNTRY, countryInfoForRegion } from '../src/lib/countries';
 import { GUIDE_REGIONS } from '../src/lib/guide-store';
 
 describe('countries — pokritost in celovitost', () => {
@@ -36,5 +36,20 @@ describe('countries — pokritost in celovitost', () => {
   test('imena držav so enolična', () => {
     const names = Object.values(REGION_COUNTRY).map((i) => i.name);
     expect(new Set(names).size).toBe(names.length);
+  });
+});
+
+describe('countries — pogledi za navigacijo (Država select)', () => {
+  test('vsaka država ima veljaven center in zoom', () => {
+    expect(BALKAN_COUNTRY_VIEWS.length).toBe(8);
+    for (const c of BALKAN_COUNTRY_VIEWS) {
+      expect(Math.abs(c.lat)).toBeLessThanOrEqual(90);
+      expect(Math.abs(c.lng)).toBeLessThanOrEqual(180);
+      expect(c.zoom).toBeGreaterThanOrEqual(5);
+      expect(c.zoom).toBeLessThanOrEqual(10);
+      expect(c.name.length).toBeGreaterThan(2);
+    }
+    const ids = new Set(BALKAN_COUNTRY_VIEWS.map((c) => c.id));
+    expect(ids.size).toBe(BALKAN_COUNTRY_VIEWS.length);
   });
 });

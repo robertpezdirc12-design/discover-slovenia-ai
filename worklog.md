@@ -1694,3 +1694,15 @@ Work Log:
 - Prejšnja odstranitev (čipi Razišči/Okoli) je bila NAPAČNA — uporabnik je mislil seznam »Razišči: Bled … Bitola« na domači strani.
 - Izvedeno: git revert 6339c33 (vrnjeni čipi) + odstranjen navigacijski seznam DESTINATIONS iz page.tsx (in import). SEO strani /kraj/[slug] ostanejo.
 - VRATA: 334 pass / 0 fail; tsc 0; lint 0; build OK; lokalno 0 × /kraj/ na domači strani, čipi prisotni.
+
+---
+Task ID: POLIRAJ-28-DRZAVA-SELECT (uporabnikov predlog)
+Datum: 2026-11-10
+Agent: ZCode (main session)
+Task: navigacija pogleda po državah
+
+Work Log:
+- Predlog: spustna vrstica »Država« — klik na državo približa pogled iz celega Balkana.
+- Implementirano: BALKAN_COUNTRY_VIEWS (8 držav, središče + zoom) v countries.ts; select v orodni vrstici (»Vse« + 8 držav) → flyTo z animacijo. Čista navigacija, brez filtriranja.
+- TESTI: +1 → 335 pass / 0 fail.
+- GIT: push na GitHub main + GitLab sandbox/guided-ux-line.

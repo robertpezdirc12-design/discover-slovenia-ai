@@ -1549,13 +1549,6 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
       // varovalka: če strežnik s ploščicami ne odgovori, skeleton vseeno sprosti
       const fallback = window.setTimeout(() => setMapReady(true), 3000);
 
-      const icon = L.divIcon({ className: 'dsa-pin', html: PinSvg(), iconSize: [24, 32], iconAnchor: [12, 32] });
-      DESTINATIONS.forEach((d) =>
-        L.marker([d.pos[0], d.pos[1]], { icon, title: d.name })
-          .addTo(map)
-          .bindTooltip(`${d.name} — ${d.region}`),
-      );
-
       // VODENI TOK: regija iz shranjenih odgovorov → mapa lepo pripotuje.
       const flyToGuideRegion = () => {
         try {

@@ -4,10 +4,15 @@ import { emptyGuideState, type GuideState } from '../src/lib/guide-store';
 import {
   TRIP_CODE_ALPHABET,
   TRIP_CODE_LENGTH,
+  TRIP_STATELESS_MAX_LENGTH,
+  TRIP_STATELESS_PREFIX,
+  decodeStatelessTripCode,
+  encodeStatelessTripCode,
   generateTripCode,
   hasOwnPlan,
   importSharedState,
   isShareable,
+  isShortTripCode,
   parseSharedTrip,
   sharedStopOrder,
   sharedStays,
@@ -141,6 +146,51 @@ describe('share-trip — pogoj deljenja in naslovi', () => {
     expect(stays).toEqual([
       { id: 'n123', name: 'Guesthouse Jezero', city: 'Bled', priceFrom: 65 },
     ]);
+  });
+});
+
+describe('share-trip — stateless koda (rezerva brez baze)', () => {
+  test('round-trip: zakodirano → dekodirano ohrani vso vsebino in stopOrder', () => {
+    const order = ['Bohinj', 'Bled'] as const;
+    const code = encodeStatelessTripCode(FULL, order)!;
+    expect(code).not.toBeNull();
+    expect(code.startsWith(TRIP_STATELESS_PREFIX)).toBe(true);
+    expect(code.length).toBeLessThanOrEqual(TRIP_STATELESS_MAX_LENGTH);
+    expect(isShortTripCode(code)).toBe(false);
+
+    const decoded = decodeStatelessTripCode(code)!;
+    expect(decoded).not.toBeNull();
+    expect(decoded.state.region).toBe('gorenjska');
+    expect(decoded.state.interests).toEqual(['narava', 'hrana']);
+    expect(decoded.state.days).toBe(3);
+    expect(decoded.state.stays).toHaveLength(1);
+    expect(decoded.stopOrder).toEqual(['Bohinj', 'Bled']);
+  });
+
+  test('brez stopOrder: koda deluje in red je null', () => {
+    const code = encodeStatelessTripCode(FULL)!;
+    const decoded = decodeStatelessTripCode(code)!;
+    expect(decoded.stopOrder).toBeNull();
+    expect(decoded.state.region).toBe('gorenjska');
+  });
+
+  test('vsaka kratka koda se NE more dekodirati kot stateless', () => {
+    const short = generateTripCode();
+    expect(isShortTripCode(short)).toBe(true);
+    expect(decodeStatelessTripCode(short)).toBeNull();
+  });
+
+  test('hostilni vnosi → null (nikoli izjema)', () => {
+    expect(decodeStatelessTripCode('')).toBeNull();
+    expect(decodeStatelessTripCode('x')).toBeNull();
+    expect(decodeStatelessTripCode('x@@@')).toBeNull();
+    expect(decodeStatelessTripCode('x' + 'A'.repeat(TRIP_STATELESS_MAX_LENGTH + 1))).toBeNull();
+    expect(decodeStatelessTripCode('x!!not-base64!!')).toBeNull();
+  });
+
+  test('neveljavno stanje → encode vrne null (edina pot je baza)', () => {
+    const broken = stateWith({ version: 2 as never });
+    expect(encodeStatelessTripCode(broken)).toBeNull();
   });
 });
 

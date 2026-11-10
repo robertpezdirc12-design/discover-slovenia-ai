@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { sanitizeGuideState } from '@/lib/guide-store';
 import {
+  encodeStatelessTripCode,
   generateTripCode,
   isShareable,
   sharedTripPayload,
@@ -55,6 +56,17 @@ export async function POST(request: Request) {
       lastError = err;
     }
   }
+
+  // REZERVNI NAČIN — stateless koda: če baza ni na voljo (npr. serverless
+  // brez provisionirane baze), zakodiraj vsebino v samo povezavo. Uporabnik
+  // nič ne opazi; URL je le daljši. Vsebina je že sanitizirana in javna.
+  const stateless = encodeStatelessTripCode(state, stopOrder);
+  if (stateless) {
+    console.warn('pot/share: baza ni na voljo — uporabljena stateless koda');
+    const origin = new URL(request.url).origin;
+    return NextResponse.json({ ok: true, id: stateless, url: `${origin}/pot/${stateless}` });
+  }
+
   console.error('pot/share: ustvarjanje ni uspelo', lastError);
   return NextResponse.json(
     { ok: false, error: 'Deljenje trenutno ni na voljo — poskusi znova.' },

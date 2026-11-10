@@ -23,6 +23,20 @@ export const TRIP_CODE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
 export const TRIP_CODE_LENGTH = 10;
 
 /**
+ * Kratka koda ima JAJKO črke/številke iz zgoraj omenjenega abecede. Vsaka
+ * koda izven tega vzorca (npr. "x" + base64url) je STATELESS samozadostna
+ * koda: payload je zakodiran v samo povezavo in ne potrebuje baze. To je
+ * rezervni način deljenja, kadar strežnik nima baze (npr. Vercel serverless
+ * brez provisionirane baze).
+ */
+export const TRIP_CODE_RE = /^[2-9A-Z]{6,16}$/;
+
+/** Predpona stateless kod — zunaj kratkega abecede, zato brez kolizij. */
+export const TRIP_STATELESS_PREFIX = 'x';
+/** Zgornja meja dolžine stateless kode (pribl. 1 KB payloada v base64url). */
+export const TRIP_STATELESS_MAX_LENGTH = 1200;
+
+/**
  * Kratka koda deljene poti (npr. "K7M2XRQ4ZP"). Uporablja Web Crypto
  * (Node 18+ in brskalniki jo imajo); povratno Math.random samo če crypto
  * ni na voljo (nikoli v produkciji).
@@ -77,6 +91,66 @@ export function sharedStopOrder(payload: string): readonly string[] | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * STATELESS KODIRANJE — rezervni način deljenja brez baze.
+ *
+ * Koda = "x" + base64url(JSON payloada). Uporabniku se URL pokaže enako
+ * (`/pot/x<koda>`), le da je daljši. Vsebina je že sanitizirana in javna
+ * (ista kot tista, ki bi šla v bazo), zato podpis ni potreben; stran ob
+ * dekodiranju znova SANITIZIRA — noben tuj vnos ne preživi.
+ */
+function base64UrlEncode(data: string): string {
+  return btoa(unescape(encodeURIComponent(data)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+function base64UrlDecode(data: string): string | null {
+  try {
+    const b64 = data.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+    return decodeURIComponent(escape(atob(padded)));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Zakodira deljeno pot v stateless kodo. Vrne null, če je vsebina
+ * predolga ali neveljavna (potem je edina pot baza).
+ */
+export function encodeStatelessTripCode(
+  state: GuideState,
+  stopOrder?: readonly string[] | null,
+): string | null {
+  try {
+    const payload = sharedTripPayload(state, stopOrder);
+    const code = TRIP_STATELESS_PREFIX + base64UrlEncode(payload);
+    return code.length <= TRIP_STATELESS_MAX_LENGTH ? code : null;
+  } catch {
+    return null; // neveljavno stanje — edina pot je baza
+  }
+}
+
+/** Razčleni stateless kodo (hostilen vnos → null). */
+export function decodeStatelessTripCode(
+  code: string,
+): { state: GuideState; stopOrder: readonly string[] | null } | null {
+  if (!code.startsWith(TRIP_STATELESS_PREFIX)) return null;
+  if (code.length < 8 || code.length > TRIP_STATELESS_MAX_LENGTH) return null;
+  const payload = base64UrlDecode(code.slice(TRIP_STATELESS_PREFIX.length));
+  if (payload === null) return null;
+  const state = parseSharedTrip(payload);
+  if (!state) return null;
+  return { state, stopOrder: sharedStopOrder(payload) };
+}
+
+/** Ali je koda kratka (baza) ali stateless (samozadostna)? */
+export function isShortTripCode(code: string): boolean {
+  return TRIP_CODE_RE.test(code);
 }
 
 /** Prejemnikova stran: razčleni payload (hostilen vnos → null). */

@@ -6,6 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { db } from '@/lib/db';
 import { GUIDE_REGIONS } from '@/lib/guide-store';
 import {
+  decodeStatelessTripCode,
+  isShortTripCode,
   parseSharedTrip,
   sharedStopOrder,
   sharedStays,
@@ -24,13 +26,16 @@ import { ImportSharedTripButton } from './import-button';
  */
 
 async function loadSharedTrip(id: string) {
-  // Koda mora biti iz našega abecede — a priori zaščita pred čudnimi vhodi.
-  if (!/^[2-9A-Z]{6,16}$/.test(id)) return null;
-  const row = await db.sharedTrip.findUnique({ where: { id } });
-  if (!row) return null;
-  const state = parseSharedTrip(row.data);
-  if (!state) return null;
-  return { state, stopOrder: sharedStopOrder(row.data) };
+  // Kratka koda → baza. Vse drugo (npr. "x…") je stateless samozadostna
+  // koda: dekodira se in ponovno sanitizira brez baze (hostilen vnos → null).
+  if (isShortTripCode(id)) {
+    const row = await db.sharedTrip.findUnique({ where: { id } });
+    if (!row) return null;
+    const state = parseSharedTrip(row.data);
+    if (!state) return null;
+    return { state, stopOrder: sharedStopOrder(row.data) };
+  }
+  return decodeStatelessTripCode(id);
 }
 
 export async function generateMetadata({

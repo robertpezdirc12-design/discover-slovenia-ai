@@ -12,7 +12,6 @@ import { useGuideState } from '@/components/home/use-guide-state';
 import { SHOW_TRIP_EVENT, speak } from '@/lib/speech';
 import {
   GUIDE_EVENT,
-  GUIDE_INTEREST_OPTIONS,
   GUIDE_REGIONS,
   GUIDE_STEPS,
   clearGuideState,
@@ -23,7 +22,6 @@ import {
   isStepAnswered,
   nextStepSuggestion,
   saveGuideState,
-  type GuideInterest,
   type GuidePace,
   type GuideRegionId,
   type GuideState,
@@ -43,7 +41,6 @@ import {
  */
 
 const STEP_LABELS: Record<GuideStepId, string> = {
-  interests: 'Interesi',
   region: 'Regija',
   days: 'Število dni',
   pace: 'Tempo',
@@ -65,7 +62,6 @@ export function GuidedFlow() {
   // uporabnikova navigacija povozi samodejni korak (null = sledi toku)
   const [userStep, setUserStep] = useState<ViewStep | null>(null);
   const [dismissed, setDismissed] = useState(false);
-  const [draftInterests, setDraftInterests] = useState<GuideInterest[]>([]);
   const [draftRegion, setDraftRegion] = useState<GuideRegionId | null>(null);
   const [draftExtras, setDraftExtras] = useState<GuideRegionId[]>([]);
   const [draftDays, setDraftDays] = useState<number>(2);
@@ -73,7 +69,7 @@ export function GuidedFlow() {
   const cardRef = useRef<HTMLDivElement | null>(null);
 
   // Enostavno: brez vstopnega zaslona — tok začne kar pri prvem vprašanju.
-  const autoStep: ViewStep = state === null ? 'interests' : (firstUnansweredStep(state) ?? 'done');
+  const autoStep: ViewStep = state === null ? 'region' : (firstUnansweredStep(state) ?? 'done');
   const step: ViewStep = userStep ?? autoStep;
   const complete = state ? isGuideComplete(state) : false;
 
@@ -119,7 +115,6 @@ export function GuidedFlow() {
     } catch {
       /* prijetnost */
     }
-    setDraftInterests([]);
     setDraftRegion(null);
     setDraftExtras([]);
     setDraftDays(2);
@@ -130,7 +125,6 @@ export function GuidedFlow() {
 
   /** Komoot predizpolnjevanje: pri ponovnem vstopu so odgovori že izpolnjeni. */
   const syncDrafts = (s: GuideState) => {
-    setDraftInterests(s.interests);
     setDraftRegion(s.region);
     setDraftExtras(s.extraRegions ?? []);
     setDraftDays(s.days ?? 2);
@@ -204,7 +198,7 @@ export function GuidedFlow() {
               onClick={toggleVoice}
               aria-pressed={state?.voiceEnabled ?? false}
               aria-label={state?.voiceEnabled ? 'Izklopi govorne nasvete' : 'Vklopi govorne nasvete (glasovno vodenje)'}
-              title={`Glasovno vodenje (sl-SI) — korak: ${STEP_LABELS[(step === 'welcome' || step === 'done') ? 'interests' : step] ?? 'vodič'}`}
+              title={`Glasovno vodenje (sl-SI) — korak: ${STEP_LABELS[(step === 'done') ? 'pace' : step] ?? 'vodič'}`}
             >
               {state?.voiceEnabled ? <Ear className="size-4" aria-hidden /> : <EarOff className="size-4" aria-hidden />}
             </Button>
@@ -213,51 +207,6 @@ export function GuidedFlow() {
         </CardHeader>
 
         <CardContent>
-          {step === 'interests' && (
-            <fieldset className="space-y-3">
-              <legend className="text-sm font-medium">Kaj te zanimajo?</legend>
-              <div className="flex flex-wrap gap-2">
-                {GUIDE_INTEREST_OPTIONS.map((opt) => {
-                  const active = draftInterests.includes(opt);
-                  return (
-                    <Button
-                      key={opt}
-                      type="button"
-                      size="sm"
-                      className={`min-h-11 rounded-full sm:min-h-8 ${active ? 'shadow-sm' : ''}`}
-                      variant={active ? 'default' : 'outline'}
-                      aria-pressed={active}
-                      onClick={() =>
-                        setDraftInterests((prev) =>
-                          prev.includes(opt) ? prev.filter((x) => x !== opt) : [...prev, opt],
-                        )
-                      }
-                    >
-                      {active && <Check className="size-3.5" aria-hidden />}
-                      {opt}
-                    </Button>
-                  );
-                })}
-              </div>
-              {draftInterests.length === 0 && (
-                <p role="status" className="text-xs text-muted-foreground">
-                  Izberi vsaj eno zanimivost, da se vklopi gumb Naprej.
-                </p>
-              )}
-              {state && isStepAnswered(state, 'interests') && (
-                <p className="text-xs text-emerald-700">· odgovor shranjen prejšnjič (lahko ga spremeniš)</p>
-              )}
-              <Button
-                className="h-11 sm:h-9"
-                disabled={draftInterests.length === 0}
-                onClick={() => commit({ interests: draftInterests, answered: ['interests'] }, 'region')}
-              >
-                Naprej — regija
-                <ChevronRight className="size-4" aria-hidden />
-              </Button>
-            </fieldset>
-          )}
-
           {step === 'region' && (
             <fieldset className="space-y-3">
               <legend className="text-sm font-medium">Katera regija te vabi?</legend>
@@ -326,7 +275,6 @@ export function GuidedFlow() {
                   Naprej — dni
                   <ChevronRight className="size-4" aria-hidden />
                 </Button>
-                <Button variant="ghost" className="h-11 sm:h-9" onClick={() => enterStep('interests')}>Nazaj</Button>
               </div>
             </fieldset>
           )}

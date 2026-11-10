@@ -67,7 +67,7 @@ export interface GuideStayStop {
 }
 
 /** Koraki toka — vrstni red je hkrati definicija "naslednjega koraka". */
-export const GUIDE_STEPS = ['interests', 'region', 'days', 'pace'] as const;
+export const GUIDE_STEPS = ['region', 'days', 'pace'] as const;
 export type GuideStepId = (typeof GUIDE_STEPS)[number];
 
 /** Shranjena zanimivost/dediščina (»Dodaj v pot« s zemljevida). */
@@ -253,8 +253,6 @@ export function clearGuideState(storage: GuideStorage): void {
 export function isStepAnswered(state: GuideState, step: GuideStepId): boolean {
   if (!state.answered.includes(step)) return false;
   switch (step) {
-    case 'interests':
-      return state.interests.length > 0;
     case 'region':
       return state.region !== null;
     case 'days':
@@ -298,16 +296,14 @@ export function nextStepSuggestion(
     if (next === null) {
       return { text: 'Plan is ready — see it on the map. Want another destination, or finish here?', nextStep: 'done' };
     }
-    if (next === 'interests') return { text: 'Pick a few interests to get started — I\'ll remember them.', nextStep: next };
-    if (next === 'region') return { text: `Saved ${state.interests.length} interest(s). Now: which region?`, nextStep: next };
-    if (next === 'days') return { text: `Region saved. How many days do you have?`, nextStep: next };
+    if (next === 'region') return { text: 'Where in the region do you want to go?', nextStep: next };
+    if (next === 'days') return { text: 'Region saved. How many days do you have?', nextStep: next };
     return { text: 'Last question: how fast should the trip feel?', nextStep: next };
   }
   if (next === null) {
     return { text: 'Načrt je pripravljen — poglej svojo pot na zemljevidu. Želiš še eno destinacijo, ali zaključiš?', nextStep: 'done' };
   }
-  if (next === 'interests') return { text: 'Izberi interese, ki te zanimajo — si jih bom zapomnil.', nextStep: next };
-  if (next === 'region') return { text: `Shranjeno: ${state.interests.length} ${interestsNoun(state.interests.length)}. Naslednje: katera regija te vabi?`, nextStep: next };
+  if (next === 'region') return { text: 'Katera regija te vabi?', nextStep: next };
   if (next === 'days') return { text: 'Regija shranjena. Koliko dni imaš na voljo?', nextStep: next };
   return { text: 'Zadnje vprašanje: kakšen tempo potovanja ti ustreza?', nextStep: next };
 }

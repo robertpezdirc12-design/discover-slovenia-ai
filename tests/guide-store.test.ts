@@ -40,10 +40,10 @@ describe('guide-store — trajanje odgovorov (Komoot onboarding)', () => {
 
   test('odgovor se shrani in ohrani med naložbami (zapomni si ga)', () => {
     const s = memStorage();
-    saveGuideState(s, stateWith({ interests: ['narava', 'hrana'], answered: ['interests'] }));
+    saveGuideState(s, stateWith({ region: 'gorenjska', answered: ['region'] }));
     const loaded = loadGuideState(s);
-    expect(loaded?.interests).toEqual(['narava', 'hrana']);
-    expect(loaded?.answered).toContain('interests');
+    expect(loaded?.region).toBe('gorenjska');
+    expect(loaded?.answered).toContain('region');
   });
 
   test('pokvarjen JSON → fail-clean (null, ne napaka)', () => {
@@ -63,37 +63,27 @@ describe('guide-store — trajanje odgovorov (Komoot onboarding)', () => {
   });
 
   test('isStepAnswered zahteva tako potrditev kot vsebino', () => {
-    expect(isStepAnswered(stateWith({ answered: ['interests'], interests: [] }), 'interests')).toBe(false);
-    expect(isStepAnswered(stateWith({ answered: ['interests'], interests: ['narava'] }), 'interests')).toBe(true);
-    expect(isStepAnswered(stateWith({ interests: ['narava'], answered: [] }), 'interests')).toBe(false);
+    expect(isStepAnswered(stateWith({ answered: ['region'], region: null }), 'region')).toBe(false);
+    expect(isStepAnswered(stateWith({ answered: ['region'], region: 'gorenjska' }), 'region')).toBe(true);
+    expect(isStepAnswered(stateWith({ answered: [] }), 'region')).toBe(false);
     expect(isStepAnswered(stateWith({ answered: ['days'], days: 3 }), 'days')).toBe(true);
     expect(isStepAnswered(stateWith({ answered: ['days'], days: 0 }), 'days')).toBe(false);
   });
 
   test('firstUnansweredStep — tok nadaljuje na prvem praznem koraku', () => {
-    expect(firstUnansweredStep(emptyGuideState())).toBe('interests');
+    expect(firstUnansweredStep(emptyGuideState())).toBe('region');
+    expect(firstUnansweredStep(stateWith({ region: 'gorenjska', answered: ['region'] }))).toBe('days');
     expect(
-      firstUnansweredStep(stateWith({ interests: ['narava'], answered: ['interests'] })),
-    ).toBe('region');
-    expect(
-      firstUnansweredStep(
-        stateWith({ interests: ['narava'], answered: ['interests'], region: 'gorenjska' }),
-      ),
-    ).toBe('region');
-    expect(
-      firstUnansweredStep(
-        stateWith({ interests: ['narava'], answered: ['interests', 'region'], region: 'gorenjska' }),
-      ),
-    ).toBe('days');
+      firstUnansweredStep(stateWith({ region: 'gorenjska', days: 2, answered: ['region', 'days'] })),
+    ).toBe('pace');
   });
 
   test('popoln tok → firstUnansweredStep null + isGuideComplete true', () => {
     const full = stateWith({
-      interests: ['narava'],
       region: 'gorenjska',
       days: 2,
       pace: 'zmeren',
-      answered: ['interests', 'region', 'days', 'pace'],
+      answered: ['region', 'days', 'pace'],
     });
     expect(isGuideComplete(full)).toBe(true);
     expect(firstUnansweredStep(full)).toBeNull();
@@ -101,32 +91,31 @@ describe('guide-store — trajanje odgovorov (Komoot onboarding)', () => {
 
   test('clearGuideState pobriše spomin (»začni znova«)', () => {
     const s = memStorage();
-    saveGuideState(s, stateWith({ interests: ['narava'], answered: ['interests'] }));
+    saveGuideState(s, stateWith({ region: 'gorenjska', answered: ['region'] }));
     clearGuideState(s);
     expect(loadGuideState(s)).toBeNull();
   });
 });
 
 describe('nextStepSuggestion — izrečen naslednji korak (vodenje)', () => {
-  test('začetek: povabi k interesom', () => {
+  test('začetek: povabi k izbiri regije', () => {
     const s = nextStepSuggestion(emptyGuideState());
-    expect(s.nextStep).toBe('interests');
-    expect(s.text).toContain('interes');
+    expect(s.nextStep).toBe('region');
+    expect(s.text).toContain('regija');
   });
 
-  test('po interesih: pove, koliko jih je shranjeno, in vpraša po regiji', () => {
-    const s = nextStepSuggestion(stateWith({ interests: ['narava', 'hrana'], answered: ['interests'] }));
-    expect(s.nextStep).toBe('region');
-    expect(s.text).toContain('2');
+  test('po regiji: pove, da je shranjena, in vpraša po dnevih', () => {
+    const s = nextStepSuggestion(stateWith({ region: 'gorenjska', answered: ['region'] }));
+    expect(s.nextStep).toBe('days');
+    expect(s.text).toContain('dni');
   });
 
   test('KONČNI NASVET (izrazita želja): »Želiš še eno destinacijo, ali zaključiš?«', () => {
     const full = stateWith({
-      interests: ['narava'],
       region: 'gorenjska',
       days: 2,
       pace: 'zmeren',
-      answered: ['interests', 'region', 'days', 'pace'],
+      answered: ['region', 'days', 'pace'],
     });
     const sl = nextStepSuggestion(full);
     expect(sl.nextStep).toBe('done');
@@ -137,12 +126,12 @@ describe('nextStepSuggestion — izrečen naslednji korak (vodenje)', () => {
   });
 
   test('determinizem: isti vhod → isti izhod', () => {
-    const st = stateWith({ interests: ['narava'], answered: ['interests'] });
+    const st = stateWith({ region: 'gorenjska', answered: ['region'] });
     expect(nextStepSuggestion(st)).toEqual(nextStepSuggestion(st));
   });
 
   test('vsi koraki so pokriti v vrstnem redu', () => {
-    expect(GUIDE_STEPS).toEqual(['interests', 'region', 'days', 'pace']);
+    expect(GUIDE_STEPS).toEqual(['region', 'days', 'pace']);
   });
 });
 

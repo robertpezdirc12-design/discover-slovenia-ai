@@ -30,7 +30,7 @@ const FULL: GuideState = stateWith({
   region: 'gorenjska',
   days: 3,
   pace: 'zmeren',
-  answered: ['interests', 'region', 'days', 'pace'],
+  answered: ["region", "days", "pace"],
   stays: [
     {
       id: 'n123',

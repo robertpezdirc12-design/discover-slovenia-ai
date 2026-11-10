@@ -24,16 +24,20 @@
 export const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org';
 /**
  * Overpass končnice — poskusimo po vrsti (failover).
- * Izmerjeno v peskovniku (18. 10. 2026): overpass-api.de je blokiran
- * (ConnectionRefused), overpass.osm.ch odgovarja 200. POZOR: osm.ch je
- * ŠVICARSKI izvleček OSM — izven Švice vrne 200 s PRAZNIM `elements`.
- * Iskalnik zato prazne zadetke obravnava kot neuspeh in nadaljuje z
- * naslednjim zrcalom oziroma Photon rezervo. Funkcija /api/pot/nearby
- * to zrcalo namerno izpusti in uporablja izključno globalna zrcala.
+ *
+ * Produkcijska meritev (Vercel, `/api/stays/search?q=Bled`): `overpass-api.de`
+ * je dosegljiv in vrne prava prenočišča v ~10 s, medtem ko `overpass.osm.ch`
+ * odgovori v ~0,3 s s PRAZNIM `elements` — osm.ch je namreč ŠVICARSKI
+ * izvleček OSM in izven Švice nima podatkov. Zato je GLOBALNO zrcalo PRVO:
+ * za Slovenijo (in ves ostali svet) ne zapravljamo zahtevka na praznem
+ * izvlečku. Iskalnik prazne zadetke vseeno obravnava kot neuspeh in
+ * nadaljuje z naslednjim zrcalom oziroma Photon rezervo; švicarsko zrcalo
+ * ostane kot hitra rezerva za švicarska iskanja. `/api/pot/nearby` uporablja
+ * izključno globalna zrcala (glej `src/lib/overpass.ts`).
  */
 export const OVERPASS_ENDPOINTS = [
-  'https://overpass.osm.ch/api/interpreter',
   'https://overpass-api.de/api/interpreter',
+  'https://overpass.osm.ch/api/interpreter',
 ] as const;
 
 /** Vrste prenočišč, ki jih iščemo (OSM tag tourism=*). */

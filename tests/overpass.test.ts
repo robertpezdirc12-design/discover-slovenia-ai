@@ -1,0 +1,149 @@
+import { describe, expect, test } from 'bun:test';
+
+import {
+  GLOBAL_OVERPASS_ENDPOINTS,
+  OSM_USER_AGENT,
+  OVERPASS_DEFAULT_BUDGET_MS,
+  raceOverpass,
+} from '@/lib/overpass';
+
+const QUERY = '[out:json][timeout:25];(node["tourism"="viewpoint"](46.2,14.0,46.4,14.2););out center 300;';
+
+const named = (count: number) => JSON.stringify({
+  elements: Array.from({ length: count }, (_, i) => ({
+    type: 'node',
+    id: i + 1,
+    lat: 46.3 + i / 1000,
+    lon: 14.1,
+    tags: { name: `Točka ${i + 1}`, tourism: 'viewpoint' },
+  })),
+});
+
+const jsonResponse = (body: string, status = 200) =>
+  new Response(body, { status, headers: { 'content-type': 'application/json' } });
+
+/** Število poimenovanih elementov — enako kot v pravih razčlenjevalnikih. */
+const countNamed = (raw: unknown): number => {
+  const elements = (raw as { elements?: unknown[] } | null)?.elements;
+  return Array.isArray(elements) ? elements.filter((e) => (e as { tags?: { name?: string } })?.tags?.name).length : 0;
+};
+
+const endpoints = ['https://a.example/api/interpreter', 'https://b.example/api/interpreter'] as const;
+
+describe('raceOverpass — POST, User-Agent in poštena raba', () => {
+  test('privzeta zrcala so izključno globalna (brez švicarskega izvlečka)', () => {
+    expect(GLOBAL_OVERPASS_ENDPOINTS.length).toBeGreaterThanOrEqual(2);
+    expect(GLOBAL_OVERPASS_ENDPOINTS.every((e) => e.includes('overpass'))).toBe(true);
+    expect(GLOBAL_OVERPASS_ENDPOINTS.some((e) => e.includes('osm.ch'))).toBe(false);
+    expect(OSM_USER_AGENT).toContain('discover-slovenia-ai');
+    expect(OVERPASS_DEFAULT_BUDGET_MS).toBeGreaterThan(5_000);
+  });
+
+  test('pošlje POST z URL-kodiranim `data`, opisnim UA in accept: application/json', async () => {
+    const calls: Array<{ url: string; init: RequestInit }> = [];
+    const fetchImpl = (async (url: string | URL | Request, init?: RequestInit) => {
+      calls.push({ url: String(url), init: init ?? {} });
+      return jsonResponse(named(2));
+    }) as typeof fetch;
+
+    const { result } = await raceOverpass(QUERY, countNamed, { endpoints: [endpoints[0]], fetchImpl });
+
+    expect(result?.endpoint).toBe(endpoints[0]);
+    expect(result?.count).toBe(2);
+    expect(calls).toHaveLength(1);
+    const init = calls[0].init;
+    expect(init.method).toBe('POST');
+    expect(new URLSearchParams(String(init.body)).get('data')).toBe(QUERY);
+    const headers = init.headers as Record<string, string>;
+    expect(headers['content-type']).toContain('x-www-form-urlencoded');
+    expect(headers['user-agent']).toBe(OSM_USER_AGENT);
+    expect(headers.accept).toBe('application/json');
+  });
+
+  test('prvi odgovor s poimenovanimi zadetki zmaga; preostali se prekličejo', async () => {
+    const seen: string[] = [];
+    const fetchImpl = (async (url: string | URL | Request, init?: RequestInit) => {
+      const endpoint = String(url);
+      seen.push(endpoint);
+      if (endpoint === endpoints[0]) return jsonResponse(named(3));
+      return new Promise<Response>((_resolve, reject) => {
+        const signal = init?.signal;
+        signal?.addEventListener('abort', () => reject(new Error('aborted')), { once: true });
+      });
+    }) as typeof fetch;
+
+    const { result, attempts } = await raceOverpass(QUERY, countNamed, { endpoints, fetchImpl, budgetMs: 500 });
+
+    expect(result?.endpoint).toBe(endpoints[0]);
+    expect(result?.count).toBe(3);
+    expect(seen).toEqual([...endpoints]);
+    expect(attempts).toHaveLength(2);
+    expect(attempts[0].ok).toBe(true);
+    expect(attempts[0].count).toBe(3);
+    expect(attempts[1].ok).toBe(false);
+    expect(attempts[1].error).toContain('preklican');
+  });
+
+  test('prazno zrcalo (200 + elements: []) je NEUSPEH — zmaga naslednje zrcalo', async () => {
+    const fetchImpl = (async (url: string | URL | Request) =>
+      jsonResponse(String(url) === endpoints[0] ? named(0) : named(1))) as typeof fetch;
+
+    const { result, attempts } = await raceOverpass(QUERY, countNamed, { endpoints, fetchImpl });
+
+    expect(result?.endpoint).toBe(endpoints[1]);
+    expect(result?.count).toBe(1);
+    expect(attempts[0].ok).toBe(false);
+    expect(attempts[0].error).toContain('brez poimenovanih zadetkov');
+    expect(attempts[1].ok).toBe(true);
+  });
+
+  test('HTTP napake in neveljaven JSON se zapišejo; brez zmagovalca → result null', async () => {
+    const fetchImpl = (async (url: string | URL | Request) => {
+      if (String(url) === endpoints[0]) return jsonResponse('rate limited', 429);
+      return jsonResponse('{ni json', 200);
+    }) as typeof fetch;
+
+    const { result, attempts } = await raceOverpass(QUERY, countNamed, { endpoints, fetchImpl });
+
+    expect(result).toBeNull();
+    expect(attempts).toHaveLength(2);
+    expect(attempts[0].status).toBe(429);
+    expect(attempts[0].ok).toBe(false);
+    expect(attempts[0].error).toContain('429');
+    expect(attempts[1].ok).toBe(false);
+    expect(attempts[1].error).toBeTruthy();
+    expect(attempts.every((a) => a.ms >= 0)).toBe(true);
+  });
+
+  test('časovni proračun prekliče vse počasne poskuse in vrne popolno diagnostiko', async () => {
+    const fetchImpl = (async (_url: string | URL | Request, init?: RequestInit) =>
+      new Promise<Response>((_resolve, reject) => {
+        const signal = init?.signal;
+        if (signal?.aborted) return reject(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+        signal?.addEventListener(
+          'abort',
+          () => reject(Object.assign(new Error('aborted'), { name: 'AbortError' })),
+          { once: true },
+        );
+      })) as typeof fetch;
+
+    const { result, attempts } = await raceOverpass(QUERY, countNamed, { endpoints, fetchImpl, budgetMs: 25 });
+
+    expect(result).toBeNull();
+    expect(attempts).toHaveLength(2);
+    expect(attempts.every((a) => !a.ok && a.error && a.error.length > 0)).toBe(true);
+    expect(attempts.every((a) => a.endpoint.includes('example'))).toBe(true);
+  });
+
+  test('brez zrcal ne pokliče ničesar in ne vrže napake', async () => {
+    let called = 0;
+    const fetchImpl = (async (_url: string | URL | Request, _init?: RequestInit) => {
+      called += 1;
+      return jsonResponse(named(1));
+    }) as typeof fetch;
+    const { result, attempts } = await raceOverpass(QUERY, countNamed, { endpoints: [], fetchImpl });
+    expect(result).toBeNull();
+    expect(attempts).toEqual([]);
+    expect(called).toBe(0);
+  });
+});

@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
 import { osrmRouteUrl, parseOsrmRoute, type OsrmWaypoint } from '@/lib/osrm-route';
+import {
+  OVERPASS_DEFAULT_BUDGET_MS,
+  raceOverpass,
+  type OverpassAttempt,
+} from '@/lib/overpass';
 import { selectCatalogPois } from '@/lib/poi-catalog';
 import {
   bboxForRoute,
@@ -33,28 +38,23 @@ import {
  * veliko. Praznega odziva zato ne štejemo za uspeh.
  *
  * Poštena raba: 10-min predpomnilnik + združevanje hkratnih zahtevkov,
- * skupni 5-sekundni proračun za Overpass (vsi poskusi se po njem prekličejo),
- * brskalnik nikoli ne kliče tujih virov neposredno. Če OSRM odpove,
- * uporabimo premico med postanki — predlogi ostanejo smiselni.
+ * skupni 12-sekundni proračun za Overpass (vsi poskusi se po njem prekličejo),
+ * POST + opisen User-Agent, brskalnik nikoli ne kliče tujih virov neposredno.
+ * Če OSRM odpove, uporabimo premico med postanki — predlogi ostanejo smiselni.
+ *
+ * `?debug=1` doda `overpass` z izidom vsakega zrcala (status, število zadetkov,
+ * milisekunde) — diagnostika degradiranega načina brez odpiranja logov.
  */
 
 export const dynamic = 'force-dynamic';
+/** Overpass zrcala v produkciji odgovarjajo v ~3–12 s; privzetih 10 s funkcije ni dovolj. */
+export const maxDuration = 25;
 
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const CACHE_MAX_ENTRIES = 30;
-const OSRM_TIMEOUT_MS = 8_000;
-const OVERPASS_BUDGET_MS = 5_000;
+const OSRM_TIMEOUT_MS = 5_000;
+const OVERPASS_BUDGET_MS = OVERPASS_DEFAULT_BUDGET_MS;
 const MAX_STOPS = 8;
-
-/**
- * Samo GLOBALNA zrcala — švicarski izvleček je za Slovenijo brez podatkov,
- * zato ga tukaj namerno ne kličemo.
- */
-const OVERPASS_POI_ENDPOINTS = [
-  'https://overpass.kumi.systems/api/interpreter',
-  'https://overpass-api.de/api/interpreter',
-  'https://overpass.private.coffee/api/interpreter',
-] as const;
 
 interface CacheEntry {
   pois: RoutePoi[];
@@ -65,6 +65,8 @@ interface CacheEntry {
   degraded: boolean;
   /** Mirno obvestilo za UI (ne napaka), ko živi vir ni dosegljiv. */
   error?: string;
+  /** Izid poskusov na posameznih zrcalih (samo za `?debug=1`). */
+  overpassAttempts: OverpassAttempt[];
   expiresAt: number;
 }
 
@@ -81,7 +83,7 @@ function cacheSet(key: string, entry: Omit<CacheEntry, 'expiresAt'>): CacheEntry
   return full;
 }
 
-function payload(entry: CacheEntry) {
+function payload(entry: CacheEntry, debug = false) {
   return {
     ok: true,
     pois: entry.pois,
@@ -91,6 +93,7 @@ function payload(entry: CacheEntry) {
     catalogCount: entry.catalogCount,
     degraded: entry.degraded,
     error: entry.error,
+    ...(debug ? { overpass: entry.overpassAttempts } : {}),
   };
 }
 
@@ -143,41 +146,13 @@ async function routeCoords(stops: OsrmWaypoint[]): Promise<LatLng[]> {
   return fallback;
 }
 
-/**
- * Overpass: vzporedni poskusi, zmaga prvi odgovor z IMENOVANIMI zadetki.
- * Prazno zrcalo (npr. švicarski izvleček) šteje za neuspeh. Skupni
- * časovni proračun preprečuje, da bi počasen vir zadrževal uporabnika.
- */
-async function fetchOverpass(query: string): Promise<{ raw: unknown; count: number } | null> {
-  const controller = new AbortController();
-  const deadline = setTimeout(() => controller.abort(), OVERPASS_BUDGET_MS);
-  try {
-    const attempts = OVERPASS_POI_ENDPOINTS.map(async (base) => {
-      const response = await fetch(`${base}?data=${encodeURIComponent(query)}`, {
-        signal: controller.signal,
-        headers: { accept: 'application/json' },
-      });
-      if (!response.ok) throw new Error(`Overpass HTTP ${response.status}`);
-      const raw: unknown = await response.json();
-      const count = parseOverpassPois(raw).length;
-      if (count === 0) throw new Error('Overpass brez poimenovanih zadetkov');
-      return { raw, count };
-    });
-    return await Promise.any(attempts);
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(deadline);
-    controller.abort();
-  }
-}
-
 function finish(
   key: string,
   pois: RoutePoi[],
   routePoints: number,
   radiusKm: number,
   osmLive: boolean,
+  overpassAttempts: OverpassAttempt[] = [],
 ): CacheEntry {
   const osmCount = pois.filter((p) => p.source === 'osm').length;
   const catalogCount = pois.length - osmCount;
@@ -194,6 +169,7 @@ function finish(
     catalogCount,
     degraded: !osmLive,
     error,
+    overpassAttempts,
   });
 }
 
@@ -210,12 +186,13 @@ export async function GET(request: Request) {
     radiusRaw === null ? (stops.length === 1 ? 12 : 3) : Number(radiusRaw),
   );
   const max = clampPoiMax(maxRaw === null ? 6 : Number(maxRaw));
+  const debug = url.searchParams.get('debug') === '1';
   const key = `${stops.map((s) => `${s.lat.toFixed(4)},${s.lng.toFixed(4)}`).join(';')}|${radiusKm}|${max}`;
 
   const hit = cache.get(key);
-  if (hit && hit.expiresAt > Date.now()) return NextResponse.json(payload(hit));
+  if (hit && hit.expiresAt > Date.now()) return NextResponse.json(payload(hit, debug));
   const pending = inFlight.get(key);
-  if (pending) return NextResponse.json(payload(await pending));
+  if (pending) return NextResponse.json(payload(await pending, debug));
 
   const task = (async (): Promise<CacheEntry> => {
     const coords = await routeCoords(stops);
@@ -224,16 +201,20 @@ export async function GET(request: Request) {
       return finish(key, [], coords.length, radiusKm, false);
     }
 
-    const overpass = await fetchOverpass(overpassPoiQuery(bbox));
-    const osm = overpass ? selectPoisAlongRoute(overpass.raw, coords, { radiusKm, max }) : [];
+    const race = await raceOverpass(
+      overpassPoiQuery(bbox),
+      (raw) => parseOverpassPois(raw).length,
+      { budgetMs: OVERPASS_BUDGET_MS },
+    );
+    const osm = race.result ? selectPoisAlongRoute(race.result.raw, coords, { radiusKm, max }) : [];
     const catalog = selectCatalogPois(coords, { radiusKm, max });
     const pois = mergePois(osm, catalog, max);
-    return finish(key, pois, coords.length, radiusKm, overpass !== null);
+    return finish(key, pois, coords.length, radiusKm, race.result !== null, race.attempts);
   })();
 
   inFlight.set(key, task);
   try {
-    return NextResponse.json(payload(await task));
+    return NextResponse.json(payload(await task, debug));
   } finally {
     inFlight.delete(key);
   }

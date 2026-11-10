@@ -490,6 +490,13 @@ export function MapSection() {
     const controller = new AbortController();
     poiAbortRef.current = { routeKey, controller };
     setPoiState({ routeKey, status: 'loading', pois: [] });
+    // Javna Overpass zrcala včasih potrebujejo ~10 s. Strežnik ima 12-sekundni
+    // proračun; tudi če bi ta ali omrežje odpovedala, vmesnik ne čaka v nedogled.
+    let timedOut = false;
+    const clientTimeout = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, 22_000);
     const stopsParam = plan.map((s) => `${s.lat},${s.lng}`).join(';');
     const radiusKm = plan.length === 1 ? 12 : 3;
     fetch(`/api/pot/nearby?stops=${encodeURIComponent(stopsParam)}&radius=${radiusKm}`, { signal: controller.signal })
@@ -502,6 +509,7 @@ export function MapSection() {
         catalogCount?: number;
       }>)
       .then((j) => {
+        clearTimeout(clientTimeout);
         if (controller.signal.aborted || poiAbortRef.current?.controller !== controller) return;
         poiAbortRef.current = null;
         setPoiState({
@@ -528,6 +536,16 @@ export function MapSection() {
         }
       })
       .catch(() => {
+        clearTimeout(clientTimeout);
+        // Nameren preklic (sprememba regije / nov klik) ne sme prikazati napake;
+        // lastna časovna omejitev pa mora uporabniku povedati, kaj se je zgodilo.
+        if (timedOut) {
+          if (poiAbortRef.current?.controller === controller) {
+            poiAbortRef.current = null;
+            setPoiState({ routeKey, status: 'error', pois: [], warning: 'Iskanje je trajalo predolgo. Poskusi znova.' });
+          }
+          return;
+        }
         if (!controller.signal.aborted && poiAbortRef.current?.controller === controller) {
           poiAbortRef.current = null;
           setPoiState({ routeKey, status: 'error', pois: [], warning: 'Predlogi trenutno niso na voljo. Poskusi znova.' });
@@ -1515,6 +1533,11 @@ export function MapSection() {
                               : 'Zanimivosti ob poti'}
                       </Button>
                       <div aria-live="polite">
+                        {currentPoiState.status === 'loading' && (
+                          <p className="mt-1 px-1 text-[11px] text-muted-foreground">
+                            Preverjam javne podatke OpenStreetMap — lahko traja nekaj sekund …
+                          </p>
+                        )}
                         {currentPoiState.status === 'ok' && currentPoiState.pois.length === 0 && (
                           <p className="mt-1 px-1 text-[11px] text-muted-foreground">
                             {currentPoiState.warning ?? 'V bližini poti ni najdenih zanimivosti. Poskusi drugo regijo.'}

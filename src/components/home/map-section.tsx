@@ -79,6 +79,11 @@ import {
 import { navChipText, navIsLast, navNext, navPrev, navProgressLabel } from '@/lib/route-guidance';
 import { buildDayTrack, driveLabel } from '@/lib/day-track';
 import { buildTripBudget, formatEur, nightsNoun, personsNoun, unpricedNote } from '@/lib/trip-budget';
+import {
+  REGION_CURRENCY,
+  isNonEuro,
+  localCurrencyNote,
+} from '@/lib/currency';
 import type { OsrmLegInfo } from '@/lib/osrm-route';
 import { SHOW_TRIP_EVENT, speak } from '@/lib/speech';
 
@@ -796,6 +801,25 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
     () => buildTripBudget(reservedStays, guide?.days ?? null, budgetPersons),
     [reservedStays, guide?.days, budgetPersons],
   );
+
+  // VEČVALUTNI PRORAČUN: ko je regija zunaj EUR, prikažemo še približek
+  // v lokalni valuti (tečaji iz /api/open-data/rates; predpomnilnik).
+  const [rates, setRates] = useState<Readonly<Record<string, number>> | null>(null);
+  const ratesFetchRef = useRef<Promise<Readonly<Record<string, number>> | null> | null>(null);
+  const regionCurrency = planKey ? REGION_CURRENCY[planKey] : 'EUR';
+  useEffect(() => {
+    if (!planKey || !isNonEuro(regionCurrency) || rates || ratesFetchRef.current) return;
+    ratesFetchRef.current = fetch('/api/open-data/rates')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => (j && j.ok ? (j.rates as Record<string, number>) : null))
+      .finally(() => {
+        ratesFetchRef.current = null;
+      });
+    ratesFetchRef.current.then((r) => {
+      if (r) setRates(r);
+    });
+  }, [planKey, regionCurrency, rates]);
+  const localNote = localCurrencyNote(planKey, budget.totalEur, rates);
 
   // ————— IZVOZ GPX (offline pot) —————
   // Vrstni red: destinacije načrta, nato rezervirana prenočišča; čista
@@ -1882,6 +1906,9 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
                           {budget.unpricedCount > 0 && (
                             <p className="mt-1 text-[11px] text-muted-foreground">{unpricedNote(budget.unpricedCount)}</p>
                           )}
+                          {localNote && (
+                            <p className="mt-1 text-[11px] font-medium text-primary/80">{localNote}</p>
+                          )}
                           <p className="mt-1 text-[11px] text-muted-foreground">Indikativne cene od — točen znesek pri ponudniku.</p>
                         </>
                       ) : (
@@ -1915,6 +1942,7 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
                         budget={budget}
                         stays={reservedStays}
                         regionLabel={guideRegion?.label ?? null}
+                        localCurrencyNote={localNote}
                       />
                     </div>
                   )}

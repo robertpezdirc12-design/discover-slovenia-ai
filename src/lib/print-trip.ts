@@ -19,6 +19,8 @@ export interface TripPrintInput {
   budget: TripBudget;
   stays: readonly PrintStay[];
   regionLabel?: string | null;
+  /** Opomba v lokalni valuti (npr. »≈ 18.400 RSD«) — opcijsko. */
+  localCurrencyNote?: string | null;
   generatedAt?: Date;
 }
 
@@ -137,7 +139,7 @@ function renderPoi(poi: RoutePoi): string {
   return `<li><strong>${escapeHtml(poi.name)}</strong><div class="details">${details}</div></li>`;
 }
 
-function renderBudget(budget: TripBudget): string {
+function renderBudget(budget: TripBudget, localCurrencyNote?: string | null): string {
   if (budget.items.length === 0) return '';
 
   const rows = budget.items.slice(0, 60).map((item) => {
@@ -160,8 +162,11 @@ function renderBudget(budget: TripBudget): string {
   const unpriced = budget.unpricedCount > 0
     ? `<p class="fine-print">${escapeHtml(unpricedNote(budget.unpricedCount))}</p>`
     : '';
+  const localNote = localCurrencyNote
+    ? `<p class="fine-print local-currency">${escapeHtml(localCurrencyNote)}</p>`
+    : '';
 
-  return `<section class="section"><h2>Ocena proračuna prenočišč</h2><div class="table-wrap"><table><thead><tr><th>Prenočišče</th><th>Noči</th><th>Cena</th><th>Ocena</th></tr></thead><tbody>${rows}</tbody></table></div>${total}${perPerson}${unpriced}<p class="fine-print">Cene so indikativne; končni znesek preveri pri ponudniku.</p></section>`;
+  return `<section class="section"><h2>Ocena proračuna prenočišč</h2><div class="table-wrap"><table><thead><tr><th>Prenočišče</th><th>Noči</th><th>Cena</th><th>Ocena</th></tr></thead><tbody>${rows}</tbody></table></div>${total}${perPerson}${unpriced}${localNote}<p class="fine-print">Cene so indikativne; končni znesek preveri pri ponudniku.</p></section>`;
 }
 
 export function buildTripPrintHtml(input: TripPrintInput): string {
@@ -246,6 +251,7 @@ export function buildTripPrintHtml(input: TripPrintInput): string {
     .table-detail { display: block; color: #53675f; font-size: 8.5pt; font-weight: 400; }
     .budget-total { margin: 12px 0 4px; font-size: 12pt; }
     .fine-print { margin: 4px 0; }
+    .local-currency { color: #247251; font-weight: 600; }
     .sources a { color: inherit; }
     footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #d8e6df; color: #53675f; font-size: 9pt; }
     @media print {
@@ -271,7 +277,7 @@ export function buildTripPrintHtml(input: TripPrintInput): string {
     </header>
     ${routeSection}
     ${staySection}
-    ${renderBudget(input.budget)}
+    ${renderBudget(input.budget, input.localCurrencyNote)}
     ${poiSection}
     <footer>
       ${sourceSection}

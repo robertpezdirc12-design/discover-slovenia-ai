@@ -29,13 +29,14 @@ export function PrintTripModal({
   budget,
   stays,
   regionLabel,
+  localCurrencyNote,
 }: PrintTripModalProps) {
   const printFrameRef = useRef<HTMLIFrameElement | null>(null);
   const [loadedHtml, setLoadedHtml] = useState<string | null>(null);
   const printStops = stops ?? EMPTY_STOPS;
   const html = useMemo(
-    () => buildTripPrintHtml({ stops: printStops, dayTrack, pois, budget, stays, regionLabel }),
-    [printStops, dayTrack, pois, budget, stays, regionLabel],
+    () => buildTripPrintHtml({ stops: printStops, dayTrack, pois, budget, stays, regionLabel, localCurrencyNote }),
+    [printStops, dayTrack, pois, budget, stays, regionLabel, localCurrencyNote],
   );
   const previewReady = loadedHtml === html;
 

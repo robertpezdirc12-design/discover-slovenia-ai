@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { countryInfoForRegion } from '@/lib/countries';
 import {
   DESTINATIONS,
   destinationBySlug,
@@ -61,6 +62,7 @@ export default async function DestinationPage({
   const dest = destinationBySlug(slug);
   if (!dest) notFound();
 
+  const country = countryInfoForRegion(dest.regionId);
   const attractions = nearbyAttractions(dest);
 
   return (
@@ -148,6 +150,54 @@ export default async function DestinationPage({
           </CardContent>
         </Card>
       </div>
+
+      {/* MEJE IN PREVOZ — kurirane informacije o državi (zunaj Slovenije). */}
+      {country?.name && (
+        <section className="mt-8">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="font-display text-lg font-semibold tracking-tight">
+              {country.name}: meje in prevoz
+            </h2>
+            <Badge variant="secondary" className="text-xs">
+              {country.eu && country.schengen
+                ? 'EU · Schengen'
+                : country.eu
+                  ? 'EU (ni Schengen)'
+                  : 'ni EU · mejne kontrole'}
+            </Badge>
+          </div>
+          <ul className="mt-3 space-y-2">
+            {country.transport.map((t) => (
+              <li key={t} className="rounded-xl border bg-card/60 px-4 py-2.5 text-sm">
+                {t}
+              </li>
+            ))}
+          </ul>
+          <div className="mt-3 rounded-xl border border-amber-200/70 bg-amber-50/50 px-4 py-3 text-sm text-amber-900">
+            <p className="font-medium">Praktično</p>
+            <ul className="mt-1 list-disc space-y-1 pl-4">
+              {country.tips.map((tip) => (
+                <li key={tip}>{tip}</li>
+              ))}
+            </ul>
+          </div>
+          {country.links.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {country.links.map((l) => (
+                <a
+                  key={l.url}
+                  href={l.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-full border border-border/80 bg-card/70 px-3 py-1.5 text-xs transition-colors hover:border-primary/30 hover:bg-primary/5"
+                >
+                  {l.label} ↗
+                </a>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {attractions.length > 0 && (
         <section className="mt-8">

@@ -490,8 +490,9 @@ export function MapSection() {
     const controller = new AbortController();
     poiAbortRef.current = { routeKey, controller };
     setPoiState({ routeKey, status: 'loading', pois: [] });
-    // Javna Overpass zrcala včasih potrebujejo ~10 s. Strežnik ima 12-sekundni
-    // proračun; tudi če bi ta ali omrežje odpovedala, vmesnik ne čaka v nedogled.
+    // Javna Overpass zrcala včasih potrebujejo ~10–15 s. Strežnik ima
+    // 15-sekundni proračun; tudi če bi ta ali omrežje odpovedala, vmesnik
+    // ne čaka v nedogled.
     let timedOut = false;
     const clientTimeout = setTimeout(() => {
       timedOut = true;

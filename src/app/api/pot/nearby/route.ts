@@ -38,8 +38,9 @@ import {
  * veliko. Praznega odziva zato ne štejemo za uspeh.
  *
  * Poštena raba: 10-min predpomnilnik + združevanje hkratnih zahtevkov,
- * skupni 12-sekundni proračun za Overpass (vsi poskusi se po njem prekličejo),
- * POST + opisen User-Agent, brskalnik nikoli ne kliče tujih virov neposredno.
+ * skupni 15-sekundni proračun za Overpass (vsi poskusi se po njem prekličejo),
+ * GET najprej + POST rezerva + opisen User-Agent, brskalnik nikoli ne kliče
+ * tujih virov neposredno.
  * Če OSRM odpove, uporabimo premico med postanki — predlogi ostanejo smiselni.
  *
  * `?debug=1` doda `overpass` z izidom vsakega zrcala (status, število zadetkov,
@@ -47,7 +48,7 @@ import {
  */
 
 export const dynamic = 'force-dynamic';
-/** Overpass zrcala v produkciji odgovarjajo v ~3–12 s; privzetih 10 s funkcije ni dovolj. */
+/** Overpass glavno zrcalo v produkciji odgovarja v ~10 s; 5 s OSRM + 15 s proračun. */
 export const maxDuration = 25;
 
 const CACHE_TTL_MS = 10 * 60 * 1000;

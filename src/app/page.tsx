@@ -1,10 +1,12 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
+import Link from 'next/link';
 import { GuidedFlow } from '@/components/home/guided-flow';
 import { HeroSection } from '@/components/home/hero-section';
 import { MapSection } from '@/components/home/map-section';
 import { PersonalHomeSection, PersonalHomeSkeleton } from '@/components/home/personal-home-section';
 import { SiteHeader } from '@/components/home/site-header';
+import { DESTINATIONS } from '@/lib/destinations';
 import { getHeroVariant } from '@/lib/seasonal-hero';
 
 const SESSION_COOKIE = 'dsa_demo_user';
@@ -68,6 +70,25 @@ export default async function Home({
 
       <main className="flex-1">
         <HeroSection variant={variant} microEvent={microEvent} />
+
+        {/* DESTINACIJE — notranje povezave na statične strani /kraj/[slug]
+            (SEO: največja rast po per-destination straneh). */}
+        <nav aria-label="Destinacije" className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Razišči:
+            </span>
+            {DESTINATIONS.map((d) => (
+              <Link
+                key={d.slug}
+                href={`/kraj/${d.slug}`}
+                className="rounded-full border border-border/80 bg-card/70 px-3 py-1.5 text-sm transition-colors hover:border-primary/30 hover:bg-primary/5"
+              >
+                {d.name}
+              </Link>
+            ))}
+          </div>
+        </nav>
 
         <div className="space-y-10 pb-16 pt-6 sm:space-y-12 sm:pt-8">
           {/* VODENI TOK (Komoot onboarding): vpraša le enkrat, odgovore si zapomni,

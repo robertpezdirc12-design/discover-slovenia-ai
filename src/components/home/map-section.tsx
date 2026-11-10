@@ -43,6 +43,15 @@ import { POI_CATEGORY_LABELS, poiDistanceLabel, type PoiCategory, type RoutePoi 
 import { CATALOG_ATTRIBUTION } from '@/lib/poi-catalog';
 import { clusterRkd, filterRkd, filterRkdInBounds, parseRkdData, type RkdDataset } from '@/lib/rkd';
 import { buildRkdLayer } from '@/lib/rkd-layer';
+import {
+  TRANSIT_ATTRIBUTION,
+  TRANSIT_DEFAULT_ORIGIN,
+  formatTransitTime,
+  transitLegSummary,
+  transitModeEmoji,
+  transitPlanSummary,
+  type TransitPlan,
+} from '@/lib/public-transport';
 import { tripPlanFor, type TripStop } from '@/lib/trip-plan';
 import {
   MAP_GUIDE_CATEGORIES,
@@ -138,6 +147,17 @@ function getTripOrderSnapshot(): string | null {
   } catch {
     return null;
   }
+}
+
+/** Minimalen HTML escape za vsebine iz podatkovnih virov (popup-i). */
+function escapeHtml(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 /** Višina na točko (ARSO LiDAR 1 m ali Copernicus 90 m): mirovanje → nalaganje → rezultat. */
@@ -368,6 +388,105 @@ export function MapSection() {
     };
   }, [mapReady, rkdEnabled, rkdFeatures, rkdData]);
 
+  // ————— JAVNI PREVOZ (OJPP / brezavta): gumb v pojavnem oknu postanke → —————
+  // poišče naslednje povezave iz Ljubljane in izbrano pot nariše na zemljevid.
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      const btn = target?.closest?.('.dsa-transit-btn') as HTMLElement | null;
+      if (!btn) return;
+      const stopName = decodeURIComponent(btn.dataset.stop ?? '');
+      const lat = Number(btn.dataset.lat);
+      const lng = Number(btn.dataset.lng);
+      const marker = stopName ? planMarkersRef.current.get(stopName) : undefined;
+      const L = LeafletRef.current;
+      const map = mapRef.current;
+      if (!marker || !L || !map) return;
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+      const origin = TRANSIT_DEFAULT_ORIGIN;
+      const controller = new AbortController();
+      marker
+        .setPopupContent('<p style="margin:0">🔎 Iščem povezave z javnim prevozom …</p>')
+        .openPopup();
+
+      fetch(
+        `/api/pot/transit?from=${origin.lat},${origin.lng}&to=${lat},${lng}&mode=BUS`,
+        { signal: controller.signal },
+      )
+        .then(
+          (r) =>
+            r.json() as Promise<{
+              ok: boolean;
+              plans?: TransitPlan[];
+              error?: string;
+              destName?: string | null;
+            }>,
+        )
+        .then((j) => {
+          if (controller.signal.aborted) return;
+          if (!j.ok || !j.plans || j.plans.length === 0) {
+            marker.setPopupContent(
+              `<p style="margin:0">Nisem našel povezav z javnim prevozom do ${escapeHtml(stopName)}. ${escapeHtml(j.error ?? '')}</p>`,
+            );
+            return;
+          }
+          const arrivalStop = j.destName || stopName;
+          const plans = j.plans.slice(0, 4);
+          const items = plans
+            .map(
+              (plan, idx) =>
+                `<div class="dsa-plan-row" data-plan="${idx}" style="border:1px solid ${idx === 0 ? '#c7d2fe' : '#e5e7eb'};border-radius:8px;padding:6px 8px;margin-top:6px">` +
+                `<div style="font-size:12px;font-weight:600;color:#3730a3">${escapeHtml(transitPlanSummary(plan))}</div>` +
+                plan.legs
+                  .map((leg) => {
+                    const dep = formatTransitTime(leg.startTime);
+                    const arr = formatTransitTime(leg.endTime);
+                    return (
+                      `<div style="display:flex;gap:6px;align-items:baseline;margin-top:2px">` +
+                      `<span>${transitModeEmoji(leg.mode)}</span>` +
+                      `<span style="font-size:11px;color:#374151;white-space:nowrap">${dep}–${arr}</span>` +
+                      `<span style="color:#53675f;font-size:11px">${escapeHtml(leg.fromPoint.name || '?')} → ${escapeHtml(leg.toPoint.name || '?')} · ${escapeHtml(transitLegSummary(leg))}</span>` +
+                      `</div>`
+                    );
+                  })
+                  .join('') +
+                `</div>`,
+            )
+            .join('');
+          marker.setPopupContent(
+            `<div style="min-width:240px;max-width:300px">` +
+              `<strong>Javni prevoz</strong> · <span style="color:#53675f;font-size:11px">Od: ${escapeHtml(origin.name)} · Do: ${escapeHtml(arrivalStop)}</span>` +
+              items +
+              `<p style="margin:6px 0 0;color:#87978f;font-size:10px">${TRANSIT_ATTRIBUTION}</p>` +
+              `</div>`,
+          ).openPopup();
+
+          // Nariši geometrijo prve (najhitrejše) povezave.
+          if (transitLayerRef.current) {
+            (transitLayerRef.current as L.Polyline).remove();
+            transitLayerRef.current = null;
+          }
+          const coords = plans[0].legs
+            .flatMap((leg) => leg.geometry ?? [])
+            .map(([lon, lat2]) => [lat2, lon] as [number, number]);
+          if (coords.length > 1) {
+            transitLayerRef.current = L.polyline(coords, {
+              color: '#4f46e5',
+              weight: 4,
+              opacity: 0.85,
+            }).addTo(map);
+          }
+        })
+        .catch(() => {
+          if (controller.signal.aborted) return;
+          marker.setPopupContent('<p style="margin:0">Javni prevoz trenutno ni dosegljiv — poskusi znova.</p>');
+        });
+    };
+    document.addEventListener('click', onClick);
+    return () => document.removeEventListener('click', onClick);
+  }, []);
+
   // ————— PRENOČIŠČA: iskanje → slike/cena → »Rezerviraj« (samodejno shrani) —————
   const [stayQuery, setStayQuery] = useState('');
   const [stayKinds, setStayKinds] = useState<readonly StayKind[]>(STAY_KINDS);
@@ -563,6 +682,8 @@ export function MapSection() {
   const [routeFailed, setRouteFailed] = useState(false);
   const routeAbortRef = useRef<AbortController | null>(null);
   const routeLayerRef = useRef<unknown>(null);
+  /** Linija izbrane povezave javnega prevoza (vijolična, ločena od OSRM). */
+  const transitLayerRef = useRef<unknown>(null);
   const planRef = useRef<readonly TripStop[] | null>(null);
   planRef.current = plan;
   const navActive = navIndex !== null;
@@ -867,6 +988,10 @@ export function MapSection() {
       planLayerRef.current = null;
       planMarkersRef.current = new Map();
     }
+    if (transitLayerRef.current) {
+      (transitLayerRef.current as L.Polyline).remove();
+      transitLayerRef.current = null;
+    }
     if (!plan) return;
     const group = L.layerGroup();
     plan.forEach((stop, i) => {
@@ -878,7 +1003,11 @@ export function MapSection() {
       });
       const m = L.marker([stop.lat, stop.lng], { icon, title: `${i + 1}. ${stop.name}`, zIndexOffset: 500 })
         .addTo(group)
-        .bindPopup(`<strong>${i + 1}. ${stop.name}</strong><br/>${stop.note}`);
+        .bindPopup(
+          `<strong>${i + 1}. ${escapeHtml(stop.name)}</strong><br/>${escapeHtml(stop.note)}` +
+            `<br/><button type="button" class="dsa-transit-btn" data-stop="${encodeURIComponent(stop.name)}" ` +
+            `data-lat="${stop.lat}" data-lng="${stop.lng}" style="margin-top:4px;padding:3px 10px;border-radius:999px;border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;font-size:12px;cursor:pointer">🚌 Javni prevoz</button>`,
+        );
       planMarkersRef.current.set(stop.name, m);
     });
     planLayerRef.current = group.addTo(map);
@@ -1241,6 +1370,7 @@ export function MapSection() {
     return () => {
       planLayerRef.current = null;
       planMarkersRef.current = new Map();
+      transitLayerRef.current = null;
       stayLayerRef.current = null;
       reservedLayerRef.current = null;
       tourLayerRef.current = null;

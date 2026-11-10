@@ -72,3 +72,4 @@ server.log
 /.playwright-cli/
 /home-*.png
 /panel-*.png
+/gpx-export-sample.gpx

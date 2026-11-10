@@ -26,6 +26,8 @@ import {
 } from '@/lib/guide-store';
 import { useGuideState } from '@/components/home/use-guide-state';
 import { ShareTripButton } from '@/components/home/share-trip-button';
+import { ExportTripButton } from '@/components/home/export-trip-button';
+import type { GpxPoint } from '@/lib/gpx-export';
 import { tripPlanFor, type TripStop } from '@/lib/trip-plan';
 import {
   MAP_GUIDE_CATEGORIES,
@@ -398,6 +400,29 @@ export function MapSection() {
   const budget = useMemo(
     () => buildTripBudget(reservedStays, guide?.days ?? null, budgetPersons),
     [reservedStays, guide?.days, budgetPersons],
+  );
+
+  // ————— IZVOZ GPX (offline pot) —————
+  // Vrstni red: destinacije načrta, nato rezervirana prenočišča; čista
+  // podatkovna plast v gpx-export.ts poskrbi za veljavnost koordinat.
+  const exportPoints = useMemo<readonly GpxPoint[]>(
+    () => [
+      ...(plan ?? []).map((s) => ({
+        name: s.name,
+        lat: s.lat,
+        lng: s.lng,
+        note: s.note,
+        kind: 'destinacija' as const,
+      })),
+      ...reservedStays.map((s) => ({
+        name: s.name,
+        lat: s.lat,
+        lng: s.lng,
+        note: `${s.city} · rezervirano prenočišče`,
+        kind: 'prenocisce' as const,
+      })),
+    ],
+    [plan, reservedStays],
   );
 
   // ————— VODIČ PO ZEMLJEVIDU (cel Balkan: mesta · vasi · kmečki · narava) —————
@@ -1303,6 +1328,8 @@ export function MapSection() {
                   {guide && guide.answered.length > 0 && (
                     <div className="mt-2 border-t pt-2">
                       <ShareTripButton state={guide} />
+                      {/* GPX = pot za offline (navigacija/OsmAnd/Komoot). */}
+                      <ExportTripButton points={exportPoints} className="mt-1.5" />
                     </div>
                   )}
                 </>

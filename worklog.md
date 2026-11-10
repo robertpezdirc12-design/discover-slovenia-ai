@@ -1292,3 +1292,20 @@ Stage Summary:
 - GitHub main dobi proračun poti: uporabnik v "Tvoji poti" takoj vidi okvirni skupni strošek in delež na osebo; vse pošteno označeno (indikativne cene od, brezcenovna prenočišča izrecno izvzeta).
 - Produkcija je zdrava in sledi mainu — odprta točka iz prejšnjih vnosov (pokvarjeni API-ji starega deploja) je ZAKLJUČENA.
 - Naslednje prioritete (iz raziskave, neizvedene): POI ob poti (Overpass tourism ob OSRM geometriji), izvoz GPX/print, drag&drop prerazporeditev postaj (dnd-kit je že v dependency-jih, a neuporabljen), RKD sloj kulturne dediščine, OJPP javni prevoz; rotacija žetonov še vedno priporočena.
+---
+Task ID: POLIRAJ-7-GPX-IZVOZ (nadaljevanje "odlicno nadaljuj")
+Agent: WorkBuddy AI (lokalno, Agent mode)
+Task: naslednja prioriteta iz raziskave — izvoz GPX/print (Komoot/Outdooractive vzorec, mali trud, offline uporabnost)
+
+Work Log:
+- NOVA ZMOŽNOST — IZVOZ POTI V GPX 1.1: src/lib/gpx-export.ts (čista logika, brez strežnika/ključa): sanitizeGpxPoints (veljavne koordinate, omejitev 60 točk, trim imen/opisov), escapeXml (& < > " '), buildGpx → <metadata> + <wpt> za vsako točko (name/desc/type) + <rte>/<rtept> v vrstnem redu obiska, gpxFileName (pot-po-sloveniji-YYYY-MM-DD.gpx). Prazna/neveljavna pot → null (nikoli prazna datoteka).
+- UI: src/components/home/export-trip-button.tsx — gumb "Izvozi GPX" v plošči "Tvoja pot" (zraven "Deli pot"), Blob + programski prenos, toast s številom točk, IN VEDNO ročna povezava "Prenos se ni začel? Odpri datoteko ročno" (iframe predogledi / strogi brskalniki blokirajo a.click), Blob URL se sprosti ob zamenjavi/odstranitvi komponente.
+- V map-section.tsx: exportPoints = destinacije načrta (plan) + rezervirana prenočišča, v tem vrstnem redu; prenočišča dobijo type=prenocisce in opis z krajem.
+- TESTI: tests/gpx-export.test.ts = 13 testov (XML escaping, čiščenje koordinat, 60-točkovni cap, null za prazno pot, metadata/čas, waypointi, rte vrstni red, determinističnost, ime datoteke).
+- E2E (Playwright 1.64.1 headless, acceptDownloads, seeded localStorage, localhost:3100): gumb viden → KLIK → DEJANSKI prenos `pot-po-sloveniji-2026-11-10.gpx` → XML glava ✓ · 4 <wpt> + 4 <rtept> (2 destinaciji + 2 prenočišči) ✓ · <type>prenocisce</type> ✓ · ime z & in narekovaji pravilno escapano ✓ · ročna rezervna povezava vidna ✓ · mobilno 390: scrollWidth 390 ✓ · 0 page errors. Datoteka dodatno preverjena s python xml.etree (ROOT_OK: gpx v GPX 1.1 imenskem prostoru, 4 wpt, 4 rtept, metadata/time).
+- VRATA: tsc 0 v src · eslint 0 novih napak (6 predhodnih v map-section ostanejo) · bun test 188 pass / 2 fail — oba izključno ŽIVA omrežna testa (reverse/vreme), noben logični; 190 testov v 11 datotekah.
+- HIGIENA: .gitignore dodan /gpx-export-sample.gpx (E2E vzorčna datoteka).
+
+Stage Summary:
+- "Moja pot" je zdaj PRENOSLJIVA: uporabnik z enim klikom dobi standardno GPX 1.1 datoteko za navigacijo, OsmAnd, Garmin ali Komoot — tudi brez povezave. Ni novih odvisnosti, ni strežniškega klica, ni osebnih podatkov v datoteki (samo javne koordinate postank).
+- Naslednje prioritete (neizvedene): POI ob poti (Overpass tourism ob OSRM geometriji), drag&drop prerazporeditev postaj (dnd-kit že v odvisnostih), print/PDF pogled, RKD sloj, OJPP; rotacija žetonov še vedno priporočena.

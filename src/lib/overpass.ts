@@ -24,8 +24,14 @@ export const OSM_USER_AGENT =
   'discover-slovenia-ai/1.0 (slovenian travel guide; fair-use, 10-min cache)';
 
 /**
- * Globalna zrcala. `overpass-api.de` je PRVO, ker je edino izmerjeno
- * dosegljivo iz Vercela (produkcijski `/api/stays/search?q=Bled`).
+ * Globalna zrcala. `overpass-api.de` je PRVO (najbližje odzivno v meritvah).
+ *
+ * PRODUKCIJSKA OMEJITEV (Vercel, izmerjeno s `?debug=1`): odhodni `fetch` do
+ * teh zrcal se prekine pri ~10 s (`fetch failed` po 10,4 s), ostala zrcala pa
+ * visijo do proračuna. Zato je proračun namerno KRATEK: uporabnik ne čaka
+ * 15 s na vir, ki iz tega okolja ne more odgovoriti. Ko bi katero zrcalo
+ * postalo dosegljivo v <6 s, se živi OSM podatki SAMODEJNO spet vključijo —
+ * brez spremembe kode. `?debug=1` vedno pokaže vzrok.
  */
 export const GLOBAL_OVERPASS_ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
@@ -79,8 +85,11 @@ export interface RaceOverpassOutcome {
   attempts: OverpassAttempt[];
 }
 
-/** Privzeti skupni proračun (produkcijsko glavno zrcalo odgovarja v ~10 s). */
-export const OVERPASS_DEFAULT_BUDGET_MS = 15_000;
+/**
+ * Skupni proračun: dovolj za hitro zrcalo, prekratek za 15-sekundno čakanje
+ * na nedosegljivega ponudnika. Predpomnilnik (10 min) pokrije ponovne klice.
+ */
+export const OVERPASS_DEFAULT_BUDGET_MS = 6_000;
 
 const DEFAULT_METHODS: readonly OverpassMethod[] = ['GET', 'POST'];
 

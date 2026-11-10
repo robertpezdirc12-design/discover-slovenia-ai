@@ -310,3 +310,16 @@ export function selectPoisAlongRoute(
 export function poiDistanceLabel(km: number): string {
   return `${km.toFixed(1).replace('.', ',')} km od poti`;
 }
+
+/**
+ * Obvestilo ob predlogih. Urejeni izbor je PRVORAZREDEN vir (ne »napaka«):
+ * ko predlogi obstajajo, je poštena navedba vira v vrstici »Vir: …« dovolj —
+ * uporabnika ne obremenjujemo z nedosegljivostjo ozadnjega ponudnika.
+ * Opozorilo prikažemo le, ko predlogov res ni (takrat je vzrok koristen).
+ */
+export function poiSourceNotice(osmLive: boolean, poiCount: number): string | undefined {
+  if (poiCount > 0) return undefined;
+  return osmLive
+    ? 'V bližini poti ni najdenih zanimivosti. Poskusi drugo regijo ali večji polmer.'
+    : 'V bližini poti trenutno ni predlogov. Poskusi drugo regijo ali večji polmer.';
+}

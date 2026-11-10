@@ -42,7 +42,10 @@ describe('raceOverpass — GET/POST, User-Agent in poštena raba', () => {
     // Edino zrcalo, izmerjeno dosegljivo iz Vercela, mora biti prvo.
     expect(GLOBAL_OVERPASS_ENDPOINTS[0]).toContain('overpass-api.de');
     expect(OSM_USER_AGENT).toContain('discover-slovenia-ai');
-    expect(OVERPASS_DEFAULT_BUDGET_MS).toBeGreaterThan(10_000);
+    // Vercel prekine odhodni fetch pri ~10 s → dolg proračun bi le podaljšal
+    // čakanje brez živih podatkov. Kratek proračun ščiti UX.
+    expect(OVERPASS_DEFAULT_BUDGET_MS).toBeGreaterThanOrEqual(5_000);
+    expect(OVERPASS_DEFAULT_BUDGET_MS).toBeLessThanOrEqual(8_000);
   });
 
   test('GET je prvi: `?data=` v URL-ju, opisen UA, brez telesa', async () => {

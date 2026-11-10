@@ -14,6 +14,7 @@ import {
   overpassPoiQuery,
   parseOverpassPois,
   poiDistanceLabel,
+  poiSourceNotice,
   selectPoisAlongRoute,
   type RoutePoi,
 } from '@/lib/route-poi';
@@ -83,6 +84,15 @@ describe('route-poi — Overpass poizvedba in razčlenjevanje', () => {
     expect(q.length).toBeLessThan(400);
     // Posredniki zavrnejo predolge ?data= URL-je (502/414), preden poizvedba steče.
     expect(encodeURIComponent(q).length).toBeLessThan(600);
+  });
+
+  test('obvestilo o viru: predlogi brez opozorila, prazno z razlago', () => {
+    // Urejeni izbor je prvovrsten vir — ko predlogi obstajajo, uporabnik vidi
+    // le pošteno vrstico »Vir: …«, ne pa odvečnega opozorila o izpadu OSM.
+    expect(poiSourceNotice(false, 4)).toBeUndefined();
+    expect(poiSourceNotice(true, 4)).toBeUndefined();
+    expect(poiSourceNotice(false, 0)).toContain('trenutno ni predlogov');
+    expect(poiSourceNotice(true, 0)).toContain('ni najdenih zanimivosti');
   });
 
   test('kategorije iz OSM tagov', () => {

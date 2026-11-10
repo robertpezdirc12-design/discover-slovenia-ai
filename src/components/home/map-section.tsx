@@ -490,14 +490,13 @@ export function MapSection() {
     const controller = new AbortController();
     poiAbortRef.current = { routeKey, controller };
     setPoiState({ routeKey, status: 'loading', pois: [] });
-    // Javna Overpass zrcala včasih potrebujejo ~10–15 s. Strežnik ima
-    // 15-sekundni proračun; tudi če bi ta ali omrežje odpovedala, vmesnik
-    // ne čaka v nedogled.
+    // Strežnik ima 6-sekundni proračun za javni OSM vir (+ do 5 s za OSRM);
+    // tudi če bi ta ali omrežje odpovedala, vmesnik ne čaka v nedogled.
     let timedOut = false;
     const clientTimeout = setTimeout(() => {
       timedOut = true;
       controller.abort();
-    }, 22_000);
+    }, 14_000);
     const stopsParam = plan.map((s) => `${s.lat},${s.lng}`).join(';');
     const radiusKm = plan.length === 1 ? 12 : 3;
     fetch(`/api/pot/nearby?stops=${encodeURIComponent(stopsParam)}&radius=${radiusKm}`, { signal: controller.signal })

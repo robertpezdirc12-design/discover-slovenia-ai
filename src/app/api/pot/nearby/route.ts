@@ -13,6 +13,7 @@ import {
   mergePois,
   overpassPoiQuery,
   parseOverpassPois,
+  poiSourceNotice,
   selectPoisAlongRoute,
   type LatLng,
   type RoutePoi,
@@ -38,18 +39,19 @@ import {
  * veliko. Praznega odziva zato ne štejemo za uspeh.
  *
  * Poštena raba: 10-min predpomnilnik + združevanje hkratnih zahtevkov,
- * skupni 15-sekundni proračun za Overpass (vsi poskusi se po njem prekličejo),
+ * skupni 6-sekundni proračun za Overpass (vsi poskusi se po njem prekličejo),
  * GET najprej + POST rezerva + opisen User-Agent, brskalnik nikoli ne kliče
- * tujih virov neposredno.
- * Če OSRM odpove, uporabimo premico med postanki — predlogi ostanejo smiselni.
+ * tujih virov neposredno. Kratek proračun je nameren: Vercel prekine odhodne
+ * klice do globalnih zrcal pri ~10 s, zato daljše čakanje uporabniku ne bi
+ * prineslo živih podatkov. Če OSRM odpove, uporabimo premico med postanki.
  *
- * `?debug=1` doda `overpass` z izidom vsakega zrcala (status, število zadetkov,
- * milisekunde) — diagnostika degradiranega načina brez odpiranja logov.
+ * `?debug=1` doda `overpass` z izidom vsakega zrcala in metode (status,
+ * število zadetkov, milisekunde) — diagnostika brez odpiranja logov.
  */
 
 export const dynamic = 'force-dynamic';
-/** Overpass glavno zrcalo v produkciji odgovarja v ~10 s; 5 s OSRM + 15 s proračun. */
-export const maxDuration = 25;
+/** 5 s OSRM + 6 s Overpass + varnostna rezerva. */
+export const maxDuration = 15;
 
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const CACHE_MAX_ENTRIES = 30;
@@ -157,11 +159,9 @@ function finish(
 ): CacheEntry {
   const osmCount = pois.filter((p) => p.source === 'osm').length;
   const catalogCount = pois.length - osmCount;
-  const error = !osmLive
-    ? 'OpenStreetMap trenutno ni dosegljiv — prikazan je urejeni izbor slovenskih znamenitosti.'
-    : pois.length === 0
-      ? 'V bližini poti ni najdenih zanimivosti. Poskusi drugo regijo.'
-      : undefined;
+  // Ko predlogi obstajajo, je navedba vira v UI dovolj — ne prikazujemo
+  // odvečnega opozorila o nedosegljivosti ozadnjega ponudnika.
+  const error = poiSourceNotice(osmLive, pois.length);
   return cacheSet(key, {
     pois,
     routePoints,

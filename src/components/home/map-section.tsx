@@ -277,6 +277,7 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
   const [countrySel, setCountrySel] = useState('');
   /** »Iščem:« — kategorija krajev okoli izbranega območja (država/center). */
   const [placeSel, setPlaceSel] = useState('');
+  const [resultsVisible, setResultsVisible] = useState(true);
   const [placesResult, setPlacesResult] = useState<{
     key: string;
     places: PlaceResult[];
@@ -352,6 +353,7 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
         }
         const places = Array.isArray(j.places) ? j.places : [];
         setPlacesResult({ key, places, curated: j.curated });
+        setResultsVisible(true);
         if (places.length === 0) return;
         const group = L.layerGroup();
         for (const p of places) {
@@ -1766,11 +1768,26 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
               )}
             </span>
           </div>
-          {/* DRŽAVA — navigacija pogleda: izbira približa državo (brez filtrov). */}
-          <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-muted/40 px-2.5 py-1">
-            <Label htmlFor="country-view" className="text-xs text-muted-foreground">
-              Država
-            </Label>
+          {/* ENOTNA ISKALNA VRSTICA — kategorija »Iščem« + država (v enem okvirju). */}
+          <div className="flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/40 py-1 pl-3 pr-1.5">
+            <span className="text-[11px] font-medium text-muted-foreground">Razišči:</span>
+            <select
+              id="place-cat"
+              value={placeSel}
+              onChange={(e) => {
+                setPlaceSel(e.target.value);
+                if (e.target.value) setResultsVisible(true);
+              }}
+              aria-label="Kategorija krajev, ki jih iščem"
+              className="h-7 rounded-full border border-border/70 bg-background/80 px-2 text-xs text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <option value="">—</option>
+              {PLACE_CATEGORIES.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
             <select
               id="country-view"
               value={countrySel}
@@ -1782,7 +1799,7 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
                 if (c) mapRef.current?.flyTo([c.lat, c.lng], c.zoom, { duration: 1.4 });
               }}
               aria-label="Približaj državo na zemljevidu"
-              className="h-7 rounded-md border border-border/70 bg-background/80 px-1.5 text-xs text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="h-7 rounded-full border border-border/70 bg-background/80 px-2 text-xs text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <option value="">Vse</option>
               {BALKAN_COUNTRY_VIEWS.map((c) => (
@@ -1792,34 +1809,18 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
               ))}
             </select>
           </div>
-          {/* »IŠČEM:« — kategorija krajev okoli izbranega območja. */}
-          <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-muted/40 px-2.5 py-1">
-            <Label htmlFor="place-cat" className="text-xs text-muted-foreground">
-              Iščem
-            </Label>
-            <select
-              id="place-cat"
-              value={placeSel}
-              onChange={(e) => setPlaceSel(e.target.value)}
-              aria-label="Kategorija krajev, ki jih iščem"
-              className="h-7 rounded-md border border-border/70 bg-background/80 px-1.5 text-xs text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <option value="">—</option>
-              {PLACE_CATEGORIES.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </div>
           {placesResult && placesResult.error && (
             <span className="text-[11px] text-destructive">{placesResult.error}</span>
           )}
           {placesResult && !placesResult.error && placesResult.places.length > 0 && (
-            <span className="text-[11px] text-muted-foreground">
+            <button
+              type="button"
+              onClick={() => setResultsVisible((v) => !v)}
+              className="text-[11px] text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            >
               {placesResult.places.length} najdenih · {placeCategoryById(placeSel)?.label ?? ''}
-              {placesResult.curated ? ' · kurirano' : ''}
-            </span>
+              {placesResult.curated ? ' · kurirano' : ''} {resultsVisible ? '· skrij' : '· pokaži'}
+            </button>
           )}
           <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-muted/40 px-2.5 py-1">
             <Mountain className="size-3.5 text-stone-600" aria-hidden />
@@ -2437,6 +2438,54 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
               )}
             </div>
           </aside>
+        )}
+
+        {/* PLAVAJOČI SEZNAM REZULTATOV (»Iščem«) — mapa + seznam, kot Kayak. */}
+        {placesResult && !placesResult.error && placesResult.places.length > 0 && resultsVisible && (
+          <div className="absolute inset-y-3 right-3 z-30 flex w-[min(300px,calc(100%-1.5rem))] flex-col overflow-hidden rounded-xl border bg-background/95 shadow-lg backdrop-blur">
+            <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
+              <p className="truncate text-xs font-medium">
+                {placeCategoryById(placeSel)?.label ?? 'Rezultati'} · {placesResult.places.length}
+              </p>
+              <button
+                type="button"
+                onClick={() => setResultsVisible(false)}
+                aria-label="Zapri seznam rezultatov"
+                className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                <X className="size-3.5" aria-hidden />
+              </button>
+            </div>
+            <ul className="nice-scroll max-h-[52dvh] flex-1 space-y-1 overflow-y-auto p-2">
+              {placesResult.places.map((p) => (
+                <li
+                  key={p.id}
+                  className="flex items-center justify-between gap-2 rounded-lg border bg-card/60 px-2.5 py-1.5 text-xs"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium">{p.name}</span>
+                    <span className="block text-[10px] text-muted-foreground">
+                      {p.curated ? 'kurirano območje' : 'OpenStreetMap'}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    className="dsa-add-poi-btn shrink-0 rounded-full bg-primary/10 px-2.5 py-1 font-medium text-primary transition-colors hover:bg-primary/20"
+                    data-kind="place"
+                    data-id={`place-${p.id}`}
+                    data-name={p.name}
+                    data-lat={p.lat}
+                    data-lng={p.lng}
+                    data-category={placeCategoryById(placeSel)?.label ?? ''}
+                    data-source={p.curated ? 'izbor' : 'osm'}
+                    aria-label={`Dodaj ${p.name} v pot`}
+                  >
+                    + Dodaj
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
 
         {mode === 'map' && !mapReady && (

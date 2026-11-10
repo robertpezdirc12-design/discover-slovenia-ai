@@ -1436,3 +1436,22 @@ Stage Summary:
 - Zemljevid ima zdaj sloj kulturne dediščine: 31,107 registriranih enot (stavbe, spomeniki, arheologija, parki …) z lenim nalaganjem, izbiro tipa, gručenjem in pojavnimi okni s fotografijo ter povezavo v eID.
 - Vsa vrata zelena (285 testov, tsc 0 v src, eslint 0 novih, build OK) + produkcijska potrditev.
 - Naslednje prioritete (neizvedene): OJPP javni prevoz, širše SEO destination strani; rotacija/dodajanje žetonov (GitLab) ostaja uporabniška odločitev.
+
+---
+Task ID: POLIRAJ-13-OJPP-JAVNI-PREVOZ (naslednja prioriteta iz raziskave)
+Datum: 2026-11-10
+Agent: ZCode (main session)
+Task: javni prevoz — »kako tja z busom/vlakom« za postanke vodiča (dopolnitev OSRM, ki je samo za avto)
+
+Work Log:
+- VIR RAZISKAN: OJPP (odprti javni potniški promet) — skupnostni projekt; ojpp.si je trenutno 502, ampak backend Brezavta.si (api.beta.brezavta.si) je ŽIV (OpenAPI 0.1.0, 21 poti, kub stops/plan/arrivals/trips). Načrtovanje: /plan/{transport_modes}/{from_lon_lat}/{to_lon_lat} (preizkušeno: plan/BUS 200 v ~1 s; WALK,BUS/TRAIN kombinacije 405/500 — variantno). VREDNO: seznam postaj /stops/ (17k+, 2,3 MB).
+- POSREDNIK src/app/api/pot/transit: GET ?from=lat,lng&to=lat,lng&mode=BUS; omejitev 15 s, UA, varstvo koordinat/načinov; KLJUČNO odkritje: upstream vrača PRAZNA telesa za prosto stoječe točke (npr. Bled 46.3625,14.0936) → iskanje NAJBLIŽJE postaje iz /stops/ (haversine, ≤8 km, predpomnilnik) in načrtovanje do nje (vrne destName) — odpravljeno in izboljšana UX (pravo ime postaje).
+- CISTA PLAST src/lib/public-transport.ts: varstvo vnosa (plans ≤10, legs ≤30, koordinate, geometrija LineString ≤2000), buildTransitUrl, slovenski povzetki (Pohod/Bus/Vlak, km/min), formatTransitTime (sl-SI).
+- UI (map-section): gumb »🚌 Javni prevoz« v pojavnem oknu postanke (samo kadar ima koordinate) → prikaže do 4 naslednje povezave (povzetek + legi s postajami in časi), izbrano pot nariše vijolično na zemljevidu; atribucija OJPP/brezavta.
+- TESTI: +8 (293 pass / 0 fail / 2168 expect).
+- SMOKE (Playwright, localhost:3100): seed gorenjska → popup Bled → gumb → 4 načrti (»Javni prevoz · Od: Ljubljana · Do: Bled Mlino«) + 1 vijolična linija ✓; PRODUKCIJSKO enako ✓ (proxy 200, 5 plans, destName Bled Mlino).
+- GIT: 409e12d (feat: javni prevoz) → push origin main.
+
+Stage Summary:
+- Postanke vodiča imajo zdaj »Javni prevoz«: naslednje povezave (bus/vlak) iz Ljubljane z imeni postaj in časi, narisane na zemljevidu. Vir je skupnostni OJPP/brezavta (odprti podatki).
+- Naslednje prioritete (neizvedene): širše SEO destination strani (per-destination rute iz kataloga 31 postaj); rotacija/dodajanje žetonov (GitLab) ostaja uporabniška odločitev.

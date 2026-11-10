@@ -72,12 +72,11 @@ export function HeroSection({
               {variant.badge}
             </p>
 
-            {/* UPORABNIK NIKOLI NI ZGUBLJEN: primarni CTA vodi na začetek
-                vodenega toka, sekundarni direktno na zemljevid (anchor,
-                deluje tudi brez JS-a). */}
+            {/* UPORABNIK NIKOLI NI ZGUBLJEN: primarni CTA vodi direktno na
+                zemljevid (anchor, deluje tudi brez JS-a). */}
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <a
-                href="#vodic"
+                href="#zemljevid"
                 className={buttonVariants({
                   size: 'lg',
                   className:

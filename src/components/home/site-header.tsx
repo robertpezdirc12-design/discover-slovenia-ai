@@ -38,7 +38,7 @@ export function SiteHeader({ loggedIn }: { loggedIn: boolean }) {
             <li>
               <a
                 className="inline-flex min-h-11 items-center rounded-md px-2.5 transition-colors hover:bg-accent hover:text-foreground sm:min-h-9"
-                href={loggedIn ? '#osebno' : '#vodic'}
+                href={loggedIn ? '#osebno' : '#zemljevid'}
               >
                 Za tebe
               </a>

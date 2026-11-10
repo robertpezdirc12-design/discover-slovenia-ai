@@ -7,6 +7,7 @@ import { db } from '@/lib/db';
 import { GUIDE_REGIONS } from '@/lib/guide-store';
 import {
   parseSharedTrip,
+  sharedStopOrder,
   sharedStays,
   tripHeadline,
   tripShareDescription,
@@ -29,7 +30,7 @@ async function loadSharedTrip(id: string) {
   if (!row) return null;
   const state = parseSharedTrip(row.data);
   if (!state) return null;
-  return state;
+  return { state, stopOrder: sharedStopOrder(row.data) };
 }
 
 export async function generateMetadata({
@@ -38,8 +39,9 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const state = await loadSharedTrip(id).catch(() => null);
-  if (!state) return { title: 'Deljena pot · Odkrij Slovenijo' };
+  const shared = await loadSharedTrip(id).catch(() => null);
+  if (!shared) return { title: 'Deljena pot · Odkrij Slovenijo' };
+  const state = shared.state;
   return {
     title: `Pot: ${tripHeadline(state)} · Odkrij Slovenijo`,
     description: tripShareDescription(state),
@@ -66,8 +68,9 @@ export default async function SharedTripPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const state = await loadSharedTrip(id).catch(() => null);
-  if (!state) notFound();
+  const shared = await loadSharedTrip(id).catch(() => null);
+  if (!shared) notFound();
+  const state = shared.state;
 
   const region = GUIDE_REGIONS.find((g) => g.id === state.region);
   const stays = sharedStays(state);
@@ -78,6 +81,7 @@ export default async function SharedTripPage({
     pace: state.pace,
     stays: state.stays,
     completedAt: state.completedAt,
+    ...(shared.stopOrder ? { stopOrder: shared.stopOrder } : {}),
   });
 
   return (

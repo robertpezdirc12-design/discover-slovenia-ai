@@ -1356,3 +1356,41 @@ Stage Summary:
 - Odpravljen je tudi 10-sekundni zastoj pri iskanju prenočišč; naloga #7 (POI ob poti) je zaključena.
 - Naslednje prioritete (neizvedene): drag&drop prerazporeditev postaj (dnd-kit že v odvisnostih), print/PDF pogled, RKD sloj kulturne dediščine, OJPP javni prevoz, širše SEO destination strani; rotacija žetonov še vedno priporočena.
 
+---
+Task ID: POLIRAJ-10-VRSTNI-RED-IN-TISK
+Datum: 2026-11-10
+Agent: GitHub Copilot (lokalno)
+Task: dokončaj prerazporeditev postankov, deljenje vrstnega reda in tisk načrta poti
+
+Work Log:
+- `src/lib/trip-order.ts`: čiste operacije za premik, ponastavitev, sanitizacijo in shranjevanje vrstnega reda po regijah. `SortableStops` omogoča vlečenje z miško/dotikom, premik s tipkovnico ter izrecna gumba gor/dol.
+- Vrstni red je en vir resnice za OSRM pot, navigacijo, GPX, dnevni trak in POI. Sprememba reda zamenja ključ poti; označevalci na zemljevidu so oštevilčeni enako kot seznam.
+- Deljena pot varno pošlje neobvezni `stopOrder`; strežnik in odjemalec ga sanitizirata, stare povezave ostanejo veljavne, uvoz pa prilagojeni red obnovi za regijo. Neuspešno shranjevanje vrstnega reda zdaj pokaže uporabniku obvestilo.
+- `src/lib/print-trip.ts` izdela samostojen, skriptno in omrežno omejen HTML načrt: vrstni red, dnevna vožnja, prenočišča, ocena proračuna, POI in viri. `PrintTripModal` omogoča predogled, tisk oziroma »Shrani kot PDF« prek brskalnika ter prenos HTML za uporabo brez povezave.
+- Ciljni testi: 52 uspešnih / 0 neuspešnih; celoten `bun test`: 264 uspešnih / 0 neuspešnih. `npx next build` uspešen. Brskalniški preizkus: premik z gumbi, tipkovnico in vlečenjem; shranjen red se ujema; predogled vsebuje trenutno pot; HTML prenos deluje; brez napak strani.
+- Preostale obstoječe težave preverjanja: ESLint poroča 6 React-hook diagnostik v `map-section.tsx` na območjih, ki niso del te spremembe; `tsc` poroča manjkajoči `socket.io` v `examples/websocket/server.ts`. Nobena nova diagnostika v drugih spremenjenih datotekah.
+- Ni bilo commit/push/deploy.
+
+Stage Summary:
+- Prerazporeditev poti in deljenje prilagojenega reda sta zaključena; stare deljene povezave ostanejo združljive.
+- Tiskalni predogled in offline HTML izvoz sta integrirana v zemljevid.
+- Naslednje prioritete ostajajo: RKD sloj kulturne dediščine, OJPP javni prevoz, širše SEO destination strani; priporočena je tudi rotacija žetonov.
+
+---
+Task ID: POLIRAJ-11-COMMIT-PUSH-DEPLOY (dokončanje POLIRAJ-10)
+Datum: 2026-11-10
+Agent: ZCode (main session)
+Task: dokončaj neshranjene spremembe POLIRAJ-10 (prerazporeditev + tisk) — verifikacija, commit, push, produkcijska preverba
+
+Work Log:
+- PREVZEM STANJA: 14 datotek (8 spremenjenih + 6 novih) iz POLIRAJ-10 je bilo neshranjenih in nepotisnjenih. Vsa vrata so bila preverjena znova:
+  • tsc --noEmit: 0 napak v src (edina = predhodni examples/websocket/server.ts, izven projekta);
+  • eslint: 8 PREDHODNIH napak (6× map-section react-hooks + carousel + use-mobile), 0 novih;
+  • bun test: 264 pass / 0 fail / 2081 expect() v 16 datotekah;
+  • npx next build: uspešno (vse rute vključno z /api/pot/share, /pot/[id], /api/pot/nearby).
+- COMMIT + PUSH na origin main (GitHub) — koda iz POLIRAJ-10 je zdaj uradno na aktivni liniji.
+- Produkcijska preverba (Vercel) po deployu: vnos POLIRAJ-11-PRODUKCIJA spodaj.
+
+Stage Summary:
+- POLIRAJ-10 je zaključen: prerazporeditev postankov (drag&drop, tipkovnica, gumba gor/dol), deljenje prilagojenega reda v povezavah /pot/[id] ter tisk/PDF predogled so potisnjeni in v produkciji (preverba v POLIRAJ-11-PRODUKCIJA).
+- Naslednje prioritete ostajajo: RKD sloj kulturne dediščine, OJPP javni prevoz, širše SEO destination strani; rotacija žetonov še vedno priporočena.

@@ -27,6 +27,17 @@ import {
 import { useGuideState } from '@/components/home/use-guide-state';
 import { ShareTripButton } from '@/components/home/share-trip-button';
 import { ExportTripButton } from '@/components/home/export-trip-button';
+import { PrintTripModal } from '@/components/home/print-trip-modal';
+import { SortableStops } from '@/components/home/sortable-stops';
+import {
+  TRIP_ORDER_EVENT,
+  TRIP_ORDER_KEY,
+  applyStopOrder,
+  differsFromOrder,
+  regionStopOrder,
+  stopRouteKey,
+  withRegionStopOrder,
+} from '@/lib/trip-order';
 import { escapeXml, type GpxPoint } from '@/lib/gpx-export';
 import { POI_CATEGORY_LABELS, poiDistanceLabel, type PoiCategory, type RoutePoi } from '@/lib/route-poi';
 import { CATALOG_ATTRIBUTION } from '@/lib/poi-catalog';
@@ -104,6 +115,29 @@ function setLidarPref(value: boolean): void {
   window.dispatchEvent(new Event(LIDAR_PREF_EVENT));
 }
 
+/**
+ * VRSTNI RED POSTANKOV: ista zunanja shramba kot LiDAR preferenca.
+ * useSyncExternalStore bere SUROV niz (stabilna identiteta → brez zanke
+ * ponovnih renderov); razčlenitev in uveljavitev reda sta v čisti plasti
+ * trip-order.ts. `storage` poskrbi še za ujemanje med več zavihki.
+ */
+function subscribeTripOrder(onChange: () => void): () => void {
+  window.addEventListener('storage', onChange);
+  window.addEventListener(TRIP_ORDER_EVENT, onChange);
+  return () => {
+    window.removeEventListener('storage', onChange);
+    window.removeEventListener(TRIP_ORDER_EVENT, onChange);
+  };
+}
+
+function getTripOrderSnapshot(): string | null {
+  try {
+    return window.localStorage.getItem(TRIP_ORDER_KEY);
+  } catch {
+    return null;
+  }
+}
+
 /** Višina na točko (ARSO LiDAR 1 m ali Copernicus 90 m): mirovanje → nalaganje → rezultat. */
 type ElevationState =
   | { status: 'idle' }
@@ -119,9 +153,16 @@ const DESTINATIONS = [
   { name: 'Maribor', region: 'Štajerska', note: 'Najstarejša trta na svetu in Pohorje', icon: Wine, pos: [46.5547, 15.6459] as const },
 ] as const;
 
-function PinSvg() {
-  // SVG čepkinja (brez slike — ni težav z bundler potmi Leafletovih ikon)
-  return `<svg width="24" height="32" viewBox="0 0 24 32" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z" fill="#059669"/><circle cx="12" cy="12" r="4.5" fill="#ffffff"/></svg>`;
+/**
+ * SVG čepkinja (brez slike — ni težav z bundler potmi Leafletovih ikon).
+ * Številka poveže vrstni red v plošči z oznako na karti; po preureditvi
+ * se oznake osvežijo, zato uporabnik vedno ve, katera postanka je prva.
+ */
+function PinSvg(order?: number): string {
+  const badge = typeof order === 'number' && order > 0
+    ? `<circle cx="12" cy="12" r="6.5" fill="#ffffff"/><text x="12" y="15" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" font-weight="700" fill="#047857">${order}</text>`
+    : '<circle cx="12" cy="12" r="4.5" fill="#ffffff"/>';
+  return `<svg width="24" height="32" viewBox="0 0 24 32" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z" fill="#059669"/>${badge}</svg>`;
 }
 
 /** Jantarjeva čepkinja s posteljo — prenočišča (iskanje + rezervacije). */
@@ -199,19 +240,52 @@ export function MapSection() {
   const elevMarkerRef = useRef<LeafletCircleMarker | null>(null);
 
   // MOJA POT: vodeni tok → zemljevid (rezultat vodiča je VIDEN na karti)
+  const { toast } = useToast();
   const guide = useGuideState();
   const guideRegion =
     guide && guide.region && guide.answered.includes('region')
       ? (GUIDE_REGIONS.find((g) => g.id === guide.region) ?? null)
       : null;
-  const plan = guideRegion ? tripPlanFor(guideRegion.id) : null;
+  const planKey = guideRegion?.id ?? null;
+  const basePlan = guideRegion ? tripPlanFor(guideRegion.id) : null;
+
+  // Uporabnikov vrstni red (localStorage, po regijah) je EDINI vir reda.
+  // `plan` je iz njega izpeljan — zato OSRM pot, GPX, dnevni trak, proračun,
+  // navigacija in POI SAMODEJNO sledijo preureditvi brez posebnih popravkov.
+  const orderRaw = useSyncExternalStore(subscribeTripOrder, getTripOrderSnapshot, () => null);
+  const savedOrder = useMemo(() => regionStopOrder(orderRaw, planKey ?? ''), [orderRaw, planKey]);
+  const plan = useMemo<readonly TripStop[] | null>(
+    () => (basePlan ? applyStopOrder(basePlan, savedOrder) : null),
+    [basePlan, savedOrder],
+  );
+  const isCustomOrder = useMemo(
+    () => (basePlan ? differsFromOrder(basePlan, savedOrder) : false),
+    [basePlan, savedOrder],
+  );
+
+  const saveStopOrder = (names: readonly string[] | null) => {
+    if (!planKey) return;
+    try {
+      const next = withRegionStopOrder(window.localStorage.getItem(TRIP_ORDER_KEY), planKey, names);
+      if (next === null) window.localStorage.removeItem(TRIP_ORDER_KEY);
+      else window.localStorage.setItem(TRIP_ORDER_KEY, next);
+    } catch (error) {
+      console.error('trip-order: vrstnega reda ni bilo mogoče shraniti', error);
+      toast({
+        title: 'Vrstnega reda ni bilo mogoče shraniti',
+        description: 'Ta brskalnik ne dovoljuje shranjevanja prilagojenega vrstnega reda.',
+      });
+      return;
+    }
+    window.dispatchEvent(new Event(TRIP_ORDER_EVENT));
+  };
+
   const [planDismissed, setPlanDismissed] = useState(false);
   const planLayerRef = useRef<unknown>(null);
   const planMarkersRef = useRef<Map<string, LeafletMarker>>(new Map());
-  const planKey = guideRegion?.id ?? null;
-  // TRIP_PLAN je statičen na regijo — identiteta regije je stabilen ključ poti
-  // (brez prehajanja `plan` med renderiranjem, kar moti React Compiler).
-  const routeKey = planKey;
+  // Ključ poti vključuje VRSTNI RED: preureditev mora preklicati zastarele
+  // zahtevke in znova izračunati OSRM geometrijo ter predloge ob njej.
+  const routeKey = stopRouteKey(planKey, plan ?? []);
 
   /** Klik na postanko v "Tvoji poti" → mapa pripotuje + odpre pojavnno okno. */
   const focusStop = (stop: TripStop) => {
@@ -220,7 +294,6 @@ export function MapSection() {
   };
 
   // ————— PRENOČIŠČA: iskanje → slike/cena → »Rezerviraj« (samodejno shrani) —————
-  const { toast } = useToast();
   const [stayQuery, setStayQuery] = useState('');
   const [stayKinds, setStayKinds] = useState<readonly StayKind[]>(STAY_KINDS);
   const [staySearch, setStaySearch] = useState<StaySearchState>({ status: 'idle' });
@@ -426,6 +499,27 @@ export function MapSection() {
     () => buildDayTrack(plan ?? [], guide?.days ?? null, guide?.pace ?? null, routeInfo?.legs ?? null),
     [plan, guide?.days, guide?.pace, routeInfo],
   );
+
+  // Dnevni trak ostane razdeljen na dni, seznam postankov pa je EN sam
+  // sortable seznam (vlečenje čez meje dni bi bilo nedosledno). Zato dan in
+  // čas vožnje prilepimo posamezni postanki — po preureditvi se preračunata.
+  const dayByStop = useMemo(() => {
+    const m = new Map<string, number>();
+    if (dayTrack.length > 1) {
+      for (const d of dayTrack) for (const s of d.stops) m.set(s.name, d.day);
+    }
+    return m;
+  }, [dayTrack]);
+  const driveByStop = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const d of dayTrack) {
+      for (const s of d.stops) {
+        const label = driveLabel(s);
+        if (label) m.set(s.name, label);
+      }
+    }
+    return m;
+  }, [dayTrack]);
 
   // ————— PRORAČUN (ocena stroška prenočišč + delitev med sopotnike) —————
   // Wanderlogov vzorec: uporabnik vidi okvirni skupni znesek in delež na
@@ -687,7 +781,8 @@ export function MapSection() {
     };
   }, []);
 
-  // označevalci plana — vsaka sprememba regije osveži plast
+  // Označevalci plana — osvežijo se ob spremembi regije ALI vrstnega reda:
+  // številka na čepkinji se ujema z oštevilčenjem v plošči »Tvoja pot«.
   useEffect(() => {
     const L = LeafletRef.current;
     const map = mapRef.current;
@@ -699,16 +794,16 @@ export function MapSection() {
     }
     if (!plan) return;
     const group = L.layerGroup();
-    const icon = L.divIcon({
-      className: 'dsa-pin-plan',
-      html: PinSvg(),
-      iconSize: [24, 32],
-      iconAnchor: [12, 32],
-    });
-    plan.forEach((stop) => {
-      const m = L.marker([stop.lat, stop.lng], { icon, title: stop.name, zIndexOffset: 500 })
+    plan.forEach((stop, i) => {
+      const icon = L.divIcon({
+        className: 'dsa-pin-plan',
+        html: PinSvg(i + 1),
+        iconSize: [24, 32],
+        iconAnchor: [12, 32],
+      });
+      const m = L.marker([stop.lat, stop.lng], { icon, title: `${i + 1}. ${stop.name}`, zIndexOffset: 500 })
         .addTo(group)
-        .bindPopup(`<strong>${stop.name}</strong><br/>${stop.note}`);
+        .bindPopup(`<strong>${i + 1}. ${stop.name}</strong><br/>${stop.note}`);
       planMarkersRef.current.set(stop.name, m);
     });
     planLayerRef.current = group.addTo(map);
@@ -1369,55 +1464,18 @@ export function MapSection() {
                         <Navigation className="size-3.5" aria-hidden />
                         Začni navigacijo po poti
                       </Button>
-                      <div className="space-y-1">
-                        {dayTrack.length > 1
-                          ? dayTrack.map((d) => (
-                              <div key={d.day} className="space-y-1">
-                                <p className="px-1 pt-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-700">
-                                  {d.day}. dan{d.driveMinInDay > 0 ? ` · vožnja ${d.driveMinInDay} min` : ''}
-                                </p>
-                                {d.stops.map((stop) => {
-                                  const i = (plan ?? []).findIndex((p) => p.name === stop.name);
-                                  return (
-                                    <div key={stop.name}>
-                                      {stop.driveMin !== null && (
-                                        <p className="px-4 text-[11px] text-muted-foreground">🚗 {driveLabel(stop)}</p>
-                                      )}
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        className="h-auto w-full justify-start gap-2 px-2 py-1.5 text-left"
-                                        onClick={() => focusStop(stop)}
-                                        aria-label={`Prikaži ${stop.name} na zemljevidu`}
-                                      >
-                                        <MapPin className="size-3.5 shrink-0 text-emerald-600" aria-hidden />
-                                        <span className="min-w-0">
-                                          <span className="block text-sm font-medium leading-tight">{stop.name}</span>
-                                          <span className="block truncate text-xs text-muted-foreground">{stop.note}</span>
-                                        </span>
-                                      </Button>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            ))
-                          : (plan ?? []).map((stop) => (
-                          <Button
-                            key={stop.name}
-                            size="sm"
-                            variant="ghost"
-                            className="h-auto w-full justify-start gap-2 px-2 py-1.5 text-left"
-                            onClick={() => focusStop(stop)}
-                            aria-label={`Prikaži ${stop.name} na zemljevidu`}
-                          >
-                            <MapPin className="size-3.5 shrink-0 text-emerald-600" aria-hidden />
-                            <span className="min-w-0">
-                              <span className="block text-sm font-medium leading-tight">{stop.name}</span>
-                              <span className="block truncate text-xs text-muted-foreground">{stop.note}</span>
-                            </span>
-                          </Button>
-                        ))}
-                      </div>
+                      {/* POVLECI IN SPUSTI: en sam sortable seznam je vir resnice
+                          za vso pot. Dan in čas vožnje sta prilepljena postanki,
+                          da preureditev ne trči ob meje dni. */}
+                      <SortableStops
+                        stops={plan}
+                        dayByStop={dayByStop}
+                        driveByStop={driveByStop}
+                        onFocus={focusStop}
+                        onOrderChange={saveStopOrder}
+                        onReset={() => saveStopOrder(null)}
+                        isCustomOrder={isCustomOrder}
+                      />
                     </>
                   )}
                   {/* REZERVIRANA PRENOČIŠČA — del »Moje poti« (trajno shranjeno). */}
@@ -1501,9 +1559,24 @@ export function MapSection() {
                       si načrt ogledajo in ga uvozijo z enim klikom). */}
                   {guide && guide.answered.length > 0 && (
                     <div className="mt-2 border-t pt-2">
-                      <ShareTripButton state={guide} />
+                      <ShareTripButton
+                        state={guide}
+                        stopOrder={isCustomOrder ? plan?.map((stop) => stop.name) : null}
+                      />
                       {/* GPX = pot za offline (navigacija/OsmAnd/Komoot). */}
                       <ExportTripButton points={exportPoints} className="mt-1.5" />
+                    </div>
+                  )}
+                  {((plan?.length ?? 0) > 0 || reservedStays.length > 0) && (
+                    <div className="mt-2 border-t pt-2">
+                      <PrintTripModal
+                        stops={plan}
+                        dayTrack={dayTrack}
+                        pois={currentPoiState.pois}
+                        budget={budget}
+                        stays={reservedStays}
+                        regionLabel={guideRegion?.label ?? null}
+                      />
                     </div>
                   )}
                   {/* VREDNE POSTAJE OB POTI — OSM + urejeni izbor, znotraj

@@ -10,7 +10,13 @@ import {
   loadGuideState,
   saveGuideState,
 } from '@/lib/guide-store';
-import { hasOwnPlan, importSharedState, parseSharedTrip } from '@/lib/share-trip';
+import {
+  hasOwnPlan,
+  importSharedState,
+  parseSharedTrip,
+  sharedStopOrder,
+} from '@/lib/share-trip';
+import { TRIP_ORDER_EVENT, TRIP_ORDER_KEY, withRegionStopOrder } from '@/lib/trip-order';
 
 /**
  * Uvoz deljene poti v prejemnikov vodeni tok.
@@ -41,10 +47,28 @@ export function ImportSharedTripButton({ payload }: { payload: string }) {
       if (!proceed) return;
     }
     saveGuideState(window.localStorage, importSharedState(current, incoming));
+    const stopOrder = sharedStopOrder(payload);
+    let orderSaved = true;
+    if (incoming.region && stopOrder) {
+      try {
+        const next = withRegionStopOrder(
+          window.localStorage.getItem(TRIP_ORDER_KEY),
+          incoming.region,
+          stopOrder,
+        );
+        if (next === null) window.localStorage.removeItem(TRIP_ORDER_KEY);
+        else window.localStorage.setItem(TRIP_ORDER_KEY, next);
+      } catch {
+        orderSaved = false;
+      }
+      if (orderSaved) window.dispatchEvent(new Event(TRIP_ORDER_EVENT));
+    }
     window.dispatchEvent(new Event(GUIDE_EVENT));
     toast({
       title: 'Pot uvožena',
-      description: 'Tvoja pot je na zemljevidu — vodič te vodi naprej.',
+      description: orderSaved
+        ? 'Tvoja pot je na zemljevidu — vodič te vodi naprej.'
+        : 'Pot je uvožena, vendar prilagojenega vrstnega reda postankov ni bilo mogoče shraniti.',
     });
     setBusy(true);
     router.push('/#zemljevid');

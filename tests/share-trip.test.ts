@@ -9,6 +9,7 @@ import {
   importSharedState,
   isShareable,
   parseSharedTrip,
+  sharedStopOrder,
   sharedStays,
   sharedTripPayload,
   tripHeadline,
@@ -64,6 +65,19 @@ describe('share-trip — payload (nasporne vsebina, ne nastavitve seje)', () => 
     expect(obj.updatedAt).toBeUndefined();
     expect(obj.region).toBe('gorenjska');
     expect(obj.stays).toHaveLength(1);
+  });
+
+  test('prilagojen vrstni red se deli; stare povezave ostanejo brez njega', () => {
+    const payload = sharedTripPayload(FULL, ['Bohinj', 'Bled']);
+    expect(JSON.parse(payload).stopOrder).toEqual(['Bohinj', 'Bled']);
+    expect(sharedStopOrder(payload)).toEqual(['Bohinj', 'Bled']);
+    expect(sharedStopOrder(sharedTripPayload(FULL))).toBeNull();
+  });
+
+  test('sharedStopOrder prečisti podvojene in neveljavne vnose', () => {
+    expect(
+      sharedStopOrder(JSON.stringify({ stopOrder: [' Bled ', 42, 'Bled', 'Bohinj'] })),
+    ).toEqual(['Bled', 'Bohinj']);
   });
 
   test('okrogel sprehod: payload → parseSharedTrip → enaka vsebina, sveža seja', () => {

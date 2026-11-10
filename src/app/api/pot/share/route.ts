@@ -6,6 +6,7 @@ import {
   isShareable,
   sharedTripPayload,
 } from '@/lib/share-trip';
+import { sanitizeOrderNames } from '@/lib/trip-order';
 
 /**
  * POST /api/pot/share — ustvari deljeno pot (/pot/[koda]).
@@ -25,8 +26,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const raw = (body as { state?: unknown } | null)?.state;
+  const rawBody =
+    body && typeof body === 'object' && !Array.isArray(body)
+      ? (body as Record<string, unknown>)
+      : null;
+  const raw = rawBody?.state;
   const state = sanitizeGuideState(raw);
+  const stopOrder = sanitizeOrderNames(rawBody?.stopOrder);
   if (!isShareable(state)) {
     return NextResponse.json(
       { ok: false, error: 'Pot je še prazna — najprej izberi vsaj regijo ali interese.' },
@@ -41,7 +47,7 @@ export async function POST(request: Request) {
     const code = generateTripCode();
     try {
       await db.sharedTrip.create({
-        data: { id: code, data: sharedTripPayload(state) },
+        data: { id: code, data: sharedTripPayload(state, stopOrder) },
       });
       const origin = new URL(request.url).origin;
       return NextResponse.json({ ok: true, id: code, url: `${origin}/pot/${code}` });

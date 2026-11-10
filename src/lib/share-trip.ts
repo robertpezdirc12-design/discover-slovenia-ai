@@ -16,6 +16,7 @@ import {
   type GuideState,
   type GuideStayStop,
 } from '@/lib/guide-store';
+import { sanitizeOrderNames } from '@/lib/trip-order';
 
 /** Kodirnik brez zablodljivih znakov (brez 0/O/1/I/L) — diktiranje po telefonu. */
 export const TRIP_CODE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
@@ -47,9 +48,15 @@ export function generateTripCode(len: number = TRIP_CODE_LENGTH): string {
  * Glas (voiceEnabled), časovni žigi in "answered" se ne prenašajo —
  * prejemnik dobi vsebino, tok pa ga vodi po njegovem tempu.
  */
-export function sharedTripPayload(state: GuideState): string {
+export function sharedTripPayload(
+  state: GuideState,
+  stopOrder?: readonly string[] | null,
+): string {
   const clean = sanitizeGuideState(state);
   if (!clean) throw new Error('shared-trip: neveljavno stanje');
+  // Vrstni red je NEOBVEZEN dodatek: stare deljene poti brez polja ostanejo
+  // veljavne, prejemnik brez prilagojenega reda pa dobi privzetega.
+  const order = sanitizeOrderNames(stopOrder);
   return JSON.stringify({
     interests: clean.interests,
     region: clean.region,
@@ -57,7 +64,19 @@ export function sharedTripPayload(state: GuideState): string {
     pace: clean.pace,
     stays: clean.stays,
     completedAt: clean.completedAt,
+    ...(order ? { stopOrder: order } : {}),
   });
+}
+
+/** Prebere neobvezni vrstni red postankov iz (tujega) payloada. */
+export function sharedStopOrder(payload: string): readonly string[] | null {
+  try {
+    const raw: unknown = JSON.parse(payload);
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    return sanitizeOrderNames((raw as Record<string, unknown>).stopOrder);
+  } catch {
+    return null;
+  }
 }
 
 /** Prejemnikova stran: razčleni payload (hostilen vnos → null). */

@@ -26,9 +26,11 @@ import { tripHeadline } from '@/lib/share-trip';
  */
 export function ShareTripButton({
   state,
+  stopOrder,
   className,
 }: {
   state: GuideState;
+  stopOrder?: readonly string[] | null;
   className?: string;
 }) {
   const { toast } = useToast();
@@ -51,7 +53,7 @@ export function ShareTripButton({
       const res = await fetch('/api/pot/share', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ state }),
+        body: JSON.stringify({ state, ...(stopOrder ? { stopOrder } : {}) }),
       });
       const j = (await res.json()) as { ok: boolean; url?: string; error?: string };
       if (!j.ok || !j.url) {

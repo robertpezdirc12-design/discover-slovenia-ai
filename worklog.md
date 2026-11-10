@@ -1666,3 +1666,20 @@ Work Log:
 - TESTI: +5 → 334 pass / 0 fail / 3049 expect.
 - GIT: c731fe8 → GitHub main + GitLab sandbox/guided-ux-line.
 - Preostalo po raziskavi: delitev stroškov po postavkah, offline karte (PWA), i18n (B).
+
+---
+Task ID: POLIRAJ-26-KNJIGA (metafora: zemljevid = knjiga)
+Datum: 2026-11-10
+Agent: ZCode (main session)
+Task: uporabnikova metafora »knjige« — enostavno, čim več možnosti
+
+Work Log:
+- Upodobitev metafore:
+  • Knjiga = zemljevid; branje = raziskovanje; izpisovanje = »Dodaj v pot«;
+    knjižica = plošča »Tvoja pot«; kazalo = novo.
+  • Plošča »Tvoja pot« dobi »Kazalo« (Postanki/Prenočišča/Zanimivosti/
+    Proračun) — skok na razdelek znotraj drseče plošče (ref + id-ji).
+  • PDF načrt dobi kazalo (TOC) s povezavami na poglavja, ki obstajajo
+    (id-ji sekcij; CSS).
+- VRATA: 334 pass / 0 fail; tsc 0; lint 0; build OK.
+- GIT: 3eced24 → GitHub main + GitLab sandbox/guided-ux-line.

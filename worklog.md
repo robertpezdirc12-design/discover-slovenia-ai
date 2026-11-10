@@ -1653,3 +1653,16 @@ Work Log:
 - TESTI: +2 (savedPois) → 329 pass / 0 fail / 3034 expect.
 - PRODUKCIJA: domača stran 200; share payload s savedPois 200.
 - GIT: d58c745 → GitHub main + GitLab sandbox/guided-ux-line.
+
+---
+Task ID: POLIRAJ-25-PAKIRNI-SEZNAM (»nadaljuj po logiki«)
+Datum: 2026-11-10
+Agent: ZCode (main session)
+Task: dokončati »pripravo potovanja« (Wanderlog predloga, skriptno)
+
+Work Log:
+- src/lib/packing.ts: baza (17 postavk) + dodatki po tipih (gore/morje/mesto) iz regije in interesov; stanje ključano na routeKey; packingProgress; varstvo vnosa (parse/serialize).
+- PackingDialog: skupine (Dokumenti/Oblačila/Toaletni/Tehnika/Razno), checkboxi, vrstica napredka (aria), Ponastavi; vključen v ploščo »Tvoja pot« (samo ob izbrani regiji; key=routeKey).
+- TESTI: +5 → 334 pass / 0 fail / 3049 expect.
+- GIT: c731fe8 → GitHub main + GitLab sandbox/guided-ux-line.
+- Preostalo po raziskavi: delitev stroškov po postavkah, offline karte (PWA), i18n (B).

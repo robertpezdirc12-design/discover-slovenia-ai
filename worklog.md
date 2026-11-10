@@ -1414,3 +1414,25 @@ Stage Summary:
 - Deljena pot je v produkciji ZDRAVA tudi brez baze: ko baza ni na voljo, povezava nosi vso vsebino sama; ko bo baza kdaj provisionirana, se kratke kode samodejno vključijo brez spremembe kode.
 - POLIRAJ-11 zaključen: verifikacija, commit, push in produkcijska preverba POLIRAJ-10 + odprava odkritega produkcijskega 500.
 - Naslednje prioritete ostajajo: RKD sloj kulturne dediščine, OJPP javni prevoz, širše SEO destination strani; rotacija/dodajanje žetonov (GitLab) je uporabniška odločitev.
+
+---
+Task ID: POLIRAJ-12-RKD-SLOJ (naslednja prioriteta iz raziskave)
+Datum: 2026-11-10
+Agent: ZCode (main session)
+Task: RKD sloj kulturne dediščine na zemljevidu (30.000+ enot, brez ključa)
+
+Work Log:
+- VIR POTRJEN: CKAN paket «register-nepremicne-kulturne-dediscine» (podatki.gov.si) — HTTP 200 z brskalniškim UA (sandbox blokira privzeti curl UA → 407; produkcija/drugi odjemalci niso prizadeti). Vir RNPD JSON = tok GeoJSON značk (31.107 enot, VSE imajo opis, občino, koordinate in fotografijo na ised.gov.si). Licenca: OPSI / CC BY 4.0 (MOP/GURS).
+- PREDOBDELAVA: research/rkd/transform.py (trajno v repozitoriju) → public/data/rkd.json: kompaktni nabor 7,2 MB (gzip ~1,95 MB), polja {ime, tip-indeks, opis ≤96, občina, lat/lng 4dp, fotografija, EŠD}; unikatni EŠD 31.107/31.107.
+- CISTA PLAST src/lib/rkd.ts: parseRkdData (varstvo vnosa: koordinate/tip/EŠD/meje), filterRkd (tip + besedilo), clusterRkd (mreža Web Mercator, DETERMINISTIČNO — najmanjši EŠD kot predstavnik, sort po števcu, limit), filterRkdInBounds (KLJUČNO: omejitev gruč le na vidne značke — sicer omejitev odvrže posamezne enote v korist velikih gruč izven pogleda), inBounds, rkdUnitUrl/rkdPhotoUrl.
+- LEAFLET ADAPTER src/lib/rkd-layer.ts: gruče (krog s števcem, klik = približanje), pike v barvah tipov, popup (fotografija, značka tipa, ime, opis, občina, povezava eID gov.si/S/{EŠD} — XSS-varno escapano).
+- UI (map-section): stikalo «Kulturna dediščina» + izbirnik tipa v orodni vrstici poleg LiDAR-a; LENO nalaganje ob prvem vklopu (fetch /data/rkd.json → parseRkdData); preračun ob zoomend/moveend; atribucijska vrstica pod vrstico.
+- TESTI: +16 (razčlenitev/varstvo, filtri, gručenje vklj. determinizem, pripomočki) → 285 pass / 0 fail / 2143 expect.
+- SMOKE (Playwright, fresh dev server): vklop → 6 gruč → klik na gručo → približanje (pike/gruče) → popup z vrsto «arheološka najdišča» in povezavo https://eid.gov.si/S/541 ✓; enako PRODUKCIJSKO po deployu ✓.
+- RAZVOJNA ZANKA (za naslednje seje): predhodno je bil port 3100 zaseden s STARIM dev procesom (EADDRINUSE) — testi so tekli proti zastareli kodi in peljali v napačne zaključke; preveriti, da je port res svež proces.
+- GIT: c6d27fc (feat: RKD sloj) → push origin main. Produkcija: /data/rkd.json 200 (7.152.934 B, application/json), / 200, smoke E2E ✓.
+
+Stage Summary:
+- Zemljevid ima zdaj sloj kulturne dediščine: 31,107 registriranih enot (stavbe, spomeniki, arheologija, parki …) z lenim nalaganjem, izbiro tipa, gručenjem in pojavnimi okni s fotografijo ter povezavo v eID.
+- Vsa vrata zelena (285 testov, tsc 0 v src, eslint 0 novih, build OK) + produkcijska potrditev.
+- Naslednje prioritete (neizvedene): OJPP javni prevoz, širše SEO destination strani; rotacija/dodajanje žetonov (GitLab) ostaja uporabniška odločitev.

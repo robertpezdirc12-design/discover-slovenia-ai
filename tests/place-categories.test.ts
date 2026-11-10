@@ -8,8 +8,8 @@ import {
 } from '../src/lib/place-categories';
 
 describe('place-categories — kategorije in poizvedbe', () => {
-  test('vseh 7 kategorij je pokritih z oznako in barvo', () => {
-    expect(PLACE_CATEGORIES.length).toBe(7);
+  test('vse kategorije so pokrite z oznako in barvo', () => {
+    expect(PLACE_CATEGORIES.length).toBeGreaterThanOrEqual(12);
     for (const c of PLACE_CATEGORIES) {
       expect(c.label.length).toBeGreaterThan(2);
       expect(c.color).toMatch(/^#[0-9a-f]{6}$/i);

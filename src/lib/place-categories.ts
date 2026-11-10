@@ -9,11 +9,20 @@
 export type PlaceCategoryId =
   | 'muzeji'
   | 'restavracije'
+  | 'kavarne'
+  | 'barji'
   | 'hoteli'
+  | 'kampi'
   | 'znamenitosti'
+  | 'sakralni'
+  | 'sport'
   | 'prevoz'
   | 'bencinske'
-  | 'lekarne';
+  | 'lekarne'
+  | 'bankomati'
+  | 'posta'
+  | 'parkirisca'
+  | 'supermarketi';
 
 export interface PlaceCategory {
   id: PlaceCategoryId;
@@ -27,11 +36,20 @@ export interface PlaceCategory {
 export const PLACE_CATEGORIES: readonly PlaceCategory[] = [
   { id: 'muzeji', label: 'Muzeji', tag: '["tourism"="museum"]', color: '#7c3aed' },
   { id: 'restavracije', label: 'Restavracije', tag: '["amenity"="restaurant"]', color: '#b91c1c' },
+  { id: 'kavarne', label: 'Kavarne', tag: '["amenity"="cafe"]', color: '#a16207' },
+  { id: 'barji', label: 'Barji in pubi', tag: '["amenity"~"^(bar|pub|nightclub)$"]', color: '#831843' },
   { id: 'hoteli', label: 'Hoteli', tag: '["tourism"~"^(hotel|hostel)$"]', color: '#d97706' },
+  { id: 'kampi', label: 'Kampi', tag: '["tourism"="camp_site"]', color: '#65a30d' },
   { id: 'znamenitosti', label: 'Znamenitosti', tag: '["tourism"="attraction"]', color: '#0891b2' },
+  { id: 'sakralni', label: 'Sakralni objekti', tag: '["amenity"="place_of_worship"]', color: '#6d28d9' },
+  { id: 'sport', label: 'Športni objekti', tag: '["leisure"~"^(sports_centre|stadium)$"]', color: '#0369a1' },
   { id: 'prevoz', label: 'Prevoz (postaje)', tag: '["public_transport"~"^(stop_position|station)$"]', color: '#2563eb' },
   { id: 'bencinske', label: 'Bencinske', tag: '["amenity"="fuel"]', color: '#4d7c0f' },
   { id: 'lekarne', label: 'Lekarne', tag: '["amenity"="pharmacy"]', color: '#be185d' },
+  { id: 'bankomati', label: 'Bankomati', tag: '["amenity"="atm"]', color: '#334155' },
+  { id: 'posta', label: 'Pošta', tag: '["amenity"="post_office"]', color: '#57534e' },
+  { id: 'parkirisca', label: 'Parkirišča', tag: '["amenity"="parking"]', color: '#52525b' },
+  { id: 'supermarketi', label: 'Supermarketi', tag: '["shop"="supermarket"]', color: '#166534' },
 ];
 
 export function placeCategoryById(id: string): PlaceCategory | null {

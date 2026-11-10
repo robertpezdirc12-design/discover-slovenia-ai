@@ -122,12 +122,14 @@ export function overpassPoiQuery(b: RouteBbox): string {
     '["natural"~"peak|spring|cave_entrance|waterfall"]',
     '["amenity"~"restaurant|cafe"]',
   ];
-  const parts: string[] = [];
-  for (const f of filters) {
-    parts.push(`node${f}(${bbox});`, `way${f}(${bbox});`);
-  }
+  // KOMPAKTNA OBLIKA (izmerjeno na Vercelu): globalni `[bbox:]` + `nwr`
+  // (node/way/relation) namesto 8× ponovljenega bbox-a. GET URL se tako
+  // skrči s 1043 na ~420 znakov — posredniki pred Overpassom namreč zavrnejo
+  // predolge `?data=…` URL-je s 502/414, še preden poizvedba steče. Krajše
+  // poizvedbe (iskanje prenočišč) na istem zrcalu delujejo. Sintaksa
+  // preverjena na dosegljivem zrcalu: 300 elementov / 292 poimenovanih.
   // Brez kotvic/regularnih omejitev v izpisu: zrcala včasih 500-irajo.
-  return `[out:json][timeout:25];(${parts.join('')});out center 300;`;
+  return `[out:json][timeout:25][bbox:${bbox}];(${filters.map((f) => `nwr${f};`).join('')});out center 300;`;
 }
 
 /** Razvrsti OSM tage v slovensko kategorijo (prvi zadetek odloča). */

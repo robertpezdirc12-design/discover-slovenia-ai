@@ -87,6 +87,11 @@ describe('raceOverpass — GET/POST, User-Agent in poštena raba', () => {
     expect(calls.map((c) => c.init.method)).toEqual(['GET', 'POST']);
     expect(attempts[0].ok).toBe(true);
     expect(attempts[0].method).toBe('POST');
+    // Diagnostika hrani IZID VSAKE metode — ne le zadnje (GET 502 ne sme izginiti).
+    expect(attempts[0].tries.map((t) => t.method)).toEqual(['GET', 'POST']);
+    expect(attempts[0].tries[0].status).toBe(403);
+    expect(attempts[0].tries[0].ok).toBe(false);
+    expect(attempts[0].tries[1].ok).toBe(true);
   });
 
   test('prvi odgovor s poimenovanimi zadetki zmaga; preostali se prekličejo', async () => {

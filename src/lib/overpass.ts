@@ -35,6 +35,16 @@ export const GLOBAL_OVERPASS_ENDPOINTS = [
 
 export type OverpassMethod = 'GET' | 'POST';
 
+/** Izid ene metode na enem zrcalu (GET in morebitni POST posebej). */
+export interface OverpassTry {
+  method: OverpassMethod;
+  ms: number;
+  ok: boolean;
+  status?: number;
+  count?: number;
+  error?: string;
+}
+
 /** Posamezen poskus — za `?debug=1` in razumevanje degradiranega načina. */
 export interface OverpassAttempt {
   endpoint: string;
@@ -44,6 +54,7 @@ export interface OverpassAttempt {
   status?: number;
   count?: number;
   error?: string;
+  tries: OverpassTry[];
 }
 
 export interface OverpassRaceResult {
@@ -122,6 +133,7 @@ export async function raceOverpass(
     ms: 0,
     ok: false,
     error: 'v teku',
+    tries: [],
   }));
 
   if (endpoints.length === 0) {
@@ -140,27 +152,32 @@ export async function raceOverpass(
       for (const method of methods) {
         if (controller.signal.aborted) throw new Error('preklican');
         record.method = method;
+        const tryRecord: OverpassTry = { method, ms: 0, ok: false };
+        record.tries.push(tryRecord);
         try {
           const url = method === 'GET' ? overpassGetUrl(endpoint, query) : endpoint;
           const response = await doFetch(url, requestInit(method, query, controller.signal));
+          tryRecord.status = response.status;
+          tryRecord.ms = Date.now() - t0;
           record.status = response.status;
           record.ms = Date.now() - t0;
           if (!response.ok) throw new Error(`Overpass HTTP ${response.status} (${method})`);
 
           const raw: unknown = await response.json();
           const count = countNamed(raw);
+          tryRecord.count = count;
           record.count = count;
-          record.ms = Date.now() - t0;
+          tryRecord.ms = record.ms = Date.now() - t0;
           if (count === 0) throw new Error(`Overpass brez poimenovanih zadetkov (${method})`);
 
-          record.ok = true;
+          tryRecord.ok = record.ok = true;
           record.error = undefined;
           return { raw, endpoint, count, ms: Date.now() - started, method };
         } catch (error) {
           lastError = error;
-          record.ms = Date.now() - t0;
+          tryRecord.ms = record.ms = Date.now() - t0;
+          tryRecord.error = record.error = shortError(error);
           record.ok = false;
-          record.error = shortError(error);
         }
       }
       throw lastError;

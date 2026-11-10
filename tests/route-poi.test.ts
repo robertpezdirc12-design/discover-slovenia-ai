@@ -75,6 +75,16 @@ describe('route-poi — Overpass poizvedba in razčlenjevanje', () => {
     expect(q).toContain('46.');
   });
 
+  test('kompaktna poizvedba: globalni [bbox:] + nwr, GET URL pod 600 znaki', () => {
+    const q = overpassPoiQuery(bboxForRoute(ROUTE, 3)!);
+    expect(q).toContain('[bbox:');
+    expect(q).toContain('nwr["tourism"');
+    expect(q).not.toContain('node[');
+    expect(q.length).toBeLessThan(400);
+    // Posredniki zavrnejo predolge ?data= URL-je (502/414), preden poizvedba steče.
+    expect(encodeURIComponent(q).length).toBeLessThan(600);
+  });
+
   test('kategorije iz OSM tagov', () => {
     expect(categorizePoi({ tourism: 'viewpoint' })).toBe('razgled');
     expect(categorizePoi({ historic: 'castle' })).toBe('kultura');

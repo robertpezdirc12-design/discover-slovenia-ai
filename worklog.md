@@ -1394,3 +1394,23 @@ Work Log:
 Stage Summary:
 - POLIRAJ-10 je zaključen: prerazporeditev postankov (drag&drop, tipkovnica, gumba gor/dol), deljenje prilagojenega reda v povezavah /pot/[id] ter tisk/PDF predogled so potisnjeni in v produkciji (preverba v POLIRAJ-11-PRODUKCIJA).
 - Naslednje prioritete ostajajo: RKD sloj kulturne dediščine, OJPP javni prevoz, širše SEO destination strani; rotacija žetonov še vedno priporočena.
+
+---
+Task ID: POLIRAJ-11-PRODUKCIJA (zaključek POLIRAJ-11)
+Datum: 2026-11-10
+Agent: ZCode (main session)
+Task: produkcijska preverba deljene poti + odprava 500
+
+Work Log:
+- PREVERBA JE ODKRILA PRAVI PRODUKCIJSKI HROŠČ: POST /api/pot/share je v produkciji vračal 500 (»Deljenje trenutno ni na voljo«). Korenski vzrok: shema je SQLite z lokalno datoteko (prisma/db/custom.db), Vercel serverless pa nima provisionirane baze → db.sharedTrip.create vedno odpove. Funkcija »Deli pot« na produkciji NI nikoli delovala (prejšnje seje so jo preverjale le lokalno).
+- REŠITEV — STATELESS REZERVA (brez infrastrukture, brez skrivnosti): src/lib/share-trip.ts dobi encodeStatelessTripCode/decodeStatelessTripCode (»x« + base64url sanitiziranega payloada); ruta najprej poskusi bazo (kratka 10-mestna koda), ob izpadu pade na stateless kodo; /pot/[id] razlikuje kratke kode (baza) od stateless (dekodiranje + ponovna sanitizacija). Uporabnik nič ne opazi — URL je le daljši.
+- PIECE: pace »sprosceno« ni bila veljavna vrednost v sanitizaciji (v payloadu je prišla kot null) — ni vplivalo na preverbo.
+- VRATA: bun test 269 pass / 0 fail / 2101 expect (5 novih stateless testov); tsc 0 v src; eslint 8 predhodnih, 0 novih; next build uspešen.
+- GIT: e90b096 (statseless rezerva) → push origin main.
+- PRODUKCIJA (po deployu): POST /api/pot/share s stopOrder → 200 { ok:true, id:"x…" }; GET /pot/x… → 200 z naslovom »Pot: Gorenjska · 3 dni · Odkrij Slovenijo« in OG description »narava — odpri pot na zemljevidu.«; / 200; /sitemap.xml 200; /api/pot/nearby 200.
+- GITLAB: remote ni več konfiguriran v .git/config (žetona nista shranjena); GitLab ostaja usklajen pri 4d7b215. Za nadaljnjo sinhronizacijo potrebuje uporabnik nov žeton ali pa odločitev o rotaciji.
+
+Stage Summary:
+- Deljena pot je v produkciji ZDRAVA tudi brez baze: ko baza ni na voljo, povezava nosi vso vsebino sama; ko bo baza kdaj provisionirana, se kratke kode samodejno vključijo brez spremembe kode.
+- POLIRAJ-11 zaključen: verifikacija, commit, push in produkcijska preverba POLIRAJ-10 + odprava odkritega produkcijskega 500.
+- Naslednje prioritete ostajajo: RKD sloj kulturne dediščine, OJPP javni prevoz, širše SEO destination strani; rotacija/dodajanje žetonov (GitLab) je uporabniška odločitev.

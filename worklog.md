@@ -1487,3 +1487,21 @@ Work Log:
 
 Stage Summary:
 - Vse prioritete iz raziskave so izvedene (SEO hitre zmage, delitev, dnevni trak, proračun, POI, GPX/tisk, prerazporeditev, RKD, OJPP, SEO destinacije). Priporočilo: rotacija GitLab žetona (bil je deljen v klepetu).
+
+---
+Task ID: POLIRAJ-16-GLOBOKA-POVEZAVA (»nadaljuj po svoji logiki profesionalno«)
+Datum: 2026-11-10
+Agent: ZCode (main session)
+Task: zaprtje zanke SEO strani → zemljevid + bogatejši rezultati iskanja
+
+Work Log:
+- MapSection sprejme destSlug: ob ?dest=slug mapa prileti do destinacije (flyTo) in odpre pojavno okno — plan marker, če je destinacija v trenutnem planu vodiča; sicer začasni marker z opisom/regijo. Čiščenje začasnega markerja ob spremembi/unmount.
+- Home: searchParams.dest → MapSection.
+- /kraj/[slug]: CTA »Načrtuj pot · {ime}« zdaj vodi na /?dest={slug}#zemljevid; dodan BreadcrumbList JSON-LD (Domov → Regija → Destinacija).
+- SMOKE (Playwright): oba scenarija (brez seje → začasni marker; s sejo gorenjska → plan marker) → popup z Bled ✓ lokalno in PRODUKCIJSKO ✓. /kraj/bled vsebuje BreadcrumbList ✓.
+- Vrata: tsc 0 v src, 301 testov / 0 fail, build OK. ESLint ostaja z 7 predhodnimi react-hooks opozorili v map-section (dolg iz prejšnjih sej; ni novih).
+- GIT: b4f9f42 → GitHub main + GitLab sandbox/guided-ux-line.
+
+Stage Summary:
+- SEO strani so zdaj funkcionalno zaprte v produkt: klik na destinacijo odpre zemljevid točno na njej. BreadcrumbList krepi bogate rezultate.
+- Naslednji možni koraki: čiščenje react-hooks lint dolga, večjezičnost (HR/ME/AL), združitev linij.

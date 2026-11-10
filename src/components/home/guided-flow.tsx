@@ -179,12 +179,6 @@ export function GuidedFlow() {
   }
 
   const focusCard = () => cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  const stepIndex =
-    step === 'welcome' || step === 'done'
-      ? step === 'done'
-        ? GUIDE_STEPS.length
-        : 0
-      : GUIDE_STEPS.indexOf(step) + 1;
 
   return (
     <section id="vodic" aria-labelledby="guide-heading" className="mx-auto w-full scroll-mt-20 max-w-6xl px-4 sm:px-6">
@@ -218,39 +212,6 @@ export function GuidedFlow() {
             </Button>
           </div>
 
-          {/* Koraki — samo vizualni napredek; logika ostane ista */}
-          <ol className="flex flex-wrap gap-1.5" aria-label="Koraki vodiča">
-            {GUIDE_STEPS.map((s, i) => {
-              const done = state ? isStepAnswered(state, s) : false;
-              const current = step === s;
-              return (
-                <li key={s}>
-                  <button
-                    type="button"
-                    onClick={() => enterStep(s)}
-                    className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors ${
-                      current
-                        ? 'border-primary/40 bg-primary/10 font-medium text-primary'
-                        : done
-                          ? 'border-primary/20 bg-primary/5 text-foreground'
-                          : 'border-transparent bg-muted/70 text-muted-foreground hover:bg-muted'
-                    }`}
-                    aria-current={current ? 'step' : undefined}
-                  >
-                    {done ? <Check className="size-3" aria-hidden /> : <span className="tabular-nums opacity-70">{i + 1}</span>}
-                    {STEP_LABELS[s]}
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
-
-          <div className="flex items-center gap-3">
-            <Progress value={progress} className="h-1.5 flex-1" aria-label={`Napredek: ${progress} %`} />
-            <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-              {stepIndex}/{GUIDE_STEPS.length}
-            </span>
-          </div>
         </CardHeader>
 
         <CardContent>

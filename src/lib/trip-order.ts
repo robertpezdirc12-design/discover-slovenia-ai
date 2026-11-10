@@ -165,8 +165,10 @@ export function withRegionStopOrder(
   return keys.length > 0 ? serializeTripOrderMap(map) : null;
 }
 
-/** Stabilen ključ poti: regija + dejanski vrstni red (OSRM/POI se morata preračunati). */
+/** Stabilen ključ poti: regija (če obstaja) + dejanski vrstni red
+ *  (OSRM/POI se morata preračunati). Deluje tudi brez regije
+ *  (pot, zgrajena iz »Dodaj v pot«/Start Anywhere). */
 export function stopRouteKey(region: string | null, stops: readonly NamedStop[]): string | null {
-  if (!region) return null;
-  return `${region}:${stops.map((s) => s.name).join('>')}`;
+  if (!stops || stops.length === 0) return null;
+  return `${region ?? 'pot'}:${stops.map((s) => s.name).join('>')}`;
 }

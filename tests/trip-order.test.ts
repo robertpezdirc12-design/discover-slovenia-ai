@@ -204,8 +204,13 @@ describe('trip-order — localStorage zapis po regijah', () => {
 });
 
 describe('trip-order — stopRouteKey', () => {
-  test('brez regije → null', () => {
-    expect(stopRouteKey(null, STOPS)).toBeNull();
+  test('brez regije → ključ »pot:…« (pot iz »Dodaj v pot«)', () => {
+    expect(stopRouteKey(null, STOPS)).toMatch(/^pot:/);
+  });
+
+  test('brez postankov → null', () => {
+    expect(stopRouteKey('gorenjska', [])).toBeNull();
+    expect(stopRouteKey(null, [])).toBeNull();
   });
 
   test('vključuje regijo IN vrstni red (preureditev sproži nov OSRM/POI izračun)', () => {

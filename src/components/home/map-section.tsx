@@ -434,9 +434,8 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
   // (Faza E-lite) + uvoženi kraji. Dedupe po imenu; vrstni red: glavna,
   // nato dodatne, nato uvoženi kraji.
   const basePlan = useMemo<readonly TripStop[] | null>(() => {
-    if (!guideRegion) return null;
     const regionIds: readonly GuideRegionId[] = [
-      guideRegion.id,
+      ...(guideRegion ? [guideRegion.id] : []),
       ...(guide?.extraRegions ?? []),
     ];
     const seen = new Set<string>();
@@ -453,8 +452,14 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
       seen.add(stop.name);
       out.push(stop);
     }
-    return out;
-  }, [guideRegion, guide?.extraRegions, customStops]);
+    // »Dodaj v pot« (destinacije, POI, RKD, rezerve) — so del poti.
+    for (const p of guide?.savedPois ?? []) {
+      if (seen.has(p.name)) continue;
+      seen.add(p.name);
+      out.push({ name: p.name, note: p.note || p.category || 'Zanimivost', lat: p.lat, lng: p.lng });
+    }
+    return out.length > 0 ? out : null;
+  }, [guideRegion, guide?.extraRegions, guide?.savedPois, customStops]);
 
   // Uporabnikov vrstni red (localStorage, po regijah) je EDINI vir reda.
   // `plan` je iz njega izpeljan — zato OSRM pot, GPX, dnevni trak, proračun,
@@ -1270,7 +1275,8 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
     // vsaka sprememba poti/navigacije počisti prejšnjo linijo
     if (routeLayerRef.current) (routeLayerRef.current as L.Polyline).remove();
     routeLayerRef.current = null;
-    if (!navActive || !plan || !routeKey) return;
+    // Pot se NARIŠE vedno, ko imamo ≥2 postanki (brez čakanja na navigacijo).
+    if (!plan || plan.length < 2 || !routeKey) return;
 
     const stopsParam = plan.map((s) => `${s.lat},${s.lng}`).join(';');
     const controller = new AbortController();
@@ -1308,7 +1314,7 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
         drawStraight();
       });
     return () => controller.abort();
-  }, [routeKey, navActive, mapReady]);
+  }, [routeKey, plan, mapReady]);
 
   // čiščenje plana ob odstranitvi mape
   useEffect(() => {
@@ -2485,6 +2491,24 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+
+        {/* »VODI ME« — trajno viden, ko pot obstaja (≥2 postanki). */}
+        {mapReady && plan && plan.length >= 2 && !navActive && (
+          <div className="absolute bottom-3 left-3 z-20">
+            <Button
+              size="sm"
+              className="h-11 shadow-lg sm:h-8"
+              onClick={() => {
+                setNavIndex(0);
+                gotoStop(0);
+              }}
+              aria-label="Začni navigacijo po poti"
+            >
+              <Navigation className="size-4" aria-hidden />
+              Vodi me
+            </Button>
           </div>
         )}
 

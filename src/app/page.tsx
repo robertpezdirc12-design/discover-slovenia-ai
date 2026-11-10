@@ -69,7 +69,7 @@ export default async function Home({
       <main className="flex-1">
         <HeroSection variant={variant} microEvent={microEvent} />
 
-        <div className="mt-10 space-y-10 pb-12">
+        <div className="space-y-10 pb-16 pt-6 sm:space-y-12 sm:pt-8">
           {/* VODENI TOK (Komoot onboarding): vpraša le enkrat, odgovore si zapomni,
               vsak korak izreče naslednji predlog (besedilo + glas). */}
           <GuidedFlow />
@@ -87,11 +87,18 @@ export default async function Home({
       </main>
 
       {/* Lepljiva noga: pritisnjena na dno na kratkih straneh, odmaknjena na dolgih */}
-      <footer className="mt-auto border-t bg-muted/40 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 text-sm text-muted-foreground sm:flex-row sm:px-6">
-          <p>Discover Slovenia AI — potovanje po Sloveniji in Balkanu</p>
+      <footer className="mt-auto border-t border-border/80 bg-card/60 py-8 pb-[max(2rem,env(safe-area-inset-bottom))] backdrop-blur-sm">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 text-sm text-muted-foreground sm:flex-row sm:px-6">
+          <p className="font-display text-foreground/80">
+            Discover Slovenia <span className="text-primary">AI</span>
+            <span className="ml-2 font-sans text-muted-foreground">— potovanje po Sloveniji in Balkanu</span>
+          </p>
           <p>
-            Zemljevid &copy; <a className="underline underline-offset-2" href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> sodelavci
+            Zemljevid &copy;{' '}
+            <a className="underline underline-offset-2 hover:text-foreground" href="https://www.openstreetmap.org/copyright">
+              OpenStreetMap
+            </a>{' '}
+            sodelavci
           </p>
         </div>
       </footer>

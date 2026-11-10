@@ -27,7 +27,7 @@ export function SessionToggle({ loggedIn }: { loggedIn: boolean }) {
     <Button
       variant={loggedIn ? 'outline' : 'default'}
       size="sm"
-      className="h-11 sm:h-8"
+      className="h-11 rounded-lg sm:h-9"
       onClick={toggle}
       disabled={pending}
       aria-label={loggedIn ? 'Odjava (demo)' : 'Prijava (demo)'}

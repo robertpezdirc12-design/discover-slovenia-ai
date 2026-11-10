@@ -31,11 +31,11 @@ export async function PersonalHomeSection({ name }: { name: string }) {
 
   return (
     <section id="osebno" aria-labelledby="personal-heading" className="mx-auto w-full max-w-6xl scroll-mt-20 px-4 sm:px-6">
-      <div className="rounded-xl border bg-card">
+      <div className="rounded-2xl border border-primary/15 bg-card/95 shadow-sm backdrop-blur-sm">
         <div className="p-6">
           <div className="flex h-7 items-center gap-2">
-            <Sparkles className="size-5 text-emerald-600" aria-hidden />
-            <h2 id="personal-heading" className="truncate text-lg font-semibold tracking-tight">
+            <Sparkles className="size-5 text-primary" aria-hidden />
+            <h2 id="personal-heading" className="font-display truncate text-lg font-semibold tracking-tight">
               Dobrodošli nazaj, {name}!
             </h2>
             <Badge variant="secondary" className="ml-auto shrink-0">
@@ -49,13 +49,13 @@ export async function PersonalHomeSection({ name }: { name: string }) {
 
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
             {suggestions.map((s) => (
-              <Card key={s.name} className="h-[140px]">
+              <Card key={s.name} className="h-[140px] rounded-xl border-border/80 shadow-none transition-colors hover:border-primary/25">
                 <CardContent className="flex h-full flex-col gap-2 p-4">
                   <div className="flex items-center justify-between">
-                    <span className="flex size-8 items-center justify-center rounded-lg bg-emerald-600/10 text-emerald-700">
+                    <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                       <s.icon className="size-4" aria-hidden />
                     </span>
-                    <Badge className="bg-emerald-600 hover:bg-emerald-600">{s.match} ujemanje</Badge>
+                    <Badge className="bg-primary hover:bg-primary">{s.match} ujemanje</Badge>
                   </div>
                   <p className="font-medium leading-tight">{s.name}</p>
                   <p className="text-sm text-muted-foreground">{s.note}</p>
@@ -73,7 +73,7 @@ export async function PersonalHomeSection({ name }: { name: string }) {
 export function PersonalHomeSkeleton() {
   return (
     <section aria-hidden className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-      <div className="rounded-xl border bg-card">
+      <div className="rounded-2xl border border-primary/15 bg-card/95 shadow-sm">
         <div className="p-6">
           <div className="flex h-7 items-center gap-2">
             <Skeleton className="size-5 rounded-md" />

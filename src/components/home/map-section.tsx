@@ -892,57 +892,63 @@ export function MapSection() {
       </h2>
 
       {/* Lepljiv preklop — leži NAD izolirano mapo (z-30 > kontekst z-0) */}
-      <div className="sticky top-14 z-30 -mx-2 mt-6 mb-4 rounded-xl border bg-background/90 px-3 py-2.5 shadow-sm backdrop-blur">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <MapIcon className="size-4 text-emerald-600" aria-hidden />
-            <Label htmlFor="view-toggle" className="text-sm font-medium">
-              Zemljevid / seznam
-            </Label>
-          </div>
-          {/* višina na točko — izrečena tudi bralcem zaslona (aria-live) */}
-          <span aria-live="polite" className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
-            {elevation.status === 'loading' && (
-              <>
-                <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                Višina …
-              </>
-            )}
-            {elevation.status === 'ok' && (
-              <>
-                <Mountain className="size-3.5 text-stone-600" aria-hidden />
-                {formatElevation(elevation.meters)}
-                <span className="hidden md:inline">· {elevation.label}</span>
-              </>
-            )}
-            {elevation.status === 'error' && (
-              <>
-                <Mountain className="size-3.5 text-stone-400" aria-hidden />
-                višina ni na voljo
-              </>
-            )}
-          </span>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="hidden sm:inline-flex">
-              {mode === 'map' ? 'Zemljevid' : 'Seznam'} · CLS 0
-            </Badge>
-            <div className="flex items-center gap-1.5">
-              <Mountain className="size-3.5 text-stone-600" aria-hidden />
-              <Label htmlFor="lidar-toggle" className="text-xs text-muted-foreground">
-                LiDAR relief
-              </Label>
-              <Switch
-                id="lidar-toggle"
-                checked={relief}
-                onCheckedChange={setLidarPref}
-                aria-label={relief ? 'Izklopi LiDAR relief (ARSO)' : 'Vklopi LiDAR relief (ARSO, CC BY 4.0)'}
-              />
+      <div className="sticky top-14 z-30 -mx-2 mb-3 rounded-2xl border border-border/80 bg-card/90 px-3 py-2.5 shadow-sm backdrop-blur-md">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="segmented" role="group" aria-label="Pogled zemljevida">
+              <button
+                type="button"
+                id="view-toggle"
+                data-active={mode === 'map'}
+                aria-pressed={mode === 'map'}
+                onClick={() => setMode('map')}
+              >
+                <MapIcon className="mr-1 inline size-3.5 align-[-2px]" aria-hidden />
+                Zemljevid
+              </button>
+              <button
+                type="button"
+                data-active={mode === 'list'}
+                aria-pressed={mode === 'list'}
+                onClick={() => setMode('list')}
+              >
+                <List className="mr-1 inline size-3.5 align-[-2px]" aria-hidden />
+                Seznam
+              </button>
             </div>
+            {/* višina na točko — izrečena tudi bralcem zaslona (aria-live) */}
+            <span aria-live="polite" className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+              {elevation.status === 'loading' && (
+                <>
+                  <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                  Višina …
+                </>
+              )}
+              {elevation.status === 'ok' && (
+                <>
+                  <Mountain className="size-3.5 text-stone-600" aria-hidden />
+                  {formatElevation(elevation.meters)}
+                  <span className="hidden md:inline">· {elevation.label}</span>
+                </>
+              )}
+              {elevation.status === 'error' && (
+                <>
+                  <Mountain className="size-3.5 text-stone-400" aria-hidden />
+                  višina ni na voljo
+                </>
+              )}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-muted/40 px-2.5 py-1">
+            <Mountain className="size-3.5 text-stone-600" aria-hidden />
+            <Label htmlFor="lidar-toggle" className="text-xs text-muted-foreground">
+              LiDAR relief
+            </Label>
             <Switch
-              id="view-toggle"
-              checked={mode === 'map'}
-              onCheckedChange={(v) => setMode(v ? 'map' : 'list')}
-              aria-label={mode === 'map' ? 'Preklopi na seznam' : 'Preklopi na zemljevid'}
+              id="lidar-toggle"
+              checked={relief}
+              onCheckedChange={setLidarPref}
+              aria-label={relief ? 'Izklopi LiDAR relief (ARSO)' : 'Vklopi LiDAR relief (ARSO, CC BY 4.0)'}
             />
           </div>
         </div>
@@ -950,27 +956,27 @@ export function MapSection() {
 
       {/* PRENOČIŠČA — iskalna vrstica: aplikacija VODI (vzorci + izrečeno stanje).
           Klik na vzorec = en klik do zadetkov; dela povsod (Skopje, Zagreb …). */}
-      <div className="mt-4 rounded-xl border bg-background/90 px-3 py-2.5 shadow-sm">
+      <div className="mt-3 rounded-2xl border border-border/80 bg-card/90 px-3.5 py-3 shadow-sm backdrop-blur-sm">
         <form
-          className="flex flex-col gap-2 sm:flex-row"
+          className="flex flex-col gap-2.5 sm:flex-row sm:items-center"
           onSubmit={(e) => {
             e.preventDefault();
             runStaySearch(stayQuery);
           }}
         >
           <div className="flex flex-1 items-center gap-2">
-            <BedDouble className="size-4 shrink-0 text-amber-600" aria-hidden />
+            <BedDouble className="size-4 shrink-0 text-amber-700" aria-hidden />
             <Input
               id="stay-search-input"
               value={stayQuery}
               onChange={(e) => setStayQuery(e.target.value)}
               placeholder="Išči prenočišča — npr. Skopje, Bled, Zagreb"
               aria-label="Iskanje prenočišč po imenu kraja"
-              className="h-11 sm:h-9"
+              className="h-11 border-border/80 bg-background/80 sm:h-10"
               autoComplete="off"
             />
           </div>
-          <Button type="submit" size="sm" className="h-11 sm:h-9" disabled={staySearch.status === 'loading'}>
+          <Button type="submit" size="sm" className="h-11 sm:h-10" disabled={staySearch.status === 'loading'}>
             {staySearch.status === 'loading' ? (
               <Loader2 className="size-4 animate-spin" aria-hidden />
             ) : (
@@ -979,14 +985,14 @@ export function MapSection() {
             Išči prenočišča
           </Button>
         </form>
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
           <span className="text-xs text-muted-foreground">Ne veš, kje? Poskusi:</span>
           {['Skopje', 'Bled', 'Zagreb'].map((c) => (
             <button
               key={c}
               type="button"
               onClick={() => runStaySearch(c)}
-              className="rounded-full border px-2.5 py-0.5 text-xs transition-colors hover:bg-muted"
+              className="rounded-full border border-border/80 bg-background/70 px-2.5 py-1 text-xs transition-colors hover:border-primary/30 hover:bg-primary/5"
               aria-label={`Išči prenočišča v ${c}`}
             >
               {c}
@@ -1006,7 +1012,7 @@ export function MapSection() {
             Strežniški filter (Overpass + Photon dobita samo izbrane vrste,
             zato meja 24 zadetkov ne pogrešne izbranih). Klik na aktivni
             čip vrne nazaj na vse vrste. */}
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t pt-2">
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5 border-t border-border/70 pt-2.5">
           <span className="text-xs text-muted-foreground">Vrsta:</span>
           <button
             type="button"
@@ -1014,8 +1020,8 @@ export function MapSection() {
             onClick={() => clickStayKind('all')}
             className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1 text-xs transition-colors sm:min-h-8 sm:px-2.5 sm:py-0.5 ${
               stayKinds.length === STAY_KINDS.length
-                ? 'border-emerald-600/40 bg-emerald-600/10 text-emerald-800'
-                : 'text-muted-foreground hover:bg-muted'
+                ? 'border-primary/40 bg-primary/10 text-primary'
+                : 'border-transparent text-muted-foreground hover:bg-muted'
             }`}
           >
             Vse
@@ -1029,7 +1035,9 @@ export function MapSection() {
                 aria-pressed={active}
                 onClick={() => clickStayKind(k)}
                 className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1 text-xs transition-colors sm:min-h-8 sm:px-2.5 sm:py-0.5 ${
-                  active ? 'border-emerald-600/40 bg-emerald-600/10 text-emerald-800' : 'text-muted-foreground hover:bg-muted'
+                  active
+                    ? 'border-primary/40 bg-primary/10 text-primary'
+                    : 'border-transparent text-muted-foreground hover:bg-muted'
                 }`}
               >
                 {STAY_KIND_LABELS[k]}
@@ -1040,7 +1048,7 @@ export function MapSection() {
       </div>
 
       {/* Enoten vir višine: skeleton, mapa in seznam so absolutni znotraj te škatle */}
-      <div className={`relative w-full overflow-hidden rounded-xl border bg-muted ${MAP_H}`}>
+      <div className={`relative mt-3 w-full overflow-hidden rounded-2xl border border-border/80 bg-muted shadow-sm ${MAP_H}`}>
         {/* Izolacija — vse Leaflet z-index pane ostanejo tu znotraj */}
         <div className={`absolute inset-0 z-0 isolate ${mode === 'map' ? '' : 'pointer-events-none opacity-0'}`}>
           <div ref={containerRef} className="h-full w-full" aria-label="Interaktivni zemljevid Slovenije" role="application" />
@@ -1055,8 +1063,8 @@ export function MapSection() {
             aria-label="Tvoja pot — postanke in prenočišča"
             className="absolute left-3 top-3 z-20 w-[min(280px,calc(100%-1.5rem))] overflow-hidden rounded-xl border bg-background/95 shadow-lg backdrop-blur"
           >
-            <div className="flex items-center gap-2 border-b bg-emerald-600/5 px-3 py-2">
-              <Route className="size-4 shrink-0 text-emerald-600" aria-hidden />
+            <div className="flex items-center gap-2 border-b border-primary/10 bg-primary/5 px-3 py-2">
+              <Route className="size-4 shrink-0 text-primary" aria-hidden />
               <p className="min-w-0 truncate text-sm font-semibold">Tvoja pot</p>
               <Button
                 size="icon"
@@ -1447,7 +1455,7 @@ export function MapSection() {
                     aria-pressed={active}
                     onClick={() => toggleTourCat(c.id)}
                     className={`flex min-h-11 items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors sm:min-h-8 sm:px-2.5 sm:py-0.5 ${
-                      active ? 'border-emerald-600/40 bg-emerald-600/10 text-emerald-800' : 'text-muted-foreground hover:bg-muted'
+                      active ? 'border-primary/40 bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted'
                     }`}
                   >
                     <span aria-hidden className="size-2 rounded-full" style={{ backgroundColor: TOUR_COLORS[c.id] }} />

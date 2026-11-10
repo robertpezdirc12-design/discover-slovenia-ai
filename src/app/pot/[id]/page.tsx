@@ -83,11 +83,11 @@ export default async function SharedTripPage({
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col justify-center px-4 py-10 sm:px-6">
       <Card className="overflow-hidden">
-        <div className="border-b bg-emerald-600/10 px-6 py-5">
-          <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">
+        <div className="border-b border-primary/15 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent px-6 py-5">
+          <p className="text-xs font-medium tracking-wide text-primary">
             Deljena pot
           </p>
-          <h1 className="mt-1 text-xl font-semibold tracking-tight sm:text-2xl">
+          <h1 className="font-display mt-1 text-xl font-semibold tracking-tight sm:text-2xl">
             Moja pot po Sloveniji — {tripHeadline(state)}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">

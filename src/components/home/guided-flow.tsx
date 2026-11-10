@@ -149,8 +149,8 @@ export function GuidedFlow() {
   if (dismissed && state) {
     return (
       <section aria-labelledby="guide-mini" className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-muted/40 px-4 py-3">
-          <Sparkles className="size-4 text-emerald-600" aria-hidden />
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-primary/15 bg-card/90 px-4 py-3.5 shadow-sm backdrop-blur-sm">
+          <Sparkles className="size-4 text-primary" aria-hidden />
           <p id="guide-mini" className="text-sm font-medium">
             Tvoji odgovori so shranjeni:
           </p>
@@ -176,20 +176,36 @@ export function GuidedFlow() {
   }
 
   const focusCard = () => cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  const stepIndex =
+    step === 'welcome' || step === 'done'
+      ? step === 'done'
+        ? GUIDE_STEPS.length
+        : 0
+      : GUIDE_STEPS.indexOf(step) + 1;
 
   return (
     <section id="vodic" aria-labelledby="guide-heading" className="mx-auto w-full scroll-mt-20 max-w-6xl px-4 sm:px-6">
-      <Card ref={cardRef} className="border-emerald-600/20 bg-gradient-to-b from-emerald-600/5 to-transparent">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between gap-3">
-            <CardTitle id="guide-heading" className="flex items-center gap-2 text-lg">
-              <Sparkles className="size-5 text-emerald-600" aria-hidden />
-              {complete ? 'Tvoj vodič' : 'Vprašam le enkrat — ostalo si zapomnim'}
-            </CardTitle>
+      <Card
+        ref={cardRef}
+        className="overflow-hidden rounded-2xl border-primary/15 bg-card/95 shadow-sm shadow-emerald-950/5 backdrop-blur-sm"
+      >
+        <CardHeader className="space-y-3 border-b border-primary/10 bg-gradient-to-br from-primary/[0.07] via-transparent to-transparent pb-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 space-y-1">
+              <CardTitle id="guide-heading" className="font-display flex items-center gap-2 text-xl font-semibold tracking-tight">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Sparkles className="size-4" aria-hidden />
+                </span>
+                {complete ? 'Tvoj vodič' : 'Vprašam le enkrat — ostalo si zapomnim'}
+              </CardTitle>
+              <p aria-live="polite" className="text-sm leading-relaxed text-muted-foreground">
+                {suggestion.text}
+              </p>
+            </div>
             <Button
               size="icon"
               variant="ghost"
-              className="size-11 sm:size-9"
+              className="size-11 shrink-0 sm:size-9"
               onClick={toggleVoice}
               aria-pressed={state?.voiceEnabled ?? false}
               aria-label={state?.voiceEnabled ? 'Izklopi govorne nasvete' : 'Vklopi govorne nasvete (glasovno vodenje)'}
@@ -198,11 +214,40 @@ export function GuidedFlow() {
               {state?.voiceEnabled ? <Ear className="size-4" aria-hidden /> : <EarOff className="size-4" aria-hidden />}
             </Button>
           </div>
-          {/* naslednji korak — vedno izrečen (besedilo), ob uporabi tudi glasovno */}
-          <div aria-live="polite" className="text-sm text-muted-foreground">
-            {suggestion.text}
+
+          {/* Koraki — samo vizualni napredek; logika ostane ista */}
+          <ol className="flex flex-wrap gap-1.5" aria-label="Koraki vodiča">
+            {GUIDE_STEPS.map((s, i) => {
+              const done = state ? isStepAnswered(state, s) : false;
+              const current = step === s;
+              return (
+                <li key={s}>
+                  <button
+                    type="button"
+                    onClick={() => enterStep(s)}
+                    className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors ${
+                      current
+                        ? 'border-primary/40 bg-primary/10 font-medium text-primary'
+                        : done
+                          ? 'border-primary/20 bg-primary/5 text-foreground'
+                          : 'border-transparent bg-muted/70 text-muted-foreground hover:bg-muted'
+                    }`}
+                    aria-current={current ? 'step' : undefined}
+                  >
+                    {done ? <Check className="size-3" aria-hidden /> : <span className="tabular-nums opacity-70">{i + 1}</span>}
+                    {STEP_LABELS[s]}
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+
+          <div className="flex items-center gap-3">
+            <Progress value={progress} className="h-1.5 flex-1" aria-label={`Napredek: ${progress} %`} />
+            <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+              {stepIndex}/{GUIDE_STEPS.length}
+            </span>
           </div>
-          <Progress value={progress} className="mt-2 h-1.5" aria-label={`Napredek: ${progress} %`} />
         </CardHeader>
 
         <CardContent>
@@ -250,7 +295,7 @@ export function GuidedFlow() {
                       key={opt}
                       type="button"
                       size="sm"
-                      className="min-h-11 sm:min-h-8"
+                      className={`min-h-11 rounded-full sm:min-h-8 ${active ? 'shadow-sm' : ''}`}
                       variant={active ? 'default' : 'outline'}
                       aria-pressed={active}
                       onClick={() =>
@@ -293,10 +338,15 @@ export function GuidedFlow() {
                 className="grid gap-2 sm:grid-cols-2"
               >
                 {GUIDE_REGIONS.map((r) => (
-                  <div key={r.id} className="flex items-center gap-2 rounded-lg border px-3 py-2">
+                  <div
+                    key={r.id}
+                    className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 transition-colors ${
+                      draftRegion === r.id ? 'border-primary/40 bg-primary/5' : 'hover:bg-muted/50'
+                    }`}
+                  >
                     <RadioGroupItem value={r.id} id={`reg-${r.id}`} />
                     <Label htmlFor={`reg-${r.id}`} className="cursor-pointer text-sm font-normal">
-                      <MapPin className="mr-1 inline size-3.5 text-emerald-600" aria-hidden />
+                      <MapPin className="mr-1 inline size-3.5 text-primary" aria-hidden />
                       {r.label}
                     </Label>
                   </div>

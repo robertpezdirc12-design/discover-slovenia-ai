@@ -88,6 +88,7 @@ import {
   localCurrencyNote,
 } from '@/lib/currency';
 import { ImportPlacesDialog } from '@/components/home/import-places-dialog';
+import { PackingDialog } from '@/components/home/packing-dialog';
 import { CUSTOM_STOPS_EVENT, CUSTOM_STOPS_KEY, parseCustomStops } from '@/lib/import-places';
 import type { OsrmLegInfo } from '@/lib/osrm-route';
 import { SHOW_TRIP_EVENT, speak } from '@/lib/speech';
@@ -2246,6 +2247,15 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
                       <ImportPlacesDialog
                         existingNames={new Set((plan ?? []).map((stop) => stop.name.toLowerCase()))}
                       />
+                      {/* PAKIRNI SEZNAM — predloge po tipu potovanja. */}
+                      {planKey && (
+                        <PackingDialog
+                          key={planKey}
+                          routeKey={planKey}
+                          regionId={planKey}
+                          interests={guide?.interests ?? []}
+                        />
+                      )}
                       {/* GPX = pot za offline (navigacija/OsmAnd/Komoot). */}
                       <ExportTripButton points={exportPoints} className="mt-1.5" />
                     </div>

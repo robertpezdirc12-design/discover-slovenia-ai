@@ -1637,3 +1637,19 @@ Stage Summary:
   dodamo v pot — brez AI modela, povsem s skriptami (Photon + OSRM).
 - Preostali skriptni ekvivalenti iz raziskave: packing checkliste,
   delitev stroškov po postavkah, offline karte (PWA).
+
+---
+Task ID: POLIRAJ-24-RAZISKOVANJE-NAJLJEVIDA (P0)
+Datum: 2026-11-10
+Agent: ZCode (main session)
+Task: uresničiti uporabnikov predlog »zemljevid kot trgovina« na podlagi raziskave
+
+Work Log:
+- RAZISKAVA UX (subagent): točen vzorec dveh spustnikov pri konkurenci NE obstaja; najboljša praksa = čipi/toggle (Google Maps, Tripomatic, Roadtrippers) z omejenim številom kategorij + kontekst »okoli izbranega« z razdaljami (Booking/Airbnb Trips 2026) + en klik »add to trip«. Izogibati se: filtrom, ki ne preživijo premika zemljevida; prevelikemu številu kategorij.
+- IMPLEMENTIRANO (skriptno, brez AI):
+  • guide-store: savedPois: SavedPoi[] (sanitize, limit 30, addSavedPoi idempotentno); share payload vključuje savedPois;
+  • map-section: čipi »Razišči« (Vse/Prebivanje/Zanimivosti/Dediščina); ob izbrani točki (popupopen) vrsta »Okoli: {ime}« (Zanimivosti/Dediščina/Prenočišča); POI okoli točke iz /api/pot/nearby kot čipi z »+ Dodaj« (ključano stanje, brez setState v efektih);
+  • »+ Dodaj v pot« na pojavnih oknih POI in RKD; plošča prikaže shranjene zanimivosti (z ikono, kategorijo, virom).
+- TESTI: +2 (savedPois) → 329 pass / 0 fail / 3034 expect.
+- PRODUKCIJA: domača stran 200; share payload s savedPois 200.
+- GIT: d58c745 → GitHub main + GitLab sandbox/guided-ux-line.

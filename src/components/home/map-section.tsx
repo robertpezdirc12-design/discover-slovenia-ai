@@ -85,6 +85,8 @@ import {
   isNonEuro,
   localCurrencyNote,
 } from '@/lib/currency';
+import { ImportPlacesDialog } from '@/components/home/import-places-dialog';
+import { CUSTOM_STOPS_EVENT, CUSTOM_STOPS_KEY, parseCustomStops } from '@/lib/import-places';
 import type { OsrmLegInfo } from '@/lib/osrm-route';
 import { SHOW_TRIP_EVENT, speak } from '@/lib/speech';
 
@@ -276,8 +278,28 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
       ? (GUIDE_REGIONS.find((g) => g.id === guide.region) ?? null)
       : null;
   const planKey = guideRegion?.id ?? null;
+  // START ANYWHERE: lastno uvoženi kraji (localStorage, tako kot vrstni red).
+  const customStops = useSyncExternalStore(
+    (onChange) => {
+      window.addEventListener(CUSTOM_STOPS_EVENT, onChange);
+      window.addEventListener('storage', onChange);
+      return () => {
+        window.removeEventListener(CUSTOM_STOPS_EVENT, onChange);
+        window.removeEventListener('storage', onChange);
+      };
+    },
+    () => {
+      try {
+        return parseCustomStops(window.localStorage.getItem(CUSTOM_STOPS_KEY));
+      } catch {
+        return [] as readonly TripStop[];
+      }
+    },
+    () => [] as readonly TripStop[],
+  );
   // VEČDRŽAVNA POT: unija destinacij glavne regije + dodatnih regij
-  // (Faza E-lite). Dedupe po imenu; vrstni red: glavna, nato dodatne.
+  // (Faza E-lite) + uvoženi kraji. Dedupe po imenu; vrstni red: glavna,
+  // nato dodatne, nato uvoženi kraji.
   const basePlan = useMemo<readonly TripStop[] | null>(() => {
     if (!guideRegion) return null;
     const regionIds: readonly GuideRegionId[] = [
@@ -293,8 +315,13 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
         out.push(stop);
       }
     }
+    for (const stop of customStops) {
+      if (seen.has(stop.name)) continue;
+      seen.add(stop.name);
+      out.push(stop);
+    }
     return out;
-  }, [guideRegion, guide?.extraRegions]);
+  }, [guideRegion, guide?.extraRegions, customStops]);
 
   // Uporabnikov vrstni red (localStorage, po regijah) je EDINI vir reda.
   // `plan` je iz njega izpeljan — zato OSRM pot, GPX, dnevni trak, proračun,
@@ -1947,6 +1974,10 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
                       <ShareTripButton
                         state={guide}
                         stopOrder={isCustomOrder ? plan?.map((stop) => stop.name) : null}
+                      />
+                      {/* START ANYWHERE — uvoz krajev iz besedila (geokodiranje). */}
+                      <ImportPlacesDialog
+                        existingNames={new Set((plan ?? []).map((stop) => stop.name.toLowerCase()))}
                       />
                       {/* GPX = pot za offline (navigacija/OsmAnd/Komoot). */}
                       <ExportTripButton points={exportPoints} className="mt-1.5" />

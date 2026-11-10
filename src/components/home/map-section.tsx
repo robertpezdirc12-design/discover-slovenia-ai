@@ -41,6 +41,8 @@ import {
 import { escapeXml, type GpxPoint } from '@/lib/gpx-export';
 import { POI_CATEGORY_LABELS, poiDistanceLabel, type PoiCategory, type RoutePoi } from '@/lib/route-poi';
 import { CATALOG_ATTRIBUTION } from '@/lib/poi-catalog';
+import { clusterRkd, filterRkd, filterRkdInBounds, parseRkdData, type RkdDataset } from '@/lib/rkd';
+import { buildRkdLayer } from '@/lib/rkd-layer';
 import { tripPlanFor, type TripStop } from '@/lib/trip-plan';
 import {
   MAP_GUIDE_CATEGORIES,
@@ -292,6 +294,79 @@ export function MapSection() {
     mapRef.current?.flyTo([stop.lat, stop.lng], 11, { duration: 1.2 });
     planMarkersRef.current.get(stop.name)?.openPopup();
   };
+
+  // ————— RKD — Register kulturne dediščine (sloj): preklop v orodni vrstici,
+  // podatki se naložijo LENO ob prvem vklopu (31.107 enot, 7 MB / gzip 2 MB).
+  // Gručenje po mreži pri trenutnem zoomu — drobci se izrišejo kot števci,
+  // posamezne enote kot pike; klik na gručo približa. —————
+  const [rkdEnabled, setRkdEnabled] = useState(false);
+  const [rkdType, setRkdType] = useState<number | null>(null);
+  const [rkdData, setRkdData] = useState<RkdDataset | null>(null);
+  const rkdLayerRef = useRef<import('leaflet').LayerGroup | null>(null);
+  const rkdFetchRef = useRef<Promise<RkdDataset | null> | null>(null);
+
+  const enableRkd = (on: boolean) => {
+    setRkdEnabled(on);
+    if (!on || rkdData || rkdFetchRef.current) return;
+    rkdFetchRef.current = fetch('/data/rkd.json')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((raw) => parseRkdData(raw))
+      .finally(() => {
+        rkdFetchRef.current = null;
+      });
+  };
+
+  useEffect(() => {
+    if (!rkdEnabled || rkdData) return;
+    let alive = true;
+    const pending = rkdFetchRef.current ?? Promise.resolve(null);
+    pending.then((data) => {
+      if (alive && data) setRkdData(data);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [rkdEnabled, rkdData]);
+
+  const rkdFeatures = useMemo(
+    () => (rkdData ? filterRkd(rkdData.features, { type: rkdType }) : []),
+    [rkdData, rkdType],
+  );
+
+  // Sloj RKD — ob vklopu/podatkih/tipu ter ob premiku ali približavi.
+  useEffect(() => {
+    const L = LeafletRef.current;
+    const map = mapRef.current;
+    if (!L || !map || !mapReady || !rkdEnabled) return;
+    if (rkdFeatures.length === 0) return;
+    const render = () => {
+      if (rkdLayerRef.current) {
+        rkdLayerRef.current.remove();
+        rkdLayerRef.current = null;
+      }
+      // Gruči samo VIDNE značke — omejitev števila gruč je sicer odvrgla
+      // posamezne enote v korist velikih gruč izven pogleda.
+      const b = map.getBounds();
+      const visible = filterRkdInBounds(rkdFeatures, {
+        south: b.getSouth(),
+        west: b.getWest(),
+        east: b.getEast(),
+        north: b.getNorth(),
+      });
+      const clusters = clusterRkd(visible, map.getZoom());
+      rkdLayerRef.current = buildRkdLayer(L, clusters, {
+        typeLabels: rkdData?.typeLabels,
+        map,
+      }).addTo(map);
+    };
+    render();
+    map.on('zoomend moveend', render);
+    return () => {
+      map.off('zoomend moveend', render);
+      rkdLayerRef.current?.remove();
+      rkdLayerRef.current = null;
+    };
+  }, [mapReady, rkdEnabled, rkdFeatures, rkdData]);
 
   // ————— PRENOČIŠČA: iskanje → slike/cena → »Rezerviraj« (samodejno shrani) —————
   const [stayQuery, setStayQuery] = useState('');
@@ -1243,7 +1318,47 @@ export function MapSection() {
               aria-label={relief ? 'Izklopi LiDAR relief (ARSO)' : 'Vklopi LiDAR relief (ARSO, CC BY 4.0)'}
             />
           </div>
+          {/* RKD — Register kulturne dediščine: ločen sloj (LENO nalaganje), z izbiro tipa. */}
+          <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-muted/40 px-2.5 py-1">
+            <Landmark className="size-3.5 text-amber-800" aria-hidden />
+            <Label htmlFor="rkd-toggle" className="text-xs text-muted-foreground">
+              Kulturna dediščina
+            </Label>
+            <Switch
+              id="rkd-toggle"
+              checked={rkdEnabled}
+              onCheckedChange={enableRkd}
+              aria-label={
+                rkdEnabled
+                  ? 'Izklopi sloj kulturne dediščine (RKD)'
+                  : 'Vklopi sloj kulturne dediščine (RKD, OPSI CC BY 4.0)'
+              }
+            />
+            {rkdEnabled && (
+              <select
+                value={rkdType ?? -1}
+                onChange={(e) => setRkdType(e.target.value === '-1' ? null : Number(e.target.value))}
+                aria-label="Tip kulturne dediščine"
+                className="h-7 rounded-md border border-border/70 bg-background/80 px-1.5 text-xs text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <option value={-1}>Vsi tipi</option>
+                {(rkdData?.typeLabels ?? []).map((label, i) => (
+                  <option key={label} value={i}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            )}
+            {rkdEnabled && !rkdData && (
+              <Loader2 className="size-3.5 animate-spin text-muted-foreground" aria-label="Nalaganje RKD podatkov" />
+            )}
+          </div>
         </div>
+        {rkdEnabled && (
+          <p className="mt-1.5 text-[10px] leading-snug text-muted-foreground">
+            Register nepremične kulturne dediščine (RKD) — MOP/GURS, OPSI (CC BY 4.0). Zbira: podatki.gov.si. Klik na gručo približa pogled.
+          </p>
+        )}
       </div>
 
       {/* PRENOČIŠČA — iskalna vrstica: aplikacija VODI (vzorci + izrečeno stanje).

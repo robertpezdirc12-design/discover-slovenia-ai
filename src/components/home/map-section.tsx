@@ -1514,7 +1514,7 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
       const map = L.map(containerRef.current, {
         center: [46.12, 14.82],
         zoom: 8,
-        scrollWheelZoom: false,
+        scrollWheelZoom: true,
       });
       mapRef.current = map;
 

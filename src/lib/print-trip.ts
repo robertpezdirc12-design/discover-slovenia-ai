@@ -190,15 +190,15 @@ export function buildTripPrintHtml(input: TripPrintInput): string {
     .filter(Boolean)
     .join(' · ');
   const routeSection = days.length > 0
-    ? `<section class="section"><h2>Dnevni načrt</h2>${days.map(renderDay).join('')}</section>`
+    ? `<section class="section" id="sec-route"><h2>Dnevni načrt</h2>${days.map(renderDay).join('')}</section>`
     : stops.length > 0
-      ? `<section class="section"><h2>Postanki po vrstnem redu</h2><ol class="stops">${stops.map((stop, index) => renderStop(stop, index)).join('')}</ol></section>`
+      ? `<section class="section" id="sec-route"><h2>Postanki po vrstnem redu</h2><ol class="stops">${stops.map((stop, index) => renderStop(stop, index)).join('')}</ol></section>`
       : '<p class="empty">V načrtu še ni postankov.</p>';
   const staySection = stays.length > 0
-    ? `<section class="section"><h2>Rezervirana prenočišča</h2><ul class="stay-list">${stays.map(renderStay).join('')}</ul></section>`
+    ? `<section class="section" id="sec-stays"><h2>Rezervirana prenočišča</h2><ul class="stay-list">${stays.map(renderStay).join('')}</ul></section>`
     : '';
   const poiSection = pois.length > 0
-    ? `<section class="section"><h2>Zanimivosti ob poti</h2><ul class="poi-list">${pois.map(renderPoi).join('')}</ul></section>`
+    ? `<section class="section" id="sec-pois"><h2>Zanimivosti ob poti</h2><ul class="poi-list">${pois.map(renderPoi).join('')}</ul></section>`
     : '';
   const sources = new Set<string>();
   if (pois.some((poi) => poi.source === 'osm')) {
@@ -213,6 +213,19 @@ export function buildTripPrintHtml(input: TripPrintInput): string {
     : '';
   const dateLabel = escapeHtml(generatedAtLabel(input.generatedAt));
   const safeTitle = escapeHtml(title);
+
+  // KAZALO KNJIGE — poglavja, ki dejansko obstajajo.
+  const chapters: Array<[string, string]> = [];
+  if (days.length > 0 || stops.length > 0) chapters.push(['#sec-route', 'Dnevni načrt / postanki']);
+  if (stays.length > 0) chapters.push(['#sec-stays', 'Rezervirana prenočišča']);
+  if (input.budget.items.length > 0) chapters.push(['#sec-budget', 'Ocena proračuna']);
+  if (pois.length > 0) chapters.push(['#sec-pois', 'Zanimivosti ob poti']);
+  const tocHtml =
+    chapters.length > 0
+      ? `<nav class="toc" aria-label="Kazalo"><ul>${chapters
+          .map(([href, label]) => `<li><a href="${href}">${escapeHtml(label)}</a></li>`)
+          .join('')}</ul></nav>`
+      : '';
 
   return `<!doctype html>
 <html lang="sl">
@@ -233,6 +246,10 @@ export function buildTripPrintHtml(input: TripPrintInput): string {
     .subtitle, .generated { margin: 8px 0 0; color: #53675f; font-size: 10pt; }
     .generated { font-size: 9pt; }
     .section { margin-top: 24px; }
+    .toc { margin: 16px 0 4px; padding: 12px 14px; border: 1px solid #d8e6df; border-radius: 8px; background: #f4f9f6; }
+    .toc ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+    .toc a { color: #247251; text-decoration: none; font-size: 10.5pt; }
+    .toc a:hover { text-decoration: underline; }
     h2 { margin: 0 0 10px; padding-bottom: 6px; border-bottom: 1px solid #d8e6df; color: #204e3f; font-size: 15pt; }
     h3 { display: flex; justify-content: space-between; gap: 12px; margin: 18px 0 8px; color: #204e3f; font-size: 12pt; }
     .day-summary, .details, .fine-print, .sources, .empty { color: #53675f; font-size: 9.5pt; font-weight: 400; }
@@ -275,9 +292,10 @@ export function buildTripPrintHtml(input: TripPrintInput): string {
       <p class="subtitle">${subtitle}</p>
       <p class="generated">Pripravljeno ${dateLabel}</p>
     </header>
+    ${tocHtml}
     ${routeSection}
     ${staySection}
-    ${renderBudget(input.budget, input.localCurrencyNote)}
+    <div id="sec-budget">${renderBudget(input.budget, input.localCurrencyNote)}</div>
     ${poiSection}
     <footer>
       ${sourceSection}

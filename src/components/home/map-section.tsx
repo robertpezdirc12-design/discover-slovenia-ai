@@ -365,6 +365,8 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
   const [planPanel, setPlanPanel] = useState<{ key: string | null; dismissed: boolean }>(
     () => ({ key: null, dismissed: false }),
   );
+  /** Drseči predel plošče »Tvoja pot« (za kazalo). */
+  const planPanelScrollRef = useRef<HTMLDivElement | null>(null);
   const planDismissed = planPanel.key === planKey ? planPanel.dismissed : false;
   const setPlanDismissed = (value: boolean) => setPlanPanel({ key: planKey, dismissed: value });
   const planLayerRef = useRef<unknown>(null);
@@ -2088,10 +2090,40 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
                 </div>
               </div>
             )}
+            {/* KAZALO KNJIGE — hitro listanje po poglavjih poti. */}
+            {(plan?.length || reservedStays.length || guide?.savedPois?.length || budget.items.length) > 0 && (
+              <nav aria-label="Kazalo poti" className="flex flex-wrap gap-1 border-b border-border/60 px-1 pb-1.5 pt-1">
+                {(
+                  [
+                    ['sec-stops', 'Postanki'],
+                    ['sec-stays', 'Prenočišča'],
+                    ['sec-pois', 'Zanimivosti'],
+                    ['sec-budget', 'Proračun'],
+                  ] as const
+                ).map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      planPanelScrollRef.current?.querySelector(`#${id}`)?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start',
+                      });
+                    }}
+                    className="rounded-full border border-border/80 bg-card/70 px-2.5 py-1 text-[11px] text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </nav>
+            )}
             {/* Ko so predlogi odprti, plošča dobi več prostora — seznam ni odrezan. */}
             {/* Na mobilnem je plošča nižja, da plavajoči gumb »Vklopi vodiča«
                 ne prekriva zadnjega predloga; seznam ostane drseč. */}
-            <div className={`${currentPoiState.status === 'ok' ? 'max-h-[280px] sm:max-h-[340px]' : 'max-h-[220px]'} overflow-y-auto nice-scroll p-2 pb-8 sm:pb-2`}>
+            <div
+              ref={planPanelScrollRef}
+              className={`${currentPoiState.status === 'ok' ? 'max-h-[280px] sm:max-h-[340px]' : 'max-h-[220px]'} overflow-y-auto nice-scroll p-2 pb-8 sm:pb-2`}
+            >
               {navIndex === null ? (
                 <>
                   {guideRegion && (
@@ -2113,20 +2145,22 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
                       {/* POVLECI IN SPUSTI: en sam sortable seznam je vir resnice
                           za vso pot. Dan in čas vožnje sta prilepljena postanki,
                           da preureditev ne trči ob meje dni. */}
-                      <SortableStops
-                        stops={plan}
-                        dayByStop={dayByStop}
-                        driveByStop={driveByStop}
-                        onFocus={focusStop}
-                        onOrderChange={saveStopOrder}
-                        onReset={() => saveStopOrder(null)}
-                        isCustomOrder={isCustomOrder}
-                      />
+                      <div id="sec-stops">
+                        <SortableStops
+                          stops={plan}
+                          dayByStop={dayByStop}
+                          driveByStop={driveByStop}
+                          onFocus={focusStop}
+                          onOrderChange={saveStopOrder}
+                          onReset={() => saveStopOrder(null)}
+                          isCustomOrder={isCustomOrder}
+                        />
+                      </div>
                     </>
                   )}
                   {/* SHRANJENE ZANIMIVOSTI/DEDIŠČINA — »Dodaj v pot« (POI/RKD). */}
                   {(guide?.savedPois?.length ?? 0) > 0 && (
-                    <div className="mt-2 border-t pt-2">
+                    <div id="sec-pois" className="mt-2 border-t pt-2">
                       <p className="px-1 pb-1 text-xs font-medium text-muted-foreground">
                         Zanimivosti v tvoji poti ({guide!.savedPois.length})
                       </p>
@@ -2157,7 +2191,7 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
                   )}
                   {/* REZERVIRANA PRENOČIŠČA — del »Moje poti« (trajno shranjeno). */}
                   {reservedStays.length > 0 && (
-                    <div className="mt-2 border-t pt-2">
+                    <div id="sec-stays" className="mt-2 border-t pt-2">
                       <p className="px-1 pb-1 text-xs font-medium text-muted-foreground">Tvoja rezervirana prenočišča</p>
                       <div className="space-y-1">
                         {reservedStays.map((s) => (
@@ -2189,7 +2223,7 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
                       sopotnike (Wanderlogov vzorec). Cene so indikativne in
                       prenočišča brez cene so iz seštevka izrecno izvzeta. */}
                   {reservedStays.length > 0 && (
-                    <div className="mt-2 border-t px-1 pt-2" aria-label="Ocena proračuna prenočišč">
+                    <div id="sec-budget" className="mt-2 border-t px-1 pt-2" aria-label="Ocena proračuna prenočišč">
                       <p className="pb-1 text-xs font-medium text-muted-foreground">
                         Ocena proračuna · {budget.nights} {nightsNoun(budget.nights)}
                       </p>

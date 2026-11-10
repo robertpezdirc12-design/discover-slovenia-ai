@@ -471,6 +471,25 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
   );
   /** Drseči predel plošče »Tvoja pot« (za kazalo). */
   const planPanelScrollRef = useRef<HTMLDivElement | null>(null);
+
+  /** Počisti pot — odstrani shranjene postavke (savedPois, custom stope). */
+  const clearTrip = () => {
+    const storage: GuideStorage = {
+      getItem: (k) => window.localStorage.getItem(k),
+      setItem: (k, v) => window.localStorage.setItem(k, v),
+      removeItem: (k) => window.localStorage.removeItem(k),
+    };
+    const base = loadGuideState(storage) ?? emptyGuideState();
+    saveGuideState(storage, { ...base, savedPois: [] });
+    try {
+      window.localStorage.removeItem(CUSTOM_STOPS_KEY);
+    } catch {
+      /* prijetnost */
+    }
+    window.dispatchEvent(new Event(CUSTOM_STOPS_EVENT));
+    window.dispatchEvent(new Event(GUIDE_EVENT));
+    toast({ title: 'Pot je počistjena', description: 'Vse shranjene postavke so odstranjene.' });
+  };
   const planDismissed = planPanel.key === planKey ? planPanel.dismissed : false;
   const setPlanDismissed = (value: boolean) => setPlanPanel({ key: planKey, dismissed: value });
   const planLayerRef = useRef<unknown>(null);
@@ -1993,6 +2012,17 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
                   {guideRegion && (
                     <p className="px-1 pb-1.5 text-xs text-muted-foreground">{guideRegion.label}</p>
                   )}
+                  {(guide?.savedPois?.length ?? 0) > 0 || (guide?.stays?.length ?? 0) > 0 ? (
+                    <div className="flex justify-end px-1 pb-1">
+                      <button
+                        type="button"
+                        onClick={clearTrip}
+                        className="text-[11px] text-destructive underline underline-offset-2 hover:text-destructive/80"
+                      >
+                        Počisti pot
+                      </button>
+                    </div>
+                  ) : null}
                   {plan && (
                     <>
                       <Button

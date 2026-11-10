@@ -24,5 +24,11 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Generate Prisma client
         run: bun run db:generate
+      - name: Type check
+        run: bun run typecheck
+      - name: Lint
+        run: bun run lint:check
+      - name: Tests (enote + živi API testi)
+        run: bun run test
       - name: Build Next.js app
         run: bun run build

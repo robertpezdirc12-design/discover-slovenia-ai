@@ -1525,3 +1525,20 @@ Work Log:
 
 Stage Summary:
 - Koda je zdaj čista pod react-hooks/React Compiler pravili — prihodnje funkcionalne spremembe ne bodo več »pokopane« pod starim lint dolgom.
+
+---
+Task ID: POLIRAJ-18-ENGINEERING-HIGIENA (CI + README)
+Datum: 2026-11-10
+Agent: ZCode (main session)
+Task: profesionalizacija razvojnega toka
+
+Work Log:
+- tsconfig: »examples« izključen iz type checka (demo websocket brez odvisnosti ni del aplikacije) → tsc --noEmit zdaj GLOBALNO čist.
+- package.json: skripte typecheck / lint:check / test / test:watch / verify (vse v enem ukazu).
+- .github/workflows/build-check.yml: dodani koraki Type check → Lint → Tests (pred Build) — CI zdaj lovi regresije tudi v logiki, ne samo v zgradbi.
+- README.md: nov, obsežen (funkcije, tehnologije, viri/licence, zagon, testi, arhitektura, deploy, varnost) — koristen za sodelavce na obeh linijah.
+- VRATA: bun run typecheck 0 · lint:check 0 · test 301/0 · (build preverjen prej).
+- GIT: push na GitHub main + GitLab sandbox/guided-ux-line.
+
+Stage Summary:
+- Razvojni tok je zdaj standardiziran: en ukaz verify, CI z vsemi vrati, dokumentacija v repozitoriju.

@@ -37,6 +37,7 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "examples" // demo koda ni del aplikacije (npr. websocket brez odvisnosti)
   ]
 }

@@ -32,7 +32,19 @@ interface CatalogEntry {
   lng: number;
   category: PoiCategory;
   /** Regija vodiča — olajša pregled pokritosti v testih. */
-  region: 'gorenjska' | 'osrednja' | 'primorska' | 'stajerska' | 'koroska';
+  region:
+    | 'gorenjska'
+    | 'osrednja'
+    | 'primorska'
+    | 'stajerska'
+    | 'koroska'
+    | 'hrvaska'
+    | 'bosna-hercegovina'
+    | 'srbija'
+    | 'kosovo'
+    | 'crna-gora'
+    | 'albanija'
+    | 'severna-makedonija';
 }
 
 const ENTRIES: readonly CatalogEntry[] = [
@@ -106,6 +118,55 @@ const ENTRIES: readonly CatalogEntry[] = [
   { name: 'Slovenj Gradec — stari trg', lat: 46.508, lng: 15.08, category: 'kultura', region: 'koroska' },
   { name: 'Velika Kopa, Kope', lat: 46.51, lng: 14.95, category: 'razgled', region: 'koroska' },
   { name: 'Peca', lat: 46.503, lng: 14.802, category: 'narava', region: 'koroska' },
+
+  // ——— Hrvaška ———
+  { name: 'Zagreb — Zgornji grad', lat: 45.816, lng: 15.973, category: 'kultura', region: 'hrvaska' },
+  { name: 'Nacionalni park Plitvice', lat: 44.88, lng: 15.616, category: 'narava', region: 'hrvaska' },
+  { name: 'Dioklecijanova palača, Split', lat: 43.508, lng: 16.44, category: 'kultura', region: 'hrvaska' },
+  { name: 'Dubrovnik — mestno obzidje', lat: 42.641, lng: 18.108, category: 'kultura', region: 'hrvaska' },
+  { name: 'Otok Hvar — trg sv. Stjepana', lat: 43.172, lng: 16.442, category: 'kultura', region: 'hrvaska' },
+  { name: 'Nacionalni park Krka', lat: 43.802, lng: 15.97, category: 'narava', region: 'hrvaska' },
+
+  // ——— Bosna in Hercegovina ———
+  { name: 'Sarajevo — Baščaršija', lat: 43.859, lng: 18.431, category: 'kultura', region: 'bosna-hercegovina' },
+  { name: 'Stari most, Mostar', lat: 43.337, lng: 17.815, category: 'kultura', region: 'bosna-hercegovina' },
+  { name: 'Soteska Vrelo Une', lat: 44.89, lng: 16.153, category: 'narava', region: 'bosna-hercegovina' },
+  { name: 'Trdnjava Kastel, Banja Luka', lat: 44.768, lng: 17.188, category: 'kultura', region: 'bosna-hercegovina' },
+  { name: 'Razvaline Srebrenica v vasioni', lat: 44.106, lng: 19.299, category: 'kultura', region: 'bosna-hercegovina' },
+
+  // ——— Srbija ———
+  { name: 'Kalemegdan, Beograd', lat: 44.823, lng: 20.45, category: 'kultura', region: 'srbija' },
+  { name: 'Trdnjava Petrovaradin, Novi Sad', lat: 45.253, lng: 19.861, category: 'kultura', region: 'srbija' },
+  { name: 'Niška trdnjava', lat: 43.326, lng: 21.896, category: 'kultura', region: 'srbija' },
+  { name: 'Grad Golubac', lat: 44.659, lng: 21.678, category: 'kultura', region: 'srbija' },
+  { name: 'Nacionalni park Tara', lat: 43.905, lng: 19.333, category: 'narava', region: 'srbija' },
+
+  // ——— Kosovo ———
+  { name: 'Prizren — Sinan-pašina mošeja', lat: 42.208, lng: 20.741, category: 'kultura', region: 'kosovo' },
+  { name: 'Stari kamniti most, Prizren', lat: 42.211, lng: 20.743, category: 'kultura', region: 'kosovo' },
+  { name: 'Patriarhija Peć', lat: 42.662, lng: 20.266, category: 'kultura', region: 'kosovo' },
+  { name: 'Soteska Rugova', lat: 42.709, lng: 20.114, category: 'narava', region: 'kosovo' },
+
+  // ——— Črna gora ———
+  { name: 'Kotor — stari del mesta', lat: 42.425, lng: 18.771, category: 'kultura', region: 'crna-gora' },
+  { name: 'Zaliv Boka Kotorska', lat: 42.46, lng: 18.68, category: 'narava', region: 'crna-gora' },
+  { name: 'Durmitor — Črno jezero', lat: 43.139, lng: 19.088, category: 'narava', region: 'crna-gora' },
+  { name: 'Sveti Stefan', lat: 42.256, lng: 18.891, category: 'kultura', region: 'crna-gora' },
+  { name: 'Jezero Skadar', lat: 42.185, lng: 19.33, category: 'narava', region: 'crna-gora' },
+
+  // ——— Albanija ———
+  { name: 'Berat — grad in četrt Mangalem', lat: 40.706, lng: 19.944, category: 'kultura', region: 'albanija' },
+  { name: 'Gjirokastër — stari bazar', lat: 40.075, lng: 20.139, category: 'kultura', region: 'albanija' },
+  { name: 'Butrint (UNESCO)', lat: 39.746, lng: 20.021, category: 'kultura', region: 'albanija' },
+  { name: 'Riviera Albanija — Ksamil', lat: 39.768, lng: 19.999, category: 'narava', region: 'albanija' },
+  { name: 'Gora Dajti nad Tirano', lat: 41.365, lng: 19.922, category: 'razgled', region: 'albanija' },
+
+  // ——— Severna Makedonija ———
+  { name: 'Skopje — Stari bazar', lat: 42.0, lng: 21.436, category: 'kultura', region: 'severna-makedonija' },
+  { name: 'Ohridsko jezero', lat: 41.085, lng: 20.8, category: 'narava', region: 'severna-makedonija' },
+  { name: 'Cerkev sv. Janeza Kaneo, Ohrid', lat: 41.112, lng: 20.791, category: 'kultura', region: 'severna-makedonija' },
+  { name: 'Heraclea Lyncestis, Bitola', lat: 41.011, lng: 21.345, category: 'kultura', region: 'severna-makedonija' },
+  { name: 'Kanyon Matka', lat: 41.94, lng: 21.304, category: 'narava', region: 'severna-makedonija' },
 ] as const;
 
 /** Stabilna, berljiva identiteta iz imena (č/š/ž → c/s/z). */
@@ -127,7 +188,7 @@ export const POI_CATALOG: readonly CatalogPoi[] = ENTRIES.map((e) => ({
   id: `izbor-${slug(e.name)}`,
 }));
 
-export const CATALOG_ATTRIBUTION = 'urejeni izbor slovenskih znamenitosti';
+export const CATALOG_ATTRIBUTION = 'urejeni izbor znamenitosti';
 
 export interface CatalogOptions {
   radiusKm?: number;

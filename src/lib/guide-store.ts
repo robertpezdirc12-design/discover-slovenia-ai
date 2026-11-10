@@ -14,11 +14,20 @@ export const GUIDE_STORAGE_KEY = 'dsa.guide.v1';
 export const GUIDE_EVENT = 'dsa:guide-updated';
 
 export const GUIDE_REGIONS = [
+  // Slovenija
   { id: 'gorenjska', label: 'Gorenjska (Bled, Bohinj)', lat: 46.3625, lng: 14.0936 },
   { id: 'osrednja', label: 'Osrednja Slovenija (Ljubljana)', lat: 46.0569, lng: 14.5058 },
   { id: 'primorska', label: 'Primorska (Soča, Piran)', lat: 45.9, lng: 13.7 },
   { id: 'stajerska', label: 'Štajerska (Maribor, Pohorje)', lat: 46.5547, lng: 15.6459 },
   { id: 'koroska', label: 'Koroška (Dravograd)', lat: 46.5864, lng: 15.0019 },
+  // Balkan (Faza A — katalog razširjen na 8 držav)
+  { id: 'hrvaska', label: 'Hrvaška (Zagreb, obala)', lat: 45.815, lng: 15.9819 },
+  { id: 'bosna-hercegovina', label: 'Bosna in Hercegovina (Sarajevo, Mostar)', lat: 43.8563, lng: 18.4131 },
+  { id: 'srbija', label: 'Srbija (Beograd, Niš)', lat: 44.7866, lng: 20.4489 },
+  { id: 'kosovo', label: 'Kosovo (Priština, Prizren)', lat: 42.6629, lng: 21.1655 },
+  { id: 'crna-gora', label: 'Črna gora (Kotor, Budva)', lat: 42.4247, lng: 18.7715 },
+  { id: 'albanija', label: 'Albanija (Tirana, Berat)', lat: 41.3275, lng: 19.8187 },
+  { id: 'severna-makedonija', label: 'Severna Makedonija (Skopje, Ohrid)', lat: 41.9973, lng: 21.428 },
 ] as const;
 
 export type GuideRegionId = (typeof GUIDE_REGIONS)[number]['id'];

@@ -173,7 +173,7 @@ export default async function DestinationPage({
             ))}
           </ul>
           <p className="mt-3 text-xs text-muted-foreground">
-            Vir: urejeni izbor slovenskih znamenitosti (koordinate so informativne).
+            Vir: urejeni izbor znamenitosti (koordinate so informativne).
           </p>
         </section>
       )}

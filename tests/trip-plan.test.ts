@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 
 import { GUIDE_REGIONS } from '@/lib/guide-store';
-import { isInSloveniaBbox } from '@/lib/arso-lidar';
 import { TRIP_PLAN, tripPlanFor } from '@/lib/trip-plan';
+
+/** Približna bbox celotnega Balkana (protipodlaga za napačne koordinate). */
+const BALKAN_BBOX = { minLat: 39.5, maxLat: 47.2, minLng: 13.0, maxLng: 24.2 };
 
 /**
  * MOJA POT — vodič obljubi, zemljevid MORA pokazati.
@@ -18,12 +20,15 @@ describe('TRIP_PLAN — vodič in zemljevid sta povezana', () => {
     }
   });
 
-  test('vse postanke so znotraj Slovenije (DMR/LiDAR meje)', () => {
+  test('vse postanke so znotraj Balkanskih koordinatnih mej', () => {
     for (const stops of Object.values(TRIP_PLAN)) {
       for (const stop of stops) {
         expect(Number.isFinite(stop.lat)).toBe(true);
         expect(Number.isFinite(stop.lng)).toBe(true);
-        expect(isInSloveniaBbox(stop.lat, stop.lng)).toBe(true);
+        expect(stop.lat).toBeGreaterThanOrEqual(BALKAN_BBOX.minLat);
+        expect(stop.lat).toBeLessThanOrEqual(BALKAN_BBOX.maxLat);
+        expect(stop.lng).toBeGreaterThanOrEqual(BALKAN_BBOX.minLng);
+        expect(stop.lng).toBeLessThanOrEqual(BALKAN_BBOX.maxLng);
       }
     }
   });

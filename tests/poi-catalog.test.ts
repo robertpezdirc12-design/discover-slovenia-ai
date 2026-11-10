@@ -5,6 +5,7 @@ import {
   POI_CATALOG,
   selectCatalogPois,
 } from '@/lib/poi-catalog';
+import { GUIDE_REGIONS } from '@/lib/guide-store';
 import { POI_CATEGORY_LABELS } from '@/lib/route-poi';
 
 const BLED_BOHINJ = [
@@ -14,15 +15,15 @@ const BLED_BOHINJ = [
 const LJUBLJANA = [{ lat: 46.0569, lng: 14.5058 }];
 
 describe('poi-catalog — celovitost urejenega izbora', () => {
-  test('dovolj znamenitosti, vse z veljavnimi koordinatami v Sloveniji', () => {
-    expect(POI_CATALOG.length).toBeGreaterThanOrEqual(50);
+  test('dovolj znamenitosti, vse z veljavnimi balkanskimi koordinatami', () => {
+    expect(POI_CATALOG.length).toBeGreaterThanOrEqual(90);
     for (const p of POI_CATALOG) {
       expect(Number.isFinite(p.lat)).toBe(true);
       expect(Number.isFinite(p.lng)).toBe(true);
-      expect(p.lat).toBeGreaterThan(45.4);
-      expect(p.lat).toBeLessThan(46.9);
-      expect(p.lng).toBeGreaterThan(13.3);
-      expect(p.lng).toBeLessThan(16.7);
+      expect(p.lat).toBeGreaterThan(39.5);
+      expect(p.lat).toBeLessThan(47.2);
+      expect(p.lng).toBeGreaterThan(13.0);
+      expect(p.lng).toBeLessThan(24.2);
       expect(p.name.trim().length).toBeGreaterThan(2);
       expect(POI_CATEGORY_LABELS[p.category]).toBeDefined();
       expect(p.id.startsWith('izbor-')).toBe(true);
@@ -34,17 +35,16 @@ describe('poi-catalog — celovitost urejenega izbora', () => {
     expect(new Set(POI_CATALOG.map((p) => p.name)).size).toBe(POI_CATALOG.length);
   });
 
-  test('pokrite so VSE regije vodiča, tudi Koroška', () => {
+  test('pokrite so VSE regije vodiča (Slovenija + Balkan)', () => {
     const regions = [...new Set(POI_CATALOG.map((p) => p.region))];
-    const required = ['gorenjska', 'osrednja', 'primorska', 'stajerska', 'koroska'] as const;
-    for (const r of required) {
-      expect(regions).toContain(r);
-      expect(POI_CATALOG.filter((p) => p.region === r).length).toBeGreaterThanOrEqual(4);
+    for (const r of GUIDE_REGIONS) {
+      expect(regions).toContain(r.id);
+      expect(POI_CATALOG.filter((p) => p.region === r.id).length).toBeGreaterThanOrEqual(4);
     }
   });
 
   test('oznaka vira je izrecna (ne lažno pripisovanje OSM)', () => {
-    expect(CATALOG_ATTRIBUTION).toBe('urejeni izbor slovenskih znamenitosti');
+    expect(CATALOG_ATTRIBUTION).toBe('urejeni izbor znamenitosti');
   });
 });
 

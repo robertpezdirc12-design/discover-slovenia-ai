@@ -31,7 +31,7 @@ import {
  * DVA VIRA, vedno pošteno označena:
  *   • živi OpenStreetMap prek Overpassa (globalna zrcala, prvi uspešni
  *     odgovor z imenovanimi zadetki zmaga),
- *   • urejeni izbor slovenskih znamenitosti kot ZAGOTOVLJENA rezerva.
+ *   • urejeni izbor znamenitosti kot ZAGOTOVLJENA rezerva.
  *
  * Zakaj rezerva: `overpass.osm.ch` (ki ga uporablja iskanje prenočišč) je
  * ŠVICARSKI izvleček OSM — za Slovenijo vrne HTTP 200 s praznim `elements`.

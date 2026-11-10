@@ -1455,3 +1455,16 @@ Work Log:
 Stage Summary:
 - Postanke vodiča imajo zdaj »Javni prevoz«: naslednje povezave (bus/vlak) iz Ljubljane z imeni postaj in časi, narisane na zemljevidu. Vir je skupnostni OJPP/brezavta (odprti podatki).
 - Naslednje prioritete (neizvedene): širše SEO destination strani (per-destination rute iz kataloga 31 postaj); rotacija/dodajanje žetonov (GitLab) ostaja uporabniška odločitev.
+
+---
+Task ID: POLIRAJ-14-GITLAB-SINHRONIZACIJA (žeton uporabnika)
+Datum: 2026-11-10
+Agent: ZCode (main session)
+Task: dokončaj GitLab sinhronizacijo po predaji žetona
+
+Work Log:
+- ŽETON PREJET v klepetu (uporabnik), remote konfiguriran (samo .git/config, ni v worklog/kodi). Uporabnik v API-ju: robert.pezdirc12.
+- ODKRITJE: GitLab projekt markec-group/discover-slovenia-ai ima NOV ID (87315476; prej 87464605) — po opisu je bil repozitorij OBNOVLJEN po 2. vdoru v GitHub račun. Njegov main (65185488) NIMA naših funkcij: struktura src/app/[locale] (i18n), admin/destinacija/dogodki, 0 testov v src — to je obnovljeni »platformni« (no-AI) projekt. Naša sandbox linija je povsem drugačen produkt.
+- Odprava napak: (1) star remote je kazal na groupo markec-group1 (ne obstaja več) → markec-group; (2) projekt je bil ARHIVIRAN (»can't push to archived project«) → unarchive prek API-ja (201, archived:false).
+- PUSH: main → sandbox/guided-ux-line (nova veja, 023a05c) — main na GitLabu smo PUSTILI nedotaknjen (obnovljeni platformni projekt; prepis bi bil uničujoč brez odločitve uporabnika).
+- ODLOČITEV ČAKA UPORABNIKA: vrstni red/združitev dveh linij (sandbox UX vs platformna obnova) — enaka točka kot POLIRAJ-3. Priporočilo: ohrani obe veji (main = platformna obnova, sandbox/guided-ux-line = UX produkt), morebitna združitev je velik projekt, ne hitri push.

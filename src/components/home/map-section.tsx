@@ -1874,7 +1874,7 @@ export function MapSection({ destSlug }: { destSlug?: string | null }) {
             Klik na postanko → mapa pripotuje + odpre opis (aplikacija vodi).
             Plošča se pokaže TUDI samo z rezerviranimi prenočišči (uporabnik,
             ki izpusti vodnik, ni puščen brez vidnega rezultata). */}
-        {mode === 'map' && !planDismissed && (guideRegion || reservedStays.length > 0) && (
+        {mode === 'map' && !planDismissed && (guideRegion || reservedStays.length > 0 || (guide?.savedPois?.length ?? 0) > 0) && (
           <aside
             aria-label="Tvoja pot — postanke in prenočišča"
             className="absolute left-3 top-3 z-20 w-[min(280px,calc(100%-1.5rem))] overflow-hidden rounded-xl border bg-background/95 shadow-lg backdrop-blur"

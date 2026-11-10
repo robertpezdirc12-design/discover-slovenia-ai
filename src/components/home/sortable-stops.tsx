@@ -187,20 +187,16 @@ export function SortableStops({
     return at < 0 ? name : `${at + 1}. ${name}`;
   };
 
-  const announcements = useMemo<Announcements>(
-    () => ({
-      onDragStart: ({ active }) => `Primeš postanek ${label(active.id)}. Uporabi puščici gor in dol.`,
-      onDragOver: ({ active, over }) =>
-        over ? `${label(active.id)} je zdaj pred ${label(over.id)}.` : `${label(active.id)} je zunaj seznama.`,
-      onDragEnd: ({ active, over }) =>
-        over
-          ? `Postanek ${label(active.id)} je odložen na mesto ${label(over.id)}.`
-          : 'Preureditev je preklicana — vrstni red ostaja nespremenjen.',
-      onDragCancel: () => 'Preureditev je preklicana — vrstni red ostaja nespremenjen.',
-    }),
-    // `label` uporablja trenutni `items`; ob spremembi reda se napovedi znova zgradijo.
-    [items],
-  );
+  const announcements: Announcements = {
+    onDragStart: ({ active }) => `Primeš postanek ${label(active.id)}. Uporabi puščici gor in dol.`,
+    onDragOver: ({ active, over }) =>
+      over ? `${label(active.id)} je zdaj pred ${label(over.id)}.` : `${label(active.id)} je zunaj seznama.`,
+    onDragEnd: ({ active, over }) =>
+      over
+        ? `Postanek ${label(active.id)} je odložen na mesto ${label(over.id)}.`
+        : 'Preureditev je preklicana — vrstni red ostaja nespremenjen.',
+    onDragCancel: () => 'Preureditev je preklicana — vrstni red ostaja nespremenjen.',
+  };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;

@@ -1,0 +1,497 @@
+{
+ "format": "remk-museums-v1",
+ "source": "REMK — Razvid muzejev RS (Ministrstvo za kulturo), podatki.gov.si / remk.ekultura.gov.si",
+ "license": "javna informacija RS",
+ "count": 61,
+ "missed": [],
+ "museums": [
+  {
+   "id": "remk-66",
+   "name": "GASILSKA ZVEZA SLOVENIJE",
+   "address": "TRŽAŠKA CESTA 221, 1000 Metlika",
+   "registeredAt": "08.12.2023",
+   "lat": 46.03393,
+   "lng": 14.45427
+  },
+  {
+   "id": "remk-65",
+   "name": "ZAVOD ZA KULTURNE PRIREDITVE IN TURIZEM CELEIA CELJE",
+   "address": "Krekov trg 3, 3000 Celje",
+   "registeredAt": "04.12.2023",
+   "lat": 46.22833,
+   "lng": 15.26703
+  },
+  {
+   "id": "remk-64",
+   "name": "NLB  MUZA Zavod za upravljanje kulturne dediščine, Ljubljana",
+   "address": "Čopova  3, 1000 Ljubljana",
+   "registeredAt": "29.12.2022",
+   "lat": 46.05174,
+   "lng": 14.505
+  },
+  {
+   "id": "remk-63",
+   "name": "Javni zavod Bogenšperk",
+   "address": "Staretov trg  12, 1275 Šmartno pri Litiji",
+   "registeredAt": "31.08.2022",
+   "lat": 46.04428,
+   "lng": 14.84331
+  },
+  {
+   "id": "remk-62",
+   "name": "Ustanova hiša eksperimentov",
+   "address": "Trubarjeva cesta  39, 1000 Ljubljana",
+   "registeredAt": "12.07.2022",
+   "lat": 46.05272,
+   "lng": 14.511
+  },
+  {
+   "id": "remk-60",
+   "name": "JAVNI ZAVOD ZA KULTURO, TURIZEM IN RAZVOJ OBČINE ROGATEC",
+   "address": "Pot k ribniku 6, 3252 Rogatec",
+   "registeredAt": "29.01.2014",
+   "lat": 46.23074,
+   "lng": 15.69766
+  },
+  {
+   "id": "remk-59",
+   "name": "KULTURNI DOM KRŠKO",
+   "address": "TRG MATIJE GUBCA 2, 8270 Krško",
+   "registeredAt": "30.01.2014",
+   "lat": 45.95795,
+   "lng": 15.49518
+  },
+  {
+   "id": "remk-55",
+   "name": "JAVNI ZAVOD GALERIJA VELENJE",
+   "address": "Titov trg  5, 3320 Velenje",
+   "registeredAt": "01.04.2015",
+   "lat": 46.35947,
+   "lng": 15.1143
+  },
+  {
+   "id": "remk-54",
+   "name": "Javni zavod - Park vojaške zgodovine Pivka",
+   "address": "KOLODVORSKA CESTA 51, 6257 Pivka",
+   "registeredAt": "29.04.2019",
+   "lat": 45.67739,
+   "lng": 14.19336
+  },
+  {
+   "id": "remk-53",
+   "name": "LUTKOVNO GLEDALIŠČE LJUBLJANA,  OE Lutkovni muzej Ljubljana",
+   "address": "Krekov trg  2, 1000 Ljubljana",
+   "registeredAt": "31.12.2018",
+   "lat": 46.05013,
+   "lng": 14.5101
+  },
+  {
+   "id": "remk-52",
+   "name": "CENTER ZA IZOBRAŽEVANJE IN KULTURO TREBNJE",
+   "address": "KIDRIČEVA ULICA 2, 8210 Trebnje",
+   "registeredAt": "16.01.2018",
+   "lat": 45.90902,
+   "lng": 15.00703
+  },
+  {
+   "id": "remk-51",
+   "name": "JAVNI ZAVOD ZA KULTURO, MLADINO IN ŠPORT LITIJA; OE  Mestni muzej Litija",
+   "address": "Cesta komandanta Staneta  2, 1270 Litija",
+   "registeredAt": "18.02.2020",
+   "lat": 46.05703,
+   "lng": 14.83249
+  },
+  {
+   "id": "remk-50",
+   "name": "GALERIJA - MUZEJ LENDAVA GALÉRIA - MÚZEUM LENDVA",
+   "address": "Bánffyjev trg 1, 9220 Lendava/Lendva",
+   "registeredAt": "09.11.2010",
+   "lat": 46.56697,
+   "lng": 16.45278
+  },
+  {
+   "id": "remk-49",
+   "name": "KOBARIŠKI MUZEJ d.o.o.",
+   "address": "Gregorčičeva 10, 5222 Kobarid",
+   "registeredAt": "16.08.2011",
+   "lat": 46.24653,
+   "lng": 13.58099
+  },
+  {
+   "id": "remk-48",
+   "name": "KOROŠKA GALERIJA LIKOVNIH UMETNOSTI",
+   "address": "Glavni trg 24, 2380 Slovenj Gradec",
+   "registeredAt": "20.05.2009",
+   "lat": 46.50937,
+   "lng": 15.07888
+  },
+  {
+   "id": "remk-47",
+   "name": "OBALNE GALERIJE PIRAN GALLERIE COSTIERE PIRANO",
+   "address": "Tartinijev trg 3, 6330 Piran/Pirano",
+   "registeredAt": "20.05.2009",
+   "lat": 45.52899,
+   "lng": 13.56843
+  },
+  {
+   "id": "remk-46",
+   "name": "GALERIJA Murska Sobota",
+   "address": "Kocljeva ulica 7, 9000 Murska Sobota",
+   "registeredAt": "20.05.2009",
+   "lat": 46.65982,
+   "lng": 16.16433
+  },
+  {
+   "id": "remk-45",
+   "name": "UMETNOSTNA GALERIJA MARIBOR",
+   "address": "Strossmayerjeva ulica 6, 2000 Maribor",
+   "registeredAt": "12.05.2005",
+   "lat": 46.55884,
+   "lng": 15.64198
+  },
+  {
+   "id": "remk-44",
+   "name": "MEDNARODNI GRAFIČNI LIKOVNI CENTER",
+   "address": "Pod turnom 3, 1000 Ljubljana",
+   "registeredAt": "20.05.2009",
+   "lat": 46.05461,
+   "lng": 14.49302
+  },
+  {
+   "id": "remk-43",
+   "name": "Muzej za arhitekturo in oblikovanje",
+   "address": "Rusjanov trg 7, 1000 Ljubljana",
+   "registeredAt": "25.05.2009",
+   "lat": 46.05048,
+   "lng": 14.56308
+  },
+  {
+   "id": "remk-42",
+   "name": "GALERIJA BOŽIDAR JAKAC KOSTANJEVICA NA KRKI",
+   "address": "Grajska cesta 45, 8311 Kostanjevica na Krki",
+   "registeredAt": "20.05.2009",
+   "lat": 45.83517,
+   "lng": 15.41677
+  },
+  {
+   "id": "remk-41",
+   "name": "PILONOVA GALERIJA AJDOVŠČINA",
+   "address": "PREŠERNOVA ULICA 3, 5270 Ajdovščina",
+   "registeredAt": "20.05.2009",
+   "lat": 45.8882,
+   "lng": 13.90499
+  },
+  {
+   "id": "remk-40",
+   "name": "MUZEJ VELENJE",
+   "address": "Ljubljanska cesta 54, 3320 Velenje",
+   "registeredAt": "20.05.2009",
+   "lat": 46.35549,
+   "lng": 15.10972
+  },
+  {
+   "id": "remk-39",
+   "name": "TRŽIŠKI MUZEJ",
+   "address": "Muzejska ulica 11, 4290 Tržič",
+   "registeredAt": "20.05.2009",
+   "lat": 46.36652,
+   "lng": 14.30877
+  },
+  {
+   "id": "remk-38",
+   "name": "ZASAVSKI MUZEJ TRBOVLJE",
+   "address": "Ulica 1. Junija 15, 1420 Trbovlje",
+   "registeredAt": "20.05.2009",
+   "lat": 46.15047,
+   "lng": 15.04325
+  },
+  {
+   "id": "remk-37",
+   "name": "TOLMINSKI MUZEJ",
+   "address": "Mestni trg 4, 5220 Tolmin",
+   "registeredAt": "20.05.2009",
+   "lat": 46.18215,
+   "lng": 13.73263
+  },
+  {
+   "id": "remk-36",
+   "name": "LOŠKI MUZEJ ŠKOFJA LOKA",
+   "address": "Grajska pot 13, 4220 Škofja Loka",
+   "registeredAt": "20.05.2009",
+   "lat": 46.16523,
+   "lng": 14.30523
+  },
+  {
+   "id": "remk-35",
+   "name": "KOROŠKI POKRAJINSKI MUZEJ",
+   "address": "Glavni trg 24, 2380 Slovenj Gradec",
+   "registeredAt": "20.05.2009",
+   "lat": 46.50937,
+   "lng": 15.07888
+  },
+  {
+   "id": "remk-34",
+   "name": "Javni zavod Rokodelski center Ribnica - zavod za rokodelstvo, muzejsko in galerijsko dejavnost",
+   "address": "Cesta na Ugar 6, 1310 Ribnica",
+   "registeredAt": "14.07.2011",
+   "lat": 45.73768,
+   "lng": 14.72487
+  },
+  {
+   "id": "remk-33",
+   "name": "MUZEJI RADOVLJIŠKE OBČINE",
+   "address": "Linhartov trg 1, 4240 Radovljica",
+   "registeredAt": "20.05.2009",
+   "lat": 46.34071,
+   "lng": 14.17581
+  },
+  {
+   "id": "remk-32",
+   "name": "POKRAJINSKI MUZEJ PTUJ -ORMOŽ",
+   "address": "Muzejski trg  1, 2250 Ptuj",
+   "registeredAt": "20.05.2009",
+   "lat": 46.42058,
+   "lng": 15.86514
+  },
+  {
+   "id": "remk-31",
+   "name": "ZAVOD ZNANJE POSTOJNA, javni zavod za muzejsko dejavnost, kulturo, izobraževanje in ostale dejavnosti",
+   "address": "Kolodvorska cesta 3, 6230 Postojna",
+   "registeredAt": "02.02.2011",
+   "lat": 45.77723,
+   "lng": 14.21737
+  },
+  {
+   "id": "remk-30",
+   "name": "POMORSKI MUZEJ - MUSEO DEL MARE SERGEJ MAŠERA PIRAN - PIRANO",
+   "address": "Cankarjevo nabrežje 3, 6330 Piran/Pirano",
+   "registeredAt": "20.05.2009",
+   "lat": 45.52758,
+   "lng": 13.56812
+  },
+  {
+   "id": "remk-29",
+   "name": "DOLENJSKI MUZEJ NOVO MESTO",
+   "address": "MUZEJSKA ULICA 7, 8000 Novo mesto",
+   "registeredAt": "20.05.2009",
+   "lat": 45.80309,
+   "lng": 15.16811
+  },
+  {
+   "id": "remk-28",
+   "name": "GORIŠKI MUZEJ KROMBERK - NOVA GORICA",
+   "address": "Grajska cesta 1, 5000 Nova Gorica",
+   "registeredAt": "09.05.2009",
+   "lat": 45.96154,
+   "lng": 13.68592
+  },
+  {
+   "id": "remk-27",
+   "name": "POMURSKI MUZEJ MURSKA SOBOTA",
+   "address": "Trubarjev drevored 004 , 9000 Murska Sobota",
+   "registeredAt": "22.05.2009",
+   "lat": 46.66322,
+   "lng": 16.16061
+  },
+  {
+   "id": "remk-26",
+   "name": "BELOKRANJSKI MUZEJ METLIKA",
+   "address": "Trg svobode 4, 1000 Metlika",
+   "registeredAt": "20.05.2009",
+   "lat": 45.65155,
+   "lng": 15.31737
+  },
+  {
+   "id": "remk-25",
+   "name": "POKRAJINSKI MUZEJ MARIBOR",
+   "address": "GRAJSKA ULICA 2, 2000 Maribor",
+   "registeredAt": "22.05.2009",
+   "lat": 46.56085,
+   "lng": 15.64858
+  },
+  {
+   "id": "remk-24",
+   "name": "MUZEJ NARODNE OSVOBODITVE MARIBOR",
+   "address": "Ulica heroja Tomšiča 5, 2000 Maribor",
+   "registeredAt": "22.05.2009",
+   "lat": 46.56276,
+   "lng": 15.64789
+  },
+  {
+   "id": "remk-23",
+   "name": "Muzej in galerije mesta Ljubljane",
+   "address": "GOSPOSKA ULICA 15, 1000 Ljubljana",
+   "registeredAt": "20.05.2009",
+   "lat": 46.04697,
+   "lng": 14.50406
+  },
+  {
+   "id": "remk-22",
+   "name": "GORENJSKI MUZEJ",
+   "address": "TOMŠIČEVA ULICA 42, 4000 Kranj",
+   "registeredAt": "20.05.2009",
+   "lat": 46.23885,
+   "lng": 14.35434
+  },
+  {
+   "id": "remk-21",
+   "name": "POKRAJINSKI MUZEJ KOPER, MUSEO REGIONALE DI CAPODISTRIA",
+   "address": "Kidričeva ulica 19, 6000 Koper/Capodistria",
+   "registeredAt": "20.05.2009",
+   "lat": 45.54871,
+   "lng": 13.72624
+  },
+  {
+   "id": "remk-20",
+   "name": "POKRAJINSKI MUZEJ KOČEVJE",
+   "address": "Prešernova ulica 11, 1330 Kočevje",
+   "registeredAt": "20.05.2009",
+   "lat": 45.637,
+   "lng": 14.8657
+  },
+  {
+   "id": "remk-19",
+   "name": "MEDOBČINSKI MUZEJ KAMNIK",
+   "address": "Muzejska pot 3, 1241 Kamnik",
+   "registeredAt": "20.05.2009",
+   "lat": 46.22311,
+   "lng": 14.60566
+  },
+  {
+   "id": "remk-18",
+   "name": "GORNJESAVSKI MUZEJ JESENICE",
+   "address": "Cesta Franceta Prešerna 45, 4270 Jesenice",
+   "registeredAt": "20.05.2009",
+   "lat": 46.4329,
+   "lng": 14.05738
+  },
+  {
+   "id": "remk-17",
+   "name": "MESTNI MUZEJ IDRIJA, Muzej za Idrijsko in Cerkljansko",
+   "address": "Prelovčeva ulica 9, 5280 Idrija",
+   "registeredAt": "20.05.2009",
+   "lat": 46.00069,
+   "lng": 14.01892
+  },
+  {
+   "id": "remk-16",
+   "name": "MUZEJ NOVEJŠE ZGODOVINE CELJE",
+   "address": "Prešernova ulica 17, 3000 Celje",
+   "registeredAt": "20.05.2009",
+   "lat": 46.22916,
+   "lng": 15.26287
+  },
+  {
+   "id": "remk-15",
+   "name": "POKRAJINSKI MUZEJ CELJE",
+   "address": "Trg celjskih knezov 8, 3000 Celje",
+   "registeredAt": "20.05.2009",
+   "lat": 46.22888,
+   "lng": 15.26055
+  },
+  {
+   "id": "remk-14",
+   "name": "POSAVSKI MUZEJ BREŽICE",
+   "address": "Cesta prvih borcev 1, 8250 Brežice",
+   "registeredAt": "20.05.2005",
+   "lat": 45.9016,
+   "lng": 15.59229
+  },
+  {
+   "id": "remk-13",
+   "name": "MODERNA GALERIJA",
+   "address": "Windischerjeva ulica 2, 1000 Ljubljana",
+   "registeredAt": "18.05.2009",
+   "lat": 46.05286,
+   "lng": 14.49804
+  },
+  {
+   "id": "remk-12",
+   "name": "NARODNA GALERIJA",
+   "address": "Puharjeva ulica 9, 1000 Ljubljana",
+   "registeredAt": "18.05.2005",
+   "lat": 46.05402,
+   "lng": 14.50026
+  },
+  {
+   "id": "remk-11",
+   "name": "VOJAŠKI MUZEJ SLOVENSKE VOJSKE",
+   "address": "Engelsova ulica 15, 2000 Maribor",
+   "registeredAt": "19.08.2010",
+   "lat": 46.54809,
+   "lng": 15.63081
+  },
+  {
+   "id": "remk-9",
+   "name": "SLOVENSKI ŠOLSKI MUZEJ",
+   "address": "Plečnikov trg 1, 1000 Ljubljana",
+   "registeredAt": "18.05.2009",
+   "lat": 46.05025,
+   "lng": 14.50249
+  },
+  {
+   "id": "remk-8",
+   "name": "MUZEJ KRŠČANSTVA NA SLOVENSKEM",
+   "address": "Stična 17, 1295 Ivančna Gorica",
+   "registeredAt": "20.11.2008",
+   "lat": 45.95665,
+   "lng": 14.80512
+  },
+  {
+   "id": "remk-7",
+   "name": "TEHNIŠKI MUZEJ SLOVENIJE",
+   "address": "Tržaška cesta  2, 1000 Ljubljana",
+   "registeredAt": "01.04.2005",
+   "lat": 46.04729,
+   "lng": 14.49328
+  },
+  {
+   "id": "remk-6",
+   "name": "SLOVENSKA KINOTEKA",
+   "address": "Miklošičeva cesta 28, 1000 Ljubljana",
+   "registeredAt": "10.06.2016",
+   "lat": 46.0558,
+   "lng": 14.50804
+  },
+  {
+   "id": "remk-5",
+   "name": "SLOVENSKI GLEDALIŠKI INŠTITUT",
+   "address": "Mestni trg 17, 1000 Ljubljana",
+   "registeredAt": "05.04.2005",
+   "lat": 46.04893,
+   "lng": 14.50589
+  },
+  {
+   "id": "remk-4",
+   "name": "MUZEJ NOVEJŠE IN SODOBNE ZGODOVINE SLOVENIJE",
+   "address": "Celovška cesta 23, 1000 Ljubljana",
+   "registeredAt": "18.05.2009",
+   "lat": 46.05904,
+   "lng": 14.49523
+  },
+  {
+   "id": "remk-3",
+   "name": "SLOVENSKI ETNOGRAFSKI MUZEJ",
+   "address": "Metelkova ulica 2, 1000 Ljubljana",
+   "registeredAt": "18.05.2009",
+   "lat": 46.05498,
+   "lng": 14.51617
+  },
+  {
+   "id": "remk-2",
+   "name": "Prirodoslovni muzej Slovenije",
+   "address": "Prešernova cesta 20, 1000 Ljubljana",
+   "registeredAt": "05.04.2005",
+   "lat": 46.05207,
+   "lng": 14.49954
+  },
+  {
+   "id": "remk-1",
+   "name": "NARODNI MUZEJ SLOVENIJE",
+   "address": "Prešernova cesta 20, 1000 Ljubljana",
+   "registeredAt": "09.02.2016",
+   "lat": 46.05207,
+   "lng": 14.49954
+  }
+ ]
+}

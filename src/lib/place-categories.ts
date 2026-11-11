@@ -163,6 +163,10 @@ export interface PlaceResult {
   note?: string;
   /** Kraj/mesto (kurirani katalogi). */
   city?: string;
+  /** Ulica/naslov (uradni registri). */
+  address?: string;
+  /** Vir zapisa: 'remk' (uradni razvid muzejev RS) ipd. */
+  source?: string;
 }
 
 export function parseOverpassPlaces(raw: unknown, categoryId: PlaceCategoryId): PlaceResult[] {

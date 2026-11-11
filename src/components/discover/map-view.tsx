@@ -162,12 +162,18 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
         .bindPopup(
           `<div>` +
             `<div class="dsa-popup__name">${escapeHtml(p.name)}</div>` +
-            (p.city ? `<div class="dsa-popup__meta">${escapeHtml(p.city)}</div>` : '') +
+            (p.address
+              ? `<div class="dsa-popup__meta">${escapeHtml(p.address)}</div>`
+              : p.city
+                ? `<div class="dsa-popup__meta">${escapeHtml(p.city)}</div>`
+                : '') +
             `<div class="dsa-popup__meta">${escapeHtml(placesLabel ?? '')}</div>` +
             (p.note
               ? `<div class="dsa-popup__meta" style="margin-top:2px">${escapeHtml(p.note)}</div>`
               : '') +
-            `<span class="dsa-popup__badge">vir: ${p.curated ? 'kuriran katalog (približna lokacija)' : 'OpenStreetMap'}</span>` +
+            (p.source === 'remk'
+              ? `<span class="dsa-popup__badge">✔ uradno vpisan — Razvid muzejev RS (REMK)</span>`
+              : `<span class="dsa-popup__badge">vir: ${p.curated ? 'kuriran katalog (približna lokacija)' : 'OpenStreetMap'}</span>`) +
             `</div>`,
           { maxWidth: 280 },
         );

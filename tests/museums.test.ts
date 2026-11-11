@@ -39,3 +39,22 @@ describe('museums — kurirani katalog slovenskih muzejev', () => {
     expect(PLACE_CATEGORIES.some((c) => c.id === 'muzeji')).toBe(true);
   });
 });
+
+describe('museums-register — uradni REMK razvid', () => {
+  test('public/data/museums-register.json obstaja in ima ≥55 geokodiranih muzejev', () => {
+    const fs = require('node:fs');
+    const raw = JSON.parse(
+      fs.readFileSync('public/data/museums-register.json', 'utf-8'),
+    );
+    expect(raw.format).toBe('remk-museums-v1');
+    expect(raw.museums.length).toBeGreaterThanOrEqual(55);
+    for (const m of raw.museums.slice(0, 10)) {
+      expect(m.name.length).toBeGreaterThan(3);
+      expect(m.address.length).toBeGreaterThan(3);
+      expect(m.lat).toBeGreaterThan(45.3);
+      expect(m.lat).toBeLessThan(46.9);
+      expect(m.lng).toBeGreaterThan(13.3);
+      expect(m.lng).toBeLessThan(16.8);
+    }
+  });
+});

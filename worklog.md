@@ -1786,3 +1786,20 @@ Work Log:
 
 Stage Summary:
 - Živi pini:Photon multi-city (primarno, ~0,5 s) + Overpass per-city (2. vir, dokler Vercel limit) + kurirana rezerva. Pokritost čez vsa večja mesta vsake države.
+
+---
+Task ID: POLIRAJ-34-RESTAVRACIJE-REGISTRI (uporabnik: uradni viri + popravke)
+Datum: 2026-11-11
+Agent: ZCode (main session)
+Task: uradni registri restavracij po državah + popravke živih pinov
+
+Work Log:
+- RAZISKAVA: Srbija ima CROB (registarobjekata.minpolj.gov.rs — 403 iz peskovnika), HR ima TuRegistar/eVisitor (ni javen); data.gov.hr XLSX »Popis kategoriziranih turističkih objekata« = SAMO hotelski objekti (restavracij ni). Sklep: uradni registri restavracij z naslovi/koordinatami niso javno dostopni → živi OSM pini (Photon) ostanejo vir.
+- FIX 1: Photon fan-out 2 poskusa (900 ms cool-down, 429 utripanje pri zaporednih državah).
+- FIX 2: manjkajoči zaklep if(bboxNum) (TS1005) po prejšnjem urejanju.
+- NOVI HUB-I (prejšnji commit): +13 mest čez države.
+- POTRJENO: AL 70, XK 50, SRB 47, HR 79+ živih restavracij; HR 106 na produkciji.
+- GIT: push GitHub main + GitLab sandbox/guided-ux-line.
+
+Stage Summary:
+- Restavracije po vseh državah: živi OSM pini (desetinšt.) s stabilnim retryjem; uradni muzejski registri (REMK) ostajajo za muzeje.

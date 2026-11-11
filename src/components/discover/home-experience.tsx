@@ -317,10 +317,10 @@ export default function HomeExperience() {
             ) : null}
           </section>
 
-          {/* Zemljevid */}
+          {/* Zemljevid (isolate: Leaflet paneji ne prekrijejo spustnega okenc) */}
           <section
             aria-label="Zemljevid Slovenije in Balkana"
-            className="overflow-hidden rounded-2xl border border-border/80 shadow-sm"
+            className="isolate overflow-hidden rounded-2xl border border-border/80 shadow-sm"
           >
             <div className="relative h-[58vh] min-h-[420px] w-full">
               <MapView
@@ -330,28 +330,6 @@ export default function HomeExperience() {
                 activeApartmentId={activeApartmentId}
                 onSelectApartment={handleSelectApartment}
               />
-
-              {/* Oblak z navodilom (pred izbiro države) */}
-              {!selectedCountry ? (
-                <div className="pointer-events-none absolute left-1/2 top-4 z-[500] w-[min(92%,26rem)] -translate-x-1/2 rounded-xl border border-border/80 bg-card/95 p-3 text-center shadow-lg backdrop-blur">
-                  <p className="text-sm font-medium">
-                    👇 V spustnem okencu izberi državo — zemljevid se približa
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {COUNTRIES.length} držav na izbiro · odprti podatki OpenStreetMap
-                  </p>
-                </div>
-              ) : null}
-
-              {/* Oblak za izbrano državo (brez apartmajev / pred nalaganjem) */}
-              {selectedCountry && status !== 'ready' && status !== 'loading' ? (
-                <div className="pointer-events-none absolute left-1/2 top-4 z-[500] w-[min(92%,26rem)] -translate-x-1/2 rounded-xl border border-border/80 bg-card/95 p-3 text-center shadow-lg backdrop-blur">
-                  <p className="text-sm font-medium">
-                    {selectedCountry.flag} {selectedCountry.name}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{selectedCountry.hint}</p>
-                </div>
-              ) : null}
 
               {/* Nalaganje apartmajev */}
               {status === 'loading' ? (

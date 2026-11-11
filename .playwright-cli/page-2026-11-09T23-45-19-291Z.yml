@@ -1,0 +1,246 @@
+- generic [ref=f2e1]:
+  - generic [ref=f2e2]:
+    - banner [ref=f2e3]:
+      - generic [ref=f2e4]:
+        - link "Discover Slovenia AI — domov" [ref=f2e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f2e9]: Discover Slovenia AI
+        - navigation "Glavna navigacija" [ref=f2e10]:
+          - list [ref=f2e11]:
+            - listitem [ref=f2e12]:
+              - link "Zemljevid" [ref=f2e13] [cursor=pointer]:
+                - /url: "#zemljevid"
+            - listitem [ref=f2e14]:
+              - link "Za tebe" [ref=f2e15] [cursor=pointer]:
+                - /url: "#vodic"
+        - button "Prijava (demo)" [ref=f2e17]
+    - main [ref=f2e19]:
+      - region [ref=f2e20]:
+        - generic [ref=f2e21]:
+          - img "Slovenija v zlatu — sezonska vizualizacija (Martinovanje · 11. november)" [ref=f2e22]
+          - generic [ref=f2e25]:
+            - generic [ref=f2e26]:
+              - generic [ref=f2e27]: Martinovanje · 11. november
+              - generic [ref=f2e28]: mikro-dogodek
+            - heading "Slovenija v zlatu" [level=1] [ref=f2e29]
+            - paragraph [ref=f2e30]: Vinogradniške terase Štajerske, kostanjevi gaji in topla barva dolin — sezona okusov in panoram.
+            - paragraph [ref=f2e31]: Mlato vino · zabetiniran kostanj
+            - generic [ref=f2e32]:
+              - link "Razišči jesenske destinacije" [ref=f2e33] [cursor=pointer]:
+                - /url: "#vodic"
+              - link "Vinske ceste in kostanj" [ref=f2e34] [cursor=pointer]:
+                - /url: "#zemljevid"
+      - generic [ref=f2e35]:
+        - region [ref=f2e267]:
+          - generic [ref=f2e37]:
+            - generic [ref=f2e38]:
+              - generic [ref=f2e39]:
+                - generic [ref=f2e40]: Tvoj vodič
+                - button "Vklopi govorne nasvete (glasovno vodenje)" [ref=f2e43]
+              - generic [ref=f2e44]: Načrt je pripravljen — poglej svojo pot na zemljevidu. Želiš še eno destinacijo, ali zaključiš?
+              - 'progressbar "Napredek: 100 %" [ref=f2e268]'
+            - generic [ref=f2e269]:
+              - generic [ref=f2e270]:
+                - generic [ref=f2e271]: narava
+                - generic [ref=f2e272]: Gorenjska (Bled, Bohinj)
+                - generic [ref=f2e273]: 2 dni
+                - generic [ref=f2e274]: "tempo: zmeren"
+              - generic [ref=f2e275]:
+                - button "Pokaži tvojo pot na zemljevidu" [ref=f2e276]
+                - button "Želiš še eno destinacijo" [ref=f2e277]
+                - button "Dodaj prenočišče" [ref=f2e278]
+                - button "Zaključi" [ref=f2e279]
+              - paragraph [ref=f2e280]: Odgovori so shranjeni na tej napravi — naslednjič vas vodič ne bo več vprašal.
+        - region [ref=f2e51]:
+          - heading "Zemljevid destinacij s preklopilem pogledom" [level=2] [ref=f2e52]
+          - generic [ref=f2e54]:
+            - generic [ref=f2e55]: Zemljevid / seznam
+            - generic [ref=f2e59]:
+              - generic [ref=f2e60]: Zemljevid · CLS 0
+              - generic [ref=f2e61]:
+                - generic [ref=f2e64]: LiDAR relief
+                - switch "Vklopi LiDAR relief (ARSO, CC BY 4.0)" [ref=f2e65]
+              - switch "Preklopi na seznam" [checked] [ref=f2e66]
+          - generic [ref=f2e67]:
+            - generic [ref=f2e68]:
+              - textbox "Iskanje prenočišč po imenu kraja" [ref=f2e73]:
+                - /placeholder: Išči prenočišča — npr. Skopje, Bled, Zagreb
+                - text: Bled
+              - button "Išči prenočišča" [ref=f2e74]
+            - generic [ref=f2e75]:
+              - generic [ref=f2e76]: "Ne veš, kje? Poskusi:"
+              - button "Išči prenočišča v Skopje" [ref=f2e77]: Skopje
+              - button "Išči prenočišča v Bled" [ref=f2e78]: Bled
+              - button "Išči prenočišča v Zagreb" [ref=f2e79]: Zagreb
+              - generic [ref=f2e287]: 18 prenočišč · Bled
+            - generic [ref=f2e80]:
+              - generic [ref=f2e81]: "Vrsta:"
+              - button "Vse" [pressed] [ref=f2e82]
+              - button "Hotel" [ref=f2e83]
+              - button "Gostišče" [ref=f2e84]
+              - button "Mladinski hotel" [ref=f2e85]
+              - button "Motel" [ref=f2e86]
+              - button "Apartma" [ref=f2e87]
+              - button "Rezort" [ref=f2e88]
+          - generic [ref=f2e89]:
+            - application "Interaktivni zemljevid Slovenije" [ref=f2e91]:
+              - generic:
+                - generic:
+                  - button "Bled" [ref=f2e92] [cursor=pointer]
+                  - button "Ljubljana" [ref=f2e96] [cursor=pointer]
+                  - button "Dolina Soče" [ref=f2e100] [cursor=pointer]
+                  - button "Piran" [ref=f2e104] [cursor=pointer]
+                  - button "Maribor" [ref=f2e108] [cursor=pointer]
+                  - button "Bled" [ref=f2e204] [cursor=pointer]
+                  - button "Bohinj" [ref=f2e208] [cursor=pointer]
+                  - button "Hotel Vila Bled" [active] [ref=f2e288] [cursor=pointer]
+                  - button "Grand Hotel Toplice" [ref=f2e295] [cursor=pointer]
+                  - button "Bled Rose Hotel" [ref=f2e302] [cursor=pointer]
+                  - button "Hotel Lovec" [ref=f2e309] [cursor=pointer]
+                  - button "Hotel Astoria" [ref=f2e316] [cursor=pointer]
+                  - button "Hotel Triglav" [ref=f2e323] [cursor=pointer]
+                  - button "Hotel Trst" [ref=f2e330] [cursor=pointer]
+                  - button "Park Hotel" [ref=f2e337] [cursor=pointer]
+                  - button "Hotel Starkl" [ref=f2e344] [cursor=pointer]
+                  - button "Garni Hotel Berc" [ref=f2e351] [cursor=pointer]
+                  - button "Hotel Jadran" [ref=f2e358] [cursor=pointer]
+                  - button "Ribno Alpine Hotel" [ref=f2e365] [cursor=pointer]
+                  - button "Hotel Kompas" [ref=f2e372] [cursor=pointer]
+                  - button "Hotel-Pension Pibernik" [ref=f2e379] [cursor=pointer]
+                  - button "Kurow Hotel" [ref=f2e386] [cursor=pointer]
+                  - button "Hotel A4" [ref=f2e393] [cursor=pointer]
+                  - button "Cwrt Bleddyn Hotel" [ref=f2e400] [cursor=pointer]
+                  - button "EndHotel" [ref=f2e407] [cursor=pointer]
+                - generic [ref=f2e502]:
+                  - generic [ref=f2e504]:
+                    - strong [ref=f2e505]: Hotel Vila Bled
+                    - text: Hotel · od 95 €/noč (indikativno)
+                  - button "Close popup" [ref=f2e507] [cursor=pointer]: ×
+              - generic:
+                - generic [ref=f2e112]:
+                  - button "Zoom in" [ref=f2e113] [cursor=pointer]: +
+                  - button "Zoom out" [ref=f2e114] [cursor=pointer]: −
+                - generic [ref=f2e115]:
+                  - link "Leaflet" [ref=f2e116] [cursor=pointer]:
+                    - /url: https://leafletjs.com
+                  - text: "| ©"
+                  - link "OpenStreetMap" [ref=f2e121] [cursor=pointer]:
+                    - /url: https://www.openstreetmap.org/copyright
+            - complementary "Tvoja pot — postanke in prenočišča" [ref=f2e212]:
+              - generic [ref=f2e213]:
+                - paragraph [ref=f2e218]: Tvoja pot
+                - button "Skrij ploščo Tvoja pot" [ref=f2e219]
+              - generic [ref=f2e220]:
+                - paragraph [ref=f2e221]: Gorenjska (Bled, Bohinj)
+                - button "Začni navigacijo po poti" [ref=f2e222]
+                - generic [ref=f2e223]:
+                  - generic [ref=f2e253]:
+                    - paragraph [ref=f2e254]: 1. dan
+                    - button "Prikaži Bled na zemljevidu" [ref=f2e256]:
+                      - generic [ref=f2e257]:
+                        - generic [ref=f2e258]: Bled
+                        - generic [ref=f2e259]: Jezerski otok in grad nad strmino
+                  - generic [ref=f2e260]:
+                    - paragraph [ref=f2e261]: 2. dan
+                    - button "Prikaži Bohinj na zemljevidu" [ref=f2e263]:
+                      - generic [ref=f2e264]:
+                        - generic [ref=f2e265]: Bohinj
+                        - generic [ref=f2e266]: Ledeniško jezero pod Triglavom
+                - paragraph [ref=f2e232]: "2 dni · tempo: zmeren · klikni destinacijo"
+                - button "Deli povezavo do svoje poti" [ref=f2e234]: Deli pot
+            - complementary "Prenočišča — rezultati iskanja" [ref=f2e414]:
+              - generic [ref=f2e415]:
+                - paragraph [ref=f2e419]: Prenočišča · Bled
+                - button "Skrij rezultate iskanja prenočišč" [ref=f2e420]
+              - generic [ref=f2e422]:
+                - paragraph [ref=f2e423]: 18 zadetkov · klikni za slike in ceno
+                - generic [ref=f2e424]:
+                  - button "Odpri Hotel Vila Bled — slike, cena, rezervacija" [ref=f2e425]:
+                    - generic [ref=f2e426]:
+                      - generic [ref=f2e427]: Hotel Vila Bled
+                      - generic [ref=f2e428]: Hotel · od 95 €/noč
+                  - button "Odpri Grand Hotel Toplice — slike, cena, rezervacija" [ref=f2e429]:
+                    - generic [ref=f2e430]:
+                      - generic [ref=f2e431]: Grand Hotel Toplice
+                      - generic [ref=f2e432]: Hotel · od 95 €/noč
+                  - button "Odpri Bled Rose Hotel — slike, cena, rezervacija" [ref=f2e433]:
+                    - generic [ref=f2e434]:
+                      - generic [ref=f2e435]: Bled Rose Hotel
+                      - generic [ref=f2e436]: Hotel · od 95 €/noč
+                  - button "Odpri Hotel Lovec — slike, cena, rezervacija" [ref=f2e437]:
+                    - generic [ref=f2e438]:
+                      - generic [ref=f2e439]: Hotel Lovec
+                      - generic [ref=f2e440]: Hotel · od 95 €/noč
+                  - button "Odpri Hotel Astoria — slike, cena, rezervacija" [ref=f2e441]:
+                    - generic [ref=f2e442]:
+                      - generic [ref=f2e443]: Hotel Astoria
+                      - generic [ref=f2e444]: Hotel · od 95 €/noč
+                  - button "Odpri Hotel Triglav — slike, cena, rezervacija" [ref=f2e445]:
+                    - generic [ref=f2e446]:
+                      - generic [ref=f2e447]: Hotel Triglav
+                      - generic [ref=f2e448]: Hotel · od 95 €/noč
+                  - button "Odpri Hotel Trst — slike, cena, rezervacija" [ref=f2e449]:
+                    - generic [ref=f2e450]:
+                      - generic [ref=f2e451]: Hotel Trst
+                      - generic [ref=f2e452]: Hotel · od 95 €/noč
+                  - button "Odpri Park Hotel — slike, cena, rezervacija" [ref=f2e453]:
+                    - generic [ref=f2e454]:
+                      - generic [ref=f2e455]: Park Hotel
+                      - generic [ref=f2e456]: Hotel · od 95 €/noč
+                  - button "Odpri Hotel Starkl — slike, cena, rezervacija" [ref=f2e457]:
+                    - generic [ref=f2e458]:
+                      - generic [ref=f2e459]: Hotel Starkl
+                      - generic [ref=f2e460]: Hotel · od 95 €/noč
+                  - button "Odpri Garni Hotel Berc — slike, cena, rezervacija" [ref=f2e461]:
+                    - generic [ref=f2e462]:
+                      - generic [ref=f2e463]: Garni Hotel Berc
+                      - generic [ref=f2e464]: Hotel · od 95 €/noč
+                  - button "Odpri Hotel Jadran — slike, cena, rezervacija" [ref=f2e465]:
+                    - generic [ref=f2e466]:
+                      - generic [ref=f2e467]: Hotel Jadran
+                      - generic [ref=f2e468]: Hotel · od 95 €/noč
+                  - button "Odpri Ribno Alpine Hotel — slike, cena, rezervacija" [ref=f2e469]:
+                    - generic [ref=f2e470]:
+                      - generic [ref=f2e471]: Ribno Alpine Hotel
+                      - generic [ref=f2e472]: Hotel · od 95 €/noč
+                  - button "Odpri Hotel Kompas — slike, cena, rezervacija" [ref=f2e473]:
+                    - generic [ref=f2e474]:
+                      - generic [ref=f2e475]: Hotel Kompas
+                      - generic [ref=f2e476]: Hotel · od 95 €/noč
+                  - button "Odpri Hotel-Pension Pibernik — slike, cena, rezervacija" [ref=f2e477]:
+                    - generic [ref=f2e478]:
+                      - generic [ref=f2e479]: Hotel-Pension Pibernik
+                      - generic [ref=f2e480]: Hotel · od 95 €/noč
+                  - button "Odpri Kurow Hotel — slike, cena, rezervacija" [ref=f2e481]:
+                    - generic [ref=f2e482]:
+                      - generic [ref=f2e483]: Kurow Hotel
+                      - generic [ref=f2e484]: Gostišče · od 65 €/noč
+                  - button "Odpri Hotel A4 — slike, cena, rezervacija" [ref=f2e485]:
+                    - generic [ref=f2e486]:
+                      - generic [ref=f2e487]: Hotel A4
+                      - generic [ref=f2e488]: Hotel · od 95 €/noč
+                  - button "Odpri Cwrt Bleddyn Hotel — slike, cena, rezervacija" [ref=f2e489]:
+                    - generic [ref=f2e490]:
+                      - generic [ref=f2e491]: Cwrt Bleddyn Hotel
+                      - generic [ref=f2e492]: Hotel · od 95 €/noč
+                  - button "Odpri EndHotel — slike, cena, rezervacija" [ref=f2e493]:
+                    - generic [ref=f2e494]:
+                      - generic [ref=f2e495]: EndHotel
+                      - generic [ref=f2e496]: Hotel · od 95 €/noč
+                - paragraph [ref=f2e497]:
+                  - generic [ref=f2e500]: "Naslednji prazniki (SI): božič, 25. 12. · dan samostojnosti in enotnosti, 26. 12. · novo leto, 1. 1."
+                - paragraph [ref=f2e501]: cena = indikativna ocena · podatki © OpenStreetMap
+            - button "Vklopi vodiča po zemljevidu — potovanje po mestih, vaseh, kmečkem turizmu in naravi celotnega Balkana" [ref=f2e123]: Vklopi vodiča po zemljevidu
+          - paragraph [ref=f2e124]: "Viri: © OpenStreetMap — zemljevid + prenočišča (Nominatim, Overpass, Photon; ves svet, torej cel Balkan) · OSRM — cestne poti · ARSO DMR 1 m — višine (CC BY 4.0) · vreme + zrak — Open-Meteo / wttr.in · opisi — Wikipedia (CC BY-SA) · tečaji — open.er-api.com · prazniki — Nager.Date · z-ai iskalnica — zastopne fotografije · cene indikativne; Booking.com ni integriran — prava rezervacija pri objektu ali uradni strani."
+    - contentinfo [ref=f2e125]:
+      - generic [ref=f2e126]:
+        - paragraph [ref=f2e127]: Discover Slovenia AI — potovanje po Sloveniji in Balkanu
+        - paragraph [ref=f2e128]:
+          - text: Zemljevid ©
+          - link "OpenStreetMap" [ref=f2e129] [cursor=pointer]:
+            - /url: https://www.openstreetmap.org/copyright
+          - text: sodelavci
+  - region "Notifications (F8)":
+    - list
+  - button "Open Next.js Dev Tools" [ref=f2e135] [cursor=pointer]
+  - alert [ref=f2e139]

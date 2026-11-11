@@ -22,6 +22,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { MapContainer, TileLayer } from 'react-leaflet';
 import { REGION_VIEW, SLOVENIA_BOUNDS, countryById } from '@/lib/countries-view';
 import type { ApartmentApiItem } from '@/lib/apartments-view';
+import type { PlaceResult } from '@/lib/place-categories';
 
 export interface MapViewHandle {
   flyToCountry: (id: string) => void;
@@ -35,6 +36,9 @@ export interface MapViewProps {
   apartmentsVisible: boolean;
   activeApartmentId: string | null;
   onSelectApartment: (id: string) => void;
+  /** »Iščem« — pini kategorije krajev (muzeji, restavracije …). */
+  places: PlaceResult[];
+  placesLabel: string | null;
 }
 
 /** Escapaj besedila za HTML popup (varnost: imena so iz tujih virov). */
@@ -120,6 +124,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
     apartmentsVisible,
     activeApartmentId,
     onSelectApartment,
+    places,
+    placesLabel,
   },
   ref,
 ) {
@@ -131,6 +137,43 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
   useEffect(() => {
     selectApartmentRef.current = onSelectApartment;
   }, [onSelectApartment]);
+
+  // ── »Iščem« plast — pini kategorije krajev (muzeji, restavracije …) ──
+  const placesLayerRef = useRef<L.LayerGroup | null>(null);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (!placesLayerRef.current) placesLayerRef.current = L.layerGroup().addTo(map);
+    const layer = placesLayerRef.current;
+    layer.clearLayers();
+    if (places.length === 0) return;
+    for (const p of places) {
+      const marker = L.marker([p.lat, p.lng], {
+        icon: L.divIcon({
+          className: 'dsa-pin-place',
+          html:
+            `<div style="width:16px;height:16px;border-radius:50%;background:#0891b2;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,.45)"></div>`,
+          iconSize: [16, 16],
+          iconAnchor: [8, 8],
+        }),
+        title: p.name,
+        alt: `${placesLabel ?? 'Kraj'} ${p.name}`,
+      })
+        .bindPopup(
+          `<div>` +
+            `<div class="dsa-popup__name">${escapeHtml(p.name)}</div>` +
+            (p.city ? `<div class="dsa-popup__meta">${escapeHtml(p.city)}</div>` : '') +
+            `<div class="dsa-popup__meta">${escapeHtml(placesLabel ?? '')}</div>` +
+            (p.note
+              ? `<div class="dsa-popup__meta" style="margin-top:2px">${escapeHtml(p.note)}</div>`
+              : '') +
+            `<span class="dsa-popup__badge">vir: ${p.curated ? 'kuriran katalog (približna lokacija)' : 'OpenStreetMap'}</span>` +
+            `</div>`,
+          { maxWidth: 280 },
+        );
+      marker.addTo(layer);
+    }
+  }, [places, placesLabel]);
 
   // Imperativni ukazi za starša (flyTo po kliku na državo/apartma/reset)
   useImperativeHandle(ref, () => ({

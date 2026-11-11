@@ -28,6 +28,8 @@ import {
   RotateCcw,
   Tent,
   RefreshCw,
+  Search,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +43,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { COUNTRIES, countryById } from '@/lib/countries-view';
+import { PLACE_CATEGORIES, placeCategoryById, type PlaceResult } from '@/lib/place-categories';
 import {
   formatUpdatedAt,
   sourceLabel,
@@ -84,6 +87,43 @@ export default function HomeExperience() {
   const [refreshing, setRefreshing] = useState(false);
   const [syncProgress, setSyncProgress] = useState<SyncProgressView | null>(null);
 
+  // ── »Iščem« — kategorije krajev (muzeji, restavracije …) za izbrano državo ──
+  const [placeSel, setPlaceSel] = useState('');
+  const [places, setPlaces] = useState<PlaceResult[]>([]);
+  const [placesStatus, setPlacesStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const placesAbortRef = useRef<AbortController | null>(null);
+
+  const handleSelectPlaceCategory = useCallback(
+    (catId: string) => {
+      setPlaceSel(catId);
+      placesAbortRef.current?.abort();
+      if (!catId || !selectedCountryId) {
+        setPlaces([]);
+        setPlacesStatus('idle');
+        return;
+      }
+      const controller = new AbortController();
+      placesAbortRef.current = controller;
+      setPlacesStatus('loading');
+      fetch(
+        `/api/pot/places?cat=${encodeURIComponent(catId)}&scope=country&country=${encodeURIComponent(selectedCountryId)}`,
+        { signal: controller.signal },
+      )
+        .then((r) => r.json() as Promise<{ ok: boolean; places?: PlaceResult[]; error?: string }>)
+        .then((j) => {
+          if (controller.signal.aborted) return;
+          setPlaces(j.ok && Array.isArray(j.places) ? j.places : []);
+          setPlacesStatus(j.ok ? 'done' : 'error');
+        })
+        .catch(() => {
+          if (controller.signal.aborted) return;
+          setPlaces([]);
+          setPlacesStatus('error');
+        });
+    },
+    [selectedCountryId],
+  );
+
   const selectedCountry = countryById(selectedCountryId);
   const sloveniaSelected = selectedCountryId === 'slovenija';
   const apartmentsVisible = sloveniaSelected && status === 'ready';
@@ -104,6 +144,10 @@ export default function HomeExperience() {
   const handleSelectCountry = useCallback((id: string) => {
     setSelectedCountryId(id);
     setActiveApartmentId(null);
+    // »Iščem« rezultati so vezani na državo — ob spremembi počistimo.
+    setPlaceSel('');
+    setPlaces([]);
+    setPlacesStatus('idle');
     if (id === 'slovenija') {
       mapRef.current?.fitSlovenia();
     } else {
@@ -313,6 +357,62 @@ export default function HomeExperience() {
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* Okence »IŠČEM« — kategorije krajev (muzeji, restavracije …) */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="bg-background shadow-sm"
+                  disabled={!selectedCountry}
+                  title={selectedCountry ? 'Muzeji, restavracije in druge kategorije v izbrani državi' : 'Najprej izberi državo'}
+                >
+                  {placesStatus === 'loading' ? (
+                    <Loader2 className="mr-2 h-4.5 w-4.5 animate-spin" />
+                  ) : (
+                    <Search className="mr-2 h-4.5 w-4.5" />
+                  )}
+                  {placeSel
+                    ? placeCategoryById(placeSel)?.label ?? 'Iščem'
+                    : 'Iščem …'}
+                  <ChevronDown className="ml-2 h-4 w-4 opacity-70" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="dsa-scroll-list max-h-80 w-72 overflow-y-auto">
+                <DropdownMenuLabel className="text-xs text-muted-foreground">
+                  {selectedCountry
+                    ? `Kaj iščem: ${selectedCountry.flag} ${selectedCountry.name}?`
+                    : 'Najprej izberi državo'}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {PLACE_CATEGORIES.map((c) => (
+                  <DropdownMenuItem
+                    key={c.id}
+                    onSelect={() => handleSelectPlaceCategory(c.id)}
+                    disabled={!selectedCountry}
+                    className="gap-2.5 py-2.5"
+                  >
+                    <span
+                      aria-hidden
+                      className="h-3 w-3 shrink-0 rounded-full"
+                      style={{ backgroundColor: c.color }}
+                    />
+                    <span className="font-medium">{c.label}</span>
+                    {placeSel === c.id ? <Check className="ml-auto h-4 w-4 text-primary" /> : null}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {placesStatus === 'done' && places.length > 0 ? (
+              <Badge variant="outline" className="text-xs">
+                {places.length} {placeCategoryById(placeSel)?.label.toLowerCase() ?? 'krajev'}
+              </Badge>
+            ) : null}
+            {placesStatus === 'error' ? (
+              <span className="text-xs text-destructive">Iskanje ni uspelo — poskusi znova.</span>
+            ) : null}
+
             {/* Okence PRENOČIŠČA — apartmaji, hoteli, kampi */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -396,6 +496,8 @@ export default function HomeExperience() {
                 apartmentsVisible={apartmentsVisible}
                 activeApartmentId={activeApartmentId}
                 onSelectApartment={handleSelectApartment}
+                places={places}
+                placesLabel={placeSel ? placeCategoryById(placeSel)?.label ?? null : null}
               />
 
               {/* Nalaganje prenočišč */}

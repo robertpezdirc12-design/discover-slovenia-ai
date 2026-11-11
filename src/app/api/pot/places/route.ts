@@ -8,6 +8,7 @@ import {
   placeCategoryById,
   type PlaceCategoryId,
 } from '@/lib/place-categories';
+import { MUSEUMS } from '@/lib/museums';
 
 /**
  * GET /api/pot/places?cat={kategorija}&lat=&lng=&radius=
@@ -58,6 +59,22 @@ export async function GET(request: Request) {
     const cb = COUNTRY_BBOX[country];
     if (!cb) {
       return NextResponse.json({ ok: false, error: 'Neznana država.' }, { status: 400 });
+    }
+    // KURIRANI KATALOG (muzeji v Sloveniji) — pravi muzeji z opisi,
+    // takojšnji odziv brez omrežja. Za druge kategorije/države ostane
+    // živi OSM z rezervo.
+    if (country === 'slovenija' && catId === 'muzeji') {
+      const places = MUSEUMS.map((m) => ({
+        id: `muzej-${m.id}`,
+        name: m.name,
+        category: 'muzeji' as PlaceCategoryId,
+        lat: m.lat,
+        lng: m.lng,
+        curated: true,
+        note: m.desc,
+        city: m.city,
+      }));
+      return NextResponse.json({ ok: true, category: catId, radius, curated: true, places });
     }
     bbox = cb;
   }

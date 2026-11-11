@@ -159,6 +159,10 @@ export interface PlaceResult {
   lng: number;
   /** Rezerva (kurirano območje) — OSM ni bil dosegljiv. */
   curated?: boolean;
+  /** Kratek opis (kurirani katalogi, npr. muzeji v Sloveniji). */
+  note?: string;
+  /** Kraj/mesto (kurirani katalogi). */
+  city?: string;
 }
 
 export function parseOverpassPlaces(raw: unknown, categoryId: PlaceCategoryId): PlaceResult[] {

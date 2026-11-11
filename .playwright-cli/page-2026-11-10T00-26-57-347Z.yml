@@ -1,0 +1,103 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - link "Discover Slovenia AI — domov" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e9]: Discover Slovenia AI
+        - navigation "Glavna navigacija" [ref=e10]:
+          - list [ref=e11]:
+            - listitem [ref=e12]:
+              - link "Zemljevid" [ref=e13] [cursor=pointer]:
+                - /url: "#zemljevid"
+            - listitem [ref=e14]:
+              - link "Za tebe" [ref=e15] [cursor=pointer]:
+                - /url: "#vodic"
+        - button "Prijava (demo)" [ref=e17]
+    - main [ref=e19]:
+      - region [ref=e20]:
+        - generic [ref=e21]:
+          - img "Slovenija v zlatu — sezonska vizualizacija (Martinovanje · 11. november)" [ref=e22]
+          - generic [ref=e25]:
+            - generic [ref=e26]:
+              - generic [ref=e27]: Martinovanje · 11. november
+              - generic [ref=e28]: mikro-dogodek
+            - heading "Slovenija v zlatu" [level=1] [ref=e29]
+            - paragraph [ref=e30]: Vinogradniške terase Štajerske, kostanjevi gaji in topla barva dolin — sezona okusov in panoram.
+            - paragraph [ref=e31]: Mlato vino · zabetiniran kostanj
+            - generic [ref=e32]:
+              - link "Razišči jesenske destinacije" [ref=e33] [cursor=pointer]:
+                - /url: "#vodic"
+              - link "Vinske ceste in kostanj" [ref=e34] [cursor=pointer]:
+                - /url: "#zemljevid"
+      - generic [ref=e35]:
+        - region [ref=e36]:
+          - generic [ref=e37]:
+            - generic [ref=e38]:
+              - generic [ref=e39]:
+                - generic [ref=e40]: Vprašam le enkrat — ostalo si zapomnim
+                - button "Vklopi govorne nasvete (glasovno vodenje)" [ref=e43]
+              - generic [ref=e44]: Izberi interese, ki te zanimajo — si jih bom zapomnil.
+              - 'progressbar "Napredek: 0 %" [ref=e45]'
+            - button "Začni" [ref=e50]
+        - region [ref=e51]:
+          - heading "Zemljevid destinacij s preklopilem pogledom" [level=2] [ref=e52]
+          - generic [ref=e54]:
+            - generic [ref=e55]: Zemljevid / seznam
+            - generic [ref=e59]:
+              - generic [ref=e60]: Zemljevid · CLS 0
+              - generic [ref=e61]:
+                - generic [ref=e64]: LiDAR relief
+                - switch "Vklopi LiDAR relief (ARSO, CC BY 4.0)" [ref=e65]
+              - switch "Preklopi na seznam" [checked] [ref=e66]
+          - generic [ref=e67]:
+            - generic [ref=e68]:
+              - textbox "Iskanje prenočišč po imenu kraja" [ref=e73]:
+                - /placeholder: Išči prenočišča — npr. Skopje, Bled, Zagreb
+              - button "Išči prenočišča" [ref=e74]
+            - generic [ref=e75]:
+              - generic [ref=e76]: "Ne veš, kje? Poskusi:"
+              - button "Išči prenočišča v Skopje" [ref=e77]: Skopje
+              - button "Išči prenočišča v Bled" [ref=e78]: Bled
+              - button "Išči prenočišča v Zagreb" [ref=e79]: Zagreb
+            - generic [ref=e80]:
+              - generic [ref=e81]: "Vrsta:"
+              - button "Vse" [pressed] [ref=e82]
+              - button "Hotel" [ref=e83]
+              - button "Gostišče" [ref=e84]
+              - button "Mladinski hotel" [ref=e85]
+              - button "Motel" [ref=e86]
+              - button "Apartma" [ref=e87]
+              - button "Rezort" [ref=e88]
+          - generic [ref=e89]:
+            - application "Interaktivni zemljevid Slovenije" [ref=e91]:
+              - generic:
+                - generic:
+                  - button "Bled" [ref=e92] [cursor=pointer]
+                  - button "Ljubljana" [ref=e96] [cursor=pointer]
+                  - button "Dolina Soče" [ref=e100] [cursor=pointer]
+                  - button "Piran" [ref=e104] [cursor=pointer]
+                  - button "Maribor" [ref=e108] [cursor=pointer]
+              - generic:
+                - generic [ref=e112]:
+                  - button "Zoom in" [ref=e113] [cursor=pointer]: +
+                  - button "Zoom out" [ref=e114] [cursor=pointer]: −
+                - generic [ref=e115]:
+                  - link "Leaflet" [ref=e116] [cursor=pointer]:
+                    - /url: https://leafletjs.com
+                  - text: "| ©"
+                  - link "OpenStreetMap" [ref=e121] [cursor=pointer]:
+                    - /url: https://www.openstreetmap.org/copyright
+            - button "Vklopi vodiča po zemljevidu — potovanje po mestih, vaseh, kmečkem turizmu in naravi celotnega Balkana" [ref=e123]: Vklopi vodiča po zemljevidu
+          - paragraph [ref=e124]: "Viri: © OpenStreetMap — zemljevid + prenočišča (Nominatim, Overpass, Photon; ves svet, torej cel Balkan) · OSRM — cestne poti · ARSO DMR 1 m — višine (CC BY 4.0) · vreme + zrak — Open-Meteo / wttr.in · opisi — Wikipedia (CC BY-SA) · tečaji — open.er-api.com · prazniki — Nager.Date · z-ai iskalnica — zastopne fotografije · cene indikativne; Booking.com ni integriran — prava rezervacija pri objektu ali uradni strani."
+    - contentinfo [ref=e125]:
+      - generic [ref=e126]:
+        - paragraph [ref=e127]: Discover Slovenia AI — potovanje po Sloveniji in Balkanu
+        - paragraph [ref=e128]:
+          - text: Zemljevid ©
+          - link "OpenStreetMap" [ref=e129] [cursor=pointer]:
+            - /url: https://www.openstreetmap.org/copyright
+          - text: sodelavci
+  - region "Notifications (F8)":
+    - list
+  - alert [ref=e130]

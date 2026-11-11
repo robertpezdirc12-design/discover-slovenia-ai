@@ -1803,3 +1803,18 @@ Work Log:
 
 Stage Summary:
 - Restavracije po vseh državah: živi OSM pini (desetinšt.) s stabilnim retryjem; uradni muzejski registri (REMK) ostajajo za muzeje.
+
+---
+Task ID: ZAKLJUCEK-PROJEKTA (odločitev uporabnika)
+Datum: 2026-11-11
+Agent: ZCode (main session)
+Task: zaključek razvoja — uporabnikova odločitev
+
+Work Log:
+- Uporabnikova odločitev: nadaljnji razvoj nima smisla — isti podatki so že na vsakem telefonu (Google Maps), Gemini planer je zastonj, konkurenca nasičena.
+- Strinjam se: podatkovno ne moremo konkurirati; edinstveni viri (REMK, AJPES) so prednost, a niša je ozka in brej trženja nedosegljiva.
+- STANJE OB ZAKLJUČKU: vse potisnjeno na GitHub main + GitLab (ed9b2fe+); produkcija i-feel-slovenia.vercel.app živa; 344+ testov / 0 fail; CI (typecheck+lint+testi+build+e2e) v GitHub Actions; README posodobljen.
+- Projekt ostane kot dokaz znanja: Next.js 16, Leaflet, odprti podatki (OSM, REMK, AJPES, Wikidata, Photon, OSRM), 8 držav, 31 destinacijskih strani, uradni registri, navigacija, večvalutni proračun.
+
+Stage Summary:
+- KONEC: brej nadaljnjih funkcij. Repo arhiviran v trenutnem stanju, produkcija živa dokler Vercel teče. Možnost vrnitve: vse dokumentirano v tem worklogu.

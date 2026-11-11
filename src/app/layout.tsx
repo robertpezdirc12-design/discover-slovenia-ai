@@ -22,7 +22,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Discover Slovenia AI — zemljevid in apartmaji",
+  title: "Discover Slovenia AI — zemljevid in uradna prenočišča",
   description:
     "Interaktivni zemljevid: klikni državo, odpri Slovenijo, izberi »Apartmaji« in poglej vse apartmaje v Sloveniji na odprtih podatkih OpenStreetMap.",
   keywords: ["Slovenija", "apartmaji", "zemljevid", "potovanja", "OpenStreetMap", "Discover Slovenia"],
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
   },
   openGraph: {
-    title: "Discover Slovenia AI — zemljevid in apartmaji",
+    title: "Discover Slovenia AI — zemljevid in uradna prenočišča",
     description:
       "Klikni državo → odpri Slovenijo → spustni meni → apartmaji: vsi apartmaji v Sloveniji na odprtih podatkih.",
     locale: "sl_SI",

@@ -1,19 +1,20 @@
 import { NextResponse } from 'next/server';
-import { indicativeApartmentPrice } from '@/lib/apartments-source';
 import { regionForCityWithCoords } from '@/lib/si-regions';
 import {
   getApartmentsFromDb,
+  getSyncProgress,
   isApartmentsDbEmpty,
-  syncApartments,
+  startAjpesSyncInBackground,
 } from '@/lib/apartments-sync';
 
 /**
- * API: apartmaji v Sloveniji.
+ * API: uradna prenočišča v Sloveniji (vir: AJPES Poslovni register RS).
  *
  * GET /api/apartments
- *   → 200 { ok:true, count, updatedAt, source, apartments:[…] }
- *     (podatki iz baze — zadnji uspešen prenos s spleta)
- *     Če je baza prazna, se samodejno sproži usklajevanje (prvi zagon).
+ *   → 200 { ok:true, count, updatedAt, source, syncing?, apartments:[…] }
+ *     Če je baza prazna, se V OZADJU sproži usklajevanje z uradnim virom
+ *     (prenos PRS + geokodiranje naslovov — lahko traja do eno uro),
+ *     odgovor pa takoj vrne prazno stanje z `syncing:true`.
  */
 
 export const dynamic = 'force-dynamic';
@@ -28,18 +29,50 @@ export interface ApartmentApiItem {
   region: string;
   street: string | null;
   postcode: string | null;
+  obcina: string | null;
+  legalForm: string | null;
+  maticna: string | null;
   website: string | null;
   phone: string | null;
   stars: number | null;
-  priceFrom: number;
   source: string;
+}
+
+export interface ApartmentsApiResponse {
+  ok: boolean;
+  count?: number;
+  updatedAt?: string | null;
+  source?: string | null;
+  syncing?: boolean;
+  syncProgress?: ReturnType<typeof getSyncProgress>;
+  apartments?: ApartmentApiItem[];
+  error?: string;
 }
 
 export async function GET() {
   try {
     if (await isApartmentsDbEmpty()) {
-      // Prvi zagon: samodejno usklajevanje (Overpass → Nominatim rezerva).
-      await syncApartments(fetch);
+      const progress = getSyncProgress();
+      if (!progress.running) {
+        // Prvi zagon: uradni AJPES potek v ozadju, odgovor takoj.
+        const started = startAjpesSyncInBackground();
+        return NextResponse.json(
+          {
+            ok: true,
+            count: 0,
+            updatedAt: null,
+            source: null,
+            syncing: true,
+            syncProgress: started,
+            apartments: [],
+          },
+          { headers: { 'Cache-Control': 'no-store' } },
+        );
+      }
+      return NextResponse.json(
+        { ok: true, count: 0, updatedAt: null, source: null, syncing: true, syncProgress: progress, apartments: [] },
+        { headers: { 'Cache-Control': 'no-store' } },
+      );
     }
 
     const { apartments, updatedAt, source } = await getApartmentsFromDb();
@@ -53,10 +86,12 @@ export async function GET() {
       region: regionForCityWithCoords(a.city, a.lat, a.lng),
       street: a.street,
       postcode: a.postcode,
+      obcina: a.obcina,
+      legalForm: a.legalForm,
+      maticna: a.maticna,
       website: a.website,
       phone: a.phone,
       stars: a.stars,
-      priceFrom: indicativeApartmentPrice(a.stars),
       source: a.source,
     }));
 
@@ -67,7 +102,7 @@ export async function GET() {
   } catch (error) {
     console.error('GET /api/apartments napaka:', error);
     return NextResponse.json(
-      { ok: false, error: 'Podatkov o apartmajih trenutno ni mogoče prikazati.' },
+      { ok: false, error: 'Podatkov o prenočiščih trenutno ni mogoče prikazati.' },
       { status: 500 },
     );
   }

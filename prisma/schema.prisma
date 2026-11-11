@@ -31,9 +31,9 @@ model Post {
   updatedAt DateTime @updatedAt
 }
 
-/// Apartma v Sloveniji — prenos realnih objektov iz odprtih spletnih virov
-/// (OpenStreetMap prek Photon / Overpass). `id` je OSM ključ ("n123", "w456"),
-/// zato je vnos idempotenten ob ponovnem usklajevanju.
+/// Ponudnik prenočitve v Sloveniji — iz uradnega registra (AJPES Poslovni
+/// register Slovenije, registrirani sobodajalci) ali iz OpenStreetMap.
+/// `id`: "ajpes-<maticna>" (uradni vir) ali OSM ključ ("n123", "w456").
 model Apartment {
   id        String   @id
   name      String
@@ -42,12 +42,26 @@ model Apartment {
   city      String?
   street    String?
   postcode  String?
+  obcina    String?
+  legalForm String?
+  maticna   String?
   website   String?
   phone     String?
   stars     Int?
   source    String   @default("photon")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+/// Predpomnilnik geokodiranja uradnih naslovov (ključ = normaliziran naslov).
+/// `match`: exact (ulica + hišna št.) | settlement (center naselja) | miss.
+model GeocodeCache {
+  key       String   @id
+  lat       Float?
+  lng       Float?
+  obcina    String?
+  match     String   @default("miss")
+  checkedAt DateTime @default(now())
 }
 
 /// En sam vrstica metapodatkov usklajevanja (id = "apartments-sync").

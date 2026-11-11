@@ -3,7 +3,7 @@
  * Ločeno od `apartments-source.ts`, ker UI dela le z API obliko.
  */
 
-/** En apartma, kot ga vrne GET /api/apartments. */
+/** Ena prenočišče, kot jo vrne GET /api/apartments. */
 export interface ApartmentApiItem {
   id: string;
   name: string;
@@ -13,11 +13,16 @@ export interface ApartmentApiItem {
   region: string;
   street: string | null;
   postcode: string | null;
+  /** Občina (iz geokodiranega uradnega naslova). */
+  obcina: string | null;
+  /** Pravnoorganizacijska oblika (AJPES — npr. »Registrirani sobodajalec«). */
+  legalForm: string | null;
+  /** Matična številka AJPES (uradni identifikator). */
+  maticna: string | null;
   website: string | null;
   phone: string | null;
   stars: number | null;
-  /** Indikativna cena od (EUR/noč) — jasno označena kot ocena v UI. */
-  priceFrom: number;
+  /** 'ajpes' (uradni register) | 'overpass' | 'nominatim' (OpenStreetMap). */
   source: string;
 }
 
@@ -27,19 +32,45 @@ export interface ApartmentsResponse {
   count?: number;
   updatedAt?: string | null;
   source?: string | null;
+  /** true, če poteka prvo usklajevanje (baza prazna) — glej syncProgress. */
+  syncing?: boolean;
+  syncProgress?: SyncProgressView | null;
   apartments?: ApartmentApiItem[];
   error?: string;
 }
 
-/** Odgovor POST /api/apartments/sync. */
-export interface SyncResponse {
+/** Stanje usklajevanja (odraz GET/POST /api/apartments/sync). */
+export interface SyncProgressView {
+  running: boolean;
+  phase: 'idle' | 'download' | 'geocode' | 'persist' | 'done' | 'error';
+  done: number;
+  total: number;
+  matched: number;
+  startedAt: string | null;
+  finishedAt: string | null;
+  error: string | null;
+}
+
+/** Odgovor POST /api/apartments/sync (začetek v ozadju). */
+export interface SyncStartResponse {
   ok: boolean;
-  count?: number;
-  source?: string;
-  requests?: number;
-  failures?: number;
-  durationMs?: number;
+  started?: boolean;
+  progress?: SyncProgressView;
   error?: string;
+}
+
+/** Odgovor GET /api/apartments/sync (napredek). */
+export interface SyncProgressResponse {
+  ok: boolean;
+  progress?: SyncProgressView;
+  error?: string;
+}
+
+/** Človeku berljiv vir podatkov za statusno vrstico. */
+export function sourceLabel(source: string | null | undefined, dataSource: string | null | undefined): string {
+  if (source === 'ajpes-prs') return 'vir: AJPES — Poslovni register RS (uradno)';
+  if (source) return `vir: OpenStreetMap (${dataSource ?? source})`;
+  return 'vir: —';
 }
 
 /** Formatiran datum/čas v slovenščini (npr. »3. 11. 2025, 14:30«). */

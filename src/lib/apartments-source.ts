@@ -1,29 +1,22 @@
 /**
- * APARTMAJI V SLOVENIJI — podatkovna plast (prenos z odprtih spletnih virov).
+ * APARTMAJI V SLOVENIJI — REZERVNA podatkovna plast (OpenStreetMap).
  *
- * Uporabnikova zahteva: klik na »Apartmaji« prikaže VSE apartmaje v Sloveniji,
- * s podatki s spleta. Vira (brez ključev, poštena raba):
+ * GLAVNI VIR aplikacije je URADNI AJPES PRS (glej `ajpes-source.ts`);
+ * ta modul je rezervna pot prek OpenStreetMap, če uradni vir ni dosegljiv:
  *
  *  1) OVERPASS API (overpass-api.de + zrcalo) — prava OSM objekta
  *     tourism=apartment z bbox celotne Slovenije; vrača tudi zvezdice,
  *     spletno stran in telefon (najbogatejši vir). Če je dosegljiv,
- *     je to primarna pot (ena sama zahteva).
+ *     je to primarna rezervna pot (ena sama zahteva).
  *
  *  2) NOMINATIM (nominatim.openstreetmap.org) — iskalnik nad OSM z
  *     podporo za viewbox + bounded + countrycodes: mreža celic čez
  *     Slovenijo, za vsako celico poizvedujemo besede "apartma",
- *     "apartment" in "apartmaji" (Nominatim ne dela pripone — vsaka
- *     beseda je svoj žeton). Presežek 50 zadetkov → celica se kvadratno
- *     razdeli (quadtree). Zagotovljena vljudnost: ≤ 1 zahteva/s,
- *     uporabniški agent + countrycodes=si (samo slovenski objekti).
- *     To je zanesljiva rezerva, ko Overpass ni dosegljiv.
+ *     "apartment" in "apartmaji". Presežek 50 zadetkov → celica se
+ *     kvadratno razdeli (quadtree). Zagotovljena vljudnost: ≤ 1 zahteva/s.
  *
  * Odgovori se razčlenijo v enotno obliko `ApartmentRecord` z OSM ključem
- * ("n123" / "w456"), zato je usklajevanje idempotentno in Overpass
- * (bogatejši) prepiše Nominatim zapise istih objektov.
- *
- * Čisto in testabilno: gradnja URL + razčlenjevanje brez `fetch`
- * (fetch dobi kot parameter), cena je INDIKATIVNA in v UI jasno označena.
+ * ("n123" / "w456"), zato je usklajevanje idempotentno.
  */
 
 /** Normaliziran zapis apartmaja (OSM ključ kot id). */
@@ -61,17 +54,6 @@ export const MAX_APARTMENTS = 600;
 
 /** Nominatim vljudnost: največ 1 zahteva/sekundo (uradna pravila rabe). */
 export const NOMINATIM_DELAY_MS = 1100;
-
-// ─── Indikativna cena ────────────────────────────────────────────────────────
-
-/**
- * Indikativna cena od (EUR / noč) za apartma: osnova 70 € × multiplikator
- * zvezdic, zaokroženo na 5 €. JASNO označeno kot ocena, ne uradni cenik.
- */
-export function indicativeApartmentPrice(stars: number | null): number {
-  const factor = stars === 1 ? 0.7 : stars === 2 ? 0.85 : stars === 4 ? 1.45 : stars === 5 ? 2.1 : 1.0;
-  return Math.max(30, Math.round((70 * factor) / 5) * 5);
-}
 
 // ─── Overpass ────────────────────────────────────────────────────────────────
 

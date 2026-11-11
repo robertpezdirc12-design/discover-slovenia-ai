@@ -1,36 +1,42 @@
 import { NextResponse } from 'next/server';
-import { syncApartments } from '@/lib/apartments-sync';
+import { getSyncProgress, startAjpesSyncInBackground } from '@/lib/apartments-sync';
 
 /**
- * API: ročno osveževanje apartmajev s spleta.
+ * API: usklajevanje uradnega registra ponudnikov prenočitev (AJPES PRS).
  *
  * POST /api/apartments/sync
- *   → 200 { ok:true, count, source, requests, failures, durationMs }
- *   → 503 { ok:false, error } (usklajevanje že poteka)
+ *   → 200 { ok:true, started, progress } — potek gre V OZADJU (geokodiranje
+ *     uradnih naslovov ≤ 1 zahteva/s, lahko traja do eno uro), odgovor je takoj.
  *
- * Potek: Overpass (bogatejši vir) → Nominatim mreža (≤ 1 zahteva/s,
- * zato lahko traja nekaj minut). Odziv pride šele po koncu.
+ * GET /api/apartments/sync
+ *   → 200 { ok:true, progress } — trenutni napredek (faza, done/total, napake).
  */
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 export async function POST() {
   try {
-    const outcome = await syncApartments(fetch);
+    const progress = startAjpesSyncInBackground();
     return NextResponse.json({
       ok: true,
-      count: outcome.persisted,
-      source: outcome.source,
-      requests: outcome.totalRequests,
-      failures: outcome.failedRequests,
-      durationMs: outcome.durationMs,
+      started: progress.running,
+      progress,
     });
   } catch (error) {
     console.error('POST /api/apartments/sync napaka:', error);
     return NextResponse.json(
-      { ok: false, error: 'Usklajevanje ni uspelo. Poskusite znova kasneje.' },
+      { ok: false, error: 'Usklajevanja ni bilo mogoče začeti.' },
       { status: 500 },
     );
+  }
+}
+
+export async function GET() {
+  try {
+    return NextResponse.json({ ok: true, progress: getSyncProgress() });
+  } catch (error) {
+    console.error('GET /api/apartments/sync napaka:', error);
+    return NextResponse.json({ ok: false, error: 'Stanja ni bilo mogoče prebrati.' }, { status: 500 });
   }
 }

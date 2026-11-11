@@ -7,7 +7,9 @@
  *  1) regijski pregled (Slovenija + Balkan) — brez oznak držav,
  *  2) državo izbereš v spustnem okencu → starš pokliče flyTo/fit-bounds
  *     in se zemljevid približa izbrani državi,
- *  3) izbira »Apartmaji« → pini vseh apartmajev v Sloveniji z popupi.
+ *  3) izbira »Apartmaji« → pini VSEH uradno registriranih ponudnikov
+ *     prenočitev (AJPES PRS) v Sloveniji; klik na pin pokaže popup
+ *     z uradnim naslovom in statusom registracije.
  *
  * Apartmajski pini se gradijo imperativno v LayerGroup (stotine kosov →
  * brez React overheada). Komunikacija s staršem: callback propi +
@@ -45,10 +47,14 @@ function escapeHtml(text: string): string {
     .replace(/'/g, '&#39;');
 }
 
-/** HTML vsebine popupa apartmaja (ime, naslov, cena, povezave). */
+/** HTML vsebine popupa prenočišča (ime, uradni naslov, vir). */
 function apartmentPopupHtml(a: ApartmentApiItem): string {
+  const isAjpes = a.source === 'ajpes';
   const place = [a.city, a.postcode].filter(Boolean).join(' · ');
   const streetLine = a.street ? `<div class="dsa-popup__meta">${escapeHtml(a.street)}</div>` : '';
+  const obcinaLine = a.obcina
+    ? `<div class="dsa-popup__meta">občina ${escapeHtml(a.obcina)}</div>`
+    : '';
   const stars = a.stars ? `${'★'.repeat(a.stars)}${'☆'.repeat(5 - a.stars)}` : '';
   const website = a.website
     ? `<a class="dsa-popup__link" href="${escapeHtml(a.website)}" target="_blank" rel="noopener noreferrer">spletna stran ↗</a>`
@@ -57,13 +63,37 @@ function apartmentPopupHtml(a: ApartmentApiItem): string {
     ? `<a class="dsa-popup__link" href="tel:${escapeHtml(a.phone.replace(/\s+/g, ''))}">${escapeHtml(a.phone)}</a>`
     : '';
   const metaBits = [website, phone].filter(Boolean).join('<span class="dsa-popup__meta"> · </span>');
+
+  if (isAjpes) {
+    // URADNI vir (AJPES) — samo pravi podatki registra, brez ocen.
+    const official =
+      `<div class="dsa-popup__row">` +
+      `<span class="dsa-popup__badge">✔ uradno registriran ponudnik</span>` +
+      (a.legalForm ? `<span class="dsa-popup__meta">${escapeHtml(a.legalForm)}</span>` : '') +
+      `</div>` +
+      (a.maticna
+        ? `<div class="dsa-popup__row"><small class="dsa-popup__meta">matična št. ${escapeHtml(a.maticna)} · AJPES Poslovni register RS</small></div>`
+        : '');
+    return (
+      `<div>` +
+      `<div class="dsa-popup__name">${escapeHtml(a.name)}</div>` +
+      (place ? `<div class="dsa-popup__meta">${escapeHtml(place)}</div>` : '') +
+      streetLine +
+      obcinaLine +
+      official +
+      `</div>`
+    );
+  }
+
+  // OSM rezerva — prikažemo le resnične podatke (brez ocenjenih cen).
+  const starsRow = stars ? `<div class="dsa-popup__row"><span class="dsa-popup__meta" title="zvezdice (OSM)">${stars}</span></div>` : '';
   return (
     `<div>` +
     `<div class="dsa-popup__name">${escapeHtml(a.name)}</div>` +
     (place ? `<div class="dsa-popup__meta">${escapeHtml(place)}</div>` : '') +
     streetLine +
-    `<div class="dsa-popup__row"><span class="dsa-popup__price">od ~${a.priceFrom} € / noč</span>${stars ? `<span class="dsa-popup__meta" title="zvezdice (OSM)">${stars}</span>` : ''}</div>` +
-    `<div class="dsa-popup__row"><small class="dsa-popup__meta">Indikativna ocena, ne uradni cenik.</small></div>` +
+    obcinaLine +
+    starsRow +
     (metaBits ? `<div class="dsa-popup__row">${metaBits}</div>` : '') +
     `<span class="dsa-popup__badge">vir: OpenStreetMap (${escapeHtml(a.source)})</span>` +
     `</div>`

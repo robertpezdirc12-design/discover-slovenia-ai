@@ -82,6 +82,7 @@ export function buildSloveniaMuseums(): PlaceResult[] {
       city: match?.city,
       address: entry.address,
       source: 'remk',
+      website: match?.website,
     });
   }
   // Kurirani muzeji, ki jih register (po imenu) ni pokril — dodaj na konec.

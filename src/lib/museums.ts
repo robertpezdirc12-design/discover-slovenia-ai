@@ -17,6 +17,8 @@ export interface Museum {
   desc: string;
   lat: number;
   lng: number;
+  /** Uradna spletna stran (samo zanesljive domene). */
+  website?: string;
 }
 
 export const MUSEUMS: readonly Museum[] = [
@@ -28,6 +30,7 @@ export const MUSEUMS: readonly Museum[] = [
     desc: 'Najstarejši slovenski muzej: arheologija, numizmatika in steklena zbirka (Prešernova cesta).',
     lat: 46.0518,
     lng: 14.5063,
+    website: 'https://www.narodni-muzej.si',
   },
   {
     id: 'narodna-galerija',
@@ -36,6 +39,7 @@ export const MUSEUMS: readonly Museum[] = [
     desc: 'Glavna umetnostna zbirka: slovenska umetnost od srednjega veka do 20. stoletja.',
     lat: 46.0522,
     lng: 14.5032,
+    website: 'https://www.ng-slo.si',
   },
   {
     id: 'etnografski-muzej',
@@ -44,6 +48,7 @@ export const MUSEUMS: readonly Museum[] = [
     desc: 'Ljudska kultura, vsakdan in identitete — na Metelkovi, z rednimi razstavami.',
     lat: 46.0545,
     lng: 14.5152,
+    website: 'https://www.etno-muzej.si',
   },
   {
     id: 'msum',
@@ -52,6 +57,7 @@ export const MUSEUMS: readonly Museum[] = [
     desc: 'Sodobna umetnost in Arteast zbirka (Metelkova 10).',
     lat: 46.0553,
     lng: 14.5165,
+    website: 'https://www.msum.si',
   },
   {
     id: 'cekinov-grad',
@@ -60,6 +66,7 @@ export const MUSEUMS: readonly Museum[] = [
     desc: 'Zgodovina 20. stoletja v Cekinovem gradu ob Tivoliju.',
     lat: 46.0589,
     lng: 14.4938,
+    website: 'https://www.mnzs.si',
   },
   {
     id: 'zeleznicni-muzej',
@@ -68,6 +75,7 @@ export const MUSEUMS: readonly Museum[] = [
     desc: 'Parne lokomotive in železniška zgodovina na Ljubljanski postaji.',
     lat: 46.0505,
     lng: 14.5218,
+    website: 'https://www.zeleznicnimuzej.si',
   },
   {
     id: 'mao',
@@ -76,6 +84,7 @@ export const MUSEUMS: readonly Museum[] = [
     desc: 'Arhitektura, oblikovanje in Plečnikova zapuščina na Fužinskem gradu.',
     lat: 46.0478,
     lng: 14.5252,
+    website: 'https://mao.si',
   },
   {
     id: 'plecnikov-muzej',
@@ -101,6 +110,7 @@ export const MUSEUMS: readonly Museum[] = [
     desc: 'Grad Bistra: vozila, letala, lovstvo in tehnika — največji tehniški muzej.',
     lat: 45.9628,
     lng: 14.2750,
+    website: 'https://www.tms.si',
   },
   {
     id: 'postni-muzej',
@@ -151,6 +161,7 @@ export const MUSEUMS: readonly Museum[] = [
     desc: 'Slovenska umetnost 20. stoletja v centru Maribora.',
     lat: 46.5565,
     lng: 15.6470,
+    website: 'https://www.ugm.si',
   },
   {
     id: 'mno-maribor',
@@ -175,6 +186,7 @@ export const MUSEUMS: readonly Museum[] = [
     desc: 'Najstarejše slovensko mesto: glasbila, grajske zbirke, kurenti.',
     lat: 46.3975,
     lng: 15.8700,
+    website: 'https://www.pmpo.si',
   },
   {
     id: 'zasavski-muzej',
@@ -250,6 +262,7 @@ export const MUSEUMS: readonly Museum[] = [
     desc: 'Koroška umetnost in zgodovina (Glavni trg).',
     lat: 46.5095,
     lng: 15.0790,
+    website: 'https://www.kpm.si',
   },
   // ——— Zasavje / Posavje ———
   {
@@ -259,6 +272,7 @@ export const MUSEUMS: readonly Museum[] = [
     desc: 'Živosrebrni rudnik (UNESCO) in čipkarska zapuščina v Gewerkeneggovem gradu.',
     lat: 45.9985,
     lng: 14.0260,
+    website: 'https://www.muzej-idrija-cerkno.si',
   },
   // ——— Dolenjska/jug ———
   {

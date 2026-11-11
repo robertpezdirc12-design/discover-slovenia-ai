@@ -286,6 +286,21 @@ export function wikiUrl(title: string, lang = 'sl'): string {
   return `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${t}?redirect=true`;
 }
 
+/** URL MediaWiki iskanja — razreši KAPITALKE/približne naslove na pravi članek. */
+export function wikiSearchUrl(title: string, lang = 'sl'): string {
+  const q = encodeURIComponent(title.trim());
+  return `https://${lang}.wikipedia.org/w/api.php?action=query&format=json&list=search&srlimit=1&srsearch=${q}&origin=*`;
+}
+
+/** Iz iskalnega odgovora poišči prvi veljaven naslov članka (fail-clean → null). */
+export function parseWikiSearch(raw: unknown): string | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const hits = (raw as { query?: { search?: unknown } }).query?.search;
+  if (!Array.isArray(hits) || hits.length === 0) return null;
+  const title = (hits[0] as { title?: unknown }).title;
+  return typeof title === 'string' && title.trim() ? title.trim() : null;
+}
+
 /** Razčlenjevanje REST summary odgovora. Fail-clean: null (404 → null). */
 export function parseWikiSummary(raw: unknown): WikiSummary | null {
   if (!raw || typeof raw !== 'object') return null;

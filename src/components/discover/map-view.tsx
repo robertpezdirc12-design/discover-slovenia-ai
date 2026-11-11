@@ -147,6 +147,65 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
     const layer = placesLayerRef.current;
     layer.clearLayers();
     if (places.length === 0) return;
+
+    /** Osnovna vsebina popupa (prikaže se takoj ob kliku). */
+    const baseHtml = (p: PlaceResult): string =>
+      `<div>` +
+      `<div class="dsa-popup__name">${escapeHtml(p.name)}</div>` +
+      (p.address
+        ? `<div class="dsa-popup__meta">${escapeHtml(p.address)}</div>`
+        : p.city
+          ? `<div class="dsa-popup__meta">${escapeHtml(p.city)}</div>`
+          : '') +
+      `<div class="dsa-popup__meta">${escapeHtml(placesLabel ?? '')}</div>` +
+      (p.note ? `<div class="dsa-popup__meta" style="margin-top:2px">${escapeHtml(p.note)}</div>` : '') +
+      (p.source === 'remk'
+        ? `<span class="dsa-popup__badge">✔ uradno vpisan — Razvid muzejev RS (REMK)</span>`
+        : `<span class="dsa-popup__badge">vir: ${p.curated ? 'kuriran katalog (približna lokacija)' : 'OpenStreetMap'}</span>`) +
+      `</div>`;
+
+    /** Obogatitev z Wikipedijo (asinhrono): slika + povzetek + povezavi.
+     *  Deluje za vse muzeje, tudi za tiste brez kurirane spletne strani. */
+    const enrichWithWiki = (marker: L.Marker, p: PlaceResult) => {
+      const popup = marker.getPopup();
+      if (!popup || !popup.isOpen()) return;
+      fetch(`/api/open-data/wiki?title=${encodeURIComponent(p.name)}&lang=sl`)
+        .then((r) =>
+          r.ok ? (r.json() as Promise<{ ok: boolean; wiki?: { title: string; extract: string; thumb: string | null } }>) : null,
+        )
+        .then((j) => {
+          if (!j?.ok || !j.wiki) return;
+          if (!popup.isOpen()) return;
+          const wikiLink = `https://sl.wikipedia.org/wiki/${encodeURIComponent(j.wiki.title.replace(/ /g, '_'))}`;
+          popup.setContent(
+            `<div>` +
+              (j.wiki.thumb
+                ? `<img src="${escapeHtml(j.wiki.thumb)}" alt="" style="width:100%;height:110px;object-fit:cover;border-radius:8px;margin-bottom:6px"/>`
+                : '') +
+              `<div class="dsa-popup__name">${escapeHtml(p.name)}</div>` +
+              (p.address
+                ? `<div class="dsa-popup__meta">${escapeHtml(p.address)}</div>`
+                : p.city
+                  ? `<div class="dsa-popup__meta">${escapeHtml(p.city)}</div>`
+                  : '') +
+              (p.note ? `<div class="dsa-popup__meta" style="margin-top:2px">${escapeHtml(p.note)}</div>` : '') +
+              `<div class="dsa-popup__meta" style="margin-top:2px">${escapeHtml(j.wiki.extract.slice(0, 220))}${j.wiki.extract.length > 220 ? '…' : ''}</div>` +
+              `<div class="dsa-popup__row"><a class="dsa-popup__link" href="${escapeHtml(wikiLink)}" target="_blank" rel="noopener noreferrer">Wikipedija ↗</a>` +
+              (p.website
+                ? `<span class="dsa-popup__meta"> · </span><a class="dsa-popup__link" href="${escapeHtml(p.website)}" target="_blank" rel="noopener noreferrer">uradna stran ↗</a>`
+                : '') +
+              `</div>` +
+              (p.source === 'remk'
+                ? `<span class="dsa-popup__badge">✔ uradno vpisan — Razvid muzejev RS (REMK)</span>`
+                : '') +
+              `</div>`,
+          );
+        })
+        .catch(() => {
+          /* brez Wikipedije ostane osnovni popup */
+        });
+    };
+
     for (const p of places) {
       const marker = L.marker([p.lat, p.lng], {
         icon: L.divIcon({
@@ -159,24 +218,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
         title: p.name,
         alt: `${placesLabel ?? 'Kraj'} ${p.name}`,
       })
-        .bindPopup(
-          `<div>` +
-            `<div class="dsa-popup__name">${escapeHtml(p.name)}</div>` +
-            (p.address
-              ? `<div class="dsa-popup__meta">${escapeHtml(p.address)}</div>`
-              : p.city
-                ? `<div class="dsa-popup__meta">${escapeHtml(p.city)}</div>`
-                : '') +
-            `<div class="dsa-popup__meta">${escapeHtml(placesLabel ?? '')}</div>` +
-            (p.note
-              ? `<div class="dsa-popup__meta" style="margin-top:2px">${escapeHtml(p.note)}</div>`
-              : '') +
-            (p.source === 'remk'
-              ? `<span class="dsa-popup__badge">✔ uradno vpisan — Razvid muzejev RS (REMK)</span>`
-              : `<span class="dsa-popup__badge">vir: ${p.curated ? 'kuriran katalog (približna lokacija)' : 'OpenStreetMap'}</span>`) +
-            `</div>`,
-          { maxWidth: 280 },
-        );
+        .bindPopup(baseHtml(p), { maxWidth: 280 })
+        .on('click', () => enrichWithWiki(marker, p));
       marker.addTo(layer);
     }
   }, [places, placesLabel]);

@@ -28,7 +28,9 @@ import {
   parseOpenMeteoWeather,
   parseReverse,
   parseWikiSummary,
+  parseWikiSearch,
   parseWttrWeather,
+  wikiSearchUrl,
   wikiUrl,
   wttrUrl,
   type Holiday,
@@ -87,8 +89,11 @@ export async function fetchWikiChain(title: string, lang: string): Promise<WikiS
   try {
     return parseWikiSummary(await upstream(wikiUrl(title, lang), OPEN_DATA_UA));
   } catch (e) {
-    if (e instanceof UpstreamHttpError && e.status === 404) return null; // članka ni — ni napaka
-    throw e;
+    if (!(e instanceof UpstreamHttpError) || e.status !== 404) throw e;
+    // Članka ni (npr. KAPITALKE iz uradnega registra) → iskanje razreši pravi naslov.
+    const resolved = parseWikiSearch(await upstream(wikiSearchUrl(title, lang), OPEN_DATA_UA));
+    if (!resolved || resolved === title.trim()) return null;
+    return parseWikiSummary(await upstream(wikiUrl(resolved, lang), OPEN_DATA_UA));
   }
 }
 

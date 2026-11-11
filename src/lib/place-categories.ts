@@ -167,6 +167,8 @@ export interface PlaceResult {
   address?: string;
   /** Vir zapisa: 'remk' (uradni razvid muzejev RS) ipd. */
   source?: string;
+  /** Uradna spletna stran (kurirani katalog). */
+  website?: string;
 }
 
 export function parseOverpassPlaces(raw: unknown, categoryId: PlaceCategoryId): PlaceResult[] {

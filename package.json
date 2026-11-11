@@ -16,7 +16,8 @@
     "test": "bun test tests/",
     "test:watch": "bun test --watch",
     "test:e2e": "playwright test",
-    "verify": "bun run typecheck && bun run lint:check && bun run test && bun run build"
+    "verify": "bun run typecheck && bun run lint:check && bun run test && bun run build",
+    "data:export": "bun run scripts/export-ajpes-json.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -16,6 +16,16 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 export async function POST() {
+  // Serverless (Vercel): dolgotrajnega usklajevanja ni mogoče zagnati —
+  // strežnik uporablja vgrajen snapshot (data/ajpes-apartments.json).
+  if (process.env.VERCEL) {
+    return NextResponse.json({
+      ok: true,
+      started: false,
+      progress: getSyncProgress(),
+      note: 'Na strežniški platformi se uporablja vgrajen uradni snapshot; usklajevanje poteka le na lokalnem strežniku.',
+    });
+  }
   try {
     const progress = startAjpesSyncInBackground();
     return NextResponse.json({

@@ -1739,3 +1739,17 @@ Work Log:
 
 Stage Summary:
 - Muzeji po vsem Balkanu: vsaka država vrne prave muzeje z opisi; klik → popup + wiki obogatitev (slika + povzetek + povezavi).
+
+---
+Task ID: POLIRAJ-31-ZIVI-PINI-RESTAVRACIJE (Photon vir)
+Datum: 2026-11-11
+Agent: ZCode (main session)
+Task: živi OSM pini za restavracije/kavarne/… po državah
+
+Work Log:
+- Analiza: uradni registri restavracij ne obstajajo javno; Overpass-api.de z Vercela ne prestreže 10,4 s za cele države; osm.ch = samo švicarski izvleček (0 za Balkan).
+- REŠITEV: Photon (Komoot, dosegljiv povsod ~0,5 s) — q=a (generik) + bbox države (minLon,minLat,maxLon,maxLat!) + osm_tag po kategoriji; strikten filter koordinat + OSM imena držav (OSM_COUNTRY_NAMES, dualni zapisi SR/BIH).
+- Napake pri poti: photon bbox vrstni red (COUNTRY_BBOX south,west,north,east → photon minLon,minLat,maxLon,maxLat) — popravljeno po merjenju.
+- VRATA: 349 pass / 0 fail; tsc 0; lint 0; build OK.
+- PRODUKCIJA: HR restavracije 11 živih (Zagreb/Split/Rijeka) v 0,8 s; SRB lekarne 15 živih.
+- GIT: push GitHub main + GitLab sandbox/guided-ux-line.

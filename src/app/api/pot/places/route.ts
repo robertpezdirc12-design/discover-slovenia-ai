@@ -30,6 +30,25 @@ function parseCoord(raw: string | null): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/** Lokalna imena držav v OSM (Photon properties.country) → naš country id. */
+const OSM_COUNTRY_NAMES: Record<string, readonly string[]> = {
+  slovenija: ['Slovenija', 'Slovenia'],
+  hrvaska: ['Hrvatska', 'Croatia'],
+  'bosna-hercegovina': ['Bosna i Hercegovina', 'Bosnia and Herzegovina'],
+  srbija: ['Srbija', 'Serbia', 'Србија'],
+  kosovo: ['Kosovo'],
+  'crna-gora': ['Crna Gora', 'Montenegro'],
+  albanija: ['Shqipëria', 'Albania'],
+  'severna-makedonija': ['Северна Македонија', 'North Macedonia', 'Makedonija'],
+};
+
+/** Ali Photon-ime države ustreza naši izbrani državi (dualni zapisi v OSM). */
+function countryMatches(photonCountry: string, countryId: string): boolean {
+  const variants = OSM_COUNTRY_NAMES[countryId];
+  if (!variants) return true; // neznana država → ne filtriraj
+  return variants.some((v) => photonCountry.startsWith(v));
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const catId = (url.searchParams.get('cat') ?? '').trim();
@@ -41,6 +60,7 @@ export async function GET(request: Request) {
   // omejeno iskanje okoli točke, z `scope=country&country=<id>` pa poženemo
   // iskanje znotraj izbrane države (uporabno za vmesnik »država → kaj iščem«).
   const scope = url.searchParams.get('scope') ?? 'balkan';
+  const fbCountryName = (url.searchParams.get('country') ?? '').trim();
   let bbox = BALKAN_BBOX;
   let radius = 20;
   if (scope === 'local') {
@@ -98,6 +118,74 @@ export async function GET(request: Request) {
     bbox = cb;
   }
   const query = overpassPlacesQuery(category, bbox, scope === 'local' ? 30 : 80);
+
+  // PRIMARNI VIR — Photon (Komoot, ~0,5 s, dosegljiv povsod): osm_tag po
+  // kategoriji znotraj bboxa; rezultati so striktno filtrirani na bbox in
+  // državo (Photon bbox je le bias, ne stroga mejа).
+  const parts = bbox.split(',').map(Number);
+  const bboxNum =
+    parts.length === 4 && parts.every((n) => Number.isFinite(n))
+      ? { south: parts[0], west: parts[1], north: parts[2], east: parts[3] }
+      : null;
+  if (bboxNum) {
+    try {
+      // Photon zahteva neprazen q; »a« se ujema s skoraj vsemi imeni →
+      // dejanski filter sta osm_tag + bbox (izenačeno spodaj).
+      // bbox vrstni red: COUNTRY_BBOX = south,west,north,east →
+      // Photon = minLon,minLat,maxLon,maxLat (zamenjana okljiča).
+      const [bbSouth, bbWest, bbNorth, bbEast] = bbox.split(',');
+      const photonUrl =
+        `https://photon.komoot.io/api/?q=a` +
+        `&bbox=${encodeURIComponent(`${bbWest},${bbSouth},${bbEast},${bbNorth}`)}` +
+        `&osm_tag=${encodeURIComponent(category.photonTag)}` +
+        `&limit=60`;
+      const res = await fetch(photonUrl, {
+        headers: { 'user-agent': UA, accept: 'application/json' },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (res.ok) {
+        const j = (await res.json()) as {
+          features?: { geometry?: { coordinates?: number[] }; properties?: Record<string, unknown> }[];
+        };
+        const seen = new Set<string>();
+        const places: PlaceResult[] = [];
+        for (const f of j.features ?? []) {
+          const coords = f.geometry?.coordinates;
+          if (!Array.isArray(coords) || coords.length < 2) continue;
+          const lng = Number(coords[0]);
+          const lat = Number(coords[1]);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+          // Strogi bbox filter (Photon včasih vrne tudi zadetke ob robu).
+          if (lat < bboxNum.south || lat > bboxNum.north) continue;
+          if (lng < bboxNum.west || lng > bboxNum.east) continue;
+          // Filtriraj po imenu države (Photon vrača lokalno ime iz OSM).
+          const country = typeof f.properties?.country === 'string' ? f.properties.country : '';
+          if (scope === 'country' && !countryMatches(country, fbCountryName)) continue;
+          const props = f.properties ?? {};
+          const name = typeof props.name === 'string' ? props.name.trim() : '';
+          if (!name) continue;
+          const key = name.toLowerCase();
+          if (seen.has(key)) continue;
+          seen.add(key);
+          places.push({
+            id: `osm-${typeof props.osm_type === 'string' ? props.osm_type : 'n'}-${typeof props.osm_id === 'number' || typeof props.osm_id === 'string' ? props.osm_id : seen.size}`,
+            name: name.slice(0, 120),
+            category: catId as PlaceCategoryId,
+            lat,
+            lng,
+            city: typeof props.city === 'string' ? props.city : undefined,
+            source: 'osm',
+          });
+          if (places.length >= 60) break;
+        }
+        if (places.length > 0) {
+          return NextResponse.json({ ok: true, category: catId, radius, places });
+        }
+      }
+    } catch {
+      /* Photon ni dosegljiv → Overpass → rezerva */
+    }
+  }
 
   // DOSEGLJIVI viri (izmerjeno v POLIRAJ-9/29): overpass-api.de deluje iz
   // Vercela (dokazano s prenočišči); osm.ch je SAMO švicarski izvleček

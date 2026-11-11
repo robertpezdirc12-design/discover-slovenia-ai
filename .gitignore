@@ -70,3 +70,4 @@ server.log
 /panel-*.png
 /poi-*.png
 /ui-*.png
+/package-lock.json

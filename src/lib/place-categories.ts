@@ -169,6 +169,8 @@ export interface PlaceResult {
   source?: string;
   /** Uradna spletna stran (kurirani katalog). */
   website?: string;
+  /** Natančen naslov Wikipedijinega članka (iz Wikidata sitelinka) — za exact enrichment. */
+  wikiTitle?: string;
 }
 
 export function parseOverpassPlaces(raw: unknown, categoryId: PlaceCategoryId): PlaceResult[] {

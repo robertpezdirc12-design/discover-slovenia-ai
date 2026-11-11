@@ -85,15 +85,37 @@ export async function fetchWeatherChain(lat: number, lng: number): Promise<Weath
 }
 
 /** Wikipedia povzetek; članek ne obstaja (404) → null (mrežna napaka → throw). */
-export async function fetchWikiChain(title: string, lang: string): Promise<WikiSummary | null> {
+/** Besede, ki v opisu nakazujejo OSEBO (ne muzeja) — zaščita pred napačnimi ujemanji. */
+const PERSON_HINTS =
+  /režiser|igralec|igralka|pevec|pevka|politik|nogometaš|košarkar|novinar|pisatelj|pesnik|skladatelj|dirkač|boksar|tenisač|šahist|voditelj|scenarist|producent|actor|director|politician|singer|writer|footballer|composer|painter/i;
+
+/** Zavrne summary, če opisuje OSEBO (redirect »Stone Museum« → Oliver Stone). */
+function rejectPerson(summary: WikiSummary | null): WikiSummary | null {
+  if (!summary) return null;
+  const haystack = `${summary.description ?? ''} ${summary.extract.slice(0, 180)}`;
+  if (PERSON_HINTS.test(haystack)) return null;
+  return summary;
+}
+
+export async function fetchWikiChain(
+  title: string,
+  lang: string,
+  opts: { exact?: boolean } = {},
+): Promise<WikiSummary | null> {
   try {
-    return parseWikiSummary(await upstream(wikiUrl(title, lang), OPEN_DATA_UA));
+    // Zaščita velja tudi za neposredni summary (redirecti se ugibajo).
+    return rejectPerson(parseWikiSummary(await upstream(wikiUrl(title, lang), OPEN_DATA_UA)));
   } catch (e) {
     if (!(e instanceof UpstreamHttpError) || e.status !== 404) throw e;
+    // Z `exact` (pin iz podatkovne plasti) NE ugibamo — napačen članek je
+    // hujši kot brez obogatitve (npr. »Stone Museum« → Oliver Stone).
+    if (opts.exact) return null;
     // Članka ni (npr. KAPITALKE iz uradnega registra) → iskanje razreši pravi naslov.
     const resolved = parseWikiSearch(await upstream(wikiSearchUrl(title, lang), OPEN_DATA_UA));
     if (!resolved || resolved === title.trim()) return null;
-    return parseWikiSummary(await upstream(wikiUrl(resolved, lang), OPEN_DATA_UA));
+    const summary = parseWikiSummary(await upstream(wikiUrl(resolved, lang), OPEN_DATA_UA));
+    // Zaščita: če opis opisuje OSEBO, ujemanje ni muzej → brez obogatitve.
+    return rejectPerson(summary);
   }
 }
 

@@ -18,6 +18,8 @@ interface WikidataEntry {
   name: string;
   lat: number;
   lng: number;
+  wikiSl?: string | null;
+  wikiEn?: string | null;
 }
 
 interface WikidataFile {
@@ -79,6 +81,9 @@ export function buildWikidataMuseums(
       city: match?.city,
       website: match?.website,
       source: 'wikidata',
+      // Natančen naslov Wikipedijinega članka — popup ga uporabi za
+      // enrichment z `exact=1` (brez ugibanja, npr. ne »Stone Museum« → Oliver Stone).
+      wikiTitle: entry.wikiSl ?? entry.wikiEn ?? undefined,
     };
   });
 }

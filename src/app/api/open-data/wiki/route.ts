@@ -76,10 +76,12 @@ export async function GET(request: Request) {
   const pending = inFlight.get(key);
   if (pending) return NextResponse.json({ ok: true, wiki: await pending });
 
+  const exact = url.searchParams.get('exact') === '1';
   const task = (async () => {
     try {
-      return await fetchWikiChain(parsed.title, parsed.lang);
+      return await fetchWikiChain(parsed.title, parsed.lang, { exact });
     } catch (directError) {
+      if (exact) throw directError; // exact: brez rezerve (rezerva ugiba)
       try {
         return await viaService(parsed.title, parsed.lang);
       } catch {

@@ -167,11 +167,14 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
       `</div>`;
 
     /** Obogatitev z Wikipedijo (asinhrono): slika + povzetek + povezavi.
-     *  Deluje za vse muzeje, tudi za tiste brez kurirane spletne strani. */
+     *  Z `wikiTitle` (sitelink iz Wikidat) uporabimo EXACT naslov — brez
+     *  ugibanja (prepreči npr. »Stone Museum« → članek o Oliverju Stoneu). */
     const enrichWithWiki = (marker: L.Marker, p: PlaceResult) => {
       const popup = marker.getPopup();
       if (!popup || !popup.isOpen()) return;
-      fetch(`/api/open-data/wiki?title=${encodeURIComponent(p.name)}&lang=sl`)
+      const exact = p.wikiTitle ? '&exact=1' : '';
+      const lookupTitle = p.wikiTitle ?? p.name;
+      fetch(`/api/open-data/wiki?title=${encodeURIComponent(lookupTitle)}&lang=sl${exact}`)
         .then((r) =>
           r.ok ? (r.json() as Promise<{ ok: boolean; wiki?: { title: string; extract: string; thumb: string | null } }>) : null,
         )

@@ -7,9 +7,11 @@ import {
   parseOverpassPlaces,
   placeCategoryById,
   type PlaceCategoryId,
+  type PlaceResult,
 } from '@/lib/place-categories';
 import { MUSEUMS } from '@/lib/museums';
 import { buildSloveniaMuseums } from '@/lib/museums-register';
+import { balkanMuseumsForCountry } from '@/lib/museums-balkan';
 
 /**
  * GET /api/pot/places?cat={kategorija}&lat=&lng=&radius=
@@ -61,11 +63,29 @@ export async function GET(request: Request) {
     if (!cb) {
       return NextResponse.json({ ok: false, error: 'Neznana država.' }, { status: 400 });
     }
-    // KURIRANI KATALOG + URADNI REGISTER (muzeji v Sloveniji):
-    // REMK razvid (uradni vir, z naslovi) + kurirani opisi iz kataloga.
-    if (country === 'slovenija' && catId === 'muzeji') {
-      const places = buildSloveniaMuseums();
-      return NextResponse.json({ ok: true, category: catId, radius, curated: true, places });
+    // KURIRANI KATALOG + URADNI REGISTER (muzeji):
+    // Slovenija → REMK razvid (uradni vir, z naslovi) + kurirani opisi.
+    // Ostale balkanske države → kurirani katalog pravih muzejev.
+    if (catId === 'muzeji') {
+      if (country === 'slovenija') {
+        const places = buildSloveniaMuseums();
+        return NextResponse.json({ ok: true, category: catId, radius, curated: true, places });
+      }
+      const balkan = balkanMuseumsForCountry(country);
+      if (balkan.length > 0) {
+        const places: PlaceResult[] = balkan.map((m) => ({
+          id: m.id,
+          name: m.name,
+          category: 'muzeji' as PlaceCategoryId,
+          lat: m.lat,
+          lng: m.lng,
+          curated: true,
+          note: m.desc,
+          city: m.city,
+          source: 'katalog',
+        }));
+        return NextResponse.json({ ok: true, category: catId, radius, curated: true, places });
+      }
     }
     bbox = cb;
   }

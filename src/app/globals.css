@@ -1,0 +1,295 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-source-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  /* Alpski kanon: megla + gozdna zelena + kamen (iz repozitorija discover-slovenia-ai) */
+  --radius: 0.75rem;
+  --background: oklch(0.985 0.008 155);
+  --foreground: oklch(0.22 0.025 155);
+  --card: oklch(0.995 0.004 155);
+  --card-foreground: oklch(0.22 0.025 155);
+  --popover: oklch(0.995 0.004 155);
+  --popover-foreground: oklch(0.22 0.025 155);
+  --primary: oklch(0.42 0.09 162);
+  --primary-foreground: oklch(0.98 0.01 155);
+  --secondary: oklch(0.94 0.02 155);
+  --secondary-foreground: oklch(0.28 0.04 155);
+  --muted: oklch(0.955 0.012 155);
+  --muted-foreground: oklch(0.48 0.02 155);
+  --accent: oklch(0.93 0.03 155);
+  --accent-foreground: oklch(0.28 0.05 155);
+  --destructive: oklch(0.55 0.2 25);
+  --border: oklch(0.88 0.015 155);
+  --input: oklch(0.9 0.012 155);
+  --ring: oklch(0.5 0.08 162);
+  --chart-1: oklch(0.5 0.1 162);
+  --chart-2: oklch(0.62 0.1 85);
+  --chart-3: oklch(0.55 0.08 220);
+  --chart-4: oklch(0.65 0.12 25);
+  --chart-5: oklch(0.6 0.08 300);
+  --sidebar: oklch(0.985 0.008 155);
+  --sidebar-foreground: oklch(0.22 0.025 155);
+  --sidebar-primary: oklch(0.42 0.09 162);
+  --sidebar-primary-foreground: oklch(0.98 0.01 155);
+  --sidebar-accent: oklch(0.93 0.03 155);
+  --sidebar-accent-foreground: oklch(0.28 0.05 155);
+  --sidebar-border: oklch(0.88 0.015 155);
+  --sidebar-ring: oklch(0.5 0.08 162);
+}
+
+.dark {
+  --background: oklch(0.2 0.02 155);
+  --foreground: oklch(0.95 0.01 155);
+  --card: oklch(0.24 0.02 155);
+  --card-foreground: oklch(0.95 0.01 155);
+  --popover: oklch(0.24 0.02 155);
+  --popover-foreground: oklch(0.95 0.01 155);
+  --primary: oklch(0.7 0.1 162);
+  --primary-foreground: oklch(0.2 0.03 155);
+  --secondary: oklch(0.3 0.02 155);
+  --secondary-foreground: oklch(0.95 0.01 155);
+  --muted: oklch(0.3 0.02 155);
+  --muted-foreground: oklch(0.7 0.02 155);
+  --accent: oklch(0.32 0.03 155);
+  --accent-foreground: oklch(0.95 0.01 155);
+  --destructive: oklch(0.65 0.19 25);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.6 0.08 162);
+  --chart-1: oklch(0.7 0.1 162);
+  --chart-2: oklch(0.72 0.1 85);
+  --chart-3: oklch(0.65 0.08 220);
+  --chart-4: oklch(0.7 0.12 25);
+  --chart-5: oklch(0.68 0.08 300);
+  --sidebar: oklch(0.24 0.02 155);
+  --sidebar-foreground: oklch(0.95 0.01 155);
+  --sidebar-primary: oklch(0.7 0.1 162);
+  --sidebar-primary-foreground: oklch(0.2 0.03 155);
+  --sidebar-accent: oklch(0.32 0.03 155);
+  --sidebar-accent-foreground: oklch(0.95 0.01 155);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.6 0.08 162);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ─── Leaflet prilagoditve (pini + popupi) ─────────────────────────────── */
+
+.leaflet-container {
+  font-family: var(--font-source-sans), ui-sans-serif, system-ui, sans-serif;
+  background: oklch(0.955 0.012 155);
+}
+
+/* Državni pin — krogec z zastavo in ime pod njim */
+.dsa-pin-country {
+  background: transparent;
+  border: none;
+}
+.dsa-country-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  transform-origin: center bottom;
+}
+.dsa-country-pin:hover {
+  transform: scale(1.12);
+}
+.dsa-country-pin__dot {
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  background: var(--primary);
+  border: 2.5px solid #fff;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.35);
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+  line-height: 1;
+}
+.dsa-country-pin--selected .dsa-country-pin__dot {
+  background: oklch(0.52 0.13 150);
+  box-shadow:
+    0 0 0 4px oklch(0.52 0.13 150 / 0.3),
+    0 2px 10px rgb(0 0 0 / 0.4);
+  transform: scale(1.1);
+}
+.dsa-country-pin__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: oklch(0.25 0.03 155);
+  background: rgb(255 255 255 / 0.92);
+  border: 1px solid rgb(0 0 0 / 0.08);
+  border-radius: 9999px;
+  padding: 1px 7px;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.15);
+}
+
+/* Apartma pin — manjša hišica */
+.dsa-pin-apartment {
+  background: transparent;
+  border: none;
+}
+.dsa-apartment-pin {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px 7px 7px 1px;
+  transform: rotate(-45deg);
+  background: var(--primary);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 6px rgb(0 0 0 / 0.4);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    background 0.12s ease;
+}
+.dsa-apartment-pin svg {
+  transform: rotate(45deg);
+}
+.dsa-apartment-pin:hover {
+  transform: rotate(-45deg) scale(1.15);
+  background: oklch(0.52 0.13 150);
+}
+.dsa-apartment-pin--active {
+  background: oklch(0.62 0.1 85);
+  box-shadow:
+    0 0 0 4px oklch(0.62 0.1 85 / 0.35),
+    0 1px 6px rgb(0 0 0 / 0.4);
+}
+
+/* Popup v alpskem stilu */
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+  border: 1px solid oklch(0.88 0.015 155);
+}
+.leaflet-popup-content {
+  margin: 12px 14px;
+  min-width: 200px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.dsa-popup__name {
+  font-weight: 700;
+  font-size: 14px;
+  color: oklch(0.25 0.03 155);
+  margin-bottom: 2px;
+}
+.dsa-popup__meta {
+  color: oklch(0.45 0.02 155);
+}
+.dsa-popup__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 6px;
+}
+.dsa-popup__price {
+  font-weight: 700;
+  color: oklch(0.42 0.09 162);
+  white-space: nowrap;
+}
+.dsa-popup__link {
+  color: oklch(0.42 0.09 162);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.dsa-popup__badge {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: oklch(0.4 0.05 155);
+  background: oklch(0.93 0.03 155);
+  border-radius: 9999px;
+  padding: 1px 8px;
+  margin-top: 6px;
+}
+
+/* Drobni scrollbar v seznamu apartmajev */
+.dsa-scroll-list {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.75 0.04 155) transparent;
+}
+.dsa-scroll-list::-webkit-scrollbar {
+  width: 8px;
+}
+.dsa-scroll-list::-webkit-scrollbar-thumb {
+  background: oklch(0.75 0.04 155);
+  border-radius: 9999px;
+}
+.dsa-scroll-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Pulzirajoč »prižgana« točka na izbrani državi (subtilno) */
+@keyframes dsa-pulse {
+  0% {
+    box-shadow: 0 0 0 0 oklch(0.52 0.13 150 / 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 12px oklch(0.52 0.13 150 / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 oklch(0.52 0.13 150 / 0);
+  }
+}
+.dsa-country-pin--selected .dsa-country-pin__dot {
+  animation: dsa-pulse 2.2s ease-out infinite;
+}

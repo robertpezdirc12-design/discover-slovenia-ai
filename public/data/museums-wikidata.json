@@ -2332,8 +2332,1037 @@
     "lng": 21.16627
    }
   ],
-  "crna-gora": [],
-  "albanija": [],
-  "severna-makedonija": []
+  "crna-gora": [
+   {
+    "item": "Q16677924",
+    "name": "Maritime Museum of Montenegro in Kotor",
+    "lat": 42.42506,
+    "lng": 18.7714
+   },
+   {
+    "item": "Q13043217",
+    "name": "Museum of Local History in Ulcinj",
+    "lat": 41.92462,
+    "lng": 19.20119
+   },
+   {
+    "item": "Q30284985",
+    "name": "Natural History Museum of Montenegro",
+    "lat": 42.43601,
+    "lng": 19.25981
+   },
+   {
+    "item": "Q56232896",
+    "name": "Ethnographic Museum of Montenegro",
+    "lat": 42.38797,
+    "lng": 18.92466
+   },
+   {
+    "item": "Q16258342",
+    "name": "Church-Mosque of Ulcinj",
+    "lat": 41.92458,
+    "lng": 19.20131
+   },
+   {
+    "item": "Q17050333",
+    "name": "Heritage Museum Pljevlja",
+    "lat": 43.36,
+    "lng": 19.36
+   },
+   {
+    "item": "Q56467995",
+    "name": "Q56467995",
+    "lat": 42.39146,
+    "lng": 18.9223
+   },
+   {
+    "item": "Q110048259",
+    "name": "Museum of Women of Montenegro",
+    "lat": 42.45053,
+    "lng": 19.23913
+   },
+   {
+    "item": "Q140539312",
+    "name": "Podgorica City Museum",
+    "lat": 42.43847,
+    "lng": 19.26577
+   },
+   {
+    "item": "Q140546130",
+    "name": "Archaeological Museum of Montenegro",
+    "lat": 42.38812,
+    "lng": 18.92299
+   },
+   {
+    "item": "Q140546076",
+    "name": "Art Museum of Montenegro",
+    "lat": 42.38926,
+    "lng": 18.92281
+   },
+   {
+    "item": "Q140546354",
+    "name": "Njegoš birth house",
+    "lat": 42.43329,
+    "lng": 18.829
+   },
+   {
+    "item": "Q2265459",
+    "name": "National Museum of Montenegro",
+    "lat": 42.38928,
+    "lng": 18.92286
+   },
+   {
+    "item": "Q140546038",
+    "name": "Historical Museum of Montenegro",
+    "lat": 42.38926,
+    "lng": 18.92281
+   }
+  ],
+  "albanija": [
+   {
+    "item": "Q961493",
+    "name": "Q961493",
+    "lat": 40.45222,
+    "lng": 19.48532
+   },
+   {
+    "item": "Q6980610",
+    "name": "Natural Sciences Museum Sabiha Kasimati",
+    "lat": 41.32551,
+    "lng": 19.83454
+   },
+   {
+    "item": "Q99299901",
+    "name": "Solomon Museum",
+    "lat": 40.7065,
+    "lng": 19.94828
+   },
+   {
+    "item": "Q30184883",
+    "name": "Migjeni School Museum",
+    "lat": 42.04334,
+    "lng": 19.90102
+   },
+   {
+    "item": "Q118140339",
+    "name": "Asdreni Museum",
+    "lat": 40.5831,
+    "lng": 20.79143
+   },
+   {
+    "item": "Q118143770",
+    "name": "Ndre Mjeda Museum",
+    "lat": 41.89982,
+    "lng": 19.55499
+   },
+   {
+    "item": "Q637170",
+    "name": "National Archaeological Museum",
+    "lat": 41.31829,
+    "lng": 19.8219
+   },
+   {
+    "item": "Q118140382",
+    "name": "Museum of Gramsh",
+    "lat": 40.86864,
+    "lng": 20.18369
+   },
+   {
+    "item": "Q3303191",
+    "name": "Gjergj Kastrioti Skënderbeu National Museum",
+    "lat": 41.5074,
+    "lng": 19.79401
+   },
+   {
+    "item": "Q5316767",
+    "name": "Durrës Archaeological Museum",
+    "lat": 41.31139,
+    "lng": 19.44028
+   },
+   {
+    "item": "Q6940744",
+    "name": "Museum of Apollonia",
+    "lat": 40.72033,
+    "lng": 19.47172
+   },
+   {
+    "item": "Q25570525",
+    "name": "National Archaeological Museum of Korçë",
+    "lat": 40.61528,
+    "lng": 20.78146
+   },
+   {
+    "item": "Q13043216",
+    "name": "National Museum of Weapons",
+    "lat": 40.07293,
+    "lng": 20.14
+   },
+   {
+    "item": "Q68042145",
+    "name": "Archeological Museum of Butrint",
+    "lat": 39.74615,
+    "lng": 20.01982
+   },
+   {
+    "item": "Q65307557",
+    "name": "Gjirokastra Cold War Museum",
+    "lat": 40.07481,
+    "lng": 20.1402
+   },
+   {
+    "item": "Q5160877",
+    "name": "Congress of Lushnjë Museum",
+    "lat": 40.94111,
+    "lng": 19.7075
+   },
+   {
+    "item": "Q3304897",
+    "name": "Berat National Ethnographic Museum",
+    "lat": 40.7076,
+    "lng": 19.9504
+   },
+   {
+    "item": "Q28230094",
+    "name": "Ethnographic Museum of Kavajë",
+    "lat": 41.18028,
+    "lng": 19.55556
+   },
+   {
+    "item": "Q42697166",
+    "name": "Ethnographic Museum of Dukagjin",
+    "lat": 42.38737,
+    "lng": 19.78521
+   },
+   {
+    "item": "Q13043200",
+    "name": "Ethnographic Museum of Durrës",
+    "lat": 41.31072,
+    "lng": 19.44606
+   },
+   {
+    "item": "Q13043201",
+    "name": "Elbasan Ethnographic Museum",
+    "lat": 41.11209,
+    "lng": 20.08313
+   },
+   {
+    "item": "Q15221722",
+    "name": "Gjirokastër Ethnographic Museum",
+    "lat": 40.07556,
+    "lng": 20.13472
+   },
+   {
+    "item": "Q13039148",
+    "name": "Fototeka Marubi",
+    "lat": 42.06859,
+    "lng": 19.51558
+   },
+   {
+    "item": "Q13043204",
+    "name": "Krujë Ethnographic Museum",
+    "lat": 41.50667,
+    "lng": 19.79361
+   },
+   {
+    "item": "Q13043261",
+    "name": "Mësonjëtorja",
+    "lat": 40.61667,
+    "lng": 20.77983
+   },
+   {
+    "item": "Q16349392",
+    "name": "Museum \"Aleksandër Xhuvani\"",
+    "lat": 41.11619,
+    "lng": 20.08114
+   },
+   {
+    "item": "Q16349398",
+    "name": "Bajram Curri History Museum",
+    "lat": 42.3572,
+    "lng": 20.07285
+   },
+   {
+    "item": "Q16349431",
+    "name": "National Museum of Education",
+    "lat": 40.61667,
+    "lng": 20.77983
+   },
+   {
+    "item": "Q31665506",
+    "name": "Bunk’Art",
+    "lat": 41.35169,
+    "lng": 19.86073
+   },
+   {
+    "item": "Q31666886",
+    "name": "Bunk’Art 2",
+    "lat": 41.32694,
+    "lng": 19.81944
+   },
+   {
+    "item": "Q31666843",
+    "name": "Armed Forces Museum",
+    "lat": 41.3417,
+    "lng": 19.83829
+   },
+   {
+    "item": "Q37858697",
+    "name": "Muzej tajnega nadzora",
+    "lat": 41.32667,
+    "lng": 19.81647
+   },
+   {
+    "item": "Q42699122",
+    "name": "People's Museum Stalin Boulevard",
+    "lat": 42.06778,
+    "lng": 19.51278
+   },
+   {
+    "item": "Q42757774",
+    "name": "Q42757774",
+    "lat": 41.31828,
+    "lng": 19.822
+   },
+   {
+    "item": "Q65307553",
+    "name": "Museum of Rozafa Fortress",
+    "lat": 42.04584,
+    "lng": 19.49275
+   },
+   {
+    "item": "Q116984533",
+    "name": "School museum of Elbasan",
+    "lat": 41.11375,
+    "lng": 20.08928
+   },
+   {
+    "item": "Q118143809",
+    "name": "Drishti Castle Museum",
+    "lat": 42.12334,
+    "lng": 19.61029
+   },
+   {
+    "item": "Q118146238",
+    "name": "Museum of Martyrs",
+    "lat": 41.31884,
+    "lng": 19.44498
+   },
+   {
+    "item": "Q123669771",
+    "name": "Site of Witness and Memory",
+    "lat": 42.065,
+    "lng": 19.51694
+   },
+   {
+    "item": "Q4958051",
+    "name": "Oriental Art Museum \"Bratko\"",
+    "lat": 40.61271,
+    "lng": 20.78463
+   },
+   {
+    "item": "Q1968108",
+    "name": "National Art Gallery of Albania",
+    "lat": 41.32546,
+    "lng": 19.82021
+   },
+   {
+    "item": "Q6974484",
+    "name": "National Museum of Medieval Art",
+    "lat": 40.61222,
+    "lng": 20.78667
+   },
+   {
+    "item": "Q37311903",
+    "name": "Shijakus' house",
+    "lat": 41.33595,
+    "lng": 19.82023
+   },
+   {
+    "item": "Q16349422",
+    "name": "Onufri Iconographic Museum",
+    "lat": 40.709,
+    "lng": 19.945
+   },
+   {
+    "item": "Q16349413",
+    "name": "Vlora History Museum",
+    "lat": 40.47251,
+    "lng": 19.49085
+   },
+   {
+    "item": "Q25570520",
+    "name": "Q25570520",
+    "lat": 41.60852,
+    "lng": 20.01611
+   },
+   {
+    "item": "Q1249790",
+    "name": "Historical Museum of Skodër",
+    "lat": 42.06932,
+    "lng": 19.50927
+   },
+   {
+    "item": "Q1581154",
+    "name": "Narodni zgodovinski muzej (Albanija)",
+    "lat": 41.32931,
+    "lng": 19.81719
+   },
+   {
+    "item": "Q118111951",
+    "name": "Mat historical museum",
+    "lat": 41.60852,
+    "lng": 20.01612
+   },
+   {
+    "item": "Q25570812",
+    "name": "Museum of the Bank of Albania",
+    "lat": 41.3277,
+    "lng": 19.81672
+   }
+  ],
+  "severna-makedonija": [
+   {
+    "item": "Q587617",
+    "name": "Mother Teresa Memorial House",
+    "lat": 41.99381,
+    "lng": 21.43092
+   },
+   {
+    "item": "Q922143",
+    "name": "Museum of the City of Skopje",
+    "lat": 41.99083,
+    "lng": 21.42944
+   },
+   {
+    "item": "Q986531",
+    "name": "Museum of the Macedonian Struggle",
+    "lat": 41.99806,
+    "lng": 21.43306
+   },
+   {
+    "item": "Q12908756",
+    "name": "Museum of Skopje Old Bazaar",
+    "lat": 42.00167,
+    "lng": 21.43778
+   },
+   {
+    "item": "Q3078453",
+    "name": "Porta Makedonija",
+    "lat": 41.99444,
+    "lng": 21.43222
+   },
+   {
+    "item": "Q3329592",
+    "name": "Museum of Contemporary Art Skopje",
+    "lat": 42.00389,
+    "lng": 21.43278
+   },
+   {
+    "item": "Q3329714",
+    "name": "Institute and Museum (Štip)",
+    "lat": 41.7366,
+    "lng": 22.1896
+   },
+   {
+    "item": "Q3333150",
+    "name": "Holocaust Memorial Center for the Jews of Macedonia",
+    "lat": 41.99862,
+    "lng": 21.43358
+   },
+   {
+    "item": "Q3395340",
+    "name": "ASNOM Memorial Center",
+    "lat": 42.28169,
+    "lng": 21.85798
+   },
+   {
+    "item": "Q3406442",
+    "name": "Hiša družine Robevci",
+    "lat": 41.11231,
+    "lng": 20.79625
+   },
+   {
+    "item": "Q3094685",
+    "name": "National Gallery of North Macedonia",
+    "lat": 41.9986,
+    "lng": 21.4356
+   },
+   {
+    "item": "Q15621932",
+    "name": "Museum of Water – Bay of Bones",
+    "lat": 40.99467,
+    "lng": 20.79792
+   },
+   {
+    "item": "Q33120083",
+    "name": "Negotino Wine Gallery",
+    "lat": 41.49333,
+    "lng": 22.10806
+   },
+   {
+    "item": "Q65295584",
+    "name": "Archaeological Museum of North Macedonia",
+    "lat": 41.99675,
+    "lng": 21.43432
+   },
+   {
+    "item": "Q19894418",
+    "name": "Rezhanovce Museum of folk costumes",
+    "lat": 42.15804,
+    "lng": 21.67365
+   },
+   {
+    "item": "Q12906408",
+    "name": "Ethnological Museum",
+    "lat": 41.02417,
+    "lng": 21.05028
+   },
+   {
+    "item": "Q12284498",
+    "name": "Q12284498",
+    "lat": 41.37433,
+    "lng": 21.24625
+   },
+   {
+    "item": "Q12287452",
+    "name": "Museum of NOB (Kruševo)",
+    "lat": 41.37558,
+    "lng": 21.24572
+   },
+   {
+    "item": "Q12910611",
+    "name": "Memorial house of Vasil Glavinov",
+    "lat": 41.70944,
+    "lng": 21.78386
+   },
+   {
+    "item": "Q110132368",
+    "name": "Stiv Naumov Memorial House",
+    "lat": 41.02729,
+    "lng": 21.32532
+   },
+   {
+    "item": "Q12755139",
+    "name": "Memorial Museum of Central Committee of the Communist Party of Macedonia",
+    "lat": 42.01361,
+    "lng": 20.96556
+   },
+   {
+    "item": "Q12906499",
+    "name": "People's Museum",
+    "lat": 41.02383,
+    "lng": 21.33566
+   },
+   {
+    "item": "Q12906500",
+    "name": "Institute for protection of cultural monuments and Museum in Strumitsa",
+    "lat": 41.43539,
+    "lng": 22.63672
+   },
+   {
+    "item": "Q12908545",
+    "name": "Memorial Museum 11th October",
+    "lat": 41.34502,
+    "lng": 21.55022
+   },
+   {
+    "item": "Q12908767",
+    "name": "Museum of criminology",
+    "lat": 41.96044,
+    "lng": 21.54984
+   },
+   {
+    "item": "Q12908770",
+    "name": "Museum of Tobacco (Prilep)",
+    "lat": 41.36664,
+    "lng": 21.51439
+   },
+   {
+    "item": "Q12909017",
+    "name": "Q12909017",
+    "lat": 41.99354,
+    "lng": 21.4428
+   },
+   {
+    "item": "Q12909457",
+    "name": "Partisan printing house Goce Delčev",
+    "lat": 41.61783,
+    "lng": 20.59008
+   },
+   {
+    "item": "Q16089094",
+    "name": "Kičevo Museum",
+    "lat": 41.51283,
+    "lng": 20.96161
+   },
+   {
+    "item": "Q12910617",
+    "name": "House of Kočo Racin",
+    "lat": 41.71333,
+    "lng": 21.78172
+   },
+   {
+    "item": "Q12910621",
+    "name": "Konev House",
+    "lat": 41.44931,
+    "lng": 21.55847
+   },
+   {
+    "item": "Q12910623",
+    "name": "Memorial house of Jordan Hadži Konstantinov-Džinot",
+    "lat": 41.70947,
+    "lng": 21.78332
+   },
+   {
+    "item": "Q12910687",
+    "name": "Old Turkish post office",
+    "lat": 41.43561,
+    "lng": 22.63444
+   },
+   {
+    "item": "Q20497045",
+    "name": "Museum of the Activists of IMRO from Štip and Štip Region",
+    "lat": 41.73451,
+    "lng": 22.18088
+   },
+   {
+    "item": "Q20497779",
+    "name": "Memorial House of Goce Delčev",
+    "lat": 41.02667,
+    "lng": 21.33194
+   },
+   {
+    "item": "Q20567394",
+    "name": "Macedonian Museum of Natural History",
+    "lat": 42.00583,
+    "lng": 21.41722
+   },
+   {
+    "item": "Q20569608",
+    "name": "Tetovo Region Museum",
+    "lat": 42.0105,
+    "lng": 20.96387
+   },
+   {
+    "item": "Q20569913",
+    "name": "National Museum \"Dr. Nikola Nezlobinski\"",
+    "lat": 41.1805,
+    "lng": 20.67761
+   },
+   {
+    "item": "Q20570649",
+    "name": "Memorial house of Petar Pop Arsov",
+    "lat": 41.59494,
+    "lng": 21.47475
+   },
+   {
+    "item": "Q20907764",
+    "name": "Negotino Town Museum",
+    "lat": 41.48226,
+    "lng": 22.08268
+   },
+   {
+    "item": "Q20925673",
+    "name": "Kratovo Clock Tower",
+    "lat": 42.07914,
+    "lng": 22.18179
+   },
+   {
+    "item": "Q24699208",
+    "name": "Alim Beg's House",
+    "lat": 42.00589,
+    "lng": 20.97019
+   },
+   {
+    "item": "Q25951916",
+    "name": "Memorial Museum Smilevo",
+    "lat": 41.15333,
+    "lng": 21.11194
+   },
+   {
+    "item": "Q26759575",
+    "name": "Berovo Museum",
+    "lat": 41.7075,
+    "lng": 22.85639
+   },
+   {
+    "item": "Q27586146",
+    "name": "Gevgelija Museum",
+    "lat": 41.14222,
+    "lng": 22.50889
+   },
+   {
+    "item": "Q42405529",
+    "name": "Jankov House, Strumica",
+    "lat": 41.43603,
+    "lng": 22.63781
+   },
+   {
+    "item": "Q42587325",
+    "name": "Institute for protection of cultural monuments and Museum, Prilep",
+    "lat": 41.34292,
+    "lng": 21.55925
+   },
+   {
+    "item": "Q42669956",
+    "name": "Toše Proeski Memorial",
+    "lat": 41.37433,
+    "lng": 21.24625
+   },
+   {
+    "item": "Q43754803",
+    "name": "Tatarchev House",
+    "lat": 41.08845,
+    "lng": 21.01333
+   },
+   {
+    "item": "Q47068550",
+    "name": "Kumanovo Museum",
+    "lat": 42.13819,
+    "lng": 21.71775
+   },
+   {
+    "item": "Q47086703",
+    "name": "Museum-Gallery - Kavadartsi",
+    "lat": 41.43417,
+    "lng": 22.01667
+   },
+   {
+    "item": "Q47086820",
+    "name": "Wine Museum, Demir Kapija",
+    "lat": 41.40903,
+    "lng": 22.24431
+   },
+   {
+    "item": "Q47087120",
+    "name": "House of Strašo Pindžur",
+    "lat": 41.4169,
+    "lng": 22.0188
+   },
+   {
+    "item": "Q47087313",
+    "name": "Todorovski House",
+    "lat": 42.13394,
+    "lng": 21.71053
+   },
+   {
+    "item": "Q47250196",
+    "name": "House of Paunov family",
+    "lat": 41.71596,
+    "lng": 21.78847
+   },
+   {
+    "item": "Q50815890",
+    "name": "Memorial Center Kodžadžik",
+    "lat": 41.44808,
+    "lng": 20.60022
+   },
+   {
+    "item": "Q56072938",
+    "name": "Memorial House of Kole Nedelkovski",
+    "lat": 41.60336,
+    "lng": 21.75143
+   },
+   {
+    "item": "Q30049040",
+    "name": "Memorial House of Razlovci Uprising",
+    "lat": 41.8436,
+    "lng": 22.76784
+   },
+   {
+    "item": "Q32141526",
+    "name": "Kratovo Town Museum",
+    "lat": 42.07778,
+    "lng": 22.18083
+   },
+   {
+    "item": "Q38139584",
+    "name": "Urania House",
+    "lat": 41.11219,
+    "lng": 20.79606
+   },
+   {
+    "item": "Q38190866",
+    "name": "Uzunov House",
+    "lat": 41.11222,
+    "lng": 20.79581
+   },
+   {
+    "item": "Q38196433",
+    "name": "Stružanov House",
+    "lat": 41.11247,
+    "lng": 20.79758
+   },
+   {
+    "item": "Q39000773",
+    "name": "Parlichev House",
+    "lat": 41.1125,
+    "lng": 20.79278
+   },
+   {
+    "item": "Q39008351",
+    "name": "Museum on Water, Ohrid",
+    "lat": 40.99436,
+    "lng": 20.79811
+   },
+   {
+    "item": "Q40041512",
+    "name": "Sheikh's House",
+    "lat": 41.11647,
+    "lng": 20.80033
+   },
+   {
+    "item": "Q41214160",
+    "name": "Prkev House",
+    "lat": 41.73917,
+    "lng": 22.19853
+   },
+   {
+    "item": "Q58840114",
+    "name": "Q58840114",
+    "lat": 41.88425,
+    "lng": 22.5053
+   },
+   {
+    "item": "Q61120009",
+    "name": "Museum of Illegal Workers during World War II",
+    "lat": 41.99667,
+    "lng": 21.43502
+   },
+   {
+    "item": "Q61138235",
+    "name": "Q61138235",
+    "lat": 41.11364,
+    "lng": 20.79811
+   },
+   {
+    "item": "Q85817426",
+    "name": "National Museum",
+    "lat": 41.865,
+    "lng": 21.94182
+   },
+   {
+    "item": "Q85835203",
+    "name": "National Museum (Veles)",
+    "lat": 41.71758,
+    "lng": 21.7812
+   },
+   {
+    "item": "Q95981589",
+    "name": "Miladinovs' House",
+    "lat": 41.17814,
+    "lng": 20.67728
+   },
+   {
+    "item": "Q97229937",
+    "name": "Q97229937",
+    "lat": 41.34264,
+    "lng": 21.5602
+   },
+   {
+    "item": "Q99353884",
+    "name": "Albanian Alphabet Museum",
+    "lat": 41.03194,
+    "lng": 21.32694
+   },
+   {
+    "item": "Q106617719",
+    "name": "Resen Museum",
+    "lat": 41.08889,
+    "lng": 21.01222
+   },
+   {
+    "item": "Q108678361",
+    "name": "Museum of the National Liberation War (Kruševo)",
+    "lat": 41.3757,
+    "lng": 21.2456
+   },
+   {
+    "item": "Q113486267",
+    "name": "Memorial House of the Dame Gruev Bitola-Prespa Partisan Detachment",
+    "lat": 41.11888,
+    "lng": 21.06233
+   },
+   {
+    "item": "Q135582205",
+    "name": "Q135582205",
+    "lat": 41.68253,
+    "lng": 21.55722
+   },
+   {
+    "item": "Q135582944",
+    "name": "Q135582944",
+    "lat": 41.68217,
+    "lng": 21.55656
+   },
+   {
+    "item": "Q135583325",
+    "name": "Q135583325",
+    "lat": 41.68281,
+    "lng": 21.55761
+   },
+   {
+    "item": "Q135681813",
+    "name": "Q135681813",
+    "lat": 41.68324,
+    "lng": 21.55736
+   },
+   {
+    "item": "Q1271865",
+    "name": "Čifte Hammam",
+    "lat": 42.00111,
+    "lng": 21.43722
+   },
+   {
+    "item": "Q1283985",
+    "name": "Daout Pacha Hammam",
+    "lat": 41.99861,
+    "lng": 21.43583
+   },
+   {
+    "item": "Q1580610",
+    "name": "Jeni Mosque",
+    "lat": 41.03075,
+    "lng": 21.335
+   },
+   {
+    "item": "Q3133611",
+    "name": "Saraj Resen",
+    "lat": 41.08833,
+    "lng": 21.01611
+   },
+   {
+    "item": "Q12905682",
+    "name": "Icon Gallery (Tetovo)",
+    "lat": 42.01306,
+    "lng": 20.96667
+   },
+   {
+    "item": "Q12905683",
+    "name": "Icon Gallery (Ohrid)",
+    "lat": 41.11417,
+    "lng": 20.795
+   },
+   {
+    "item": "Q20497589",
+    "name": "Kumanovo Icon Gallery",
+    "lat": 42.13722,
+    "lng": 21.72056
+   },
+   {
+    "item": "Q25553731",
+    "name": "Debar Hammam",
+    "lat": 41.52453,
+    "lng": 20.52606
+   },
+   {
+    "item": "Q27587957",
+    "name": "Gevgelija Hammam",
+    "lat": 41.14083,
+    "lng": 22.50167
+   },
+   {
+    "item": "Q27663042",
+    "name": "Icon Gallery in Saint Nicholas Church in Shtip",
+    "lat": 41.74,
+    "lng": 22.19
+   },
+   {
+    "item": "Q27663263",
+    "name": "Novo Selo Icon Gallery",
+    "lat": 41.74,
+    "lng": 22.17972
+   },
+   {
+    "item": "Q32963909",
+    "name": "Štip Bedesten",
+    "lat": 41.7375,
+    "lng": 22.1925
+   },
+   {
+    "item": "Q33125534",
+    "name": "Tetovo Gallery of Fine Arts",
+    "lat": 42.00611,
+    "lng": 20.96722
+   },
+   {
+    "item": "Q36832570",
+    "name": "Voska Hamam",
+    "lat": 41.11822,
+    "lng": 20.79231
+   },
+   {
+    "item": "Q42644722",
+    "name": "Prilep Icon Gallery",
+    "lat": 41.34394,
+    "lng": 21.55878
+   },
+   {
+    "item": "Q42749249",
+    "name": "Strumica Icon Gallery",
+    "lat": 41.42994,
+    "lng": 22.64119
+   },
+   {
+    "item": "Q47069503",
+    "name": "Kumanovo Art Gallery",
+    "lat": 42.13681,
+    "lng": 21.71706
+   },
+   {
+    "item": "Q39013591",
+    "name": "Lapidarium, Ohrid",
+    "lat": 41.11242,
+    "lng": 20.79589
+   },
+   {
+    "item": "Q95993523",
+    "name": "Vangel Kodžoman Memorial Gallery",
+    "lat": 41.17825,
+    "lng": 20.67747
+   },
+   {
+    "item": "Q108678420",
+    "name": "Nikola Martinovski Gallery",
+    "lat": 41.36893,
+    "lng": 21.25233
+   },
+   {
+    "item": "Q41617825",
+    "name": "Neolithic Settlement Museum, Madzhari",
+    "lat": 42.00147,
+    "lng": 21.50514
+   },
+   {
+    "item": "Q98538795",
+    "name": "Lazar Ličenoski Memorial House",
+    "lat": 42.00014,
+    "lng": 21.43122
+   },
+   {
+    "item": "Q61120759",
+    "name": "EVN Museum",
+    "lat": 41.95315,
+    "lng": 21.29772
+   },
+   {
+    "item": "Q12287450",
+    "name": "Museum of Ilinden Uprising and Kruševo Republic",
+    "lat": 41.36889,
+    "lng": 21.24528
+   },
+   {
+    "item": "Q3133557",
+    "name": "Museum of the Republic of North Macedonia",
+    "lat": 42.0025,
+    "lng": 21.43583
+   },
+   {
+    "item": "Q6039557",
+    "name": "Institute for Protection of Cultural Monuments and National Museum",
+    "lat": 41.11314,
+    "lng": 20.79458
+   }
+  ]
  }
 }

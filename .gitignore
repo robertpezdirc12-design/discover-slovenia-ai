@@ -59,3 +59,14 @@ server.log
 *.db-journal
 # uporabniske priloge (slike v klepetu) — ne grejo v repo
 /upload/
+
+# Artefakti razvoja (posnetki, E2E rezultati, raziskovalni podatki)
+/.playwright-cli/
+/test-results/
+/research/
+/e2e-artifacts-*.png
+/gpx-export-sample.gpx
+/home-*.png
+/panel-*.png
+/poi-*.png
+/ui-*.png

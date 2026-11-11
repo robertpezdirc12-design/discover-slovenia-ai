@@ -1723,3 +1723,19 @@ Work Log:
 - VRATA: 344 pass / 0 fail; tsc 0; lint 0; build OK; E2E: 73 pinov, Idrija popup s sliko + UNESCO povzetkom + povezavama.
 - HIGIENA: počiščeni artefakti iz repozitorija (posnetki/.playwright-cli/research/test-results/package-lock; gitignore dopolnjen).
 - GIT: push GitHub main + GitLab sandbox/guided-ux-line.
+
+---
+Task ID: POLIRAJ-30-MUZEJI-BALKAN (uporabnik: uradni viri za vse države)
+Datum: 2026-11-11
+Agent: ZCode (main session)
+Task: muzeji za vse balkanske države (kot za Slovenijo)
+
+Work Log:
+- RAZISKA (splet): uradni registri drugih držav nimajo enostavnih odprtih API-jev (REMK je izjema) → kurirani katalogi pravih muzejev (isti pristop kot poi-catalog; pošteno označeno).
+- museums-balkan.ts: 43 muzejev po 7 državah (HR 12, SRB 8, BiH 7, MK 6, AL 6, XK 6, CG 6) — ime, mesto, opis, približne koordinate.
+- API: scope=country + cat=muzeji → kurirani katalog po državi (slovenija → REMK uradni register 61).
+- TESTI: +4 → 348 pass / 0 fail / 3835 expect. E2E: Hrvaška → 12 pinov, Mimara popup ✓.
+- GIT: push GitHub main + GitLab sandbox/guided-ux-line.
+
+Stage Summary:
+- Muzeji po vsem Balkanu: vsaka država vrne prave muzeje z opisi; klik → popup + wiki obogatitev (slika + povzetek + povezavi).

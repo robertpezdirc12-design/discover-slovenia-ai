@@ -19,12 +19,15 @@ import dynamic from 'next/dynamic';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
+  BedDouble,
+  Building2,
   Check,
   ChevronDown,
   Home,
   MapPin,
   RotateCcw,
   Search,
+  Tent,
   RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -232,21 +235,11 @@ export default function HomeExperience() {
 
       <main className="flex-1">
         <div className="mx-auto w-full max-w-6xl px-4 pt-6 pb-4 sm:px-6">
-          {/* Kratek vodnik po korakih */}
-          <section aria-label="Vodnik" className="mb-4">
-            <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-              V spustnem okencu izberi državo
-            </h1>
-            <p className="mt-1 max-w-2xl text-sm text-muted-foreground sm:text-base">
-              Klikni <strong className="text-foreground">državo</strong> (Slovenija, Hrvaška, Bosna
-              …) v spustnem okencu — zemljevid se takoj približa izbrani državi. Nato izberi{' '}
-              <strong className="text-foreground">Apartmaji</strong>: pokaže se vseh{' '}
-              {status === 'ready' ? apartmentsCount : ''} apartmajev v Sloveniji z realnimi podatki
-              s spleta (OpenStreetMap).
-            </p>
-          </section>
+          <h1 className="sr-only">
+            Discover Slovenia AI — zemljevid, države in apartmaji
+          </h1>
 
-          {/* Nadzorna vrstica: spustno okence (države + apartmaji) + status */}
+          {/* Nadzorna vrstica: okence za državo + okence prenočišč + status */}
           <section aria-label="Nadzorna vrstica" className="mb-4 flex flex-wrap items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -280,6 +273,29 @@ export default function HomeExperience() {
                     ) : null}
                   </DropdownMenuItem>
                 ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Okence PRENOČIŠČA — apartmaji, hoteli, kampi */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="bg-background shadow-sm"
+                  title="Prenočišča v izbrani državi"
+                >
+                  <BedDouble className="mr-2 h-4.5 w-4.5" />
+                  Prenočišča
+                  <ChevronDown className="ml-2 h-4 w-4 opacity-70" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-72">
+                <DropdownMenuLabel className="text-xs text-muted-foreground">
+                  {selectedCountry
+                    ? `Kaj te zanima: ${selectedCountry.flag} ${selectedCountry.name}?`
+                    : 'Najprej izberi državo'}
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={() => handleChooseApartments()}
@@ -289,8 +305,22 @@ export default function HomeExperience() {
                   <Home className="h-4 w-4 text-primary" />
                   <span className="font-medium">Apartmaji</span>
                   <span className="ml-auto text-xs text-muted-foreground">
-                    {sloveniaSelected ? 'vsi v Sloveniji' : 'najprej izberi Slovenijo'}
+                    {sloveniaSelected ? 'vsi v Sloveniji' : 'izberi Slovenijo'}
                   </span>
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled className="gap-2.5 py-2">
+                  <Building2 className="h-4 w-4 opacity-50" />
+                  <span>Hoteli</span>
+                  <Badge variant="outline" className="ml-auto text-[10px]">
+                    kmalu
+                  </Badge>
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled className="gap-2.5 py-2">
+                  <Tent className="h-4 w-4 opacity-50" />
+                  <span>Kampi</span>
+                  <Badge variant="outline" className="ml-auto text-[10px]">
+                    kmalu
+                  </Badge>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -462,9 +492,10 @@ export default function HomeExperience() {
                   <p className="text-sm text-muted-foreground">
                     {status === 'error'
                       ? 'Nalaganje ni uspelo — poskusi znova (gumb na zemljevidu zgoraj).'
-                      : 'V spustnem okencu izberi '}
+                      : 'V okencu '}
                     {status !== 'error' ? (
                       <>
+                        <strong className="text-foreground">Prenočišča</strong> izberi{' '}
                         <strong className="text-foreground">Apartmaji</strong> — tu se pokaže
                         celoten seznam z filtri.
                       </>

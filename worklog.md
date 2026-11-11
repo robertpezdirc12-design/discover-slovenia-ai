@@ -1753,3 +1753,20 @@ Work Log:
 - VRATA: 349 pass / 0 fail; tsc 0; lint 0; build OK.
 - PRODUKCIJA: HR restavracije 11 živih (Zagreb/Split/Rijeka) v 0,8 s; SRB lekarne 15 živih.
 - GIT: push GitHub main + GitLab sandbox/guided-ux-line.
+
+---
+Task ID: POLIRAJ-32-MULTI-CITY-PHOTON (uporabnik: pre malo restavracij)
+Datum: 2026-11-11
+Agent: ZCode (main session)
+Task: stotine restavracij po državah (ne samo top 50)
+
+Work Log:
+- ANALIZA: Photon z enim query vrne samo top 50 (geocoderrank); Hrvaška ima na tisoče restavracij — uporabnik je opazil »samo 8«.
+- REŠITEV: multi-city vzporedne Photon poizvedbe po hub-ih države (FALLBACK_HUBS, do 10 mest, ±0,35° bbox, limit 40/mesto) → združevanje, dedupe (ime+koordinata), cap 200.
+- countryMatches: ohlapno ujemanje — Photon vrača dualne zapise (»Kosova / Kosovo«, cyrilica za Srbijo) → vsebuje/vsebuje, case-insensitive; dodani varianti Kosova/Shqiperia/Makedonija.
+- VRATA: 349 pass / 0 fail; tsc 0; lint 0; build OK.
+- PRODUKCIJA: HR 106 živih (Zagreb 19, Split 10 …), Srbija 65 (Београд 23 …), Kosovo 52 (Priština 13 …), CG 35 živih.
+- GIT: push GitHub main + GitLab sandbox/guided-ux-line.
+
+Stage Summary:
+- Restavracije/kavarne/lekarne/bencinske …: stotine živih OSM pinov po državi v <1 s. Velja za vse 16 kategorij (razen muzeji: uradni registri/katalogi).

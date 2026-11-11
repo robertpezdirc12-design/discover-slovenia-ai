@@ -213,13 +213,62 @@ export async function GET(request: Request) {
         return NextResponse.json({ ok: true, category: catId, radius, places });
       }
     } catch {
-      /* Photon ni dosegljiv → Overpass → rezerva */
+      /* Photon ni dosegljiv → Overpass po mestih → rezerva */
     }
   }
 
-  // DOSEGLJIVI viri (izmerjeno v POLIRAJ-9/29): overpass-api.de deluje iz
-  // Vercela (dokazano s prenočišči); osm.ch je SAMO švicarski izvleček
-  // (za Balkan vrne 0 → zanka nadaljuje). GET-first (POST zrcala 500-irajo).
+  // DRUGI VIR — Overpass po mestih vzporedno (mala bbox = 1–3 s / zahteva).
+  // Vsak hub: node/way kategorije v ±0,12° (≈ 13 km), out center 80.
+  if (bboxNum) {
+    const cityHubs = (scope === 'country'
+      ? FALLBACK_HUBS.filter((h) => h.country === fbCountryName)
+      : FALLBACK_HUBS.filter(
+          (h) =>
+            h.lat >= bboxNum.south && h.lat <= bboxNum.north && h.lng >= bboxNum.west && h.lng <= bboxNum.east,
+        )
+    ).slice(0, 10);
+
+    if (cityHubs.length > 0) {
+      const overpassQueries = cityHubs.map((hub) => {
+        const s = (hub.lat - 0.12).toFixed(3);
+        const w = (hub.lng - 0.12).toFixed(3);
+        const n = (hub.lat + 0.12).toFixed(3);
+        const e = (hub.lng + 0.12).toFixed(3);
+        return `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(
+          `[out:json][timeout:8];(node${category.tag}(${s},${w},${n},${e});way${category.tag}(${s},${w},${n},${e}););out center 80;`,
+        )}`;
+      });
+
+      const results = await Promise.allSettled(
+        overpassQueries.map((u) =>
+          fetch(u, {
+            headers: { 'user-agent': UA, accept: 'application/json' },
+            signal: AbortSignal.timeout(9000),
+          }).then((r) => (r.ok ? (r.json() as Promise<unknown>) : null)),
+        ),
+      );
+
+      const seen2 = new Set<string>();
+      const opPlaces: PlaceResult[] = [];
+      for (const r of results) {
+        if (r.status !== 'fulfilled' || !r.value) continue;
+        for (const p of parseOverpassPlaces(r.value, catId as PlaceCategoryId)) {
+          const key = `${p.name.toLowerCase()}@${p.lat.toFixed(3)},${p.lng.toFixed(3)}`;
+          if (seen2.has(key)) continue;
+          seen2.add(key);
+          opPlaces.push(p);
+          if (opPlaces.length >= 250) break;
+        }
+        if (opPlaces.length >= 250) break;
+      }
+      if (opPlaces.length > 0) {
+        return NextResponse.json({ ok: true, category: catId, radius, places: opPlaces });
+      }
+    }
+  }
+
+  // TRETJI VIR — Overpass po celem bboxu države (zadnja možnost; pogosto
+  // preseže 10,4 s Vercel limit za velike države/kategorije).
   const liveEndpoints = [
     'https://overpass-api.de/api/interpreter',
     'https://overpass.osm.ch/api/interpreter',

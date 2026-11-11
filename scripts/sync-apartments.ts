@@ -6,11 +6,11 @@
  * (isto logiko uporablja POST /api/apartments/sync)
  */
 
-import { syncApartments, getApartmentsFromDb } from '../src/lib/apartments-sync';
+import { syncApartmentsOsm, getApartmentsFromDb } from '../src/lib/apartments-sync';
 
 async function main() {
   console.log('→ Usklajevanje apartmajev s spleta (Overpass → Photon) …');
-  const outcome = await syncApartments(fetch);
+  const outcome = await syncApartmentsOsm(fetch);
   console.log(
     `✓ Vir: ${outcome.source} · zapisov: ${outcome.persisted} · neuspelih zahtevkov: ${outcome.failedRequests}/${outcome.totalRequests} · trajanje: ${(outcome.durationMs / 1000).toFixed(1)} s`,
   );

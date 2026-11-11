@@ -323,7 +323,10 @@ export function parseNominatimApartments(raw: unknown): ApartmentRecord[] {
 // ─── Usklajevanje (fetch + združevanje) ─────────────────────────────────────
 
 /** Minimalni fetch tip (testabilnost — resnični fetch poda klicatelj). */
-export type FetchLike = (url: string, init?: { signal?: AbortSignal }) => Promise<Response>;
+export type FetchLike = (
+  url: string,
+  init?: { signal?: AbortSignal; headers?: Record<string, string> },
+) => Promise<Response>;
 
 /** Združi zapise: Overpass prepiše Nominatim pri istem id-u; brez podvojitev. */
 export function mergeApartmentRecords(...groups: ApartmentRecord[][]): ApartmentRecord[] {

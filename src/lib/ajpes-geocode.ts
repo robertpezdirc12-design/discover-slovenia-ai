@@ -25,7 +25,10 @@ export const PHOTON_BASE = 'https://photon.komoot.io/api';
 export const PHOTON_DELAY_MS = 450;
 
 /** Minimalni fetch tip (testabilnost — resnični fetch poda klicatelj). */
-export type FetchLike = (url: string, init?: { signal?: AbortSignal }) => Promise<Response>;
+export type FetchLike = (
+  url: string,
+  init?: { signal?: AbortSignal; headers?: Record<string, string> },
+) => Promise<Response>;
 
 /** Rezultat geokodiranja enega uradnega naslova. */
 export interface GeocodeOutcome {

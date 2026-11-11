@@ -1,0 +1,75 @@
+import { NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+import { sanitizeGuideState } from '@/lib/guide-store';
+import {
+  encodeStatelessTripCode,
+  generateTripCode,
+  isShareable,
+  sharedTripPayload,
+} from '@/lib/share-trip';
+import { sanitizeOrderNames } from '@/lib/trip-order';
+
+/**
+ * POST /api/pot/share — ustvari deljeno pot (/pot/[koda]).
+ *
+ * Vhod: { state: GuideState } (iz localStorage; strežnik ga SAM sanitizira —
+ * klientu se ne sme zaupati). Izhod: { ok, id, url }.
+ * Neveljavno/prazno stanje → 400 (nič ne nastane; UI pokaže razlago).
+ */
+export async function POST(request: Request) {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { ok: false, error: 'Neveljavna zahteva — pričakovan JSON.' },
+      { status: 400 },
+    );
+  }
+
+  const rawBody =
+    body && typeof body === 'object' && !Array.isArray(body)
+      ? (body as Record<string, unknown>)
+      : null;
+  const raw = rawBody?.state;
+  const state = sanitizeGuideState(raw);
+  const stopOrder = sanitizeOrderNames(rawBody?.stopOrder);
+  if (!isShareable(state)) {
+    return NextResponse.json(
+      { ok: false, error: 'Pot je še prazna — najprej izberi vsaj regijo ali interese.' },
+      { status: 400 },
+    );
+  }
+
+  // Koda je unikatna (primarni ključ) — trk praktično nemogoč; pri trku
+  // poskusimo do 3× z novo kodo.
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const code = generateTripCode();
+    try {
+      await db.sharedTrip.create({
+        data: { id: code, data: sharedTripPayload(state, stopOrder) },
+      });
+      const origin = new URL(request.url).origin;
+      return NextResponse.json({ ok: true, id: code, url: `${origin}/pot/${code}` });
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  // REZERVNI NAČIN — stateless koda: če baza ni na voljo (npr. serverless
+  // brez provisionirane baze), zakodiraj vsebino v samo povezavo. Uporabnik
+  // nič ne opazi; URL je le daljši. Vsebina je že sanitizirana in javna.
+  const stateless = encodeStatelessTripCode(state, stopOrder);
+  if (stateless) {
+    console.warn('pot/share: baza ni na voljo — uporabljena stateless koda');
+    const origin = new URL(request.url).origin;
+    return NextResponse.json({ ok: true, id: stateless, url: `${origin}/pot/${stateless}` });
+  }
+
+  console.error('pot/share: ustvarjanje ni uspelo', lastError);
+  return NextResponse.json(
+    { ok: false, error: 'Deljenje trenutno ni na voljo — poskusi znova.' },
+    { status: 500 },
+  );
+}

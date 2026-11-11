@@ -55,7 +55,7 @@ async function prsCsvStream(): Promise<ReadableStream<Uint8Array>> {
 
   const [forCache, forParse] = res.body.tee();
   // Predpomnilnik pišemo vzporedno (ne blokira razčlenjevanja)
-  void Bun.write(CSV_CACHE_PATH, forCache)
+  void Bun.write(CSV_CACHE_PATH, forCache as unknown as Parameters<typeof Bun.write>[1])
     .then(() => log(`CSV shranjen v predpomnilnik: ${CSV_CACHE_PATH}`))
     .catch(() => log('Opomba: predpomnilnika ni bilo mogoče shraniti (nepomembno).'));
   return forParse;

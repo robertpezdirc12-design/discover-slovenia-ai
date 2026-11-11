@@ -136,7 +136,7 @@ async function prsCsvStream(doFetch: FetchLike): Promise<ReadableStream<Uint8Arr
   try {
     const st = await fs.stat(CSV_CACHE_PATH);
     if (st.size > 1_000_000 && Date.now() - st.mtimeMs < CSV_CACHE_MAX_AGE_MS) {
-      return Readable.toWeb(fsSync.createReadStream(CSV_CACHE_PATH)) as ReadableStream<Uint8Array>;
+      return Readable.toWeb(fsSync.createReadStream(CSV_CACHE_PATH)) as unknown as ReadableStream<Uint8Array>;
     }
   } catch {
     // ni predpomnilnika → prenos

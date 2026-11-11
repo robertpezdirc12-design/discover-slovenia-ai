@@ -1706,3 +1706,20 @@ Work Log:
 - Implementirano: BALKAN_COUNTRY_VIEWS (8 držav, središče + zoom) v countries.ts; select v orodni vrstici (»Vse« + 8 držav) → flyTo z animacijo. Čista navigacija, brez filtriranja.
 - TESTI: +1 → 335 pass / 0 fail.
 - GIT: push na GitHub main + GitLab sandbox/guided-ux-line.
+
+---
+Task ID: POLIRAJ-29-MUZEJI-URADNI-REGISTER + WIKI-ENRICHMENT
+Datum: 2026-11-11
+Agent: ZCode (main session)
+Task: uradni register muzejev (REMK) na zemljevidu + bogati popupi
+
+Work Log:
+- USKLADITEV: lokalni git za remote-om 8 commitov (vzporedna seja) → pull; vzporedna seja je zamenjala domačo stran z novim HomeExperience (react-leaflet) in dodala AJPES register prenočišč.
+- URADNI VIR NAJDEN: REMK — Razvid muzejev RS (remk.ekultura.gov.si/razvid/muzeji, Ministrstvo za kulturo); podatkovni endpoint /razvid/public?id=PUBLIC_MUZEJI (CSV, 61 vpisanih ustanov, UTF-8).
+- GEOCODING: research/remk/geocode-museums.py (Photon, 0,6 s/zahteva, predpomnilnik) → 61/61 uspešno → public/data/museums-register.json.
+- ZDRUŽITEV: museums-register.ts — register (uradni status + naslov) + kurirani opisi po imenskem ujemanju (normalized contains); brez registra → samo katalog.
+- NOV SPUSTNIK »Iščem« v HomeExperience (16 kategorij) → /api/pot/places?scope=country → Slovenija+Muzeji = 73 pinov (61 uradnih + 12 kuriranih dopolnitev).
+- WIKI ENRICHMENT: open-data.ts wikiSearchUrl/parseWikiSearch — REST summary 404 (KAPITALKE iz registra) → iskanje razreši pravi članek; map-view ob kliku asinhrono obogati popup: slika (thumb), Wikipedia izvleček, povezavi Wikipedija + uradna stran (12 zanesljivih domen v katalogu).
+- VRATA: 344 pass / 0 fail; tsc 0; lint 0; build OK; E2E: 73 pinov, Idrija popup s sliko + UNESCO povzetkom + povezavama.
+- HIGIENA: počiščeni artefakti iz repozitorija (posnetki/.playwright-cli/research/test-results/package-lock; gitignore dopolnjen).
+- GIT: push GitHub main + GitLab sandbox/guided-ux-line.

@@ -1,22 +1,21 @@
 'use client';
 
 /**
- * DOMAČA IZKUŠNJA — zemljevid + spustno okence (države, apartmaji) + seznam.
+ * DOMAČA IZKUŠNJA — zemljevid + spustni okenci (država, prenočišča).
  *
- * Tok (po uporabnikovi zahtevi — brez zelenih krogec / pinov držav):
+ * Tok (po uporabnikovi zahtevi — preprosto, brez seznamov):
  *  1) čist regijski zemljevid (Slovenija + Balkan),
- *  2) v SPUSTNEM OKENCU izbereš državo (Slovenija, Hrvaška, Bosna …)
- *     → zemljevid se TAKOJ približa izbrani državi (to je prvi korak),
- *  3) v istem okencu klikneš »Apartmaji« (ob izbrani Sloveniji) → naložijo
- *     se VSI apartmaji v Sloveniji (GET /api/apartments — podatki s spleta,
- *     OpenStreetMap) in se pokažejo kot pini + pregleden seznam s filtri.
+ *  2) okence »Izberi državo« → zemljevid se TAKOJ približa izbrani državi,
+ *  3) okence »Prenočišča« → Apartmaji → pini VSEH apartmajev v Sloveniji
+ *     na zemljevidu; klik na pin pokaže popup z vsemi podatki
+ *     (ime, naslov, cena, zvezdice, spletna stran, telefon — OpenStreetMap).
  *
  * Stanja so izpeljana (brez setState v efektih); nalaganje ima ločeno
  * stanje (idle/loading/ready/error) z iskrenimi sporočili.
  */
 
 import dynamic from 'next/dynamic';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   AlertTriangle,
   BedDouble,
@@ -26,7 +25,6 @@ import {
   Home,
   MapPin,
   RotateCcw,
-  Search,
   Tent,
   RefreshCw,
 } from 'lucide-react';
@@ -41,8 +39,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
 import { COUNTRIES, countryById } from '@/lib/countries-view';
 import {
   formatUpdatedAt,
@@ -67,14 +63,6 @@ const MapView = dynamic(() => import('@/components/discover/map-view'), {
 
 type LoadStatus = 'idle' | 'loading' | 'ready' | 'error';
 
-function normalize(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/č/g, 'c')
-    .replace(/š/g, 's')
-    .replace(/ž/g, 'z');
-}
-
 export default function HomeExperience() {
   const mapRef = useRef<MapViewHandle>(null);
 
@@ -87,8 +75,6 @@ export default function HomeExperience() {
   const [error, setError] = useState<string | null>(null);
 
   const [activeApartmentId, setActiveApartmentId] = useState<string | null>(null);
-  const [query, setQuery] = useState('');
-  const [regionFilter, setRegionFilter] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const selectedCountry = countryById(selectedCountryId);
@@ -150,14 +136,9 @@ export default function HomeExperience() {
     mapRef.current?.resetRegion();
   }, []);
 
-  // ── Klik na apartma pin / seznam ───────────────────────────────────────
+  // ── Klik na apartma pin → poudarjen pin (popup se odpre samodejno) ────
   const handleSelectApartment = useCallback((id: string) => {
     setActiveApartmentId(id);
-  }, []);
-
-  const handleSelectFromList = useCallback((id: string) => {
-    setActiveApartmentId(id);
-    mapRef.current?.flyToApartment(id);
   }, []);
 
   // ── Ročno osveževanje s spleta (Nominatim vljudnost → nekaj minut) ─────
@@ -185,23 +166,6 @@ export default function HomeExperience() {
       setRefreshing(false);
     }
   }, [refreshing, loadApartments]);
-
-  // ── Izpeljano: filtri seznama ──────────────────────────────────────────
-  const regionCounts = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const a of apartments) map.set(a.region, (map.get(a.region) ?? 0) + 1);
-    return Array.from(map.entries()).sort((x, y) => y[1] - x[1]);
-  }, [apartments]);
-
-  const filtered = useMemo(() => {
-    const q = normalize(query.trim());
-    return apartments.filter((a) => {
-      if (regionFilter && a.region !== regionFilter) return false;
-      if (!q) return true;
-      const haystack = normalize(`${a.name} ${a.city ?? ''} ${a.street ?? ''}`);
-      return haystack.includes(q);
-    });
-  }, [apartments, query, regionFilter]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -352,7 +316,7 @@ export default function HomeExperience() {
             aria-label="Zemljevid Slovenije in Balkana"
             className="isolate overflow-hidden rounded-2xl border border-border/80 shadow-sm"
           >
-            <div className="relative h-[58vh] min-h-[420px] w-full">
+            <div className="relative h-[72vh] min-h-[480px] w-full">
               <MapView
                 ref={mapRef}
                 apartments={apartments}
@@ -389,122 +353,6 @@ export default function HomeExperience() {
               ) : null}
             </div>
           </section>
-
-          {/* Seznam apartmajev (ko je Slovenija izbrana) */}
-          {sloveniaSelected ? (
-            <section aria-label="Seznam apartmajev" className="mt-6">
-              {status === 'ready' ? (
-                <div className="rounded-2xl border border-border/80 bg-card shadow-sm">
-                  <div className="flex flex-col gap-3 border-b border-border/70 p-4 sm:flex-row sm:items-center">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Išči po imenu, kraju ali ulici …"
-                        className="pl-9"
-                        aria-label="Iskanje apartmajev"
-                      />
-                    </div>
-                    <div className="dsa-scroll-list flex max-w-full gap-1.5 overflow-x-auto pb-1 sm:max-w-[60%]">
-                      <button
-                        type="button"
-                        onClick={() => setRegionFilter(null)}
-                        className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                          regionFilter === null
-                            ? 'border-primary bg-primary text-primary-foreground'
-                            : 'border-border bg-background hover:bg-accent'
-                        }`}
-                      >
-                        Vse ({apartmentsCount})
-                      </button>
-                      {regionCounts.map(([region, count]) => (
-                        <button
-                          key={region}
-                          type="button"
-                          onClick={() => setRegionFilter(region === regionFilter ? null : region)}
-                          className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                            regionFilter === region
-                              ? 'border-primary bg-primary text-primary-foreground'
-                              : 'border-border bg-background hover:bg-accent'
-                          }`}
-                        >
-                          {region} ({count})
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="dsa-scroll-list max-h-96 overflow-y-auto p-2">
-                    <ul className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
-                      {filtered.map((a) => (
-                        <li key={a.id}>
-                          <button
-                            type="button"
-                            onClick={() => handleSelectFromList(a.id)}
-                            className={`w-full rounded-xl border p-3 text-left transition-colors ${
-                              activeApartmentId === a.id
-                                ? 'border-primary bg-accent'
-                                : 'border-transparent hover:border-border hover:bg-accent/60'
-                            }`}
-                            aria-current={activeApartmentId === a.id}
-                          >
-                            <p className="line-clamp-1 text-sm font-semibold">{a.name}</p>
-                            <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-                              {[a.city ?? a.region, a.street].filter(Boolean).join(' · ')}
-                            </p>
-                            <div className="mt-1.5 flex items-center justify-between gap-2">
-                              <span className="text-xs font-bold text-primary">
-                                od ~{a.priceFrom} € / noč
-                              </span>
-                              <span className="text-[10.5px] text-muted-foreground">
-                                {a.stars ? '★'.repeat(a.stars) : 'ocena'}
-                              </span>
-                            </div>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                    {filtered.length === 0 ? (
-                      <p className="p-8 text-center text-sm text-muted-foreground">
-                        Ni zadetkov za »{query}«{regionFilter ? ` v regiji ${regionFilter}` : ''}.
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <p className="border-t border-border/70 px-4 py-2.5 text-[11px] text-muted-foreground">
-                    Prikazanih {filtered.length} od {apartmentsCount} apartmajev · podatki:
-                    OpenStreetMap prek {dataSource === 'overpass' ? 'Overpass API' : 'Nominatim'} ·
-                    zadnje usklajevanje: {formatUpdatedAt(updatedAt)} · cene so indikativne ocene.
-                  </p>
-                </div>
-              ) : status === 'loading' ? (
-                <div className="space-y-2 rounded-2xl border border-border/80 bg-card p-4 shadow-sm">
-                  <Skeleton className="h-9 w-full" />
-                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <Skeleton key={i} className="h-16 w-full rounded-xl" />
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-dashed border-border bg-card/60 p-8 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    {status === 'error'
-                      ? 'Nalaganje ni uspelo — poskusi znova (gumb na zemljevidu zgoraj).'
-                      : 'V okencu '}
-                    {status !== 'error' ? (
-                      <>
-                        <strong className="text-foreground">Prenočišča</strong> izberi{' '}
-                        <strong className="text-foreground">Apartmaji</strong> — tu se pokaže
-                        celoten seznam z filtri.
-                      </>
-                    ) : null}
-                  </p>
-                </div>
-              )}
-            </section>
-          ) : null}
         </div>
       </main>
 
@@ -514,7 +362,7 @@ export default function HomeExperience() {
           <p className="font-display text-foreground/80">
             Discover Slovenia <span className="text-primary">AI</span>
             <span className="ml-2 font-sans text-muted-foreground">
-              — spustno okence, države in apartmaji na enem zemljevidu
+              — klikni pin in poglej podrobnosti
             </span>
           </p>
           <p>

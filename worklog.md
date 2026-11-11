@@ -1770,3 +1770,19 @@ Work Log:
 
 Stage Summary:
 - Restavracije/kavarne/lekarne/bencinske …: stotine živih OSM pinov po državi v <1 s. Velja za vse 16 kategorij (razen muzeji: uradni registri/katalogi).
+
+---
+Task ID: POLIRAJ-33-OVERPASS-PER-CITY (uporabnik: Karlovac ima 50, Zagreb ne sme imet manj)
+Datum: 2026-11-11
+Agent: ZCode (main session)
+Task: pokritost živih pinov čez vsa mesta
+
+Work Log:
+- Novi hub-i: Karlovac, Varaždin, Šibenik, Pula (HR); Zenica, Trebinje (BiH); Čačak, Novi Pazar (SRB); Gjilan, Ferizaj (XK); Nikšić (CG); Fier (AL).
+- 2. vir: Overpass per-hub vzporedno (±0,12°, out center 80, 9 s timeout, allSettled) — mala bbox se procesirajo v 1–3 s znotraj Vercel 10,4 s limita (za razliko od cele države).
+- Popravljen podvojeni nepopoln blok iz prejšnjega urejanja (TS1472).
+- PRODUKCIJA: HR restavracije 106 živih (Zagreb 19, Split 10 …), SRB kavarne 40 živih — v ~1 s.
+- GIT: push GitHub main + GitLab sandbox/guided-ux-line.
+
+Stage Summary:
+- Živi pini:Photon multi-city (primarno, ~0,5 s) + Overpass per-city (2. vir, dokler Vercel limit) + kurirana rezerva. Pokritost čez vsa večja mesta vsake države.

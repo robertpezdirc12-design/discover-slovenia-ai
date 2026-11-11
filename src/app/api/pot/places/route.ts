@@ -3,6 +3,7 @@ import {
   BALKAN_BBOX,
   buildFallbackPlaces,
   COUNTRY_BBOX,
+  FALLBACK_HUBS,
   overpassPlacesQuery,
   parseOverpassPlaces,
   placeCategoryById,
@@ -30,23 +31,35 @@ function parseCoord(raw: string | null): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+interface PhotonResponse {
+  features?: {
+    geometry?: { coordinates?: number[] };
+    properties?: Record<string, unknown>;
+  }[];
+}
+
 /** Lokalna imena držav v OSM (Photon properties.country) → naš country id. */
 const OSM_COUNTRY_NAMES: Record<string, readonly string[]> = {
   slovenija: ['Slovenija', 'Slovenia'],
   hrvaska: ['Hrvatska', 'Croatia'],
   'bosna-hercegovina': ['Bosna i Hercegovina', 'Bosnia and Herzegovina'],
   srbija: ['Srbija', 'Serbia', 'Србија'],
-  kosovo: ['Kosovo'],
+  kosovo: ['Kosovo', 'Kosova'],
   'crna-gora': ['Crna Gora', 'Montenegro'],
-  albanija: ['Shqipëria', 'Albania'],
-  'severna-makedonija': ['Северна Македонија', 'North Macedonia', 'Makedonija'],
+  albanija: ['Shqipëria', 'Shqiperia', 'Albania'],
+  'severna-makedonija': ['Северна Македонија', 'North Macedonia', 'Makedonija', 'Македонија'],
 };
 
-/** Ali Photon-ime države ustreza naši izbrani državi (dualni zapisi v OSM). */
+/** Ali Photon-ime države ustreza naši izbrani državi (ohlapno: dualni
+ *  zapisi v OSM, npr. »Kosova / Kosovo«; ne-znane države ne filtriramo). */
 function countryMatches(photonCountry: string, countryId: string): boolean {
   const variants = OSM_COUNTRY_NAMES[countryId];
-  if (!variants) return true; // neznana država → ne filtriraj
-  return variants.some((v) => photonCountry.startsWith(v));
+  if (!variants) return true;
+  const photon = photonCountry.toLowerCase();
+  return variants.some((v) => {
+    const lv = v.toLowerCase();
+    return photon.includes(lv) || lv.includes(photon);
+  });
 }
 
 export async function GET(request: Request) {
@@ -131,25 +144,41 @@ export async function GET(request: Request) {
     try {
       // Photon zahteva neprazen q; »a« se ujema s skoraj vsemi imeni →
       // dejanski filter sta osm_tag + bbox (izenačeno spodaj).
-      // bbox vrstni red: COUNTRY_BBOX = south,west,north,east →
-      // Photon = minLon,minLat,maxLon,maxLat (zamenjana okljiča).
-      const [bbSouth, bbWest, bbNorth, bbEast] = bbox.split(',');
-      const photonUrl =
-        `https://photon.komoot.io/api/?q=a` +
-        `&bbox=${encodeURIComponent(`${bbWest},${bbSouth},${bbEast},${bbNorth}`)}` +
-        `&osm_tag=${encodeURIComponent(category.photonTag)}` +
-        `&limit=60`;
-      const res = await fetch(photonUrl, {
-        headers: { 'user-agent': UA, accept: 'application/json' },
-        signal: AbortSignal.timeout(8000),
-      });
-      if (res.ok) {
-        const j = (await res.json()) as {
-          features?: { geometry?: { coordinates?: number[] }; properties?: Record<string, unknown> }[];
-        };
-        const seen = new Set<string>();
-        const places: PlaceResult[] = [];
-        for (const f of j.features ?? []) {
+      // PO MESTIH: en query vrne samo top 50 — za celo državo pošljemo
+      // vzporedne poizvedbe po večjih mestih (hub-i) in združimo.
+      const [bbSouth, bbWest, bbNorth, bbEast] = bbox.split(',').map(Number);
+      const photonBboxFor = (clat: number, clng: number, span: number): string =>
+        encodeURIComponent(
+          `${(clng - span).toFixed(3)},${(clat - span).toFixed(3)},${(clng + span).toFixed(3)},${(clat + span).toFixed(3)}`,
+        );
+      // Središča mest: za country scope hub-i te države; za balkan — glavna mesta vseh.
+      const hubs =
+        scope === 'country'
+          ? FALLBACK_HUBS.filter((h) => h.country === fbCountryName)
+          : FALLBACK_HUBS.filter((h) =>
+              h.lat >= bbSouth &&
+              h.lat <= bbNorth &&
+              h.lng >= bbWest &&
+              h.lng <= bbEast,
+            );
+      const cityHubs = (hubs.length > 0 ? hubs : FALLBACK_HUBS.slice(0, 8)).slice(0, 10);
+      const span = scope === 'local' ? 0.15 : 0.35;
+
+      const queries = cityHubs.map((hub) =>
+        fetch(
+          `https://photon.komoot.io/api/?q=a&bbox=${photonBboxFor(hub.lat, hub.lng, span)}` +
+            `&osm_tag=${encodeURIComponent(category.photonTag)}&limit=40`,
+          { headers: { 'user-agent': UA, accept: 'application/json' }, signal: AbortSignal.timeout(8000) },
+        )
+          .then((r) => (r.ok ? (r.json() as Promise<PhotonResponse>) : { features: [] }))
+          .catch(() => ({ features: [] })),
+      );
+      const responses = await Promise.all(queries);
+
+      const seen = new Set<string>();
+      const places: PlaceResult[] = [];
+      for (const resp of responses) {
+        for (const f of resp.features ?? []) {
           const coords = f.geometry?.coordinates;
           if (!Array.isArray(coords) || coords.length < 2) continue;
           const lng = Number(coords[0]);
@@ -164,7 +193,7 @@ export async function GET(request: Request) {
           const props = f.properties ?? {};
           const name = typeof props.name === 'string' ? props.name.trim() : '';
           if (!name) continue;
-          const key = name.toLowerCase();
+          const key = `${name.toLowerCase()}@${lat.toFixed(3)},${lng.toFixed(3)}`;
           if (seen.has(key)) continue;
           seen.add(key);
           places.push({
@@ -176,11 +205,12 @@ export async function GET(request: Request) {
             city: typeof props.city === 'string' ? props.city : undefined,
             source: 'osm',
           });
-          if (places.length >= 60) break;
+          if (places.length >= 200) break;
         }
-        if (places.length > 0) {
-          return NextResponse.json({ ok: true, category: catId, radius, places });
-        }
+        if (places.length >= 200) break;
+      }
+      if (places.length > 0) {
+        return NextResponse.json({ ok: true, category: catId, radius, places });
       }
     } catch {
       /* Photon ni dosegljiv → Overpass → rezerva */

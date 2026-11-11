@@ -1,5 +1,6 @@
 /// <reference types="bun-types" />
 import { describe, expect, test } from 'bun:test';
+import { readFileSync } from 'node:fs';
 import { MUSEUMS } from '../src/lib/museums';
 import { PLACE_CATEGORIES } from '../src/lib/place-categories';
 
@@ -42,9 +43,9 @@ describe('museums — kurirani katalog slovenskih muzejev', () => {
 
 describe('museums-register — uradni REMK razvid', () => {
   test('public/data/museums-register.json obstaja in ima ≥55 geokodiranih muzejev', () => {
-    const fs = require('node:fs');
+    // (readFileSync je statično uvožen zgoraj)
     const raw = JSON.parse(
-      fs.readFileSync('public/data/museums-register.json', 'utf-8'),
+      readFileSync('public/data/museums-register.json', 'utf-8'),
     );
     expect(raw.format).toBe('remk-museums-v1');
     expect(raw.museums.length).toBeGreaterThanOrEqual(55);
@@ -55,6 +56,28 @@ describe('museums-register — uradni REMK razvid', () => {
       expect(m.lat).toBeLessThan(46.9);
       expect(m.lng).toBeGreaterThan(13.3);
       expect(m.lng).toBeLessThan(16.8);
+    }
+  });
+});
+
+describe('museums-wikidata — odprti podatki (CC0)', () => {
+  test('public/data/museums-wikidata.json ima podatke po državah', () => {
+    // (readFileSync je statično uvožen zgoraj)
+    const raw = JSON.parse(readFileSync('public/data/museums-wikidata.json', 'utf-8'));
+    expect(raw.format).toBe('wikidata-museums-v1');
+    const countries = raw.countries ?? {};
+    // vsaj ena država mora biti napolnjena (postopno polnjenje zaradi 429)
+    const filled = Object.entries(countries).filter(([, ms]) => (ms as unknown[]).length >= 5);
+    expect(filled.length).toBeGreaterThanOrEqual(1);
+    for (const [country, ms] of filled.slice(0, 3)) {
+      for (const m of (ms as { name: string; lat: number; lng: number; item: string }[]).slice(0, 10)) {
+        expect(m.name.length).toBeGreaterThan(2);
+        expect(m.item).toMatch(/^Q\d+$/);
+        expect(m.lat).toBeGreaterThan(35);
+        expect(m.lat).toBeLessThan(50);
+        expect(m.lng).toBeGreaterThan(10);
+        expect(m.lng).toBeLessThan(30);
+      }
     }
   });
 });

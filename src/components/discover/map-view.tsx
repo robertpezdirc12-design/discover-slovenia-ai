@@ -161,7 +161,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
       (p.note ? `<div class="dsa-popup__meta" style="margin-top:2px">${escapeHtml(p.note)}</div>` : '') +
       (p.source === 'remk'
         ? `<span class="dsa-popup__badge">✔ uradno vpisan — Razvid muzejev RS (REMK)</span>`
-        : `<span class="dsa-popup__badge">vir: ${p.curated ? 'kuriran katalog (približna lokacija)' : 'OpenStreetMap'}</span>`) +
+        : p.source === 'wikidata'
+          ? `<span class="dsa-popup__badge">vir: Wikidata (odprti podatki, CC0)</span>`
+          : `<span class="dsa-popup__badge">vir: ${p.curated ? 'kuriran katalog (približna lokacija)' : 'OpenStreetMap'}</span>`) +
       `</div>`;
 
     /** Obogatitev z Wikipedijo (asinhrono): slika + povzetek + povezavi.
@@ -197,7 +199,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
               `</div>` +
               (p.source === 'remk'
                 ? `<span class="dsa-popup__badge">✔ uradno vpisan — Razvid muzejev RS (REMK)</span>`
-                : '') +
+                : p.source === 'wikidata'
+                  ? `<span class="dsa-popup__badge">vir: Wikidata (odprti podatki, CC0)</span>`
+                  : '') +
               `</div>`,
           );
         })

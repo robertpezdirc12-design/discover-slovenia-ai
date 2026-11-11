@@ -15,6 +15,8 @@ export interface BalkanMuseum {
   desc: string;
   lat: number;
   lng: number;
+  /** Uradna spletna stran (samo zanesljive domene). */
+  website?: string;
   country:
     | 'hrvaska'
     | 'bosna-hercegovina'
@@ -152,6 +154,7 @@ export const BALKAN_MUSEUMS: readonly BalkanMuseum[] = [
     desc: 'Teslajevi izumi, osebni predmeti in pepel — UNESCO dokumentarna zapuščina.',
     lat: 44.8075,
     lng: 20.47,
+    website: 'https://tesla-museum.org',
     country: 'srbija',
   },
   {

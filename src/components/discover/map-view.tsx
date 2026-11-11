@@ -1,24 +1,24 @@
 'use client';
 
 /**
- * ZEMLJEVID (Leaflet) — pini držav, klik → flyTo, pini apartmajev + popupi.
+ * ZEMLJEVID (Leaflet) — čist regijski pregled, pini apartmajev + popupi.
  *
- * Tok po uporabnikovi zahtevi:
- *  1) regijski pregled s pini držav (Slovenija + Balkan),
- *  2) klik na državni pin → zemljevid odpre/zooma državo (flyTo),
- *  3) klik na Slovenija → starš odpre spustni meni (Apartmaji …),
- *  4) izbira »Apartmaji« → pini vseh apartmajev v Sloveniji z popupi.
+ * Tok po uporabnikovi zahtevi (brez zelenih krogec / pinov držav):
+ *  1) regijski pregled (Slovenija + Balkan) — brez oznak držav,
+ *  2) državo izbereš v spustnem okencu → starš pokliče flyTo/fit-bounds
+ *     in se zemljevid približa izbrani državi,
+ *  3) izbira »Apartmaji« → pini vseh apartmajev v Sloveniji z popupi.
  *
- * Državni pini so React komponente (8 kosov), apartmajski pini pa se
- * gradijo imperativno v LayerGroup (stotine kosov → brez React overheada).
- * Komunikacija s staršem: callback propi + imperativni handle (flyTo …).
+ * Apartmajski pini se gradijo imperativno v LayerGroup (stotine kosov →
+ * brez React overheada). Komunikacija s staršem: callback propi +
+ * imperativni handle (flyTo …).
  */
 
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import { MapContainer, Marker, TileLayer } from 'react-leaflet';
-import { COUNTRIES, REGION_VIEW, SLOVENIA_BOUNDS, countryById } from '@/lib/countries-view';
+import { MapContainer, TileLayer } from 'react-leaflet';
+import { REGION_VIEW, SLOVENIA_BOUNDS, countryById } from '@/lib/countries-view';
 import type { ApartmentApiItem } from '@/lib/apartments-view';
 
 export interface MapViewHandle {
@@ -29,11 +29,9 @@ export interface MapViewHandle {
 }
 
 export interface MapViewProps {
-  selectedCountryId: string | null;
   apartments: ApartmentApiItem[];
   apartmentsVisible: boolean;
   activeApartmentId: string | null;
-  onSelectCountry: (id: string) => void;
   onSelectApartment: (id: string) => void;
 }
 
@@ -73,6 +71,7 @@ function apartmentPopupHtml(a: ApartmentApiItem): string {
 }
 
 /** SVG hišica za apartma pin (bela, na zelenem označevalniku). */
+
 const HOUSE_SVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`;
 
 function apartmentIcon(active: boolean): L.DivIcon {
@@ -85,26 +84,11 @@ function apartmentIcon(active: boolean): L.DivIcon {
   });
 }
 
-function countryIcon(name: string, flag: string, selected: boolean): L.DivIcon {
-  return L.divIcon({
-    className: 'dsa-pin-country',
-    html:
-      `<div class="dsa-country-pin${selected ? ' dsa-country-pin--selected' : ''}">` +
-      `<div class="dsa-country-pin__dot">${flag}</div>` +
-      `<div class="dsa-country-pin__label">${escapeHtml(name)}</div>` +
-      `</div>`,
-    iconSize: [40, 52],
-    iconAnchor: [20, 34],
-  });
-}
-
 const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
   {
-    selectedCountryId,
     apartments,
     apartmentsVisible,
     activeApartmentId,
-    onSelectCountry,
     onSelectApartment,
   },
   ref,
@@ -205,19 +189,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> sodelavci'
         url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      {COUNTRIES.map((c) => (
-        <Marker
-          key={c.id}
-          position={[c.lat, c.lng]}
-          icon={countryIcon(c.name, c.flag, selectedCountryId === c.id)}
-          zIndexOffset={selectedCountryId === c.id ? 900 : 500}
-          title={c.name}
-          alt={`Država ${c.name}`}
-          eventHandlers={{
-            click: () => onSelectCountry(c.id),
-          }}
-        />
-      ))}
     </MapContainer>
   );
 });

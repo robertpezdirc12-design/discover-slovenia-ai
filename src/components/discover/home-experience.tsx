@@ -1,15 +1,15 @@
 'use client';
 
 /**
- * DOMAČA IZKUŠNJA — vmesnik med zemljevidom, spustnim menijem in seznamom.
+ * DOMAČA IZKUŠNJA — zemljevid + spustno okence (države, apartmaji) + seznam.
  *
- * Tok (po uporabnikovi zahtevi):
- *  1) regijski zemljevid s pini držav,
- *  2) klik na državo → odpre se na zemljevidu (flyTo),
- *  3) klik na Slovenija → samodejno se odpre SPUSTNI MENI,
- *  4) klik na »Apartmaji« → naložijo se VSI apartmaji v Sloveniji
- *     (GET /api/apartments — podatki s spleta, OpenStreetMap) in se
- *     pokažejo kot pini + pregleden seznam s filtri.
+ * Tok (po uporabnikovi zahtevi — brez zelenih krogec / pinov držav):
+ *  1) čist regijski zemljevid (Slovenija + Balkan),
+ *  2) v SPUSTNEM OKENCU izbereš državo (Slovenija, Hrvaška, Bosna …)
+ *     → zemljevid se TAKOJ približa izbrani državi (to je prvi korak),
+ *  3) v istem okencu klikneš »Apartmaji« (ob izbrani Sloveniji) → naložijo
+ *     se VSI apartmaji v Sloveniji (GET /api/apartments — podatki s spleta,
+ *     OpenStreetMap) in se pokažejo kot pini + pregleden seznam s filtri.
  *
  * Stanja so izpeljana (brez setState v efektih); nalaganje ima ločeno
  * stanje (idle/loading/ready/error) z iskrenimi sporočili.
@@ -19,13 +19,12 @@ import dynamic from 'next/dynamic';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
-  Building2,
+  Check,
   ChevronDown,
   Home,
   MapPin,
   RotateCcw,
   Search,
-  Tent,
   RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -77,7 +76,6 @@ export default function HomeExperience() {
   const mapRef = useRef<MapViewHandle>(null);
 
   const [selectedCountryId, setSelectedCountryId] = useState<string | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   const [status, setStatus] = useState<LoadStatus>('idle');
   const [apartments, setApartments] = useState<ApartmentApiItem[]>([]);
@@ -95,20 +93,18 @@ export default function HomeExperience() {
   const apartmentsVisible = sloveniaSelected && status === 'ready';
   const apartmentsCount = apartments.length;
 
-  // ── Tok: klik na državo ────────────────────────────────────────────────
+  // ── Tok: izbira države v spustnem okencu → takojšnje približanje ───────
   const handleSelectCountry = useCallback((id: string) => {
     setSelectedCountryId(id);
     setActiveApartmentId(null);
-    mapRef.current?.flyToCountry(id);
     if (id === 'slovenija') {
-      // Uporabnikova zahteva: klik na Slovenija → odpre se spustni meni
-      setMenuOpen(true);
+      mapRef.current?.fitSlovenia();
     } else {
-      setMenuOpen(false);
+      mapRef.current?.flyToCountry(id);
     }
   }, []);
 
-  // ── Tok: izbira »Apartmaji« v spustnem meniju ──────────────────────────
+  // ── Tok: izbira »Apartmaji« v spustnem okencu ──────────────────────────
   /** Vrne število naloženih apartmajev ali −1 ob napaki. */
   const loadApartments = useCallback(async (): Promise<number> => {
     setStatus((prev) => (prev === 'ready' ? prev : 'loading'));
@@ -132,11 +128,9 @@ export default function HomeExperience() {
   }, []);
 
   const handleChooseApartments = useCallback(() => {
-    setMenuOpen(false);
-    if (status === 'ready') {
-      mapRef.current?.fitSlovenia();
-      return;
-    }
+    if (!sloveniaSelected) return;
+    mapRef.current?.fitSlovenia();
+    if (status === 'ready') return;
     void loadApartments().then((count) => {
       if (count < 0) return;
       mapRef.current?.fitSlovenia();
@@ -144,12 +138,11 @@ export default function HomeExperience() {
         description: 'Vir: OpenStreetMap (odprti podatki).',
       });
     });
-  }, [status, loadApartments]);
+  }, [sloveniaSelected, status, loadApartments]);
 
   // ── Nazaj na regijski pregled ──────────────────────────────────────────
   const handleBack = useCallback(() => {
     setSelectedCountryId(null);
-    setMenuOpen(false);
     setActiveApartmentId(null);
     mapRef.current?.resetRegion();
   }, []);
@@ -169,7 +162,8 @@ export default function HomeExperience() {
     if (refreshing) return;
     setRefreshing(true);
     toast.info('Usklajevanje s spletnimi viri se je začelo …', {
-      description: 'Če Overpass ni dosegljiv, poteka Nominatim iskanje (vljudnostno ≤ 1 zahteva/s) — lahko traja nekaj minut.',
+      description:
+        'Če Overpass ni dosegljiv, poteka Nominatim iskanje (vljudnostno ≤ 1 zahteva/s) — lahko traja nekaj minut.',
     });
     try {
       const res = await fetch('/api/apartments/sync', { method: 'POST' });
@@ -219,14 +213,14 @@ export default function HomeExperience() {
               <p className="font-display text-lg font-semibold tracking-tight">
                 Discover Slovenia <span className="text-primary">AI</span>
               </p>
-              <p className="text-xs text-muted-foreground">zemljevid · pini · apartmaji</p>
+              <p className="text-xs text-muted-foreground">zemljevid · spustno okence · apartmaji</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             {selectedCountry ? (
               <Badge variant="secondary" className="hidden sm:inline-flex">
-                <MapPin className="mr-1 h-3.5 w-3.5" /> {selectedCountry.name}
+                <MapPin className="mr-1 h-3.5 w-3.5" /> {selectedCountry.flag} {selectedCountry.name}
               </Badge>
             ) : null}
             <Button variant="outline" size="sm" onClick={handleBack}>
@@ -238,78 +232,77 @@ export default function HomeExperience() {
 
       <main className="flex-1">
         <div className="mx-auto w-full max-w-6xl px-4 pt-6 pb-4 sm:px-6">
-          {/* Kratek vodnik po treh korakih */}
+          {/* Kratek vodnik po korakih */}
           <section aria-label="Vodnik" className="mb-4">
             <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-              Klikni državo na zemljevidu
+              V spustnem okencu izberi državo
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground sm:text-base">
-              Klikni pini držav — zemljevid se odpre na izbrani državi. Klikni{' '}
-              <strong className="text-foreground">Slovenija</strong>, v spustnem meniju pa izberi{' '}
+              Klikni <strong className="text-foreground">državo</strong> (Slovenija, Hrvaška, Bosna
+              …) v spustnem okencu — zemljevid se takoj približa izbrani državi. Nato izberi{' '}
               <strong className="text-foreground">Apartmaji</strong>: pokaže se vseh{' '}
-              {status === 'ready' ? apartmentsCount : ''} apartmajev v Sloveniji z realnimi
-              podatki s spleta (OpenStreetMap).
+              {status === 'ready' ? apartmentsCount : ''} apartmajev v Sloveniji z realnimi podatki
+              s spleta (OpenStreetMap).
             </p>
           </section>
 
-          {/* Nadzorna vrstica: spustni meni (Slovenija) + status */}
+          {/* Nadzorna vrstica: spustno okence (države + apartmaji) + status */}
           <section aria-label="Nadzorna vrstica" className="mb-4 flex flex-wrap items-center gap-2">
-            <DropdownMenu open={menuOpen && sloveniaSelected} onOpenChange={setMenuOpen}>
+            <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  size="lg"
-                  disabled={!sloveniaSelected}
-                  className="shadow-sm"
-                  title={sloveniaSelected ? 'Odpri spustni meni' : 'Najprej klikni Slovenijo na zemljevidu'}
-                >
-                  <Home className="mr-2 h-4.5 w-4.5" />
-                  {sloveniaSelected ? 'Slovenija — kaj te zanima?' : 'Najprej klikni državo …'}
+                <Button size="lg" className="shadow-sm" title="Izberi državo — zemljevid se približa">
+                  <MapPin className="mr-2 h-4.5 w-4.5" />
+                  {selectedCountry ? (
+                    <span>
+                      {selectedCountry.flag} {selectedCountry.name}
+                    </span>
+                  ) : (
+                    'Izberi državo …'
+                  )}
                   <ChevronDown className="ml-2 h-4 w-4 opacity-70" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-72">
+              <DropdownMenuContent align="start" className="dsa-scroll-list max-h-80 w-72 overflow-y-auto">
                 <DropdownMenuLabel className="text-xs text-muted-foreground">
-                  Kaj te zanima v Sloveniji?
+                  Izberi državo — zemljevid se približa
                 </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {COUNTRIES.map((c) => (
+                  <DropdownMenuItem
+                    key={c.id}
+                    onSelect={() => handleSelectCountry(c.id)}
+                    className="gap-2.5 py-2.5"
+                  >
+                    <span className="text-base leading-none">{c.flag}</span>
+                    <span className="font-medium">{c.name}</span>
+                    {selectedCountryId === c.id ? (
+                      <Check className="ml-auto h-4 w-4 text-primary" />
+                    ) : null}
+                  </DropdownMenuItem>
+                ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={() => handleChooseApartments()}
+                  disabled={!sloveniaSelected}
                   className="gap-2.5 py-2.5"
                 >
                   <Home className="h-4 w-4 text-primary" />
                   <span className="font-medium">Apartmaji</span>
                   <span className="ml-auto text-xs text-muted-foreground">
-                    vsi v Sloveniji
+                    {sloveniaSelected ? 'vsi v Sloveniji' : 'najprej izberi Slovenijo'}
                   </span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem disabled className="gap-2.5 py-2">
-                  <Building2 className="h-4 w-4 opacity-50" />
-                  <span>Hoteli</span>
-                  <Badge variant="outline" className="ml-auto text-[10px]">
-                    kmalu
-                  </Badge>
-                </DropdownMenuItem>
-                <DropdownMenuItem disabled className="gap-2.5 py-2">
-                  <Tent className="h-4 w-4 opacity-50" />
-                  <span>Kampi</span>
-                  <Badge variant="outline" className="ml-auto text-[10px]">
-                    kmalu
-                  </Badge>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-
-            {selectedCountry && !sloveniaSelected ? (
-              <p className="text-sm text-muted-foreground">{selectedCountry.hint}</p>
-            ) : null}
 
             {status === 'ready' ? (
               <div className="ml-auto flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                 <Badge variant="outline">
                   {apartmentsCount} apartmajev
                 </Badge>
-                <span>vir: OpenStreetMap ({dataSource ?? '—'}) · osveženo: {formatUpdatedAt(updatedAt)}</span>
+                <span>
+                  vir: OpenStreetMap ({dataSource ?? '—'}) · osveženo: {formatUpdatedAt(updatedAt)}
+                </span>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -332,11 +325,9 @@ export default function HomeExperience() {
             <div className="relative h-[58vh] min-h-[420px] w-full">
               <MapView
                 ref={mapRef}
-                selectedCountryId={selectedCountryId}
                 apartments={apartments}
                 apartmentsVisible={apartmentsVisible}
                 activeApartmentId={activeApartmentId}
-                onSelectCountry={handleSelectCountry}
                 onSelectApartment={handleSelectApartment}
               />
 
@@ -344,11 +335,21 @@ export default function HomeExperience() {
               {!selectedCountry ? (
                 <div className="pointer-events-none absolute left-1/2 top-4 z-[500] w-[min(92%,26rem)] -translate-x-1/2 rounded-xl border border-border/80 bg-card/95 p-3 text-center shadow-lg backdrop-blur">
                   <p className="text-sm font-medium">
-                    👆 Klikni pini držav — Slovenija te pelje naprej
+                    👇 V spustnem okencu izberi državo — zemljevid se približa
                   </p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {COUNTRIES.length} držav na pregledu · odprti podatki OpenStreetMap
+                    {COUNTRIES.length} držav na izbiro · odprti podatki OpenStreetMap
                   </p>
+                </div>
+              ) : null}
+
+              {/* Oblak za izbrano državo (brez apartmajev / pred nalaganjem) */}
+              {selectedCountry && status !== 'ready' && status !== 'loading' ? (
+                <div className="pointer-events-none absolute left-1/2 top-4 z-[500] w-[min(92%,26rem)] -translate-x-1/2 rounded-xl border border-border/80 bg-card/95 p-3 text-center shadow-lg backdrop-blur">
+                  <p className="text-sm font-medium">
+                    {selectedCountry.flag} {selectedCountry.name}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{selectedCountry.hint}</p>
                 </div>
               ) : null}
 
@@ -381,7 +382,7 @@ export default function HomeExperience() {
             </div>
           </section>
 
-          {/* Seznam apartmajev (ko so vidni) */}
+          {/* Seznam apartmajev (ko je Slovenija izbrana) */}
           {sloveniaSelected ? (
             <section aria-label="Seznam apartmajev" className="mt-6">
               {status === 'ready' ? (
@@ -478,15 +479,21 @@ export default function HomeExperience() {
                     ))}
                   </div>
                 </div>
-              ) : status === 'idle' ? (
+              ) : (
                 <div className="rounded-2xl border border-dashed border-border bg-card/60 p-8 text-center">
                   <p className="text-sm text-muted-foreground">
-                    Izberi <strong className="text-foreground">Apartmaji</strong> v spustnem meniju
-                    zgoraj (ali ponovno klikni pin Slovenije) in tu se pokaže celoten seznam z
-                    filtri.
+                    {status === 'error'
+                      ? 'Nalaganje ni uspelo — poskusi znova (gumb na zemljevidu zgoraj).'
+                      : 'V spustnem okencu izberi '}
+                    {status !== 'error' ? (
+                      <>
+                        <strong className="text-foreground">Apartmaji</strong> — tu se pokaže
+                        celoten seznam z filtri.
+                      </>
+                    ) : null}
                   </p>
                 </div>
-              ) : null}
+              )}
             </section>
           ) : null}
         </div>
@@ -498,7 +505,7 @@ export default function HomeExperience() {
           <p className="font-display text-foreground/80">
             Discover Slovenia <span className="text-primary">AI</span>
             <span className="ml-2 font-sans text-muted-foreground">
-              — pini, države in apartmaji na enem zemljevidu
+              — spustno okence, države in apartmaji na enem zemljevidu
             </span>
           </p>
           <p>

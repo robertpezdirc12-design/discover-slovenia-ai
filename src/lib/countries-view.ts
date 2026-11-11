@@ -1,9 +1,10 @@
 /**
- * DRŽAVE NA REGIJSKEM ZEMLJEVIDU — pini + pogledi (flyTo ob kliku).
+ * DRŽAVE V SPUSTNEM OKENCU — izbira + pogledi (flyTo ob izbiri).
  *
- * Uporabnikov tok: klik na državni pin → zemljevid odpri/zooma na državo;
- * klik na Slovenija → odpre se spustni meni (Apartmaji …).
- * Pogledi prirejeni iz repozitorija discover-slovenia-ai (BALKAN_COUNTRY_VIEWS).
+ * Uporabnikov tok: v spustnem okencu izbereš državo (Slovenija, Hrvaška,
+ * Bosna …) → zemljevid se približa izbrani državi. Na zemljevidu ni pinov
+ * držav. Pogledi prirejeni iz repozitorija discover-slovenia-ai
+ * (BALKAN_COUNTRY_VIEWS).
  */
 
 export interface CountryView {
@@ -33,7 +34,7 @@ export const COUNTRIES: readonly CountryView[] = [
     lat: 46.1,
     lng: 14.8,
     zoom: 7.4,
-    hint: 'Klikni »Apartmaji« v meniju in poglej vse apartmaje v državi.',
+    hint: 'Zdaj izberi »Apartmaji« v istem okencu — pokažejo se vsi apartmaji v državi.',
   },
   {
     id: 'hrvaska',
@@ -42,7 +43,7 @@ export const COUNTRIES: readonly CountryView[] = [
     lat: 45.4,
     lng: 16.5,
     zoom: 6.4,
-    hint: 'Sosednja država — prikaz prenočišč prihaja kmalu.',
+    hint: 'Prikaz prenočišč prihaja kmalu.',
   },
   {
     id: 'bosna-hercegovina',
@@ -51,7 +52,7 @@ export const COUNTRIES: readonly CountryView[] = [
     lat: 44.2,
     lng: 17.9,
     zoom: 7,
-    hint: 'Sosednja država — prikaz prenočišč prihaja kmalu.',
+    hint: 'Prikaz prenočišč prihaja kmalu.',
   },
   {
     id: 'srbija',
@@ -60,7 +61,7 @@ export const COUNTRIES: readonly CountryView[] = [
     lat: 44.0,
     lng: 20.9,
     zoom: 7,
-    hint: 'Sosednja država — prikaz prenočišč prihaja kmalu.',
+    hint: 'Prikaz prenočišč prihaja kmalu.',
   },
   {
     id: 'kosovo',

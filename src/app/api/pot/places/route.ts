@@ -141,7 +141,9 @@ export async function GET(request: Request) {
       ? { south: parts[0], west: parts[1], north: parts[2], east: parts[3] }
       : null;
   if (bboxNum) {
-    try {
+    for (let photonAttempt = 0; photonAttempt < 2; photonAttempt++) {
+      try {
+        if (photonAttempt > 0) await new Promise((r) => setTimeout(r, 900)); // 429 cool-down
       // Photon zahteva neprazen q; »a« se ujema s skoraj vsemi imeni →
       // dejanski filter sta osm_tag + bbox (izenačeno spodaj).
       // PO MESTIH: en query vrne samo top 50 — za celo državo pošljemo
@@ -217,6 +219,7 @@ export async function GET(request: Request) {
     }
   }
 
+  }
   // DRUGI VIR — Overpass po mestih vzporedno (mala bbox = 1–3 s / zahteva).
   // Vsak hub: node/way kategorije v ±0,12° (≈ 13 km), out center 80.
   if (bboxNum) {

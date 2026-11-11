@@ -21,12 +21,6 @@ import { buildWikidataMuseums } from '@/lib/museums-wikidata';
  * točke prek Overpassa (globalna zrcala, časovni proračun). Brez ključev.
  */
 
-const OVERPASS_ENDPOINTS = [
-  'https://overpass-api.de/api/interpreter',
-  'https://overpass.kumi.systems/api/interpreter',
-  'https://overpass.private.coffee/api/interpreter',
-];
-const TIMEOUT_MS = 12000;
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 
@@ -103,26 +97,31 @@ export async function GET(request: Request) {
     }
     bbox = cb;
   }
-  const query = overpassPlacesQuery(category, bbox, scope === 'local' ? 30 : 60);
+  const query = overpassPlacesQuery(category, bbox, scope === 'local' ? 30 : 80);
 
-  // Vzporedni poskusi zrcal; zmaga prvi uspešen odziv.
-  const attempts = OVERPASS_ENDPOINTS.map((endpoint) => {
-    const init: RequestInit = {
-      method: 'POST',
-      headers: { 'user-agent': UA, 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `data=${encodeURIComponent(query)}`,
-      signal: AbortSignal.timeout(10000),
-    };
-    return fetch(endpoint, init).then(async (res) => {
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return (await res.json()) as unknown;
-    });
-  });
+  // DOSEGLJIVI viri (izmerjeno v POLIRAJ-9/29): overpass-api.de deluje iz
+  // Vercela (dokazano s prenočišči); osm.ch je SAMO švicarski izvleček
+  // (za Balkan vrne 0 → zanka nadaljuje). GET-first (POST zrcala 500-irajo).
+  const liveEndpoints = [
+    'https://overpass-api.de/api/interpreter',
+    'https://overpass.osm.ch/api/interpreter',
+  ];
   let raw: unknown = null;
-  try {
-    raw = await Promise.any(attempts);
-  } catch {
-    raw = null;
+  for (const endpoint of liveEndpoints) {
+    try {
+      const res = await fetch(`${endpoint}?data=${encodeURIComponent(query)}`, {
+        headers: { 'user-agent': UA, accept: 'application/json' },
+        signal: AbortSignal.timeout(scope === 'local' ? 10000 : 25000),
+      });
+      if (!res.ok) continue;
+      const parsed = await res.json();
+      // Nadaljuj na naslednji vir, če je odziv prazen (osm.ch za Balkan).
+      if (parseOverpassPlaces(parsed, catId as PlaceCategoryId).length === 0) continue;
+      raw = parsed;
+      break;
+    } catch {
+      continue; // naslednji endpoint
+    }
   }
 
   if (raw !== null) {

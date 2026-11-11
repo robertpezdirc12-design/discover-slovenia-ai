@@ -1229,6 +1229,2399 @@
     "wikiSl": null,
     "wikiEn": "Zenica Synagogue"
    }
-  ]
+  ],
+  "srbija": [
+   {
+    "item": "Q116343",
+    "name": "Küstendorf",
+    "lat": 43.79563,
+    "lng": 19.50809,
+    "wikiSl": null,
+    "wikiEn": "K%C3%BCstendorf"
+   },
+   {
+    "item": "Q304972",
+    "name": "Railway Museum",
+    "lat": 44.80611,
+    "lng": 20.45861,
+    "wikiSl": null,
+    "wikiEn": "Railway Museum, Belgrade"
+   },
+   {
+    "item": "Q391211",
+    "name": "Šarganska osmica",
+    "lat": 43.8,
+    "lng": 19.52194,
+    "wikiSl": "%C5%A0arganska osmica",
+    "wikiEn": "%C5%A0argan Eight"
+   },
+   {
+    "item": "Q613201",
+    "name": "Muzej Nikole Tesle",
+    "lat": 44.8051,
+    "lng": 20.4707,
+    "wikiSl": null,
+    "wikiEn": "Nikola Tesla Museum"
+   },
+   {
+    "item": "Q698270",
+    "name": "Koncentracijsko taborišče Banjica",
+    "lat": 44.77028,
+    "lng": 20.46833,
+    "wikiSl": null,
+    "wikiEn": "Banjica concentration camp"
+   },
+   {
+    "item": "Q1263910",
+    "name": "Museum of 4 July",
+    "lat": 44.80912,
+    "lng": 20.46616,
+    "wikiSl": null,
+    "wikiEn": "Museum of 4 July"
+   },
+   {
+    "item": "Q1281959",
+    "name": "Belgrade Military Museum",
+    "lat": 44.82194,
+    "lng": 20.45,
+    "wikiSl": null,
+    "wikiEn": "Military Museum, Belgrade"
+   },
+   {
+    "item": "Q1290510",
+    "name": "Museum of Contemporary Art, Belgrade",
+    "lat": 44.81944,
+    "lng": 20.44222,
+    "wikiSl": null,
+    "wikiEn": "Museum of Contemporary Art, Belgrade"
+   },
+   {
+    "item": "Q1291533",
+    "name": "Ethnographic Museum, Belgrade",
+    "lat": 44.8198,
+    "lng": 20.45627,
+    "wikiSl": null,
+    "wikiEn": "Ethnographic Museum, Belgrade"
+   },
+   {
+    "item": "Q1566001",
+    "name": "Museum of pedagogy in Belgrade",
+    "lat": 44.82083,
+    "lng": 20.45472,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q1669926",
+    "name": "Nebojša Tower",
+    "lat": 44.82728,
+    "lng": 20.44789,
+    "wikiSl": null,
+    "wikiEn": "Neboj%C5%A1a Tower"
+   },
+   {
+    "item": "Q1775086",
+    "name": "Museum of Vuk and Dositej",
+    "lat": 44.82102,
+    "lng": 20.45888,
+    "wikiSl": null,
+    "wikiEn": "Museum of Vuk and Dositej"
+   },
+   {
+    "item": "Q2338274",
+    "name": "Museum of Theatrical Arts of Serbia",
+    "lat": 44.82131,
+    "lng": 20.4586,
+    "wikiSl": null,
+    "wikiEn": "Museum of Theatrical Arts of Serbia"
+   },
+   {
+    "item": "Q2338290",
+    "name": "Museum of Yugoslav History",
+    "lat": 44.78667,
+    "lng": 20.45167,
+    "wikiSl": null,
+    "wikiEn": "Museum of Yugoslavia"
+   },
+   {
+    "item": "Q2395759",
+    "name": "Jovan Cvijić's house",
+    "lat": 44.8157,
+    "lng": 20.4686,
+    "wikiSl": null,
+    "wikiEn": "Jovan Cviji%C4%87 House"
+   },
+   {
+    "item": "Q2403321",
+    "name": "Belgrade City Museum",
+    "lat": 44.80416,
+    "lng": 20.46119,
+    "wikiSl": null,
+    "wikiEn": "Belgrade City Museum"
+   },
+   {
+    "item": "Q2443649",
+    "name": "Despot Stefan Tower",
+    "lat": 44.82528,
+    "lng": 20.45111,
+    "wikiSl": null,
+    "wikiEn": "Despot Stefan Tower"
+   },
+   {
+    "item": "Q2539582",
+    "name": "Museum of Aviation",
+    "lat": 44.81889,
+    "lng": 20.28528,
+    "wikiSl": null,
+    "wikiEn": "Aeronautical Museum (Belgrade)"
+   },
+   {
+    "item": "Q2860466",
+    "name": "Yugoslav Film Archive",
+    "lat": 44.81968,
+    "lng": 20.45593,
+    "wikiSl": null,
+    "wikiEn": "Yugoslav Film Archive"
+   },
+   {
+    "item": "Q3198600",
+    "name": "Miloš Obrenović's House",
+    "lat": 44.07361,
+    "lng": 20.56639,
+    "wikiSl": null,
+    "wikiEn": "Milo%C5%A1 Obrenovi%C4%87 House"
+   },
+   {
+    "item": "Q3279458",
+    "name": "Manak's House",
+    "lat": 44.8137,
+    "lng": 20.4544,
+    "wikiSl": null,
+    "wikiEn": "Manak House"
+   },
+   {
+    "item": "Q3329355",
+    "name": "Old Firearms Manufactury Museum in Kragujevac",
+    "lat": 44.0075,
+    "lng": 20.91139,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q3329370",
+    "name": "Toma Rosandić Museum",
+    "lat": 44.8166,
+    "lng": 20.4566,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q3329766",
+    "name": "Spirta House, Belgrade",
+    "lat": 44.8431,
+    "lng": 20.4122,
+    "wikiSl": null,
+    "wikiEn": "Spirta House, Belgrade"
+   },
+   {
+    "item": "Q3329816",
+    "name": "Automobile museum in Belgrade",
+    "lat": 44.8139,
+    "lng": 20.4661,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q3330608",
+    "name": "Jewish Historical Museum",
+    "lat": 44.8213,
+    "lng": 20.4569,
+    "wikiSl": null,
+    "wikiEn": "Jewish Historical Museum, Belgrade"
+   },
+   {
+    "item": "Q3330697",
+    "name": "National Museum of Niš",
+    "lat": 43.31812,
+    "lng": 21.89368,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q3868179",
+    "name": "Jadar Museum",
+    "lat": 44.53161,
+    "lng": 19.22462,
+    "wikiSl": null,
+    "wikiEn": "Jadar Museum"
+   },
+   {
+    "item": "Q4306134",
+    "name": "Museum of Ivo Andrić",
+    "lat": 44.8096,
+    "lng": 20.4637,
+    "wikiSl": null,
+    "wikiEn": "Museum of Ivo Andri%C4%87"
+   },
+   {
+    "item": "Q6269660",
+    "name": "Jokanovića kuća",
+    "lat": 43.85642,
+    "lng": 19.84445,
+    "wikiSl": null,
+    "wikiEn": "Jokanovi%C4%87a ku%C4%87a"
+   },
+   {
+    "item": "Q6940959",
+    "name": "Museum of Natural History",
+    "lat": 44.81228,
+    "lng": 20.46135,
+    "wikiSl": null,
+    "wikiEn": "Natural History Museum in Belgrade"
+   },
+   {
+    "item": "Q6941048",
+    "name": "Museum of Vojvodina",
+    "lat": 45.25655,
+    "lng": 19.85176,
+    "wikiSl": null,
+    "wikiEn": "Museum of Vojvodina"
+   },
+   {
+    "item": "Q11044542",
+    "name": "Narodni muzej Šabac",
+    "lat": 44.75532,
+    "lng": 19.69269,
+    "wikiSl": "Narodni muzej %C5%A0abac",
+    "wikiEn": null
+   },
+   {
+    "item": "Q11156422",
+    "name": "Museum of Science and Technology Belgrade",
+    "lat": 44.82178,
+    "lng": 20.46525,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q12287712",
+    "name": "National Museum of Požarevac",
+    "lat": 44.62243,
+    "lng": 21.18678,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q12631744",
+    "name": "Municipal Museum in Subotica",
+    "lat": 46.10219,
+    "lng": 19.66142,
+    "wikiSl": null,
+    "wikiEn": "Municipal Museum of Subotica"
+   },
+   {
+    "item": "Q12746292",
+    "name": "National Museum of Zrenjanin",
+    "lat": 45.37989,
+    "lng": 20.38986,
+    "wikiSl": null,
+    "wikiEn": "National Museum of Zrenjanin"
+   },
+   {
+    "item": "Q12750436",
+    "name": "Vršac City Museum",
+    "lat": 45.11871,
+    "lng": 21.30123,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q12752424",
+    "name": "Serbian Historical Museum",
+    "lat": 44.8125,
+    "lng": 20.4637,
+    "wikiSl": null,
+    "wikiEn": "Historical Museum of Serbia"
+   },
+   {
+    "item": "Q12755136",
+    "name": "Memorial Museum Jovan Cvijić",
+    "lat": 44.81573,
+    "lng": 20.46859,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q12755795",
+    "name": "Jugoslavian Film Museum",
+    "lat": 44.81987,
+    "lng": 20.45566,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q12755798",
+    "name": "Second Serbian Uprising Museum",
+    "lat": 44.04404,
+    "lng": 20.38892,
+    "wikiSl": null,
+    "wikiEn": "Takovo Museum"
+   },
+   {
+    "item": "Q12755797",
+    "name": "Srem Museum",
+    "lat": 44.96739,
+    "lng": 19.609,
+    "wikiSl": null,
+    "wikiEn": "Museum of Srem"
+   },
+   {
+    "item": "Q12755802",
+    "name": "Museum of Smederevo",
+    "lat": 44.66706,
+    "lng": 20.92756,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q12755800",
+    "name": "Museum of the Rudnik-Takovo region",
+    "lat": 44.02402,
+    "lng": 20.4619,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q12755806",
+    "name": "Museum Prince Pavle",
+    "lat": 44.80986,
+    "lng": 20.46312,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q12755805",
+    "name": "Museum of wax figures of Jagodina",
+    "lat": 43.96762,
+    "lng": 21.26537,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q12755999",
+    "name": "National Museum of Toplica",
+    "lat": 43.2319,
+    "lng": 21.5899,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q12756005",
+    "name": "National Museum of Vranje",
+    "lat": 42.55455,
+    "lng": 21.89822,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q12757239",
+    "name": "Peter's house",
+    "lat": 44.24718,
+    "lng": 20.68354,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q12759412",
+    "name": "Pavle Beljanski Memorial Collection",
+    "lat": 45.25279,
+    "lng": 19.84592,
+    "wikiSl": null,
+    "wikiEn": "Pavle Beljanski Memorial Collection"
+   },
+   {
+    "item": "Q27861713",
+    "name": "Etno selo Lipolist",
+    "lat": 44.71317,
+    "lng": 19.50666,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q29576244",
+    "name": "Etno selo Vrhpolje",
+    "lat": 44.14171,
+    "lng": 19.42576,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q31181808",
+    "name": "Ethnic village \"Knezevi konaci\"",
+    "lat": 44.58363,
+    "lng": 19.73641,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q31181932",
+    "name": "Ethno village \"Tronoški vajati\"",
+    "lat": 44.46726,
+    "lng": 19.28901,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q56062736",
+    "name": "Museum of beekeeping",
+    "lat": 45.19874,
+    "lng": 19.94045,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q61135077",
+    "name": "Etnološki muzej v Drači",
+    "lat": 44.03264,
+    "lng": 20.80254,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q80194681",
+    "name": "Etno selo Babina reka",
+    "lat": 44.33588,
+    "lng": 20.35217,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97194734",
+    "name": "Lepenski Vir Museum",
+    "lat": 44.55675,
+    "lng": 22.02651,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97198424",
+    "name": "Beer Museum in Zrenjanin",
+    "lat": 45.38287,
+    "lng": 20.42869,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q116995643",
+    "name": "Museum of Natural History - Provincial Institute for Nature Protection",
+    "lat": 45.24974,
+    "lng": 19.85067,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q129824187",
+    "name": "Museum of bicycles and pop culture \"20 Cola\"",
+    "lat": 44.00894,
+    "lng": 20.92176,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q13668609",
+    "name": "Museum of the Serbian Orthodox Church",
+    "lat": 44.81806,
+    "lng": 20.45194,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q15126706",
+    "name": "Museum of Ponišavlje",
+    "lat": 43.1619,
+    "lng": 22.58862,
+    "wikiSl": null,
+    "wikiEn": "Old House, Pirot"
+   },
+   {
+    "item": "Q15621551",
+    "name": "Memorial Museum of Nadežda and Rastko Petrović",
+    "lat": 44.8145,
+    "lng": 20.4787,
+    "wikiSl": null,
+    "wikiEn": "Memorial Museum of Nade%C5%BEda and Rastko Petrovi%C4%87"
+   },
+   {
+    "item": "Q16083714",
+    "name": "Serbian Bread Museum Jeremija",
+    "lat": 44.91506,
+    "lng": 19.96174,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q16083796",
+    "name": "Valjevo Museum",
+    "lat": 44.2653,
+    "lng": 19.8834,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q16084050",
+    "name": "The building of the National Museum in Valjevo",
+    "lat": 44.26946,
+    "lng": 19.89047,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q16084068",
+    "name": "\"Old Pharmacy\" building",
+    "lat": 44.53167,
+    "lng": 19.22446,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q16084534",
+    "name": "House of Serbian-Norwegian friendship",
+    "lat": 44.02069,
+    "lng": 20.46616,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q16085363",
+    "name": "Museum of Genocide Victims in Belgrade",
+    "lat": 44.81261,
+    "lng": 20.46376,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q16086604",
+    "name": "National Museum Smederevska Palanka",
+    "lat": 44.36626,
+    "lng": 20.95639,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q16087826",
+    "name": "Museum of naive and marginal art in Jagodina",
+    "lat": 44.80213,
+    "lng": 20.35641,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q16335765",
+    "name": "National Museum of Zaječar",
+    "lat": 43.90343,
+    "lng": 22.27874,
+    "wikiSl": null,
+    "wikiEn": "National Museum Zaje%C4%8Dar"
+   },
+   {
+    "item": "Q16760952",
+    "name": "Residence of Jovan Obrenović, Čačak",
+    "lat": 43.89356,
+    "lng": 20.34857,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q16761214",
+    "name": "House of Simić in Kruševac",
+    "lat": 43.58213,
+    "lng": 21.32612,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q16761275",
+    "name": "National Museum of Čačak",
+    "lat": 43.89347,
+    "lng": 20.34856,
+    "wikiSl": null,
+    "wikiEn": "National Museum of %C4%8Ca%C4%8Dak"
+   },
+   {
+    "item": "Q19724472",
+    "name": "Q19724472",
+    "lat": 46.10217,
+    "lng": 19.66083,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q20434960",
+    "name": "Park Museum Bor",
+    "lat": 44.07615,
+    "lng": 22.0993,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q20435109",
+    "name": "Regional Museum Jagodina",
+    "lat": 43.97615,
+    "lng": 21.26291,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q20435116",
+    "name": "Homeland Museum of Aleksinac",
+    "lat": 43.54141,
+    "lng": 21.71096,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q20435124",
+    "name": "Homeland Museum of Knjaževac",
+    "lat": 43.56523,
+    "lng": 22.25102,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q20435130",
+    "name": "Homeland Museum „Glavaševa kuća” in Novi Bečej",
+    "lat": 45.60466,
+    "lng": 20.12555,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q20435781",
+    "name": "Palata Ilion",
+    "lat": 45.20366,
+    "lng": 19.93207,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q20436954",
+    "name": "Memorial Museum \"21. October” Kragujevac",
+    "lat": 44.02128,
+    "lng": 20.89434,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q20437554",
+    "name": "Memorial Complex in Idvor",
+    "lat": 45.19,
+    "lng": 20.51247,
+    "wikiSl": null,
+    "wikiEn": "Memorial Complex in Idvor (Mihajlo Pupin)"
+   },
+   {
+    "item": "Q20437776",
+    "name": "Museum of mining and metallurgy in Bor",
+    "lat": 44.07482,
+    "lng": 22.09936,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q20437781",
+    "name": "Ras Museum Novi Pazar",
+    "lat": 43.14063,
+    "lng": 20.51874,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q20437891",
+    "name": "National Museum of Arandjelovac",
+    "lat": 44.30467,
+    "lng": 20.5466,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q20437895",
+    "name": "National Museum of Užice",
+    "lat": 43.8576,
+    "lng": 19.8451,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q21193140",
+    "name": "Natural History Center Svilajnac",
+    "lat": 44.23173,
+    "lng": 21.1924,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q22343227",
+    "name": "Museum of the City of Novi Sad",
+    "lat": 45.25216,
+    "lng": 19.86217,
+    "wikiSl": null,
+    "wikiEn": "City Museum of Novi Sad"
+   },
+   {
+    "item": "Q22343224",
+    "name": "Museum of Contemporary Art Vojvodina",
+    "lat": 45.25651,
+    "lng": 19.85325,
+    "wikiSl": null,
+    "wikiEn": "Museum of Contemporary Art of Vojvodina"
+   },
+   {
+    "item": "Q25459496",
+    "name": "Homeland Museum of Vlasotince",
+    "lat": 42.9657,
+    "lng": 22.12802,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q25460950",
+    "name": "National Museum of Kraljevo",
+    "lat": 43.72534,
+    "lng": 20.68367,
+    "wikiSl": null,
+    "wikiEn": "National Museum Kraljevo"
+   },
+   {
+    "item": "Q25464147",
+    "name": "Homeland Museum of Priboj",
+    "lat": 43.58254,
+    "lng": 19.52575,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q25464628",
+    "name": "Narrow gauge railway museum",
+    "lat": 43.84228,
+    "lng": 20.02736,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q28057830",
+    "name": "National Museum of Kikinda",
+    "lat": 45.83053,
+    "lng": 20.4648,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q28598592",
+    "name": "Town Museum of Sombor",
+    "lat": 45.77188,
+    "lng": 19.11144,
+    "wikiSl": null,
+    "wikiEn": "Sombor City Museum"
+   },
+   {
+    "item": "Q28922537",
+    "name": "Museum of Serbian Medical Society",
+    "lat": 44.81633,
+    "lng": 20.4706,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q31181807",
+    "name": "National Museum of Leskovac",
+    "lat": 42.99393,
+    "lng": 21.9461,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q31182138",
+    "name": "Museum of Bačka Topola",
+    "lat": 45.8151,
+    "lng": 19.6298,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q31182247",
+    "name": "Žeravica Museum",
+    "lat": 45.72851,
+    "lng": 20.30552,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q31182252",
+    "name": "Museum of Textile Industry in Strojkovce",
+    "lat": 42.90555,
+    "lng": 21.9233,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q31182811",
+    "name": "Stone Museum",
+    "lat": 44.20576,
+    "lng": 20.09898,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q31183310",
+    "name": "Knitting Museum",
+    "lat": 43.68608,
+    "lng": 19.87987,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q31184106",
+    "name": "Nikola Pašić Foundation",
+    "lat": 43.90134,
+    "lng": 22.27376,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q31184143",
+    "name": "Society for Culture, Art and International Cooperation Adligat",
+    "lat": 44.75479,
+    "lng": 20.47358,
+    "wikiSl": null,
+    "wikiEn": "Adligat"
+   },
+   {
+    "item": "Q55098140",
+    "name": "Memorial Museum of the Parish House in Vranić",
+    "lat": 44.60016,
+    "lng": 20.32604,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q55240451",
+    "name": "Nisville Jazz Museum",
+    "lat": 43.32361,
+    "lng": 21.89501,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q55339447",
+    "name": "Zepter Museum",
+    "lat": 44.81861,
+    "lng": 20.45585,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q55871902",
+    "name": "Museum of Roma culture in Belgrade",
+    "lat": 44.81113,
+    "lng": 20.51904,
+    "wikiSl": null,
+    "wikiEn": "Museum of Roma Culture in Belgrade"
+   },
+   {
+    "item": "Q56681647",
+    "name": "Museum in Bački Petrovac",
+    "lat": 45.3613,
+    "lng": 19.5904,
+    "wikiSl": null,
+    "wikiEn": "Museum of Vojvodina Slovaks"
+   },
+   {
+    "item": "Q37925729",
+    "name": "Homeland Museum of Trstenik",
+    "lat": 43.62083,
+    "lng": 21.00133,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q57338560",
+    "name": "Muzej Podunavskih Švaba",
+    "lat": 45.21031,
+    "lng": 19.95163,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q60748718",
+    "name": "Museum of Paja Jovanović",
+    "lat": 44.80743,
+    "lng": 20.46348,
+    "wikiSl": null,
+    "wikiEn": "Museum of Paja Jovanovi%C4%87"
+   },
+   {
+    "item": "Q61122894",
+    "name": "Town Museum Senta",
+    "lat": 45.93188,
+    "lng": 20.08978,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q61126475",
+    "name": "Museum building at the archaeological site of Mediјana",
+    "lat": 43.30899,
+    "lng": 21.94777,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q61128299",
+    "name": "Museum of Health Culture in Niš",
+    "lat": 43.31632,
+    "lng": 21.91386,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q61128359",
+    "name": "Čerević Local History Museum",
+    "lat": 45.21991,
+    "lng": 19.66661,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q61128949",
+    "name": "Homeland Museum of Ruma",
+    "lat": 45.00787,
+    "lng": 19.8242,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q61128994",
+    "name": "Ilijanum Museum of Naive Art",
+    "lat": 45.12758,
+    "lng": 19.22834,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q61129316",
+    "name": "Museum of Human Anatomy of the Faculty of Medicine in Belgrade",
+    "lat": 44.79799,
+    "lng": 20.46349,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q61129380",
+    "name": "Anatomical Museum of the Faculty of Veterinary Medicine",
+    "lat": 44.79443,
+    "lng": 20.46536,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q61129501",
+    "name": "Arsenal building (Petrovaradin)",
+    "lat": 45.25222,
+    "lng": 19.86222,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q61130189",
+    "name": "Ethno-park \"Brvnara\" Backi Jarak",
+    "lat": 45.36753,
+    "lng": 19.86975,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q61130238",
+    "name": "Church treasury in Šid",
+    "lat": 45.12813,
+    "lng": 19.22858,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q61130902",
+    "name": "Red Star FC Museum",
+    "lat": 44.78333,
+    "lng": 20.465,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q61131116",
+    "name": "Digital Museum in Niš",
+    "lat": 43.32378,
+    "lng": 21.8953,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q61131452",
+    "name": "Museum of the Socialist Revolution of Vojvodina",
+    "lat": 45.25649,
+    "lng": 19.85162,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q61131471",
+    "name": "Museum of Vrbas",
+    "lat": 45.57111,
+    "lng": 19.64028,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q61131675",
+    "name": "Museum of the Revolution in Vrbas",
+    "lat": 45.56664,
+    "lng": 19.66434,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q61132550",
+    "name": "Museum of Matches",
+    "lat": 45.20314,
+    "lng": 19.93326,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q61133221",
+    "name": "Native collection Sremski Karlovci",
+    "lat": 45.20357,
+    "lng": 19.93184,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q61133904",
+    "name": "National Museum of Veliko Gradište",
+    "lat": 44.76482,
+    "lng": 21.51728,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q61134442",
+    "name": "Theater Museum of Vojvodina",
+    "lat": 45.25395,
+    "lng": 19.84432,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q83695420",
+    "name": "Homeland Museum of Zemun",
+    "lat": 44.84342,
+    "lng": 20.41217,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q85996741",
+    "name": "Museum of the Banjica Concentration Camp",
+    "lat": 44.77218,
+    "lng": 20.46805,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q85996822",
+    "name": "National Museum of Kruševac",
+    "lat": 43.58372,
+    "lng": 21.32155,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97174707",
+    "name": "Aca Stanojevic's house",
+    "lat": 43.56489,
+    "lng": 22.25429,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97192850",
+    "name": "Pudar Perfume Bottle Museum",
+    "lat": 45.84768,
+    "lng": 18.92974,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97193213",
+    "name": "Archaeological Museum of Đerdap",
+    "lat": 44.61237,
+    "lng": 22.60928,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97193596",
+    "name": "Bečej City Museum",
+    "lat": 45.61805,
+    "lng": 20.04464,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97193862",
+    "name": "Homeland Museum of Bela Palanka",
+    "lat": 43.21747,
+    "lng": 22.31115,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97193878",
+    "name": "Homeland Museum of Župa",
+    "lat": 43.45918,
+    "lng": 21.04434,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97193899",
+    "name": "Homeland Museum of Koceljeva",
+    "lat": 44.46639,
+    "lng": 19.8207,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97193906",
+    "name": "Homeland Museum of Petrovac na Mlavi",
+    "lat": 44.37763,
+    "lng": 21.4183,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97193923",
+    "name": "Homeland Museum of Sokobanja",
+    "lat": 43.64448,
+    "lng": 21.87118,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97193938",
+    "name": "Homolje Local History Museum",
+    "lat": 44.19749,
+    "lng": 21.78776,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97194425",
+    "name": "Malacological Museum",
+    "lat": 44.80399,
+    "lng": 20.47715,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97194693",
+    "name": "Horreum Margi Museum",
+    "lat": 43.93384,
+    "lng": 21.36953,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97194707",
+    "name": "Museum of the Goračić Rebellion",
+    "lat": 43.78333,
+    "lng": 20.31667,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97194720",
+    "name": "Museum of the Krajina in Negotin",
+    "lat": 44.22483,
+    "lng": 22.53118,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97194748",
+    "name": "Matsura Museum",
+    "lat": 44.93858,
+    "lng": 20.29589,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97194763",
+    "name": "Museum of Viticulture and Enology",
+    "lat": 43.45619,
+    "lng": 21.05425,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97194777",
+    "name": "Bačka Palanka City Museum",
+    "lat": 45.24913,
+    "lng": 19.38285,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97194784",
+    "name": "Museums of the victims of the raid in Čurug",
+    "lat": 45.47273,
+    "lng": 20.07219,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97194804",
+    "name": "Museum of Cultural History",
+    "lat": 44.62263,
+    "lng": 21.18126,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97194827",
+    "name": "Trumpet Museum",
+    "lat": 43.77658,
+    "lng": 20.22654,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97194847",
+    "name": "Coal Museum",
+    "lat": 43.99437,
+    "lng": 21.57122,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97194856",
+    "name": "Museum of Physical Culture in Belgrade",
+    "lat": 44.76337,
+    "lng": 20.42826,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97194869",
+    "name": "Odžaci Museum Unit",
+    "lat": 45.50813,
+    "lng": 19.2623,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97194894",
+    "name": "National Museum of Bela Crkva",
+    "lat": 44.90365,
+    "lng": 21.42458,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97194908",
+    "name": "National Museum of Pančevo",
+    "lat": 44.87146,
+    "lng": 20.64052,
+    "wikiSl": null,
+    "wikiEn": "National Museum of Pan%C4%8Devo"
+   },
+   {
+    "item": "Q97200236",
+    "name": "Vespa Museum Serbia",
+    "lat": 44.73838,
+    "lng": 20.45083,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97200870",
+    "name": "Museum of Illusions",
+    "lat": 44.81422,
+    "lng": 20.46262,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97202663",
+    "name": "Museum of Chocolate Belgrade",
+    "lat": 44.8094,
+    "lng": 20.48336,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97608792",
+    "name": "Book And Travel Museum",
+    "lat": 44.75485,
+    "lng": 20.47354,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97656524",
+    "name": "Memorial room Toplica Uprising",
+    "lat": 43.23599,
+    "lng": 21.58987,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q2291222",
+    "name": "Museum of African Art",
+    "lat": 44.78905,
+    "lng": 20.43497,
+    "wikiSl": null,
+    "wikiEn": "Museum of African Art, Belgrade"
+   },
+   {
+    "item": "Q2338260",
+    "name": "Museum of Applied Arts",
+    "lat": 44.81694,
+    "lng": 20.45448,
+    "wikiSl": null,
+    "wikiEn": "Museum of Applied Arts, Belgrade"
+   },
+   {
+    "item": "Q17076012",
+    "name": "Building of the Gallery of Fine Arts – Gift Collection of Rajko Mamuzić",
+    "lat": 45.25212,
+    "lng": 19.84528,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q21294360",
+    "name": "Тhe Gallery of Matica srpska",
+    "lat": 45.25248,
+    "lng": 19.84567,
+    "wikiSl": null,
+    "wikiEn": "Gallery of Matica srpska"
+   },
+   {
+    "item": "Q25463469",
+    "name": "Gallery of the Radio Television of Serbia",
+    "lat": 44.81181,
+    "lng": 20.46981,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q31183663",
+    "name": "Gallery of the Central Military Club of Serbia",
+    "lat": 44.81706,
+    "lng": 20.46235,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q61128854",
+    "name": "Eko Kapetan mišin breg",
+    "lat": 44.47239,
+    "lng": 22.10614,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q61130515",
+    "name": "Gallery \"Milan Konjović\" Sombor",
+    "lat": 45.77212,
+    "lng": 19.11362,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97959023",
+    "name": "Museum of Serbian Literature",
+    "lat": 44.7549,
+    "lng": 20.47351,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q102837574",
+    "name": "Motorcycle Museum in Pančevo",
+    "lat": 44.87624,
+    "lng": 20.63644,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q104724748",
+    "name": "Zobnatica Equestrian Museum",
+    "lat": 45.85774,
+    "lng": 19.63021,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q107309022",
+    "name": "Kulpin Museum complex",
+    "lat": 45.40198,
+    "lng": 19.58736,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q110045273",
+    "name": "Hungarian native house \"Tajhaz\"",
+    "lat": 45.40824,
+    "lng": 19.89825,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q110045534",
+    "name": "Museum Pupin",
+    "lat": 45.19,
+    "lng": 20.51247,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q110045957",
+    "name": "Museum in Majdanpek",
+    "lat": 44.42333,
+    "lng": 21.93697,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q110045962",
+    "name": "Bakery Museum",
+    "lat": 45.71022,
+    "lng": 19.64678,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q110048323",
+    "name": "Labor Museum Trudbenik",
+    "lat": 44.78457,
+    "lng": 20.51522,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q110049949",
+    "name": "Museum Selfie Belgrade",
+    "lat": 44.80294,
+    "lng": 20.44616,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q110475367",
+    "name": "Native house, Kristina Leković",
+    "lat": 43.75872,
+    "lng": 20.01718,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q110830061",
+    "name": "Homeland Museum of Mokrin",
+    "lat": 45.93442,
+    "lng": 20.40939,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q111829877",
+    "name": "Homeland Museum of Paraćin",
+    "lat": 43.86436,
+    "lng": 21.40882,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q111829887",
+    "name": "Kosovska Mitrovica City Museum",
+    "lat": 42.88744,
+    "lng": 20.86853,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q111829896",
+    "name": "Homeland Museum of Nova Varoš",
+    "lat": 43.46051,
+    "lng": 19.81103,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q111831808",
+    "name": "Homeland Museum of Mladenovac",
+    "lat": 44.45099,
+    "lng": 20.70473,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q111840505",
+    "name": "Prijepolje museum",
+    "lat": 43.38915,
+    "lng": 19.64948,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q111874873",
+    "name": "Museum of the First Serbian Uprising",
+    "lat": 44.34578,
+    "lng": 20.58362,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q111890933",
+    "name": "Local History Museum in Brekovo",
+    "lat": 43.64052,
+    "lng": 20.01767,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q114724042",
+    "name": "Mladenovac Museum",
+    "lat": 44.43961,
+    "lng": 20.69523,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q114761245",
+    "name": "Museum of Spa Treatment",
+    "lat": 43.61854,
+    "lng": 20.89277,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q114761953",
+    "name": "Legate Danilo Bata Stojković",
+    "lat": 43.62551,
+    "lng": 20.89526,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q114762529",
+    "name": "Tito's Villa Zlatibor",
+    "lat": 43.73545,
+    "lng": 19.70379,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q117067374",
+    "name": "Museum for the History of Pharmacy in Belgrade",
+    "lat": 44.74725,
+    "lng": 20.49402,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q121667377",
+    "name": "Museum of the Timok Rebellion",
+    "lat": 43.82994,
+    "lng": 21.9587,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q124428769",
+    "name": "Space Museum",
+    "lat": 45.253,
+    "lng": 19.86232,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q125461926",
+    "name": "Starčevo Museum",
+    "lat": 44.84732,
+    "lng": 20.68781,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q126000454",
+    "name": "Museum of Church Antiquities",
+    "lat": 43.31552,
+    "lng": 21.89673,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q126002025",
+    "name": "Museum FC Partizan",
+    "lat": 44.78999,
+    "lng": 20.45922,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q126012056",
+    "name": "Museum of Draža Mihailović",
+    "lat": 44.79608,
+    "lng": 20.49043,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q126012516",
+    "name": "Collection of Sekulić icons",
+    "lat": 44.82017,
+    "lng": 20.45574,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q126012854",
+    "name": "Native Museum Žarkovo",
+    "lat": 44.75845,
+    "lng": 20.41701,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q131324032",
+    "name": "Kuća starih zanata",
+    "lat": 43.32919,
+    "lng": 21.9069,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q133825509",
+    "name": "Museum of the Jews of Šabac",
+    "lat": 44.75479,
+    "lng": 19.69519,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q135436433",
+    "name": "Fresco Gallery",
+    "lat": 44.82188,
+    "lng": 20.45652,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q135441179",
+    "name": "Ethno Museum \"July 26\"",
+    "lat": 43.0899,
+    "lng": 21.93427,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q135441209",
+    "name": "Local History Museum in Jošanica",
+    "lat": 43.71829,
+    "lng": 21.77581,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q135448381",
+    "name": "Museum of Subjugation - Archaeological Exhibition",
+    "lat": 43.15931,
+    "lng": 22.5823,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q138005214",
+    "name": "Tamburica Fest Museum",
+    "lat": 45.25393,
+    "lng": 19.84362,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q138049685",
+    "name": "Q138049685",
+    "lat": 44.81014,
+    "lng": 20.46583,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q141429434",
+    "name": "Museum of Cyrillic Script",
+    "lat": 43.94327,
+    "lng": 19.55048,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q1277393",
+    "name": "Narodni muzej Srbije",
+    "lat": 44.81677,
+    "lng": 20.45965,
+    "wikiSl": "Narodni muzej Srbije",
+    "wikiEn": "National Museum of Serbia"
+   },
+   {
+    "item": "Q3330695",
+    "name": "National Museum of Kragujevac",
+    "lat": 44.00944,
+    "lng": 20.91128,
+    "wikiSl": null,
+    "wikiEn": "National Museum of %C5%A0umadija, Kragujevac"
+   },
+   {
+    "item": "Q16084351",
+    "name": "Open air Museum Old Village Sirogojno",
+    "lat": 43.68611,
+    "lng": 19.87972,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q16084958",
+    "name": "Belgrade Post Museum",
+    "lat": 44.81211,
+    "lng": 20.46757,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q20436793",
+    "name": "Muzej Jovana Jovanovića - Zmaja",
+    "lat": 45.22293,
+    "lng": 19.84283,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q88384952",
+    "name": "City Library Pančevo",
+    "lat": 44.87192,
+    "lng": 20.6455,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q97193547",
+    "name": "The Gallery of Fine Arts – Gift Collection of Rajko Mamuzić",
+    "lat": 45.2521,
+    "lng": 19.8453,
+    "wikiSl": null,
+    "wikiEn": "The Gallery of Fine Arts %E2%80%93 Gift Collection of Rajko Mamuzi%C4%87"
+   },
+   {
+    "item": "Q107308178",
+    "name": "Museum of Agriculture in Kulpin",
+    "lat": 45.40198,
+    "lng": 19.58736,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q110048527",
+    "name": "Legacy of Milica Zorić and Rodoljub Čolaković",
+    "lat": 44.78018,
+    "lng": 20.45373,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q110048525",
+    "name": "Legacy Gallery of Petar Dobrović",
+    "lat": 44.82035,
+    "lng": 20.45573,
+    "wikiSl": null,
+    "wikiEn": null
+   }
+  ],
+  "kosovo": [
+   {
+    "item": "Q16334463",
+    "name": "Narodna galerija Kosova",
+    "lat": 42.6571,
+    "lng": 21.164,
+    "wikiSl": null,
+    "wikiEn": "National Gallery of Kosovo"
+   },
+   {
+    "item": "Q16854755",
+    "name": "Muzej Kosova",
+    "lat": 42.66568,
+    "lng": 21.16627,
+    "wikiSl": "Muzej Kosova",
+    "wikiEn": "Kosovo Museum"
+   },
+   {
+    "item": "Q16957435",
+    "name": "Ethnological Treasure of Kosovo",
+    "lat": 42.6685,
+    "lng": 21.16811,
+    "wikiSl": null,
+    "wikiEn": "Ethnological Museum, Pristina"
+   },
+   {
+    "item": "Q26951386",
+    "name": "Ethnographic Museum Gjakova",
+    "lat": 42.37694,
+    "lng": 20.43194,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q28403037",
+    "name": "City Museum of Mitrovica",
+    "lat": 42.88728,
+    "lng": 20.86869,
+    "wikiSl": null,
+    "wikiEn": "City Museum of Mitrovica"
+   },
+   {
+    "item": "Q65307548",
+    "name": "Kosovo Railways Museum",
+    "lat": 42.63533,
+    "lng": 21.08214,
+    "wikiSl": null,
+    "wikiEn": "Kosovo Railways Museum"
+   }
+  ],
+  "crna-gora": [
+   {
+    "item": "Q2265459",
+    "name": "National Museum of Montenegro",
+    "lat": 42.38928,
+    "lng": 18.92286,
+    "wikiSl": null,
+    "wikiEn": "National Museum of Montenegro"
+   },
+   {
+    "item": "Q13043217",
+    "name": "Museum of Local History in Ulcinj",
+    "lat": 41.92462,
+    "lng": 19.20119,
+    "wikiSl": null,
+    "wikiEn": "Museum of Local History in Ulcinj"
+   },
+   {
+    "item": "Q16258342",
+    "name": "Church-Mosque of Ulcinj",
+    "lat": 41.92458,
+    "lng": 19.20131,
+    "wikiSl": null,
+    "wikiEn": "Church-Mosque of Ulcinj"
+   },
+   {
+    "item": "Q16677924",
+    "name": "Maritime Museum of Montenegro in Kotor",
+    "lat": 42.42506,
+    "lng": 18.7714,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q17050333",
+    "name": "Heritage Museum Pljevlja",
+    "lat": 43.36,
+    "lng": 19.36,
+    "wikiSl": null,
+    "wikiEn": "Heritage Museum Pljevlja"
+   },
+   {
+    "item": "Q30284985",
+    "name": "Natural History Museum of Montenegro",
+    "lat": 42.43601,
+    "lng": 19.25981,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q56232896",
+    "name": "Ethnographic Museum of Montenegro",
+    "lat": 42.38797,
+    "lng": 18.92466,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q56467995",
+    "name": "Q56467995",
+    "lat": 42.39146,
+    "lng": 18.9223,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q110048259",
+    "name": "Museum of Women of Montenegro",
+    "lat": 42.45053,
+    "lng": 19.23913,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q140539312",
+    "name": "Podgorica City Museum",
+    "lat": 42.43847,
+    "lng": 19.26577,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q140546038",
+    "name": "Historical Museum of Montenegro",
+    "lat": 42.38926,
+    "lng": 18.92281,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q140546076",
+    "name": "Art Museum of Montenegro",
+    "lat": 42.38926,
+    "lng": 18.92281,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q140546130",
+    "name": "Archaeological Museum of Montenegro",
+    "lat": 42.38812,
+    "lng": 18.92299,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q140546354",
+    "name": "Njegoš birth house",
+    "lat": 42.43329,
+    "lng": 18.829,
+    "wikiSl": null,
+    "wikiEn": null
+   }
+  ],
+  "albanija": [
+   {
+    "item": "Q637170",
+    "name": "National Archaeological Museum",
+    "lat": 41.31829,
+    "lng": 19.8219,
+    "wikiSl": null,
+    "wikiEn": "National Archaeological Museum (Tirana)"
+   },
+   {
+    "item": "Q961493",
+    "name": "Q961493",
+    "lat": 40.45222,
+    "lng": 19.48532,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q1249790",
+    "name": "Historical Museum of Skodër",
+    "lat": 42.06932,
+    "lng": 19.50927,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q1581154",
+    "name": "Narodni zgodovinski muzej (Albanija)",
+    "lat": 41.32931,
+    "lng": 19.81719,
+    "wikiSl": "Narodni zgodovinski muzej (Albanija)",
+    "wikiEn": "National History Museum (Albania)"
+   },
+   {
+    "item": "Q1968108",
+    "name": "National Art Gallery of Albania",
+    "lat": 41.32546,
+    "lng": 19.82021,
+    "wikiSl": null,
+    "wikiEn": "National Museum of Fine Arts (Albania)"
+   },
+   {
+    "item": "Q3303191",
+    "name": "Gjergj Kastrioti Skënderbeu National Museum",
+    "lat": 41.5074,
+    "lng": 19.79401,
+    "wikiSl": null,
+    "wikiEn": "Skanderbeg Museum"
+   },
+   {
+    "item": "Q3304897",
+    "name": "Berat National Ethnographic Museum",
+    "lat": 40.7076,
+    "lng": 19.9504,
+    "wikiSl": null,
+    "wikiEn": "Ethnographic Museum of Berat"
+   },
+   {
+    "item": "Q4958051",
+    "name": "Oriental Art Museum \"Bratko\"",
+    "lat": 40.61271,
+    "lng": 20.78463,
+    "wikiSl": null,
+    "wikiEn": "Bratko Museum of Oriental Art"
+   },
+   {
+    "item": "Q5160877",
+    "name": "Congress of Lushnjë Museum",
+    "lat": 40.94111,
+    "lng": 19.7075,
+    "wikiSl": null,
+    "wikiEn": "Congress of Lushnj%C3%AB Museum"
+   },
+   {
+    "item": "Q5316767",
+    "name": "Durrës Archaeological Museum",
+    "lat": 41.31139,
+    "lng": 19.44028,
+    "wikiSl": null,
+    "wikiEn": "Archaeological Museum of Durr%C3%ABs"
+   },
+   {
+    "item": "Q6940744",
+    "name": "Museum of Apollonia",
+    "lat": 40.72033,
+    "lng": 19.47172,
+    "wikiSl": null,
+    "wikiEn": "Archaeological Museum of Apolonia"
+   },
+   {
+    "item": "Q6974484",
+    "name": "National Museum of Medieval Art",
+    "lat": 40.61222,
+    "lng": 20.78667,
+    "wikiSl": null,
+    "wikiEn": "National Museum of Medieval Art (Albania)"
+   },
+   {
+    "item": "Q6980610",
+    "name": "Natural Sciences Museum Sabiha Kasimati",
+    "lat": 41.32551,
+    "lng": 19.83454,
+    "wikiSl": null,
+    "wikiEn": "Natural Sciences Museum Sabiha Kasimati"
+   },
+   {
+    "item": "Q13039148",
+    "name": "Fototeka Marubi",
+    "lat": 42.06859,
+    "lng": 19.51558,
+    "wikiSl": null,
+    "wikiEn": "Marubi National Museum of Photography"
+   },
+   {
+    "item": "Q13043200",
+    "name": "Ethnographic Museum of Durrës",
+    "lat": 41.31072,
+    "lng": 19.44606,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q13043201",
+    "name": "Elbasan Ethnographic Museum",
+    "lat": 41.11209,
+    "lng": 20.08313,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q13043204",
+    "name": "Krujë Ethnographic Museum",
+    "lat": 41.50667,
+    "lng": 19.79361,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q13043216",
+    "name": "National Museum of Weapons",
+    "lat": 40.07293,
+    "lng": 20.14,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q13043261",
+    "name": "Mësonjëtorja",
+    "lat": 40.61667,
+    "lng": 20.77983,
+    "wikiSl": null,
+    "wikiEn": "M%C3%ABsonj%C3%ABtorja"
+   },
+   {
+    "item": "Q15221722",
+    "name": "Gjirokastër Ethnographic Museum",
+    "lat": 40.07556,
+    "lng": 20.13472,
+    "wikiSl": null,
+    "wikiEn": "Ethnographic Museum of Gjirokast%C3%ABr"
+   },
+   {
+    "item": "Q16349392",
+    "name": "Museum \"Aleksandër Xhuvani\"",
+    "lat": 41.11619,
+    "lng": 20.08114,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q16349398",
+    "name": "Bajram Curri History Museum",
+    "lat": 42.3572,
+    "lng": 20.07285,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q16349413",
+    "name": "Vlora History Museum",
+    "lat": 40.47251,
+    "lng": 19.49085,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q16349422",
+    "name": "Onufri Iconographic Museum",
+    "lat": 40.709,
+    "lng": 19.945,
+    "wikiSl": null,
+    "wikiEn": "Onufri Iconographic Museum"
+   },
+   {
+    "item": "Q16349431",
+    "name": "National Museum of Education",
+    "lat": 40.61667,
+    "lng": 20.77983,
+    "wikiSl": null,
+    "wikiEn": "National Museum of Education (Albania)"
+   },
+   {
+    "item": "Q25570520",
+    "name": "Q25570520",
+    "lat": 41.60852,
+    "lng": 20.01611,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q25570525",
+    "name": "National Archaeological Museum of Korçë",
+    "lat": 40.61528,
+    "lng": 20.78146,
+    "wikiSl": null,
+    "wikiEn": "Archaeological Museum of Kor%C3%A7%C3%AB"
+   },
+   {
+    "item": "Q25570812",
+    "name": "Museum of the Bank of Albania",
+    "lat": 41.3277,
+    "lng": 19.81672,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q28230094",
+    "name": "Ethnographic Museum of Kavajë",
+    "lat": 41.18028,
+    "lng": 19.55556,
+    "wikiSl": null,
+    "wikiEn": "Ethnographic Museum of Kavaj%C3%AB"
+   },
+   {
+    "item": "Q30184883",
+    "name": "Migjeni School Museum",
+    "lat": 42.04334,
+    "lng": 19.90102,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q31665506",
+    "name": "Bunk’Art",
+    "lat": 41.35169,
+    "lng": 19.86073,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q31666843",
+    "name": "Armed Forces Museum",
+    "lat": 41.3417,
+    "lng": 19.83829,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q31666886",
+    "name": "Bunk’Art 2",
+    "lat": 41.32694,
+    "lng": 19.81944,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q37311903",
+    "name": "Shijakus' house",
+    "lat": 41.33595,
+    "lng": 19.82023,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q37858697",
+    "name": "Muzej tajnega nadzora",
+    "lat": 41.32667,
+    "lng": 19.81647,
+    "wikiSl": "Muzej tajnega nadzora",
+    "wikiEn": "Museum of Secret Surveillance"
+   },
+   {
+    "item": "Q42697166",
+    "name": "Ethnographic Museum of Dukagjin",
+    "lat": 42.38737,
+    "lng": 19.78521,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q42699122",
+    "name": "People's Museum Stalin Boulevard",
+    "lat": 42.06778,
+    "lng": 19.51278,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q42757774",
+    "name": "Q42757774",
+    "lat": 41.31828,
+    "lng": 19.822,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q65307553",
+    "name": "Museum of Rozafa Fortress",
+    "lat": 42.04584,
+    "lng": 19.49275,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q65307557",
+    "name": "Gjirokastra Cold War Museum",
+    "lat": 40.07481,
+    "lng": 20.1402,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q68042145",
+    "name": "Archeological Museum of Butrint",
+    "lat": 39.74615,
+    "lng": 20.01982,
+    "wikiSl": null,
+    "wikiEn": "Archaeological Museum of Butrint"
+   },
+   {
+    "item": "Q99299901",
+    "name": "Solomon Museum",
+    "lat": 40.7065,
+    "lng": 19.94828,
+    "wikiSl": null,
+    "wikiEn": "Solomon Museum"
+   },
+   {
+    "item": "Q116984533",
+    "name": "School museum of Elbasan",
+    "lat": 41.11375,
+    "lng": 20.08928,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q118111951",
+    "name": "Mat historical museum",
+    "lat": 41.60852,
+    "lng": 20.01612,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q118140339",
+    "name": "Asdreni Museum",
+    "lat": 40.5831,
+    "lng": 20.79143,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q118140382",
+    "name": "Museum of Gramsh",
+    "lat": 40.86864,
+    "lng": 20.18369,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q118143770",
+    "name": "Ndre Mjeda Museum",
+    "lat": 41.89982,
+    "lng": 19.55499,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q118143809",
+    "name": "Drishti Castle Museum",
+    "lat": 42.12334,
+    "lng": 19.61029,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q118146238",
+    "name": "Museum of Martyrs",
+    "lat": 41.31884,
+    "lng": 19.44498,
+    "wikiSl": null,
+    "wikiEn": null
+   },
+   {
+    "item": "Q123669771",
+    "name": "Site of Witness and Memory",
+    "lat": 42.065,
+    "lng": 19.51694,
+    "wikiSl": null,
+    "wikiEn": null
+   }
+  ],
+  "severna-makedonija": []
  }
 }
